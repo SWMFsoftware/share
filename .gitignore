@@ -6,6 +6,7 @@
 *.out
 *.ref
 *.log
+*.protex
 
 Library/src/Makefile.DEPEND
 Library/src/Makefile.RULES
