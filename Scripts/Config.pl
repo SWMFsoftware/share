@@ -758,8 +758,11 @@ sub set_hypre_{
 
     # Check if library is present
     if($NewHypre eq "yes" and not -d "util/HYPRE"){
-	print "Warning: util/HYPRE is missing. Use cd util; cvs co HYPRE\n";
-	return;
+	&shell_command("git clone herot:/GIT/FRAMEWORK/HYPRE util/HYPRE");
+	if(not -d "util/HYPRE"){
+	    print "Warning: could not git clone util/HYPRE";
+	    return;
+	}
     }
 
     if($NewHypre eq "yes" and not -e "util/HYPRE/lib/libHYPRE.a"){
