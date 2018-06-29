@@ -54,7 +54,7 @@ module ModPlotFile
 
   integer, parameter, public:: lStringPlotFile = 500
 
-  integer, parameter:: MaxDim = 3
+  integer, parameter:: MaxDim = 5
 
 contains
 
@@ -533,15 +533,15 @@ contains
        TypeFileIn, StringHeaderOut,                    &
        nStepOut, TimeOut, nDimOut, nParamOut, nVarOut, &
        IsCartesianOut,                                 &
-       n1Out, n2Out, n3Out, nOut_D,                    &
+       n1Out, n2Out, n3Out, n4Out, n5Out, nOut_D,      &
        ParamOut_I, NameVarOut,                         &
        CoordMinOut_D, CoordMaxOut_D,                   &
        CoordOut_DI,                                    &
-       Coord1Out_I, Coord2Out_I, Coord3Out_I,          &
-       CoordOut_I, CoordOut_DII, CoordOut_DIII,        &
-       VarOut_I,  VarOut_II,  VarOut_III,              &
-       VarOut_VI, VarOut_VII, VarOut_VIII,             &
-       VarOut_IV, VarOut_IIV, VarOut_IIIV,             &
+       Coord1Out_I, Coord2Out_I, Coord3Out_I, Coord4Out_I, Coord5Out_I, &
+       CoordOut_I, CoordOut_DII, CoordOut_DIII, CoordOut_DI4, CoordOut_DI5, &
+       VarOut_I,  VarOut_II,  VarOut_III,  VarOut_I4,  VarOut_I5,           &
+       VarOut_VI, VarOut_VII, VarOut_VIII, VarOut_VI4, VarOut_VI5,          &
+       VarOut_IV, VarOut_IIV, VarOut_IIIV, VarOut_I4V, VarOut_I5V,          &
        iErrorOut)
 
     ! Both VarOut_VI and CoordOut_DI can be used in 1D, 2D, and 3D
@@ -557,6 +557,7 @@ contains
     integer,          optional, intent(out):: nParamOut ! number of parameters
     integer,          optional, intent(out):: nVarOut   ! number of variables
     integer,          optional, intent(out):: n1Out, n2Out, n3Out ! grid size
+    integer,          optional, intent(out):: n4Out, n5Out
     integer,          optional, intent(out):: nOut_D(:) ! grid size array
     logical,          optional, intent(out):: IsCartesianOut ! Cartesian grid?
     real,             optional, intent(out):: ParamOut_I(:)  ! parameters
@@ -566,18 +567,28 @@ contains
     real,             optional, intent(out):: Coord1Out_I(:)
     real,             optional, intent(out):: Coord2Out_I(:)
     real,             optional, intent(out):: Coord3Out_I(:)
-    real,             optional, intent(out):: CoordOut_I(:)          ! 1D
-    real,             optional, intent(out):: CoordOut_DII(:,:,:)    ! 2D
-    real,             optional, intent(out):: CoordOut_DIII(:,:,:,:) ! 3D
+    real,             optional, intent(out):: Coord4Out_I(:)
+    real,             optional, intent(out):: Coord5Out_I(:)
+    real,             optional, intent(out):: CoordOut_I(:)               ! 1D
+    real,             optional, intent(out):: CoordOut_DII(:,:,:)         ! 2D
+    real,             optional, intent(out):: CoordOut_DIII(:,:,:,:)      ! 3D
+    real,             optional, intent(out):: CoordOut_DI4(:,:,:,:,:)     ! 4D
+    real,             optional, intent(out):: CoordOut_DI5(:,:,:,:,:,:)   ! 5D
     real,             optional, intent(out):: VarOut_I(:)    ! variable  in 1D
-    real,             optional, intent(out):: VarOut_II(:,:)       !        2D
-    real,             optional, intent(out):: VarOut_III(:,:,:)    !        3D
+    real,             optional, intent(out):: VarOut_II(:,:)              ! 2D
+    real,             optional, intent(out):: VarOut_III(:,:,:)           ! 3D
+    real,             optional, intent(out):: VarOut_I4(:,:,:,:)          ! 4D
+    real,             optional, intent(out):: VarOut_I5(:,:,:,:,:)        ! 5D
     real,             optional, intent(out):: VarOut_VI(:,:) ! variables in 1D
-    real,             optional, intent(out):: VarOut_VII(:,:,:)    !        2D
-    real,             optional, intent(out):: VarOut_VIII(:,:,:,:) !        3D
-    real,             optional, intent(out):: VarOut_IV(:,:)       !        1D
-    real,             optional, intent(out):: VarOut_IIV(:,:,:)    !        2D
-    real,             optional, intent(out):: VarOut_IIIV(:,:,:,:) !        3D
+    real,             optional, intent(out):: VarOut_VII(:,:,:)           ! 2D
+    real,             optional, intent(out):: VarOut_VIII(:,:,:,:)        ! 3D
+    real,             optional, intent(out):: VarOut_VI4(:,:,:,:,:)       ! 4D
+    real,             optional, intent(out):: VarOut_VI5(:,:,:,:,:,:)     ! 5D
+    real,             optional, intent(out):: VarOut_IV(:,:)              ! 1D
+    real,             optional, intent(out):: VarOut_IIV(:,:,:)           ! 2D
+    real,             optional, intent(out):: VarOut_IIIV(:,:,:,:)        ! 3D
+    real,             optional, intent(out):: VarOut_I4V(:,:,:,:,:)       ! 4D
+    real,             optional, intent(out):: VarOut_I5V(:,:,:,:,:,:)     ! 5D
     integer,          optional, intent(out):: iErrorOut            ! I/O error
 
     integer            :: iUnit
@@ -585,18 +596,19 @@ contains
     logical            :: DoReadHeader = .true.
     character(len=lStringPlotFile) :: StringHeader
     character(len=lStringPlotFile) :: NameVar
-    integer            :: nStep, nDim, nParam, nVar, n1, n2, n3, n_D(MaxDim)
+    integer            :: nStep, nDim, nParam, nVar
+    integer            :: n1, n2, n3, n4, n5, n_D(MaxDim)
     real               :: Time, Coord
     real(Real4_)       :: Time4
     logical            :: IsCartesian
     real(Real4_), allocatable:: Param4_I(:), Coord4_ID(:,:), Var4_IV(:,:)
     real,         allocatable:: Param_I(:),  Coord_ID(:,:),  Var_IV(:,:)
-    real    :: TecIndex_I(3)
+    real    :: TecIndex_I(MaxDim)
     integer :: nTecIndex
-    integer :: i, j, k, iDim, iVar, n
+    integer :: i, j, k, l, m, iDim, iVar, n
 
     ! Remember these values after reading header
-    save :: nDim, nVar, n1, n2, n3, TypeFile, iUnit
+    save :: nDim, nVar, n1, n2, n3, n4, n5, TypeFile, iUnit
 
     character(len=*), parameter:: NameSub = 'read_plot_file'
     !---------------------------------------------------------------------
@@ -629,22 +641,22 @@ contains
     DoReadHeader = .true.
 
     ! Read coordinates and variables into suitable 2D arrays
-    allocate(Coord_ID(n1*n2*n3, nDim), Var_IV(n1*n2*n3, nVar))
+    allocate(Coord_ID(n1*n2*n3*n4*n5, nDim), Var_IV(n1*n2*n3*n4*n5, nVar))
     select case(TypeFile)
     case('tec')
        nTecIndex = count(n_D>1, 1)
        n = 0
-       do k = 1, n3; do j = 1, n2; do i = 1, n1
+       do m = 1, n5; do l = 1, n4; do k = 1, n3; do j = 1, n2; do i = 1, n1
           n = n + 1
           read(iUnit, *, ERR=77, END=77) &
                TecIndex_I(1:nTecIndex), Coord_ID(n, :), Var_IV(n, :)
-       end do; end do; end do
+       end do; end do; end do; end do; end do
     case('ascii', 'formatted')
        n = 0
-       do k = 1, n3; do j = 1, n2; do i = 1, n1
+       do m = 1, n5; do l = 1, n4; do k = 1, n3; do j = 1, n2; do i = 1, n1
           n = n + 1
           read(iUnit, *, ERR=77, END=77) Coord_ID(n, :), Var_IV(n, :)
-       end do; end do; end do
+       end do; end do; end do; end do; end do
 
     case('real8')
        read(iUnit, ERR=77, END=77) Coord_ID
@@ -672,45 +684,66 @@ contains
     ! Fill in output coordinate arrays
     do iDim = 1, nDim
        n = 0
-       do k = 1, n3; do j = 1, n2; do i = 1, n1
+       do m = 1, n5; do l = 1, n4; do k = 1, n3; do j = 1, n2; do i = 1, n1
           n = n + 1
           Coord = Coord_ID(n, iDim)
-          if(present(CoordOut_DI))   CoordOut_DI(iDim,n)       = Coord
-          if(present(CoordOut_I))    CoordOut_I(i)             = Coord
-          if(present(CoordOut_DII))  CoordOut_DII(iDim,i,j)    = Coord
-          if(present(CoordOut_DIII)) CoordOut_DIII(iDim,i,j,k) = Coord
-          if(present(Coord1Out_I) .and. iDim==1 .and. j==1 .and. k==1) &
+          if(present(CoordOut_DI))   CoordOut_DI(iDim,n)          = Coord
+          if(present(CoordOut_I))    CoordOut_I(i)                = Coord
+          if(present(CoordOut_DII))  CoordOut_DII(iDim,i,j)       = Coord
+          if(present(CoordOut_DIII)) CoordOut_DIII(iDim,i,j,k)    = Coord
+          if(present(CoordOut_DI4))  CoordOut_DI4(iDim,i,j,k,l)   = Coord
+          if(present(CoordOut_DI5))  CoordOut_DI5(iDim,i,j,k,l,m) = Coord
+          if(present(Coord1Out_I) .and. iDim==1 &
+               .and. j==1 .and. k==1 .and. l==1 .and. m==1) &
                Coord1Out_I(i) = Coord
-          if(present(Coord2Out_I) .and. iDim==2 .and. i==1 .and. k==1) &
+          if(present(Coord2Out_I) .and. iDim==2 &
+               .and. i==1 .and. k==1 .and. l==1 .and. m==1) &
                Coord2Out_I(j) = Coord
-          if(present(Coord3Out_I) .and. iDim==3 .and. i==1 .and. j==1) &
+          if(present(Coord3Out_I) .and. iDim==3 &
+               .and. i==1 .and. j==1 .and. l==1 .and. m==1) &
                Coord3Out_I(k) = Coord
-       end do; end do; end do
+          if(present(Coord4Out_I) .and. iDim==4 &
+               .and. i==1 .and. j==1 .and. k==1 .and. m==1) &
+               Coord4Out_I(l) = Coord
+          if(present(Coord5Out_I) .and. iDim==5 &
+               .and. i==1 .and. j==1 .and. k==1 .and. l==1) &
+               Coord5Out_I(m) = Coord
+       end do; end do; end do; end do; end do
     end do
-    !Reduce nVar, if some variables are not needed
+    ! Reduce nVar, if some variables are not needed
     
     if(present(VarOut_VI))   nVar = min(nVar,size(VarOut_VI  ,1))
     if(present(VarOut_VII))  nVar = min(nVar,size(VarOut_VII ,1))
     if(present(VarOut_VIII)) nVar = min(nVar,size(VarOut_VIII,1))
+    if(present(VarOut_VI4))  nVar = min(nVar,size(VarOut_VI4, 1))
+    if(present(VarOut_VI5))  nVar = min(nVar,size(VarOut_VI5, 1))
     if(present(VarOut_IV))   nVar = min(nVar,size(VarOut_IV  ,2))
     if(present(VarOut_IIV))  nVar = min(nVar,size(VarOut_IIV ,3))
     if(present(VarOut_IIIV)) nVar = min(nVar,size(VarOut_IIIV,4))
+    if(present(VarOut_I4V))  nVar = min(nVar,size(VarOut_I4V, 5))
+    if(present(VarOut_I5V))  nVar = min(nVar,size(VarOut_I5V, 6))
     ! Fill in output variable arrays
     do iVar = 1, nVar
        n = 0
-       do k = 1, n3; do j = 1, n2; do i = 1, n1
+       do m = 1, n5; do l = 1, n4; do k = 1, n3; do j = 1, n2; do i = 1, n1
           n = n + 1
-          if(present(VarOut_I))    VarOut_I(n)             = Var_IV(n,iVar)
-          if(present(VarOut_II))   VarOut_II(i,j)          = Var_IV(n,iVar)
-          if(present(VarOut_III))  VarOut_III(i,j,k)       = Var_IV(n,iVar)
-          if(present(VarOut_VI))   VarOut_VI(iVar,n)       = Var_IV(n,iVar)
-          if(present(VarOut_VII))  VarOut_VII(iVar,i,j)    = Var_IV(n,iVar)
-          if(present(VarOut_VIII)) VarOut_VIII(iVar,i,j,k) = Var_IV(n,iVar)
-          if(present(VarOut_IV))   VarOut_IV(i,iVar)       = Var_IV(n,iVar)
-          if(present(VarOut_IIV))  VarOut_IIV(i,j,iVar)    = Var_IV(n,iVar)
-          if(present(VarOut_IIIV)) VarOut_IIIV(i,j,k,iVar) = Var_IV(n,iVar)
+          if(present(VarOut_I))    VarOut_I(n)                = Var_IV(n,iVar)
+          if(present(VarOut_II))   VarOut_II(i,j)             = Var_IV(n,iVar)
+          if(present(VarOut_III))  VarOut_III(i,j,k)          = Var_IV(n,iVar)
+          if(present(VarOut_I4))   VarOut_I4(i,j,k,l)         = Var_IV(n,iVar)
+          if(present(VarOut_I5))   VarOut_I5(i,j,k,l,m)       = Var_IV(n,iVar)
+          if(present(VarOut_VI))   VarOut_VI(iVar,n)          = Var_IV(n,iVar)
+          if(present(VarOut_VII))  VarOut_VII(iVar,i,j)       = Var_IV(n,iVar)
+          if(present(VarOut_VIII)) VarOut_VIII(iVar,i,j,k)    = Var_IV(n,iVar)
+          if(present(VarOut_VI4))  VarOut_VI4(iVar,i,j,k,l)   = Var_IV(n,iVar)
+          if(present(VarOut_VI5))  VarOut_VI5(iVar,i,j,k,l,m) = Var_IV(n,iVar)
+          if(present(VarOut_IV))   VarOut_IV(i,iVar)          = Var_IV(n,iVar)
+          if(present(VarOut_IIV))  VarOut_IIV(i,j,iVar)       = Var_IV(n,iVar)
+          if(present(VarOut_IIIV)) VarOut_IIIV(i,j,k,iVar)    = Var_IV(n,iVar)
+          if(present(VarOut_I4V))  VarOut_I4V(i,j,k,l,iVar)   = Var_IV(n,iVar)
+          if(present(VarOut_I5V))  VarOut_I5V(i,j,k,l,m,iVar) = Var_IV(n,iVar)
 
-       end do; end do; end do
+       end do; end do; end do; end do; end do
     end do
 
     deallocate(Coord_ID, Var_IV)
@@ -823,7 +856,7 @@ contains
 
       IsCartesian = nDim > 0
       nDim = abs(nDim)
-      n1 = n_D(1); n2 = n_D(2); n3 = n_D(3) 
+      n1 = n_D(1); n2 = n_D(2); n3 = n_D(3); n4 = n_D(4); n5 = n_D(5)
 
       if(present(StringHeaderOut)) StringHeaderOut = trim(StringHeader)
       if(present(NameVarOut))      NameVarOut      = trim(NameVar)
@@ -835,6 +868,8 @@ contains
       if(present(n1Out))           n1Out           = n1
       if(present(n2Out))           n2Out           = n2
       if(present(n3Out))           n3Out           = n3
+      if(present(n4Out))           n4Out           = n4
+      if(present(n5Out))           n5Out           = n5
       if(present(nOut_D))then
          nOut_D          = 1
          nOut_D(1:nDim)  = n_D(1:nDim)
