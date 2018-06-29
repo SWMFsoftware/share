@@ -1,6 +1,7 @@
 *.o
 *~
 *.mod
+*.exe
 *.diff
 *.tmp
 *.out
