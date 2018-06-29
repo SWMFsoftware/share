@@ -46,11 +46,13 @@ module ModInterpolate
 
   private ! except
 
-  public :: interpolate_scalar ! 2nd order interpolation in 1, 2 or 3D
-  public :: interpolate_vector ! 2nd order interpolation in 1, 2 or 3D
+  public :: interpolate_scalar ! 2nd order interpolation in 1...5D
+  public :: interpolate_vector ! 2nd order interpolation in 1...5D
   public :: linear             ! 2nd order interpolation in 1D
   public :: bilinear           ! 2nd order interpolation in 2D
   public :: trilinear          ! 2nd order interpolation in 3D
+  public :: quadlinear         ! 2nd order interpolation in 4D
+  public :: pentalinear        ! 2nd order interpolation in 5D
   public :: find_cell          ! find cell in non-uniform grid
   public :: fit_parabola       ! fit a parabola around an extremum
   public :: test_interpolation ! unit test
@@ -69,24 +71,32 @@ module ModInterpolate
      module procedure trilinear_scalar, trilinear_vector
   end interface
 
+  interface quadlinear
+     module procedure quadlinear_scalar, quadlinear_vector
+  end interface
+
+  interface pentalinear
+     module procedure pentalinear_scalar, pentalinear_vector
+  end interface
+
 contains
 
   !=========================================================================
   real function interpolate_scalar(a_C, nDim, Min_D, Max_D, x_D, &
-       x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
+       x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
 
-    real,    intent(in):: a_C(:,:,:)
+    real,    intent(in):: a_C(*)
     integer, intent(in):: nDim
     integer, intent(in):: Min_D(nDim), Max_D(nDim)
 
     real,    optional, intent(in):: x_D(nDim)
-    real,    optional, intent(in):: x_I(:), y_I(:), z_I(:)
+    real,    optional, intent(in):: x1_I(:), x2_I(:), x3_I(:), x4_I(:), x5_I(:)
     logical, optional, intent(in):: DoExtrapolate
     integer, optional, intent(in):: iCell_D(nDim)
     real,    optional, intent(in):: Dist_D(nDim)
 
     character(len=*), parameter:: NameSub = 'interpolate_scalar'
-    !----------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     select case(nDim)
     case(1)
        if(present(iCell_D))then
@@ -94,18 +104,28 @@ contains
             Min_D(1), Max_D(1), x_D(1), iCell=iCell_D(1), Dist=Dist_D(1))
        else
           interpolate_scalar = linear_scalar( a_C, &
-            Min_D(1), Max_D(1), x_D(1), x_I, DoExtrapolate)
+            Min_D(1), Max_D(1), x_D(1), x1_I, DoExtrapolate)
        end if
     case(2)
        interpolate_scalar = bilinear_scalar( a_C, &
             Min_D(1), Max_D(1), Min_D(2), Max_D(2), &
-            x_D, x_I, y_I, DoExtrapolate, iCell_D, Dist_D)
+            x_D, x1_I, x2_I, DoExtrapolate, iCell_D, Dist_D)
     case(3)
        interpolate_scalar = trilinear_scalar( a_C, &
             Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
-            x_D, x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
+            x_D, x1_I, x2_I, x3_I, DoExtrapolate, iCell_D, Dist_D)
+    case(4)
+       interpolate_scalar = quadlinear_scalar( a_C, &
+            Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
+            Min_D(4), Max_D(4), &
+            x_D, x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
+    case(5)
+       interpolate_scalar = pentalinear_scalar( a_C, &
+            Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
+            Min_D(4), Max_D(4), Min_D(5), Max_D(5), &
+            x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
     case default
-       call CON_stop(NameSub//' nDim should be 1, 2 or 3')
+       call CON_stop(NameSub//' nDim should be 1 to 5')
     end select
 
   end function interpolate_scalar
@@ -113,15 +133,15 @@ contains
   !=========================================================================
   function interpolate_vector( &
        a_VC, nVar, nDim, Min_D, Max_D, x_D, &
-       x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
+       x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
 
-    real,    intent(in):: a_VC(:,:,:,:)
+    real,    intent(in):: a_VC(*)
     integer, intent(in):: nVar
     integer, intent(in):: nDim
     integer, intent(in):: Min_D(nDim), Max_D(nDim)
 
     real,    optional, intent(in):: x_D(nDim)
-    real,    optional, intent(in):: x_I(:), y_I(:), z_I(:)
+    real,    optional, intent(in):: x1_I(:), x2_I(:), x3_I(:), x4_I(:), x5_I(:)
     logical, optional, intent(in):: DoExtrapolate
     integer, optional, intent(in):: iCell_D(nDim)
     real,    optional, intent(in):: Dist_D(nDim)
@@ -130,7 +150,7 @@ contains
     real:: interpolate_vector(nVar)
 
     character(len=*), parameter:: NameSub = 'interpolate_vector'
-    !----------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     select case(nDim)
     case(1)
        if(present(iCell_D))then
@@ -138,18 +158,28 @@ contains
                Min_D(1), Max_D(1), iCell=iCell_D(1), Dist=Dist_D(1))
        else
           interpolate_vector = linear_vector( a_VC, nVar, &
-               Min_D(1), Max_D(1), x_D(1), x_I, DoExtrapolate)
+               Min_D(1), Max_D(1), x_D(1), x1_I, DoExtrapolate)
        end if
     case(2)
        interpolate_vector = bilinear_vector( a_VC, nVar, &
             Min_D(1), Max_D(1), Min_D(2), Max_D(2), &
-            x_D, x_I, y_I, DoExtrapolate, iCell_D, Dist_D)
+            x_D, x1_I, x2_I, DoExtrapolate, iCell_D, Dist_D)
     case(3)
        interpolate_vector = trilinear_vector( a_VC, nVar, &
             Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
-            x_D, x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
+            x_D, x1_I, x2_I, x3_I, DoExtrapolate, iCell_D, Dist_D)
+    case(4)
+       interpolate_vector = quadlinear_vector( a_VC, nVar, &
+            Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
+            Min_D(4), Max_D(4), &
+            x_D, x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
+    case(5)
+       interpolate_vector = pentalinear_vector( a_VC, nVar, &
+            Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
+            Min_D(4), Max_D(4), Min_D(5), Max_D(5), &
+            x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
     case default
-       call CON_stop(NameSub//' nDim should be 1, 2 or 3')
+       call CON_stop(NameSub//' nDim should be 1 to 5')
     end select
 
   end function interpolate_vector
@@ -527,6 +557,438 @@ contains
          +                       Dx1*a_VIII(:,i2,j2,k2)))
 
   end function trilinear_vector
+
+  !===========================================================================
+  real function quadlinear_scalar( &
+       a_I4, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, &
+       x_D, x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
+
+    ! Calculate quadlinear interpolation of a_I4 at position x_D
+
+    integer, intent(in):: iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax
+    real,    intent(in):: a_I4(iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax)
+
+    real,    intent(in), optional:: x_D(4)
+    real,    intent(in), optional:: x1_I(iMin:)
+    real,    intent(in), optional:: x2_I(jMin:)
+    real,    intent(in), optional:: x3_I(kMin:)
+    real,    intent(in), optional:: x4_I(lMin:)
+    logical, intent(in), optional:: DoExtrapolate
+
+    integer, intent(in), optional :: iCell_D(4)
+    real,    intent(in), optional :: Dist_D(4)
+
+    integer :: i1, i2, j1, j2, k1, k2, l1, l2
+    real    :: Dx1L, Dx1R, Dx2L, Dx2R, Dx3L, Dx3R, Dx4L, Dx4R 
+    character (len=*), parameter :: NameSub=NameMod//'::quadlinear_scalar'
+    !--------------------------------------------------------------------------
+
+    if ( present(iCell_D) .and. present(Dist_D) ) then
+
+       ! Calculate the remaining cell indices and interpolation weights
+
+       i1 = iCell_D(1)
+       i2 = i1 + 1
+       Dx1L = Dist_D(1)
+       Dx1R = 1.0 - Dx1L
+
+       j1 = iCell_D(2)
+       j2 = j1 + 1
+       Dx2L = Dist_D(2)
+       Dx2R = 1.0 - Dx2L
+
+       k1 = iCell_D(3)
+       k2 = k1 + 1
+       Dx3L = Dist_D(3)
+       Dx3R = 1.0 - Dx3L
+
+       l1 = iCell_D(4)
+       l2 = l1 + 1
+       Dx4L = Dist_D(4)
+       Dx4R = 1.0 - Dx4L
+
+    else
+
+       ! Locate the point Xyz_D on the grid
+       call find_cell(iMin, iMax, x_D(1), i1, Dx1L, x1_I, DoExtrapolate, &
+            "Called for coord1 from "//NameSub)
+       
+       call find_cell(jMin, jMax, x_D(2), j1, Dx2L, x2_I, DoExtrapolate, &
+            "Called for coord2 from "//NameSub)
+
+       call find_cell(kMin, kMax, x_D(3), k1, Dx3L, x3_I, DoExtrapolate, &
+            "Called for coord3 from "//NameSub)
+
+       call find_cell(lMin, lMax, x_D(4), l1, Dx4L, x4_I, DoExtrapolate, &
+            "Called for coord4 from "//NameSub)
+    
+       ! Calculate the remaining cell indices and interpolation weights
+       i2 = i1 + 1; Dx1R = 1.0 - Dx1L
+       j2 = j1 + 1; Dx2R = 1.0 - Dx2L
+       k2 = k1 + 1; Dx3R = 1.0 - Dx3L
+       l2 = l1 + 1; Dx4R = 1.0 - Dx4L
+
+    end if
+
+    quadlinear_scalar = &
+         +Dx4R*(Dx3R*(Dx2R*(Dx1R*a_I4(i1,j1,k1,l1)   &
+         +                  Dx1L*a_I4(i2,j1,k1,l1))  &
+         +            Dx2L*(Dx1R*a_I4(i1,j2,k1,l1)   &
+         +                  Dx1L*a_I4(i2,j2,k1,l1))) &
+         +      Dx3L*(Dx2R*(Dx1R*a_I4(i1,j1,k2,l1)   &
+         +                  Dx1L*a_I4(i2,j1,k2,l1))  &
+         +            Dx2L*(Dx1R*a_I4(i1,j2,k2,l1)   &
+         +                  Dx1L*a_I4(i2,j2,k2,l1))))&
+         +Dx4L*(Dx3R*(Dx2R*(Dx1R*a_I4(i1,j1,k1,l2)   &
+         +                  Dx1L*a_I4(i2,j1,k1,l2))  &
+         +            Dx2L*(Dx1R*a_I4(i1,j2,k1,l2)   &
+         +                  Dx1L*a_I4(i2,j2,k1,l2))) &
+         +      Dx3L*(Dx2R*(Dx1R*a_I4(i1,j1,k2,l2)   &
+         +                  Dx1L*a_I4(i2,j1,k2,l2))  &
+         +            Dx2L*(Dx1R*a_I4(i1,j2,k2,l2)   &
+         +                  Dx1L*a_I4(i2,j2,k2,l2))))
+
+  end function quadlinear_scalar
+
+  !===========================================================================
+
+  function quadlinear_vector( &
+       a_VI4, nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, x_D, &
+       x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
+
+    ! Calculate quadlinear interpolation of a_I4 at position x_D
+
+    integer, intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax
+    real,    intent(in):: a_VI4(nVar,iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax)
+
+    real,    intent(in), optional:: x_D(4)
+    real,    intent(in), optional:: x1_I(iMin:)
+    real,    intent(in), optional:: x2_I(jMin:)
+    real,    intent(in), optional:: x3_I(kMin:)
+    real,    intent(in), optional:: x4_I(lMin:)
+    logical, intent(in), optional:: DoExtrapolate
+
+    integer, intent(in), optional :: iCell_D(4)
+    real,    intent(in), optional :: Dist_D(4)
+
+    ! return value
+    real :: quadlinear_vector(nVar)
+
+    integer :: i1, i2, j1, j2, k1, k2, l1, l2
+    real    :: Dx1L, Dx1R, Dx2L, Dx2R, Dx3L, Dx3R, Dx4L, Dx4R 
+    character (len=*), parameter :: NameSub=NameMod//'::quadlinear_vector'
+    !--------------------------------------------------------------------------
+
+    if ( present(iCell_D) .and. present(Dist_D) ) then
+
+       ! Calculate the remaining cell indices and interpolation weights
+
+       i1 = iCell_D(1)
+       i2 = i1 + 1
+       Dx1L = Dist_D(1)
+       Dx1R = 1.0 - Dx1L
+
+       j1 = iCell_D(2)
+       j2 = j1 + 1
+       Dx2L = Dist_D(2)
+       Dx2R = 1.0 - Dx2L
+
+       k1 = iCell_D(3)
+       k2 = k1 + 1
+       Dx3L = Dist_D(3)
+       Dx3R = 1.0 - Dx3L
+
+       l1 = iCell_D(4)
+       l2 = l1 + 1
+       Dx4L = Dist_D(4)
+       Dx4R = 1.0 - Dx4L
+
+    else
+
+       ! Locate the point Xyz_D on the grid
+       call find_cell(iMin, iMax, x_D(1), i1, Dx1L, x1_I, DoExtrapolate, &
+            "Called for coord1 from "//NameSub)
+       
+       call find_cell(jMin, jMax, x_D(2), j1, Dx2L, x2_I, DoExtrapolate, &
+            "Called for coord2 from "//NameSub)
+
+       call find_cell(kMin, kMax, x_D(3), k1, Dx3L, x3_I, DoExtrapolate, &
+            "Called for coord3 from "//NameSub)
+
+       call find_cell(lMin, lMax, x_D(4), l1, Dx4L, x4_I, DoExtrapolate, &
+            "Called for coord4 from "//NameSub)
+    
+       ! Calculate the remaining cell indices and interpolation weights
+       i2 = i1 + 1; Dx1R = 1.0 - Dx1L
+       j2 = j1 + 1; Dx2R = 1.0 - Dx2L
+       k2 = k1 + 1; Dx3R = 1.0 - Dx3L
+       l2 = l1 + 1; Dx4R = 1.0 - Dx4L
+
+    end if
+
+    quadlinear_vector = &
+         +Dx4R*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l1)   &
+         +                  Dx1L*a_VI4(:,i2,j1,k1,l1))  &
+         +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l1)   &
+         +                  Dx1L*a_VI4(:,i2,j2,k1,l1))) &
+         +      Dx3L*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k2,l1)   &
+         +                  Dx1L*a_VI4(:,i2,j1,k2,l1))  &
+         +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l1)   &
+         +                  Dx1L*a_VI4(:,i2,j2,k2,l1))))&
+         +Dx4L*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l2)   &
+         +                  Dx1L*a_VI4(:,i2,j1,k1,l2))  &
+         +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l2)   &
+         +                  Dx1L*a_VI4(:,i2,j2,k1,l2))) &
+         +      Dx3L*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k2,l2)   &
+         +                  Dx1L*a_VI4(:,i2,j1,k2,l2))  &
+         +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l2)   &
+         +                  Dx1L*a_VI4(:,i2,j2,k2,l2))))
+
+  end function quadlinear_vector
+
+  !============================================================================
+  real function pentalinear_scalar( &
+       a_I5, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, mMin, mMax, &
+       x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
+
+    ! Calculate pentalinear interpolation of a_I5 at position x_D
+
+    integer, intent(in):: &
+         iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, mMin, mMax
+    real,    intent(in):: &
+         a_I5(iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax,mMin:mMax)
+
+    real,    intent(in), optional:: x_D(5)
+    real,    intent(in), optional:: x1_I(iMin:)
+    real,    intent(in), optional:: x2_I(jMin:)
+    real,    intent(in), optional:: x3_I(kMin:)
+    real,    intent(in), optional:: x4_I(lMin:)
+    real,    intent(in), optional:: x5_I(mMin:)
+    logical, intent(in), optional:: DoExtrapolate
+
+    integer, intent(in), optional :: iCell_D(5)
+    real,    intent(in), optional :: Dist_D(5)
+
+    integer :: i1, i2, j1, j2, k1, k2, l1, l2, m1, m2
+    real    :: Dx1L, Dx1R, Dx2L, Dx2R, Dx3L, Dx3R, Dx4L, Dx4R, Dx5L, Dx5R
+    character (len=*), parameter :: NameSub=NameMod//'::pentalinear_scalar'
+    !--------------------------------------------------------------------------
+
+    if ( present(iCell_D) .and. present(Dist_D) ) then
+
+       ! Calculate the remaining cell indices and interpolation weights
+
+       i1 = iCell_D(1)
+       i2 = i1 + 1
+       Dx1L = Dist_D(1)
+       Dx1R = 1.0 - Dx1L
+
+       j1 = iCell_D(2)
+       j2 = j1 + 1
+       Dx2L = Dist_D(2)
+       Dx2R = 1.0 - Dx2L
+
+       k1 = iCell_D(3)
+       k2 = k1 + 1
+       Dx3L = Dist_D(3)
+       Dx3R = 1.0 - Dx3L
+
+       l1 = iCell_D(4)
+       l2 = l1 + 1
+       Dx4L = Dist_D(4)
+       Dx4R = 1.0 - Dx4L
+
+       m1 = iCell_D(5)
+       m2 = m1 + 1
+       Dx5L = Dist_D(5)
+       Dx5R = 1.0 - Dx5L
+
+    else
+
+       ! Locate the point Xyz_D on the grid
+       call find_cell(iMin, iMax, x_D(1), i1, Dx1L, x1_I, DoExtrapolate, &
+            "Called for coord1 from "//NameSub)
+       
+       call find_cell(jMin, jMax, x_D(2), j1, Dx2L, x2_I, DoExtrapolate, &
+            "Called for coord2 from "//NameSub)
+
+       call find_cell(kMin, kMax, x_D(3), k1, Dx3L, x3_I, DoExtrapolate, &
+            "Called for coord3 from "//NameSub)
+
+       call find_cell(lMin, lMax, x_D(4), l1, Dx4L, x4_I, DoExtrapolate, &
+            "Called for coord4 from "//NameSub)
+    
+       call find_cell(mMin, mMax, x_D(5), m1, Dx5L, x5_I, DoExtrapolate, &
+            "Called for coord5 from "//NameSub)
+    
+       ! Calculate the remaining cell indices and interpolation weights
+       i2 = i1 + 1; Dx1R = 1.0 - Dx1L
+       j2 = j1 + 1; Dx2R = 1.0 - Dx2L
+       k2 = k1 + 1; Dx3R = 1.0 - Dx3L
+       l2 = l1 + 1; Dx4R = 1.0 - Dx4L
+       m2 = m1 + 1; Dx5R = 1.0 - Dx5L
+
+    end if
+
+    pentalinear_scalar = &
+         +Dx5R*(Dx4R*(Dx3R*(Dx2R*(Dx1R*a_I5(i1,j1,k1,l1,m1)     &
+         +                        Dx1L*a_I5(i2,j1,k1,l1,m1))    &
+         +                  Dx2L*(Dx1R*a_I5(i1,j2,k1,l1,m1)     &
+         +                        Dx1L*a_I5(i2,j2,k1,l1,m1)))   &
+         +            Dx3L*(Dx2R*(Dx1R*a_I5(i1,j1,k2,l1,m1)     &
+         +                        Dx1L*a_I5(i2,j1,k2,l1,m1))    &
+         +                  Dx2L*(Dx1R*a_I5(i1,j2,k2,l1,m1)     &
+         +                        Dx1L*a_I5(i2,j2,k2,l1,m1))))  &
+         +      Dx4L*(Dx3R*(Dx2R*(Dx1R*a_I5(i1,j1,k1,l2,m1)     &
+         +                        Dx1L*a_I5(i2,j1,k1,l2,m1))    &
+         +                  Dx2L*(Dx1R*a_I5(i1,j2,k1,l2,m1)     &
+         +                        Dx1L*a_I5(i2,j2,k1,l2,m1)))   &
+         +            Dx3L*(Dx2R*(Dx1R*a_I5(i1,j1,k2,l2,m1)     &
+         +                        Dx1L*a_I5(i2,j1,k2,l2,m1))    &
+         +                  Dx2L*(Dx1R*a_I5(i1,j2,k2,l2,m1)     &
+         +                        Dx1L*a_I5(i2,j2,k2,l2,m1))))) &  
+         +Dx5L*(Dx4R*(Dx3R*(Dx2R*(Dx1R*a_I5(i1,j1,k1,l1,m2)     &
+         +                        Dx1L*a_I5(i2,j1,k1,l1,m2))    &
+         +                  Dx2L*(Dx1R*a_I5(i1,j2,k1,l1,m2)     &
+         +                        Dx1L*a_I5(i2,j2,k1,l1,m2)))   &
+         +            Dx3L*(Dx2R*(Dx1R*a_I5(i1,j1,k2,l1,m2)     &
+         +                        Dx1L*a_I5(i2,j1,k2,l1,m2))    &
+         +                  Dx2L*(Dx1R*a_I5(i1,j2,k2,l1,m2)     &
+         +                        Dx1L*a_I5(i2,j2,k2,l1,m2))))  &
+         +      Dx4L*(Dx3R*(Dx2R*(Dx1R*a_I5(i1,j1,k1,l2,m2)     &
+         +                        Dx1L*a_I5(i2,j1,k1,l2,m2))    &
+         +                  Dx2L*(Dx1R*a_I5(i1,j2,k1,l2,m2)     &
+         +                        Dx1L*a_I5(i2,j2,k1,l2,m2)))   &
+         +            Dx3L*(Dx2R*(Dx1R*a_I5(i1,j1,k2,l2,m2)     &
+         +                        Dx1L*a_I5(i2,j1,k2,l2,m2))    &
+         +                  Dx2L*(Dx1R*a_I5(i1,j2,k2,l2,m2)     &
+         +                        Dx1L*a_I5(i2,j2,k2,l2,m2)))))
+
+  end function pentalinear_scalar
+
+  !============================================================================
+  function pentalinear_vector( &
+       a_VI5, nVar, &
+       iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, mMin, mMax, x_D, &
+       x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
+
+    ! Calculate pentalinear interpolation of a_I5 at position x_D
+
+    integer, intent(in):: &
+         nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, mMin, mMax
+    real,    intent(in):: &
+         a_VI5(nVar,iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax,mMin:mMax)
+
+    real,    intent(in), optional:: x_D(5)
+    real,    intent(in), optional:: x1_I(iMin:)
+    real,    intent(in), optional:: x2_I(jMin:)
+    real,    intent(in), optional:: x3_I(kMin:)
+    real,    intent(in), optional:: x4_I(lMin:)
+    real,    intent(in), optional:: x5_I(mMin:)
+    logical, intent(in), optional:: DoExtrapolate
+
+    integer, intent(in), optional :: iCell_D(5)
+    real,    intent(in), optional :: Dist_D(5)
+
+    ! return value
+    real :: pentalinear_vector(nVar)
+
+    integer :: i1, i2, j1, j2, k1, k2, l1, l2, m1, m2
+    real    :: Dx1L, Dx1R, Dx2L, Dx2R, Dx3L, Dx3R, Dx4L, Dx4R, Dx5L, Dx5R
+    character (len=*), parameter :: NameSub=NameMod//'::pentalinear_vector'
+    !--------------------------------------------------------------------------
+
+    if ( present(iCell_D) .and. present(Dist_D) ) then
+
+       ! Calculate the remaining cell indices and interpolation weights
+
+       i1 = iCell_D(1)
+       i2 = i1 + 1
+       Dx1L = Dist_D(1)
+       Dx1R = 1.0 - Dx1L
+
+       j1 = iCell_D(2)
+       j2 = j1 + 1
+       Dx2L = Dist_D(2)
+       Dx2R = 1.0 - Dx2L
+
+       k1 = iCell_D(3)
+       k2 = k1 + 1
+       Dx3L = Dist_D(3)
+       Dx3R = 1.0 - Dx3L
+
+       l1 = iCell_D(4)
+       l2 = l1 + 1
+       Dx4L = Dist_D(4)
+       Dx4R = 1.0 - Dx4L
+
+       m1 = iCell_D(5)
+       m2 = m1 + 1
+       Dx5L = Dist_D(5)
+       Dx5R = 1.0 - Dx5L
+
+    else
+
+       ! Locate the point Xyz_D on the grid
+       call find_cell(iMin, iMax, x_D(1), i1, Dx1L, x1_I, DoExtrapolate, &
+            "Called for coord1 from "//NameSub)
+       
+       call find_cell(jMin, jMax, x_D(2), j1, Dx2L, x2_I, DoExtrapolate, &
+            "Called for coord2 from "//NameSub)
+
+       call find_cell(kMin, kMax, x_D(3), k1, Dx3L, x3_I, DoExtrapolate, &
+            "Called for coord3 from "//NameSub)
+
+       call find_cell(lMin, lMax, x_D(4), l1, Dx4L, x4_I, DoExtrapolate, &
+            "Called for coord4 from "//NameSub)
+    
+       call find_cell(mMin, mMax, x_D(5), m1, Dx5L, x5_I, DoExtrapolate, &
+            "Called for coord5 from "//NameSub)
+    
+       ! Calculate the remaining cell indices and interpolation weights
+       i2 = i1 + 1; Dx1R = 1.0 - Dx1L
+       j2 = j1 + 1; Dx2R = 1.0 - Dx2L
+       k2 = k1 + 1; Dx3R = 1.0 - Dx3L
+       l2 = l1 + 1; Dx4R = 1.0 - Dx4L
+       m2 = m1 + 1; Dx5R = 1.0 - Dx5L
+
+    end if
+
+    pentalinear_vector = &
+         +Dx5R*(Dx4R*(Dx3R*(Dx2R*(Dx1R*a_VI5(:,i1,j1,k1,l1,m1)     &
+         +                        Dx1L*a_VI5(:,i2,j1,k1,l1,m1))    &
+         +                  Dx2L*(Dx1R*a_VI5(:,i1,j2,k1,l1,m1)     &
+         +                        Dx1L*a_VI5(:,i2,j2,k1,l1,m1)))   &
+         +            Dx3L*(Dx2R*(Dx1R*a_VI5(:,i1,j1,k2,l1,m1)     &
+         +                        Dx1L*a_VI5(:,i2,j1,k2,l1,m1))    &
+         +                  Dx2L*(Dx1R*a_VI5(:,i1,j2,k2,l1,m1)     &
+         +                        Dx1L*a_VI5(:,i2,j2,k2,l1,m1))))  &
+         +      Dx4L*(Dx3R*(Dx2R*(Dx1R*a_VI5(:,i1,j1,k1,l2,m1)     &
+         +                        Dx1L*a_VI5(:,i2,j1,k1,l2,m1))    &
+         +                  Dx2L*(Dx1R*a_VI5(:,i1,j2,k1,l2,m1)     &
+         +                        Dx1L*a_VI5(:,i2,j2,k1,l2,m1)))   &
+         +            Dx3L*(Dx2R*(Dx1R*a_VI5(:,i1,j1,k2,l2,m1)     &
+         +                        Dx1L*a_VI5(:,i2,j1,k2,l2,m1))    &
+         +                  Dx2L*(Dx1R*a_VI5(:,i1,j2,k2,l2,m1)     &
+         +                        Dx1L*a_VI5(:,i2,j2,k2,l2,m1))))) &  
+         +Dx5L*(Dx4R*(Dx3R*(Dx2R*(Dx1R*a_VI5(:,i1,j1,k1,l1,m2)     &
+         +                        Dx1L*a_VI5(:,i2,j1,k1,l1,m2))    &
+         +                  Dx2L*(Dx1R*a_VI5(:,i1,j2,k1,l1,m2)     &
+         +                        Dx1L*a_VI5(:,i2,j2,k1,l1,m2)))   &
+         +            Dx3L*(Dx2R*(Dx1R*a_VI5(:,i1,j1,k2,l1,m2)     &
+         +                        Dx1L*a_VI5(:,i2,j1,k2,l1,m2))    &
+         +                  Dx2L*(Dx1R*a_VI5(:,i1,j2,k2,l1,m2)     &
+         +                        Dx1L*a_VI5(:,i2,j2,k2,l1,m2))))  &
+         +      Dx4L*(Dx3R*(Dx2R*(Dx1R*a_VI5(:,i1,j1,k1,l2,m2)     &
+         +                        Dx1L*a_VI5(:,i2,j1,k1,l2,m2))    &
+         +                  Dx2L*(Dx1R*a_VI5(:,i1,j2,k1,l2,m2)     &
+         +                        Dx1L*a_VI5(:,i2,j2,k1,l2,m2)))   &
+         +            Dx3L*(Dx2R*(Dx1R*a_VI5(:,i1,j1,k2,l2,m2)     &
+         +                        Dx1L*a_VI5(:,i2,j1,k2,l2,m2))    &
+         +                  Dx2L*(Dx1R*a_VI5(:,i1,j2,k2,l2,m2)     &
+         +                        Dx1L*a_VI5(:,i2,j2,k2,l2,m2)))))
+
+  end function pentalinear_vector
 
   !===========================================================================
   subroutine find_cell(MinCoord, MaxCoord, Coord, iCoord, dCoord, &
