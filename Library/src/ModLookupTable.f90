@@ -54,7 +54,7 @@ module ModLookupTable
      real   , allocatable:: IndexMax_I(:)  ! maximum values for indexes
      real   , allocatable:: dIndex_I(:)    ! increment of indexes
      logical, allocatable:: IsLogIndex_I(:)! true if arguments are logarithmic
-     real, allocatable :: Value_VC(:,:,:,:)! array of actual values
+     real, allocatable :: Value_VC(:,:,:,:,:,:)! array of actual values
      integer:: nParam                      ! number of extra parameters
      real, allocatable :: Param_I(:)       ! parameter values
   end type
@@ -475,7 +475,7 @@ contains
 
     Ptr => Table_I(iTable)
 
-    allocate(TableParam_I(1000), nIndex_I(3))
+    allocate(TableParam_I(1000), nIndex_I(5))
 
     call read_plot_file( Ptr%NameFile,            &
          TypeFileIn      = Ptr%TypeFile,          &
@@ -502,7 +502,8 @@ contains
     Ptr%IsLogIndex_I = index(NameVar_I(1:Ptr%nIndex), "log") == 1
 
     if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
-    allocate(Ptr%Value_VC(Ptr%nValue,nIndex_I(1),nIndex_I(2),nIndex_I(3)))
+    allocate(Ptr%Value_VC(Ptr%nValue,nIndex_I(1),nIndex_I(2),nIndex_I(3),&
+         nIndex_I(4),nIndex_I(5)))
 
     deallocate(TableParam_I, nIndex_I)
 
@@ -510,7 +511,7 @@ contains
          TypeFileIn    = Ptr%TypeFile,    &
          CoordMinOut_D = Ptr%IndexMin_I,  &
          CoordMaxOut_D = Ptr%IndexMax_I,  &
-         VarOut_VIII   = Ptr%Value_VC)
+         VarOut_VI5    = Ptr%Value_VC)
 
     ! Calculate increments
     Ptr%dIndex_I = (Ptr%IndexMax_I - Ptr%IndexMin_I)/(Ptr%nIndex_I - 1)
@@ -573,7 +574,7 @@ contains
 
     ! Allocate Value_VC array
     if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
-    allocate(Value_VC(nValue,n1), Ptr%Value_VC(nValue,n1,1,1))
+    allocate(Value_VC(nValue,n1), Ptr%Value_VC(nValue,n1,1,1,1,1))
     Value_VC = 0.0
 
     ! Fill up lookup table in parallel
@@ -585,10 +586,10 @@ contains
 
     ! Collect (or copy) result into table
     if(nProc > 1)then
-       call MPI_allreduce(Value_VC, Ptr%Value_VC(:,:,1,1), nValue*n1, &
+       call MPI_allreduce(Value_VC, Ptr%Value_VC(:,:,1,1,1,1), nValue*n1, &
             MPI_REAL, MPI_SUM, iComm, iError)
     else
-       Ptr%Value_VC(:,:,1,1) = Value_VC
+       Ptr%Value_VC(:,:,1,1,1,1) = Value_VC
     end if
 
     deallocate(Value_VC)
@@ -604,7 +605,7 @@ contains
                nDimIn         = Ptr%nIndex,                  &
                CoordMinIn_D   = Ptr%IndexMin_I,              &
                CoordMaxIn_D   = Ptr%IndexMax_I,              &
-               VarIn_VIII     = Ptr%Value_VC,                &
+               VarIn_VI       = Ptr%Value_VC(:,:,1,1,1,1),   &
                ParamIn_I      = Ptr%Param_I)
        else
           call save_plot_file( &
@@ -615,7 +616,7 @@ contains
                nDimIn         = Ptr%nIndex,                  &
                CoordMinIn_D   = Ptr%IndexMin_I,              &
                CoordMaxIn_D   = Ptr%IndexMax_I,              &
-               VarIn_VIII     = Ptr%Value_VC)
+               VarIn_VI       = Ptr%Value_VC(:,:,1,1,1,1))
        end if
     end if
 
@@ -689,7 +690,7 @@ contains
 
     ! Allocate Value_VC array
     if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
-    allocate(Value_VC(nValue,n1,n2), Ptr%Value_VC(nValue,n1,n2,1))
+    allocate(Value_VC(nValue,n1,n2), Ptr%Value_VC(nValue,n1,n2,1,1,1))
     Value_VC = 0.0
 
     ! Fill up lookup table in parallel
@@ -705,10 +706,10 @@ contains
 
     ! Collect (or copy) result into table
     if(nProc > 1)then
-       call MPI_allreduce(Value_VC, Ptr%Value_VC(:,:,:,1), nValue*n1*n2, &
+       call MPI_allreduce(Value_VC, Ptr%Value_VC(:,:,:,1,1,1), nValue*n1*n2, &
             MPI_REAL, MPI_SUM, iComm, iError)
     else
-       Ptr%Value_VC(:,:,:,1) = Value_VC
+       Ptr%Value_VC(:,:,:,1,1,1) = Value_VC
     end if
 
     deallocate(Value_VC)
@@ -724,7 +725,7 @@ contains
                nDimIn         = Ptr%nIndex,                  &
                CoordMinIn_D   = Ptr%IndexMin_I,              &
                CoordMaxIn_D   = Ptr%IndexMax_I,              &
-               VarIn_VIII     = Ptr%Value_VC,                &
+               VarIn_VII      = Ptr%Value_VC(:,:,:,1,1,1),   &
                ParamIn_I      = Ptr%Param_I)
        else
           call save_plot_file( &
@@ -735,7 +736,7 @@ contains
                nDimIn         = Ptr%nIndex,                  &
                CoordMinIn_D   = Ptr%IndexMin_I,              &
                CoordMaxIn_D   = Ptr%IndexMax_I,              &
-               VarIn_VIII     = Ptr%Value_VC)
+               VarIn_VII      = Ptr%Value_VC(:,:,:,1,1,1))
        end if
     end if
 
@@ -815,7 +816,7 @@ contains
 
     ! Allocate Value_VC array
     if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
-    allocate(Value_VC(nValue,n1,n2,n3), Ptr%Value_VC(nValue,n1,n2,n3))
+    allocate(Value_VC(nValue,n1,n2,n3), Ptr%Value_VC(nValue,n1,n2,n3,1,1))
     Value_VC = 0.0
 
     ! Fill up lookup table in parallel
@@ -839,10 +840,10 @@ contains
 
     ! Collect (or copy) result into table
     if(nProc > 1)then
-       call MPI_allreduce(Value_VC, Ptr%Value_VC, nValue*n1*n2*n3, &
+       call MPI_allreduce(Value_VC, Ptr%Value_VC(:,:,:,:,1,1), nValue*n1*n2*n3, &
             MPI_REAL, MPI_SUM, iComm, iError)
     else
-       Ptr%Value_VC = Value_VC
+       Ptr%Value_VC(:,:,:,:,1,1) = Value_VC
     end if
 
     deallocate(Value_VC)
@@ -858,7 +859,7 @@ contains
                nDimIn         = Ptr%nIndex,                  &
                CoordMinIn_D   = Ptr%IndexMin_I,              &
                CoordMaxIn_D   = Ptr%IndexMax_I,              &
-               VarIn_VIII     = Ptr%Value_VC,                &
+               VarIn_VIII     = Ptr%Value_VC(:,:,:,:,1,1),   &
                ParamIn_I      = Ptr%Param_I)
        else
           call save_plot_file( &
@@ -869,7 +870,7 @@ contains
                nDimIn         = Ptr%nIndex,                  &
                CoordMinIn_D   = Ptr%IndexMin_I,              &
                CoordMaxIn_D   = Ptr%IndexMax_I,              &
-               VarIn_VIII     = Ptr%Value_VC)
+               VarIn_VIII     = Ptr%Value_VC(:,:,:,:,1,1))
        end if
     end if
 
@@ -1012,10 +1013,58 @@ contains
 
   !===========================================================================
 
+  subroutine interpolate_arg4_scalar(iTable, Arg1, Arg2, Arg3, Arg4, Value, &
+       DoExtrapolate)
+
+    ! Return the scalar Value corresponding to arguments Arg1 ... Arg4.
+    ! If DoExtrapolate is not present, stop with an error if the arguments
+    ! are out of range. If it is present and false, return the value of
+    ! the closest element in the table. If it is present and true, do a 
+    ! linear extrapolation.
+
+    integer, intent(in) :: iTable                 ! table
+    real,    intent(in) :: Arg1, Arg2, Arg3, Arg4 ! input arguments
+    real,    intent(out):: Value                  ! output value
+    logical, optional, intent(in):: DoExtrapolate ! optional extrapolation
+
+    real:: Value_V(1)
+
+    call interpolate_arg_array(iTable, (/Arg1, Arg2, Arg3, Arg4/), Value_V, &
+         DoExtrapolate)
+    Value = Value_V(1)
+
+  end subroutine interpolate_arg4_scalar
+
+  !===========================================================================
+
+  subroutine interpolate_arg5_scalar(iTable, Arg1, Arg2, Arg3, Arg4, Arg5, &
+       Value, DoExtrapolate)
+
+    ! Return the scalar Value corresponding to arguments Arg1 ... Arg5.
+    ! If DoExtrapolate is not present, stop with an error if the arguments
+    ! are out of range. If it is present and false, return the value of
+    ! the closest element in the table. If it is present and true, do a 
+    ! linear extrapolation.
+
+    integer, intent(in) :: iTable                       ! table
+    real,    intent(in) :: Arg1, Arg2, Arg3, Arg4, Arg5 ! input arguments
+    real,    intent(out):: Value                        ! output value
+    logical, optional, intent(in):: DoExtrapolate       ! extrapolation
+
+    real:: Value_V(1)
+
+    call interpolate_arg_array(iTable, (/Arg1, Arg2, Arg3, Arg4, Arg5/), &
+         Value_V, DoExtrapolate)
+    Value = Value_V(1)
+
+  end subroutine interpolate_arg5_scalar
+
+  !===========================================================================
+
   subroutine interpolate_arg_array(iTable, ArgIn_I, Value_V, DoExtrapolate)
 
     ! Return the array of values Value_V corresponding to arguments
-    ! Arg1In and Arg2In in iTable. Use linear interpolation.
+    ! ArgIn_I in iTable. Use linear interpolation.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
     ! the closest element in the table. If it is present and true, do a 
@@ -1100,22 +1149,21 @@ contains
 
     j2 = j1 + 1; Dy2 = 1.0 - Dy1
 
-
     call find_cell(1, Ptr%nIndex_I(1), &
          ValIn, &
          i1, Dx1, &
-         Dy2*Ptr%Value_VC(iVal,:,j1,1) + &
-         Dy1*Ptr%Value_VC(iVal,:,j2,1), &
+         Dy2*Ptr%Value_VC(iVal,:,j1,1,1,1) + &
+         Dy1*Ptr%Value_VC(iVal,:,j2,1,1,1), &
          DoExtrapolate, &
          'Called from '//NameSub)
 
     i2 = i1 + 1; Dx2 = 1.0 - Dx1
 
     ! If value is outside table, use the last value (works well for constant)
-    Value_V = Dy2*( Dx2*Ptr%Value_VC(:,i1,j1,1)   &
-         +          Dx1*Ptr%Value_VC(:,i2,j1,1))  &
-         +    Dy1*( Dx2*Ptr%Value_VC(:,i1,j2,1)   &
-         +          Dx1*Ptr%Value_VC(:,i2,j2,1))
+    Value_V = Dy2*( Dx2*Ptr%Value_VC(:,i1,j1,1,1,1)   &
+         +          Dx1*Ptr%Value_VC(:,i2,j1,1,1,1))  &
+         +    Dy1*( Dx2*Ptr%Value_VC(:,i1,j2,1,1,1)   &
+         +          Dx1*Ptr%Value_VC(:,i2,j2,1,1,1))
     if(present(Arg1Out))then
        Arg1Out = (i1 - 1 + Dx1)*Ptr%dIndex_I(1) + Ptr%IndexMin_I(1)
        if(Ptr%IsLogIndex_I(1)) Arg1Out = 10**Arg1Out
