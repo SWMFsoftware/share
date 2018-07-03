@@ -625,13 +625,17 @@ contains
 
     ! No data is read. Leave file open !
     if(.not. (present(VarOut_I) .or. present(VarOut_II) &
-         .or. present(VarOut_III) &
+         .or. present(VarOut_III) .or. present(VarOut_I4) &
+         .or. present(VarOut_I5) &
          .or. present(VarOut_VI) .or. present(VarOut_VII) &
-         .or. present(VarOut_VIII).or. present(VarOut_IV)&
-         .or. present(VarOut_IIV).or. present(VarOut_IIIV))) RETURN
+         .or. present(VarOut_VIII) .or. present(VarOut_VI4) &
+         .or. present(VarOut_VI5) &
+         .or. present(VarOut_IV) .or. present(VarOut_IIV) &
+         .or. present(VarOut_IIIV) .or. present(VarOut_I4V) &
+         .or. present(VarOut_I5V))) RETURN
 
-    if((present(VarOut_I) .or. present(VarOut_II) .or. present(VarOut_III)) &
-         .and. nVar /= 1)then
+    if((present(VarOut_I) .or. present(VarOut_II) .or. present(VarOut_III) &
+         .or. present(VarOut_I4) .or. present(VarOut_I5)) .and. nVar /= 1)then
        write(*,*) NameSub,': the number of variables is ', nVar, &
             ' (larger than 1) in file ', NameFile
        call CON_stop(NameSub//' called with scalar variable argument')
@@ -665,7 +669,7 @@ contains
        end do
 
     case('real4')
-       allocate(Coord4_ID(n1*n2*n3, nDim), Var4_IV(n1*n2*n3, nVar))
+       allocate(Coord4_ID(n1*n2*n3*n4*n5, nDim), Var4_IV(n1*n2*n3*n4*n5, nVar))
        read(iUnit, ERR=77, END=77) Coord4_ID
        Coord_ID = Coord4_ID
        do iVar = 1, nVar
