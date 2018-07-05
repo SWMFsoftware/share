@@ -68,7 +68,9 @@ module ModLookupTable
      module procedure &
           interpolate_arg1, interpolate_arg1_scalar, &
           interpolate_arg2, interpolate_arg2_scalar, &
-          interpolate_arg3, interpolate_arg3_scalar,&
+          interpolate_arg3, interpolate_arg3_scalar, &
+          interpolate_arg4, interpolate_arg4_scalar, &
+          interpolate_arg5, interpolate_arg5_scalar, &
           interpolate_arg_array
      module procedure interpolate_with_known_val  ! Table value is given
   end interface
@@ -945,6 +947,50 @@ contains
 
   !===========================================================================
 
+  subroutine interpolate_arg4(iTable, Arg1, Arg2, Arg3, Arg4, Value_V, &
+       DoExtrapolate)
+
+    ! Return the array of values Value_V corresponding to arguments
+    ! Arg1, Arg2, Arg3, and Arg4.
+    ! If DoExtrapolate is not present, stop with an error if the arguments
+    ! are out of range. If it is present and false, return the value of
+    ! the closest element in the table. If it is present and true, do a 
+    ! linear extrapolation.
+
+    integer, intent(in) :: iTable                 ! table
+    real,    intent(in) :: Arg1, Arg2, Arg3, Arg4 ! input arguments
+    real,    intent(out):: Value_V(:)             ! output values
+    logical, optional, intent(in):: DoExtrapolate ! optional extrapolation
+
+    call interpolate_arg_array(iTable, (/Arg1, Arg2, Arg3, Arg4/), Value_V, &
+         DoExtrapolate)
+
+  end subroutine interpolate_arg4
+
+  !===========================================================================
+
+  subroutine interpolate_arg5(iTable, Arg1, Arg2, Arg3, Arg4, Arg5, Value_V, &
+       DoExtrapolate)
+
+    ! Return the array of values Value_V corresponding to arguments
+    ! Arg1, Arg2, Arg3, Arg4, and Arg5.
+    ! If DoExtrapolate is not present, stop with an error if the arguments
+    ! are out of range. If it is present and false, return the value of
+    ! the closest element in the table. If it is present and true, do a 
+    ! linear extrapolation.
+
+    integer, intent(in) :: iTable                       ! table
+    real,    intent(in) :: Arg1, Arg2, Arg3, Arg4, Arg5 ! input arguments
+    real,    intent(out):: Value_V(:)                   ! output values
+    logical, optional, intent(in):: DoExtrapolate ! optional extrapolation
+
+    call interpolate_arg_array(iTable, (/Arg1, Arg2, Arg3, Arg4, Arg5/), &
+         Value_V, DoExtrapolate)
+
+  end subroutine interpolate_arg5
+
+  !===========================================================================
+
   subroutine interpolate_arg1_scalar(iTable, Arg1, Value, DoExtrapolate)
 
     ! Return the scalar Value corresponding to argument Arg1.
@@ -1076,10 +1122,10 @@ contains
 
     logical, optional, intent(in):: DoExtrapolate ! optional extrapolation
 
-    real :: Arg_I(3)
+    real :: Arg_I(5)
     type(TableType), pointer:: Ptr
 
-    integer, parameter:: MinIndex_I(3) = 1
+    integer, parameter:: MinIndex_I(5) = 1
     
     character(len=*), parameter:: NameSub='interpolate_lookup_table'
     !--------------------------------------------------------------------------
