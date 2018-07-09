@@ -5,8 +5,8 @@
 # (c) 2002- University of Michigan
 #^CMP FILE CONFIGURE
 
-# List of option files in the CVS distributions. First one is the default.
-my @Optionfiles=('Configure.options','Configure.public','Spherical.options');
+# List of option files
+my @Optionfiles=('Configure.options');
 
 # Pass switches to reasonably named variables
 my $Cfg        = ($c or "CMP");
@@ -273,9 +273,6 @@ sub process_dir{
 
     -d $dir or die "ERROR: $dir does not seem to be a directory\n";
 
-    # Check if directory contains a CVS directory or CVS_Entries file
-    return unless -d "$dir/CVS" or -f "$dir/CVS_Entries";
-
     # Check if there is a $Cfg file. 
     # If the $Cfg file contains OPTION     then skipvalue is OFF
     # if the $Cfg file contains NOT OPTION then skipvalue is ON.
@@ -304,21 +301,9 @@ sub process_dir{
 	mkdir "$Dir/$dir",0777 or die "ERROR cannot make $Dir/$dir";
     }
 
-    # Read entries listed in CVS directory or in the CVS_Entries file
-    my @entries;
-    my $entryfile;
-    foreach $entryfile ("$dir/CVS_Entries",
-			"$dir/CVS/Entries",
-			"$dir/CVS/Entries.Log"){
-	next unless -f $entryfile;
-	open(ENTRIES,$entryfile) or die "ERROR: cannot open $entryfile\n";
-	my $line;
-	while($line=<ENTRIES>){
-	    # Extract entry names between /.../ delimiters:
-	    push (@entries, $1) if $line=~ m|/([^/]+)/|	;
-	}
-	close(ENTRIES);
-    }
+    # Entries in this directory
+    my @entries = grep {not /Build/} glob("$dir/*");
+    foreach (@entries){s/^$dir\///};
     print "$dir ENTRIES:",join(',',@entries),"\n" if $Debug;
 
     # Process each file listed as an entry
@@ -362,14 +347,6 @@ sub process_dir{
 	push(@files,$file) if -e $outfile;
     }
 
-    # Produce a CVS_Entries file in target directory
-    if(@files){
-	open(ENTRIES,">$Dir/$dir/CVS_Entries");
-	foreach $file (@files){
-	    print ENTRIES "/$file/\n";
-	}
-	close(ENTRIES);
-    }
 }
 
 ############################################################################
@@ -784,10 +761,6 @@ Configure.pl [-c=STR] [-D] [-d=DIR] [-exe=option1,option2...] [-h] [-i]
                     If no inputfile is given, the content of the 
                     current directory is processed recursively into
                     Build or the directory defined by -d=DIR
-
-                    Only files listed in CVS/Entries, CVS/Entries.Log
-                    or CVS_Entries are included. The CVS_Entries file
-                    is produced by Configure.pl for reference.
 
                     Binary, .ps, and .eps files are copied 
                     without processing.
