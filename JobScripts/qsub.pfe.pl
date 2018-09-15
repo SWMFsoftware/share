@@ -38,7 +38,7 @@ qsub.pfe.pl job.long Mars
 ($name) = (`pwd` =~ /(....)$/) if not $name;
 
 # Default for machine types
-@machine = ('Ivy', 'San', 'Has', 'Bro') if not @machine;
+@machine = ('Ivy', 'San', 'Has', 'Bro', 'Sky_ele', 'Bro_ele') if not @machine;
 
 # Read original script into $text
 print "qsub.pfe.pl reading $script\n";
@@ -51,9 +51,10 @@ close SCRIPT;
 my $machine;
 my @script;
 
-foreach $machine (@machine){
-    $machine =~ s/(...).*/$1/;
-
+foreach $machine (@machine){    
+    if ($machine ne 'Sky_ele' and $machine ne 'Bro_ele'){    
+	$machine =~ s/(...).*/$1/;
+    }
     my $fileout = "$script.$machine";
     print "creating $fileout\n";
 
@@ -65,7 +66,7 @@ foreach $machine (@machine){
 
     # Uncomment the line for model=$machine
     $text =~ s/^### (PBS -l.*model=$machine)$/#$1/im;
-
+    
     # Change the name of the resubmit script
     $text =~ s/^(if.*qsub) .*$/$1 $fileout/m;
 
@@ -77,7 +78,7 @@ foreach $machine (@machine){
 # submit jobs;
 foreach $machine (@machine){
     print "qsub $script.$machine\n";
-    `qsub $script.$machine`;
+    #`qsub $script.$machine`;
 }
 
 # start watch.pfe.pl in the background
