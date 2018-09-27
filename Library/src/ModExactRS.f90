@@ -16,6 +16,7 @@ module ModExactRS
   real::WL,WR       !Total perturbation speed 
                             !(advection+speed of sound for weak wave)
                             !Shock wave speed for a shock.
+  !$omp threadprivate( PStar,UnStar,RhoL,UnL,PL,RhoR,UnR,PR,CL,CR,WL,WR )
 contains
   !========================================================================!
   subroutine exact_rs_set_gamma(GammaIn)
