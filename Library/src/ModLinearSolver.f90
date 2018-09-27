@@ -20,7 +20,8 @@ module ModLinearSolver
   use ModUtilities, ONLY: CON_stop
   use ModBlasLapack, ONLY: BLAS_gemm, BLAS_copy, BLAS_gemv, &
        LAPACK_getrf, LAPACK_getrs
-
+  use omp_lib
+  
   ! BLAS_gemm, level 3 Matrix-Matrix Product.
   !
   ! BLAS_gemv, level 2 Matrix-Vector Product.
@@ -137,11 +138,11 @@ contains
        end subroutine matvec
     end interface
 
-    integer, intent(in) :: n         !  number of unknowns.
+    integer, intent(in) :: n         ! number of unknowns.
     integer, intent(in) :: nKrylov   ! size of krylov subspace
     real,    intent(in) :: Rhs(n)    ! right hand side vector
     real, intent(inout) :: Sol(n)    ! initial guess / solution vector
-    logical, intent(in) :: IsInit    ! true  if Sol contains initial guess
+    logical, intent(in) :: IsInit    ! true if Sol contains initial guess
     real, intent(inout) :: Tol       ! required / achieved residual
 
     !        on input : required (relative) 2-norm or maximum norm of residual
@@ -184,7 +185,7 @@ contains
     !-----------------------------------------------------------------------
 
     if(DoTest)write(*,*)'GMRES tol,iter:',Tol,Iter
-
+    
     ! Assign the MPI communicator
     iComm = MPI_COMM_SELF
     if(present(iCommIn)) iComm = iCommIn
@@ -261,11 +262,13 @@ contains
           !
           !           Krylov_II(i1):=A*Krylov_II(i)
           !
+    
           call matvec(Krylov_II(:,i),Krylov_II(:,i1),n) 
+
           !-----------------------------------------
           !  modified gram - schmidt...
           !-----------------------------------------
-          do j=1, i
+          do j=1,i
              t = dot_product_mpi(Krylov_II(:,j), Krylov_II(:,i1), iComm)
              hh(j,i) = t
              Krylov_II(:,i1) = Krylov_II(:,i1) - t*Krylov_II(:,j)
@@ -298,7 +301,7 @@ contains
           !---determine residual norm and test for convergence-
           hh(i,i) = c(i)*hh(i,i) + s(i)*hh(i1,i)
           ro = abs(rs(i1))
-          if (DoTest) then
+          if(DoTest)then
              select case(TypeStop)
              case('rel')
                 write(*,*) its,' matvecs, ',' ||rn||/||r0|| =',ro/ro0
@@ -306,6 +309,12 @@ contains
                 write(*,*) its,' matvecs, ',' ||rn|| =',ro
              end select
           end if
+
+          
+!          call cpu_time(finish)
+!          print '("TimeForEachIteration = ",f6.3," seconds.")',finish-funcCall1
+
+          
           if (i >= nKrylov .or. (ro <= Tol1)) exit KRYLOVLOOP
        enddo KRYLOVLOOP
 
@@ -330,11 +339,14 @@ contains
           t = rs(j)
           Sol = Sol + t*Krylov_II(:,j)
        end do
-
+       
        ! exit from outer loop if converged or too many iterations
        if (ro <= Tol1 .or. its >= Iter) exit RESTARTLOOP
     end do RESTARTLOOP
 
+!    call cpu_time(finish)
+!    print '("TimeEndMainLoop = ",f6.3," seconds.")',finish-start 
+    
     Iter=its
     Tol=Tol/Tol1*ro ! (relative) tolerance achieved
     if(ro < Tol1)then
@@ -348,6 +360,9 @@ contains
     ! Deallocate arrays that used to be automatic
     deallocate(Krylov_II, hh, c, s, rs)
 
+    !call cpu_time(finish)
+    !print '("TimeEnd = ",f6.3," seconds.")',finish-start 
+    
   end subroutine gmres
   !=========================================================================
   subroutine bicgstab(matvec,rhs,qx,nonzero,n,tol,typestop,iter,info,&
@@ -980,8 +995,19 @@ contains
        RETURN
     end if
 
-    DotProduct = dot_product(a_I, b_I)
+    !hyzhou: adding openmp slows down the code??? Maybe not worth it?
+    ! This needs to be carefully tested!
+    !start = omp_get_wtime()    
 
+    !$omp parallel
+    !$omp workshare
+    DotProduct = dot_product(a_I, b_I)
+    !$omp end workshare
+    !$omp end parallel
+    
+    !finish = omp_get_wtime()
+    !write(*,*) 'elasped time=',finish-start
+    
     if(iComm == MPI_COMM_SELF) then
        dot_product_mpi = DotProduct
        RETURN
@@ -1753,7 +1779,7 @@ contains
        write(*,*)'ERROR in ', NameSub, ' nDim=', nDim
        call CON_stop(NameSub//': invalid value for nDim')
     end if
-
+    
     select case(TypePrecond)
     case('BLOCKJACOBI')
        ! Multiply with the inverted diagonal blocks of the matrix
@@ -1926,13 +1952,15 @@ contains
     if(Param%TypePrecondSide == 'right') RETURN
 
     nVarIJK = nVar*nI*nJ*nK
-    do iBlock = 1, nBlock
+    !$omp parallel do
+    do iBlock=1,nBlock
        call multiply_left_precond( &
             Param%TypePrecond, Param%TypePrecondSide,&
             nVar, nDim, nI, nJ, nK, Jac_VVCIB(1,1,1,1,1,1,iBlock), &
             x_I(nVarIJK*(iBlock-1) + 1))
     end do
-
+    !$omp end parallel do
+    
   end subroutine precond_left_multiblock
 
   !============================================================================
@@ -1965,12 +1993,14 @@ contains
     if(Param%TypePrecondSide == 'left') RETURN
 
     nVarIJK = nVar*nI*nJ*nK
-    do iBlock = 1, nBlock
+    !$omp parallel do
+    do iBlock=1,nBlock
        call multiply_right_precond( &
             Param%TypePrecond, Param%TypePrecondSide,&
             nVar, nDim, nI, nJ, nK, Jac_VVCIB(1,1,1,1,1,1,iBlock), &
             x_I(nVarIJK*(iBlock-1) + 1))
     end do
+    !$omp end parallel do
 
   end subroutine precond_right_multiblock
 
@@ -2101,17 +2131,21 @@ contains
        elseif(Param%TypePrecond == 'JACOBI') then
           if(present(Jac_VVCIB))then
              n = 0
-             do iBlock = 1, nBlock; do k = 1, nK; do j = 1, nJ; do i = 1, nI
-                do iVar = 1, nVar
+             !$omp parallel do private( n )
+             do iBlock=1,nBlock; do k=1,nK; do j=1,nJ; do i=1,nI
+                n = (iBlock-1)*nI*nJ*nk*nVar ! openmp testing
+                do iVar=1,nVar
                    n = n + 1
                    JacobiPrec_I(n) = 1.0 / Jac_VVCIB(iVar,iVar,i,j,k,1,iBlock)
                 end do
              end do; enddo; enddo; enddo
+             !$omp end parallel do
           end if
           if(Param%TypeKrylov /= 'CG') &
                Rhs_I(1:nImpl) = JacobiPrec_I(1:nImpl)*Rhs_I(1:nImpl)
        else
-          do iBlock = 1, nBlock
+          !$omp parallel do private( n )
+          do iBlock=1,nBlock
 
              ! Preconditioning Jac_VVCIB matrix
              call get_precond_matrix(                             &
@@ -2139,7 +2173,7 @@ contains
                   nVar, nDim, nI, nJ, nK, Jac_VVCIB(1,1,1,1,1,1,iBlock), &
                   x_I(n))
           end do
-
+          !$omp end parallel do
        end if
     endif
 
