@@ -65,6 +65,9 @@
 # To run on the 28-core Electra Broadwell nodes (128GB/node or 4.5GB/core)
 ### PBS -l select=16:ncpus=28:model=bro_ele
 
+# To run on the 40-core Electra Skylake nodes (192GB/node or 4.8GB/core)
+### PBS -l select=16:ncpus=40:model=sky_ele
+
 # The default is the "normal" queue with an 8 hour walltime limit.
 
 # To run in the long queue uncomment the following line,

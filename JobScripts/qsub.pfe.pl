@@ -8,6 +8,11 @@ my $script = shift(@ARGV);
 my $name   = shift(@ARGV);
 my @machine = @ARGV;
 
+
+# Default for machine types
+@machine = ('Ivy', 'San', 'Has', 'Bro', 'Sky_ele', 'Bro_ele') if not @machine;
+
+
 if(not $script or $script =~ /\-+h/i){
     print "
 Usage: qsub.pfe.pl [-n] SCRIPT [NAME [MACHINE1 [MACHINE2 [MACHINE3]]]] ...
@@ -16,10 +21,12 @@ Submit generic job script to multiple machine types.
 Use a unique NAME argument to identify the jobs.
 Only the first four characters of the NAME are used. Default NAME is the 
 last 4 characters of the directory name where the job is submitted from.
-If no machine is specified, 4 jobs will be submitted for the 4 machine
-types (IvyBridge, SandyBridge, Haswell, Broadwell). Otherwise,
-the job will be submitted for the listed machines.
-Only the first three characters of the machine types are used.
+If no machine is specified, 6 jobs will be submitted for the 6 machine types 
+(IvyBridge, SandyBridge, Haswell, Broadwell, Broadwell_Electra, Skylake_Electra). 
+Otherwise,the job will be submitted for the listed machines.
+
+The machine name(s) must be provided strictly as:
+@machine
 
 Unless the -n (or -nowatch) flag is used, the code starts watch.pfe.pl with
 the NAME argument to make sure that when any of the jobs start to run, 
@@ -37,9 +44,6 @@ qsub.pfe.pl job.long Mars
 # Default for job ID
 ($name) = (`pwd` =~ /(....)$/) if not $name;
 
-# Default for machine types
-@machine = ('Ivy', 'San', 'Has', 'Bro') if not @machine;
-
 # Read original script into $text
 print "qsub.pfe.pl reading $script\n";
 my $text;
@@ -51,9 +55,7 @@ close SCRIPT;
 my $machine;
 my @script;
 
-foreach $machine (@machine){
-    $machine =~ s/(...).*/$1/;
-
+foreach $machine (@machine){    
     my $fileout = "$script.$machine";
     print "creating $fileout\n";
 
@@ -65,7 +67,7 @@ foreach $machine (@machine){
 
     # Uncomment the line for model=$machine
     $text =~ s/^### (PBS -l.*model=$machine)$/#$1/im;
-
+    
     # Change the name of the resubmit script
     $text =~ s/^(if.*qsub) .*$/$1 $fileout/m;
 
