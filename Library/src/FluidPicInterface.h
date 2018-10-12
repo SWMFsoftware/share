@@ -1182,7 +1182,7 @@ public:
   template <typename Type>
     inline double getPICUz(const Type x, const Type y, const Type z,
                          const int is) const {
-    int iBlock; 
+    int iBlock = 0; 
     return getPICUz(iBlock, x, y, z, is); 
   }
 
