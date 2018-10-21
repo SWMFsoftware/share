@@ -11,15 +11,12 @@ Originally writen by Lars Daldorff (daldorff@umich.edu) 15 Jan 2013
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <iomanip>
 #include <stdlib.h>
 #include <string>
-#include <unistd.h>
 #include <stdio.h>
 #include <math.h>
 #include <vector>
 #include <array>
-#include <mpi.h>
 #include "MDArray.h"
 
 using namespace std;
