@@ -725,10 +725,10 @@ void FluidPicInterface::setStateVar(double *state_I, int *iPoint_I) {
 
   int nDimArray = 5;
   State_BGV.clear();
-  State_BGV.init(nDimArray, nBlock, nxnLG, nynLG, nznLG, nVarCoupling);
+  State_BGV.init(nBlock, nxnLG, nynLG, nznLG, nVarCoupling);
 
   Bc_BGD.clear();
-  Bc_BGD.init(nDimArray, nBlock, nxnLG - 1, nynLG - 1, nznLG - 1, 3);
+  Bc_BGD.init(nBlock, nxnLG - 1, nynLG - 1, nznLG - 1, 3);
 
   //-----------------Put data to State_BGV--------------------
   double *Pos_I = nullptr;
