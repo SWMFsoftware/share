@@ -2,6 +2,7 @@
 
 my $Help     = ($h or $H or $help);
 my $Undo     = ($u or $undo);
+my $OutCode  = ($o or $output or "check_variables.f90");
 my $Verbose  = ($v or $verbose);
 
 # Allow in-place editing
@@ -57,12 +58,12 @@ foreach $source (@source){
 ### remove lines related to some modules from check_variable.f90
 ### if($Undo){
 
-# Create check_variables.f90
+# Create output code
 if($InitUse){
 
-    print "Creating check_variables.f90\n";
+    print "Creating $OutCode\n";
     
-    open(FILE, ">check_variables.f90");
+    open(FILE, ">$OutCode");
     print FILE "
 subroutine init_check_variables
 
@@ -78,6 +79,7 @@ subroutine do_check_variables
 
 $CheckUse
 
+  implicit none
   !-------------------------------------------------------------------------
 $CheckCall
 
@@ -230,7 +232,8 @@ sub process_line{
     print "$_\n" if $Verbose;
     foreach (split(',',$Vars)){
 
-	next if /_[A-Z]*B/ or /_BLK/i; 	# skip block indexed variables
+	# skip block indexed variables
+	next if /_[A-Z]*[AB]/ or /_BLK/i;  
 
 	my $Name = $_;
 	$Name =~ s/=.*//;         # get rid of initialization part
@@ -349,11 +352,14 @@ sub print_help{
 
 Usage:
 
-    CheckVarChange.pl [-h] [-v] [-u] FILE1 [FILE2 ...]
+    CheckVarChange.pl [-h] [-v] [-u] [-o=NAME] FILE1 [FILE2 ...]
 
-    -h -help    Print help message and exit.
-    -v -verbose Verbose output
-    FILE1 FILE2 Files to be processed
+    -h -help       Print help message and exit.
+    -v -verbose    Verbose output.
+    -o=NAME        Set the name of the main output code. 
+                   Default is check_variables.f90
+    -u -undo       Undo/remove changes.
+    FILE1 FILE2    Files to be processed and modified.
 
 Examples:
 
@@ -361,9 +367,9 @@ Examples:
 
 CheckVarChange.pl -v ModAMR.f90
 
-   Add variable checking to all Mod*.f90 modules
+   Add variable checking to all src/Mod*.f90 and srcBATL/BATL*.f90 modules
 
-CheckVarChange.pl Mod*.f90
+CheckVarChange.pl -o=src/check_variables.f90 src/Mod*.f90 srcBATL/BATL*.f90
 
    Remove variable checking code from ModAMR.f90
 
