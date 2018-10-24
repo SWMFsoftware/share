@@ -11,15 +11,12 @@ Originally writen by Lars Daldorff (daldorff@umich.edu) 15 Jan 2013
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <iomanip>
 #include <stdlib.h>
 #include <string>
-#include <unistd.h>
 #include <stdio.h>
 #include <math.h>
 #include <vector>
 #include <array>
-#include <mpi.h>
 #include "MDArray.h"
 
 using namespace std;
@@ -1408,7 +1405,7 @@ public:
     Pperp = 0.5 * (3.0 * P - Ppar);
 
     // Get 3 vertors spaning the vector space
-    norm_DD.init(2, 3, 3);
+    norm_DD.init(3, 3);
     MagneticBaseVectors(Bx, By, Bz, norm_DD);
 
     // Get the thermal verlocities
