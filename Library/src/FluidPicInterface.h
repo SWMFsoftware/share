@@ -18,12 +18,15 @@ Originally writen by Lars Daldorff (daldorff@umich.edu) 15 Jan 2013
 #include <vector>
 #include <array>
 #include "MDArray.h"
+#include "ReadParam.h"
 
 using namespace std;
 
 class FluidPicInterface {
  protected:
   static const int iErr = 11;
+
+  ReadParam readParam;
 
   bool doCoupleAMPS; 
 
