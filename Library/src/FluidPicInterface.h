@@ -17,8 +17,10 @@ Originally writen by Lars Daldorff (daldorff@umich.edu) 15 Jan 2013
 #include <math.h>
 #include <vector>
 #include <array>
+#include <list>
 #include "MDArray.h"
 #include "ReadParam.h"
+#include "Writer.h"
 
 using namespace std;
 
@@ -132,6 +134,7 @@ class FluidPicInterface {
   long nSync;              //
 
   int myrank;   // this process mpi rank
+  int nProcs; 
 
   bool isFirstTime;
 
@@ -153,6 +156,9 @@ class FluidPicInterface {
   bool doNeedBCOnly;
 
   int iCycle;
+
+
+ public: list<Writer> writer_I;
 
 protected:
   static const int x_ = 0, y_ = 1, z_ = 2;
@@ -308,9 +314,18 @@ public:
   bool doGetFromGM(int i, int j, int k);
 
 
+  void writers_init();
+  void writers_write(double timeNow, int iCycle, bool doForceOutput,
+		     FuncFindPointList find_output_list,
+		     FuncGetField get_var);
+
+
+
   void set_doCoupleAMPS(bool in){doCoupleAMPS=in;}
 
   void set_myrank(int i){myrank = i;}
+  void set_nProcs(int i){nProcs = i;}
+  int get_nProcs()const{return nProcs;}
 
   /** get start index in for the total domain */
   int getGlobalStartIndex(int dir) { return (StartIdx_D[dir]); }

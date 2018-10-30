@@ -1674,4 +1674,52 @@ void FluidPicInterface::CalcFluidState(const double *dataPIC_I,
   } // iVec
 }
 
+void FluidPicInterface::writers_init() {
+
+  //------ Scalar parameters.----------
+  std::vector<std::string> scalarName_I; 
+  std::vector<double> scalarVar_I; 
+  std::string ms="mS", qs="qS";
+  for(int i=0; i<nS; ++i){
+    scalarName_I.push_back(ms+std::to_string(i));
+    scalarName_I.push_back(qs+std::to_string(i));
+    scalarVar_I.push_back(getMiSpecies(i));
+    scalarVar_I.push_back(getQiSpecies(i));
+  }
+  scalarName_I.push_back("cLight"); scalarVar_I.push_back(getcLightSI());
+  scalarName_I.push_back("rPlanet"); scalarVar_I.push_back(getrPlanet());
+  //-------------------------------------
+
+  Writer::set_doSaveBinary(getdoSaveBinary());
+  for (Writer &wTmp : writer_I) {
+    // Pass information to writers.
+    wTmp.set_rank(myrank);
+    wTmp.set_nProcs(get_nProcs());
+    wTmp.set_nDim(getnDim());
+    wTmp.set_iRegion(getiRegion());
+    wTmp.set_domainMin_D({ 0 });
+    wTmp.set_domainMax_D({ getFluidLx(), getFluidLy(), getFluidLz() });
+    wTmp.set_dx_D({ dx_D[x_], dx_D[y_], dx_D[z_] });
+    wTmp.set_axisOrigin_D(
+			  { getFluidStartX(), getFluidStartY(), getFluidStartZ() });
+    wTmp.set_nSpecies(nS);
+    wTmp.set_units(getNo2SiL(), getNo2SiV(), getNo2SiB(), getNo2SiRho(), getNo2SiP(),
+                   getNo2SiJ(), getrPlanet());
+    wTmp.set_scalarValue_I(scalarVar_I);
+    wTmp.set_scalarName_I(scalarName_I);
+
+    //--------------------------------------------------
+    wTmp.init();
+    wTmp.print();
+  }
+}
+
+void FluidPicInterface::writers_write(
+    double timeNow, int iCycle, bool doForceOutput,
+    FuncFindPointList find_output_list, FuncGetField get_var){
+  for (Writer &wTmp : writer_I) {
+    wTmp.write(timeNow, iCycle, doForceOutput, find_output_list, get_var);
+  }
+}
+
 //---------End of FluidPicInterface member functions defination--------------
