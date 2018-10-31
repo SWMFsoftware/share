@@ -44,7 +44,7 @@ void Writer::init() {
       ss << subString;
       ss >> plotMin_D[idx];
       plotMin_D[idx] = plotMin_D[idx] * No2NoL - axisOrigin_D[idx];
-      plotMax_D[idx] += 1e-10;
+      plotMax_D[idx] = plotMin_D[idx]+1e-10;
     }
 
     for (int iDim = 0; iDim < nDimMax; ++iDim) {
