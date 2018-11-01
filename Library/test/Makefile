@@ -196,7 +196,7 @@ test_linear_wrapper_exe:
 		linear_solver_wrapper.o linear_solver_wrapper_c.o)
 	@make test_linear_wrapper.o 
 	${LINK.f90} ${NOMAINFLAG} -o test_linear_wrapper.exe \
-		${OBJ_LINEAR_WRAPPER} ${Lflag1} ${CPPLIB} 
+		${OBJ_LINEAR_WRAPPER} ${Lflag1}
 
 test_linear_wrapper:
 	@echo test_linear_wrapper starting 	>  test_linear_wrapper.diff	
