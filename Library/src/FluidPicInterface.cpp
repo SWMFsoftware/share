@@ -252,8 +252,8 @@ void FluidPicInterface::Moment2Velocity() {
 
 /** Get nomal and pendicular vector to magnetic field */
 void FluidPicInterface::MagneticBaseVectors(const double Bx, const double By,
-                                         const double Bz,
-                                         MDArray<double> &norm_DD) const {
+                                            const double Bz,
+                                            MDArray<double> &norm_DD) const {
   double inv;
   int Norm_, Perp1_, Perp2_, X_, Y_, Z_;
   Norm_ = 0;
@@ -304,8 +304,9 @@ void FluidPicInterface::MagneticBaseVectors(const double Bx, const double By,
 
 /** Get the Electic field as from the fluid description */
 void FluidPicInterface::setFluidFieldsNode(double *Ex, double *Ey, double *Ez,
-                                        double *Bx, double *By, double *Bz,
-                                        const int i, const int j, const int k) {
+                                           double *Bx, double *By, double *Bz,
+                                           const int i, const int j,
+                                           const int k) {
   // This function is used by IPIC3D only.
   const int iBlock = 0;
   if (doGetFromGM(i, j, k)) {
@@ -321,7 +322,8 @@ void FluidPicInterface::setFluidFieldsNode(double *Ex, double *Ey, double *Ez,
 
 // Data recived from SWMF coupler
 void FluidPicInterface::ReadFromGMinit(int *paramint, double *ParamRealRegion,
-                                    double *ParamRealComm, stringstream *ss) {
+                                       double *ParamRealComm,
+                                       stringstream *ss) {
 
   nDim = paramint[0];
   nVarFluid = paramint[2];
@@ -550,15 +552,15 @@ void FluidPicInterface::ReadFromGMinit(int *paramint, double *ParamRealRegion,
 /** Check the parameters passed or calculated from BATSRUS*/
 void FluidPicInterface::checkParam() {
 
-// #ifndef COUPLEAMPS
-//   assert_ge(lenGst_D[0], 0.0);
-//   assert_ge(lenGst_D[1], 0.0);
-//   assert_ge(lenGst_D[2], 0.0);
+  // #ifndef COUPLEAMPS
+  //   assert_ge(lenGst_D[0], 0.0);
+  //   assert_ge(lenGst_D[1], 0.0);
+  //   assert_ge(lenGst_D[2], 0.0);
 
-//   assert_ge(dx_D[0], 0.0);
-//   assert_ge(dx_D[1], 0.0);
-//   assert_ge(dx_D[2], 0.0);
-// #endif
+  //   assert_ge(dx_D[0], 0.0);
+  //   assert_ge(dx_D[1], 0.0);
+  //   assert_ge(dx_D[2], 0.0);
+  // #endif
 
   if (useMultiFluid && !useMhdPe) {
     cout << " Use multi-fluid but do not use electron pressure. This case is "
@@ -568,7 +570,8 @@ void FluidPicInterface::checkParam() {
 }
 
 bool FluidPicInterface::doGetFromGM(int i, int j, int k) {
-  if(doCoupleAMPS)  return true;
+  if (doCoupleAMPS)
+    return true;
 
   // 1) The first step initialize from GM: all nodes need information from GM;
   // 2) During updates, only boundary nodes needs to be overwritten by GM.
@@ -611,9 +614,9 @@ void FluidPicInterface::GetNgridPnt(int &nPoint) {
 }
 
 void FluidPicInterface::get_region_points(bool doCount, bool doGetPos,
-                                       bool doSetData, int &nPoint,
-                                       double *pos_I, double *state_I,
-                                       int *iPoint_I) {
+                                          bool doSetData, int &nPoint,
+                                          double *pos_I, double *state_I,
+                                          int *iPoint_I) {
   int i, j, k, iMin, iMax, jMin, jMax, kMin, kMax;
   double pic_D[3], mhd_D[3];
 
@@ -1024,9 +1027,10 @@ void FluidPicInterface::read_satellite_file(string filename) {
 }
 
 void FluidPicInterface::find_sat_points(double **pointList_ID, long &nPoint,
-                                     int nPointMax, double plotRange_I[6],
-                                     double xStart, double xEnd, double yStart,
-                                     double yEnd, double zStart, double zEnd) {
+                                        int nPointMax, double plotRange_I[6],
+                                        double xStart, double xEnd,
+                                        double yStart, double yEnd,
+                                        double zStart, double zEnd) {
   // Need to know which satellite. Here always use the last satellite
   // information read by read_satellite_file(), since this method is called
   // after read_sat_points() in iPic3dlib.cpp. Not a good approach!!!!
@@ -1147,7 +1151,7 @@ int FluidPicInterface::second_to_clock_time(int second) {
 
 /** Convert real time into simulation time in second. **/
 double FluidPicInterface::convert_time(int yr, int mo, int dy, int hr, int mn,
-                                    int sc, double msc) {
+                                       int sc, double msc) {
   double time;
   double doyStart, doyNow;
   doyStart = doy(iYear, iMonth, iDay);
@@ -1187,7 +1191,7 @@ int FluidPicInterface::doy(int yr, int mo, int dy) {
 
 /** electron mass given by IPIC3D params while ion mass comes form BATSRUS */
 void FluidPicInterface::fixPARAM(double *&qom, int *&npcelx, int *&npcely,
-                              int *&npcelz, int *ns) {
+                                 int *&npcelz, int *ns) {
 
   double qom_el;
   int npx, npy, npz;
@@ -1259,7 +1263,7 @@ void FluidPicInterface::fixPARAM(double *&qom, int *&npcelx, int *&npcely,
 }
 
 void FluidPicInterface::divide_processors(int &npx, int &npy, int &npz,
-                                       int nprocs) {
+                                          int nprocs) {
   int divisor1, divisor2, divisor3, nprocs0, npmax;
 
   if (nDim < 3) {
@@ -1376,7 +1380,7 @@ string FluidPicInterface::addPlasmaVar(string varString, int is) const {
 }
 
 void FluidPicInterface::pic_to_Mhd_Vec(double const *vecIn_D, double *vecOut_D,
-                                    bool isZeroOrigin) const {
+                                       bool isZeroOrigin) const {
   /** 1) Change a vector in coupling PIC coordinates to MHD coordinates.
       If not isZeroOrigin, then shifting the origin of the coupling
       PIC coordinates to INxRange_I.
@@ -1393,7 +1397,7 @@ void FluidPicInterface::pic_to_Mhd_Vec(double const *vecIn_D, double *vecOut_D,
 }
 
 void FluidPicInterface::mhd_to_Pic_Vec(double const *vecIn_D, double *vecOut_D,
-                                    bool isZeroOrigin) const {
+                                       bool isZeroOrigin) const {
   /** 1) Change a vector in MHD coordinates to coupling PIC coordinates.
       If not isZeroOrigin, then shifting the origin of the coupling
       PIC coordinates to phyMin_D.
@@ -1416,9 +1420,8 @@ void FluidPicInterface::mhd_to_Pic_Vec(double const *vecIn_D, double *vecOut_D,
   } // iDim
 }
 
-
 void FluidPicInterface::CalcFluidState(const double *dataPIC_I,
-                                    double *data_I) const {
+                                       double *data_I) const {
   /* Input: dataPIC_I
      Output: data_I
      Function:
@@ -1677,17 +1680,19 @@ void FluidPicInterface::CalcFluidState(const double *dataPIC_I,
 void FluidPicInterface::writers_init() {
 
   //------ Scalar parameters.----------
-  std::vector<std::string> scalarName_I; 
-  std::vector<double> scalarVar_I; 
-  std::string ms="mS", qs="qS";
-  for(int i=0; i<nS; ++i){
-    scalarName_I.push_back(ms+std::to_string(i));
-    scalarName_I.push_back(qs+std::to_string(i));
+  std::vector<std::string> scalarName_I;
+  std::vector<double> scalarVar_I;
+  std::string ms = "mS", qs = "qS";
+  for (int i = 0; i < nS; ++i) {
+    scalarName_I.push_back(ms + std::to_string(i));
+    scalarName_I.push_back(qs + std::to_string(i));
     scalarVar_I.push_back(getMiSpecies(i));
     scalarVar_I.push_back(getQiSpecies(i));
   }
-  scalarName_I.push_back("cLight"); scalarVar_I.push_back(getcLightSI());
-  scalarName_I.push_back("rPlanet"); scalarVar_I.push_back(getrPlanet());
+  scalarName_I.push_back("cLight");
+  scalarVar_I.push_back(getcLightSI());
+  scalarName_I.push_back("rPlanet");
+  scalarVar_I.push_back(getrPlanet());
   //-------------------------------------
 
   Writer::set_doSaveBinary(getdoSaveBinary());
@@ -1701,10 +1706,10 @@ void FluidPicInterface::writers_init() {
     wTmp.set_domainMax_D({ getFluidLx(), getFluidLy(), getFluidLz() });
     wTmp.set_dx_D({ dx_D[x_], dx_D[y_], dx_D[z_] });
     wTmp.set_axisOrigin_D(
-			  { getFluidStartX(), getFluidStartY(), getFluidStartZ() });
+        { getFluidStartX(), getFluidStartY(), getFluidStartZ() });
     wTmp.set_nSpecies(nS);
-    wTmp.set_units(getNo2SiL(), getNo2SiV(), getNo2SiB(), getNo2SiRho(), getNo2SiP(),
-                   getNo2SiJ(), getrPlanet());
+    wTmp.set_units(getNo2SiL(), getNo2SiV(), getNo2SiB(), getNo2SiRho(),
+                   getNo2SiP(), getNo2SiJ(), getrPlanet());
     wTmp.set_scalarValue_I(scalarVar_I);
     wTmp.set_scalarName_I(scalarName_I);
 
@@ -1714,9 +1719,10 @@ void FluidPicInterface::writers_init() {
   }
 }
 
-void FluidPicInterface::writers_write(
-    double timeNow, int iCycle, bool doForceOutput,
-    FuncFindPointList find_output_list, FuncGetField get_var){
+void FluidPicInterface::writers_write(double timeNow, int iCycle,
+                                      bool doForceOutput,
+                                      FuncFindPointList find_output_list,
+                                      FuncGetField get_var) {
   for (Writer &wTmp : writer_I) {
     wTmp.write(timeNow, iCycle, doForceOutput, find_output_list, get_var);
   }
