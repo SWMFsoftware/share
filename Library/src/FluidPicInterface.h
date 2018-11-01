@@ -22,8 +22,6 @@ Originally writen by Lars Daldorff (daldorff@umich.edu) 15 Jan 2013
 #include "ReadParam.h"
 #include "Writer.h"
 
-// using namespace std;
-
 class FluidPicInterface {
 protected:
   static const int iErr = 11;
@@ -137,7 +135,7 @@ protected:
   bool isFirstTime;
 
   int iRegion;
-  string sRegion;
+  std::string sRegion;
 
   // Do not include ghost cells.
   int nxcLocal, nycLocal, nzcLocal;
@@ -156,7 +154,7 @@ protected:
   int iCycle;
 
 public:
-  list<Writer> writer_I;
+  std::list<Writer> writer_I;
 
   ReadParam readParam;
 
@@ -173,13 +171,13 @@ protected:
   // The second dimension: xmin, xmax, ymin, ymax, zmin, zmax.
   // double **plotRangeMin_ID, **plotRangeMax_ID;
   MDArray<double> plotRangeMin_ID, plotRangeMax_ID;
-  string *plotString_I;
-  string *plotVar_I;
+  std::string *plotString_I;
+  std::string *plotVar_I;
   bool doSaveBinary;
   double drSat; // A particle within drSat*dx from a satellite point will be
                 // wrote out.
 
-  vector<vector<array<double, 4> > > satInfo_III;
+  std::vector<std::vector<std::array<double, 4> > > satInfo_III;
 
   // Simulation start time.
   int iYear, iMonth, iDay, iHour, iMinute, iSecond;
@@ -213,7 +211,7 @@ protected:
   // polarity of the magnetic field. This feature can be used to distinguish
   // the particles from different sources.
   bool doSplitSpecies;
-  string splitType;
+  std::string splitType;
   int *iSPic2Mhd_I;
 
 public:
@@ -235,7 +233,7 @@ public:
   int nBCLayer;
   bool useRandomPerCell;
   bool doUseOldRestart;
-  string testFuncs;
+  std::string testFuncs;
   int iTest, jTest, kTest;
 
   int nPartGhost;
@@ -270,7 +268,7 @@ public:
   void Moment2Velocity();
 
   void ReadFromGMinit(int *paramint, double *ParamRealRegion,
-                      double *ParamRealComm, stringstream *ss);
+                      double *ParamRealComm, std::stringstream *ss);
 
   void fixPARAM(double *&qom, int *&npcelx, int *&npcely, int *&npcelz,
                 int *ns);
@@ -285,8 +283,8 @@ public:
                       bool isZeroOrigin = false) const;
   void pic_to_Mhd_Vec(double const *vecIn_D, double *vecOut_D,
                       bool isZeroOrigin = false) const;
-  string addPlasmaVar(string varString, int is) const;
-  string expandVariable(string inVars) const;
+  std::string addPlasmaVar(std::string varString, int is) const;
+  std::string expandVariable(std::string inVars) const;
   double getSmoothFactor(int i, int j, int k) const;
   void divide_processors(int &npx, int &npy, int &npz, int nprocs);
   /** day of year **/
@@ -298,7 +296,7 @@ public:
   void find_sat_points(double **pointList_ID, long &nPoint, int nPointMax,
                        double plotRange_I[6], double xStart, double xEnd,
                        double yStart, double yEnd, double zStart, double zEnd);
-  void read_satellite_file(string filename);
+  void read_satellite_file(std::string filename);
   void PrintFluidPicInterface();
   void setStateVar(double *state_I, int *iPoint_I);
   void GetGridPnt(double *Pos_I);
@@ -415,8 +413,8 @@ public:
   void updateSItime() {
     SItime += INdt;
     if (myrank == 0) {
-      cout << "SItime = " << SItime << " dt (s) = " << INdt
-           << " , normalized dt = " << INdt *(Si2NoL / Si2NoV) << endl;
+      std::cout << "SItime = " << SItime << " dt (s) = " << INdt
+           << " , normalized dt = " << INdt *(Si2NoL / Si2NoV) << std::endl;
     }
   }
 
@@ -439,11 +437,11 @@ public:
 
   void setiRegion(int i) {
     iRegion = i;
-    stringstream ss;
+    std::stringstream ss;
     sRegion = ss.str();
   }
   int getiRegion() const { return (iRegion); }
-  string getsRegion() const { return sRegion; }
+  std::string getsRegion() const { return sRegion; }
 
   int getnDim() const { return (nDim); }
 
@@ -480,7 +478,7 @@ public:
   bool getUseRandomPerCell() const {
     return useRandomPerCell;
   };
-  string getTestFunc() const {
+  std::string getTestFunc() const {
     return testFuncs;
   };
   int getiTest() const {
@@ -503,13 +501,13 @@ public:
   double getdtOutput(int i) const {
     return dtOutput_I[i];
   };
-  string getplotString(int i) const {
+  std::string getplotString(int i) const {
     return plotString_I[i];
   };
   double getplotDx(int i) const {
     return plotDx_I[i] > 0 ? plotDx_I[i] : 1;
   };
-  string getplotVar(int i) const {
+  std::string getplotVar(int i) const {
     return plotVar_I[i];
   };
   double getplotRangeMin(int iPlot, int i) const {
@@ -622,7 +620,7 @@ public:
       return i;
     }
   }
-  string get_splitType() const { return splitType; }
+  std::string get_splitType() const { return splitType; }
 
   void set_State_BGV(int nBlockIn, int nx, int ny, int nz, double *state_I,
                      int *iPoint_I) {
@@ -1385,8 +1383,8 @@ public:
     int Norm_, Perp1_, Perp2_, X_, Y_, Z_;
 
     if (useMultiFluid || useMultiSpecies || doSplitSpecies) {
-      cout << " setFluidanisoUth has not implemented for "
-              "multifluid/multispecies/doSplitSpecies!!!" << endl;
+      std::cout << " setFluidanisoUth has not implemented for "
+              "multifluid/multispecies/doSplitSpecies!!!" << std::endl;
       abort();
     }
 
@@ -1518,8 +1516,8 @@ public:
     // Need to check whether this function works correctly! -- Yuxi
     double P;
     if (useMultiSpecies || useMultiFluid || doSplitSpecies) {
-      cout << " getFluidPpar has not implemented for "
-              "multifluid/multispecies/doSplitSpecies!!" << endl;
+      std::cout << " getFluidPpar has not implemented for "
+              "multifluid/multispecies/doSplitSpecies!!" << std::endl;
       abort();
     }
 

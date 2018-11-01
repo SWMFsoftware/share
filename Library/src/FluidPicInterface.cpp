@@ -1,5 +1,13 @@
 #include "FluidPicInterface.h"
 
+using std::cout; 
+using std::endl;
+using std::string;
+using std::stringstream;
+using std::vector; 
+using std::array; 
+
+
 /** constructor */
 FluidPicInterface::FluidPicInterface() {
 
@@ -586,11 +594,11 @@ bool FluidPicInterface::doGetFromGM(int i, int j, int k) {
     int nyg = getFluidNyc() + 3;
     int kg = StartIdx_D[2] + k - 1;
     int nzg = getFluidNzc() + 3;
-    minDn = min(ig, nxg - ig - 1);
+    minDn = std::min(ig, nxg - ig - 1);
     if (nDim > 1)
-      minDn = min(minDn, min(jg, nyg - jg - 1));
+      minDn = std::min(minDn, std::min(jg, nyg - jg - 1));
     if (nDim > 2)
-      minDn = min(minDn, min(kg, nzg - kg - 1));
+      minDn = std::min(minDn, std::min(kg, nzg - kg - 1));
     if (minDn < nBCLayer)
       doGetGM = true;
   } else {
@@ -977,7 +985,7 @@ void FluidPicInterface::PrintFluidPicInterface() {
 
 // Read Satellite files.
 void FluidPicInterface::read_satellite_file(string filename) {
-  ifstream file;
+  std::ifstream file;
   string line;
   bool doStartRead;
   vector<array<double, 4> > satInfo_II;
@@ -1304,13 +1312,13 @@ double FluidPicInterface::getSmoothFactor(int i, int j, int k) const {
 
   // The edge for PIC domain is node with index 1. It is different from
   // standalone PIC
-  iMin = min(ig - 1, nNodeGst_D[0] - ig - 2);
-  jMin = min(jg - 1, nNodeGst_D[1] - jg - 2);
-  kMin = min(kg - 1, nNodeGst_D[2] - kg - 2);
-  idxMin = min(iMin, jMin);
+  iMin = std::min(ig - 1, nNodeGst_D[0] - ig - 2);
+  jMin = std::min(jg - 1, nNodeGst_D[1] - jg - 2);
+  kMin = std::min(kg - 1, nNodeGst_D[2] - kg - 2);
+  idxMin = std::min(iMin, jMin);
 
   if (nDim > 2)
-    idxMin = min(idxMin, kMin);
+    idxMin = std::min(idxMin, kMin);
 
   double ix;
   if (idxMin < nBoundarySmooth) {
