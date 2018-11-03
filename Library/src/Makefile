@@ -34,7 +34,6 @@ OBJECTS = \
 	ModLinearSolver.o\
 	linear_solver_wrapper.o\
 	linear_solver_wrapper_c.o\
-	FluidPicInterface.o\
 	ModLookupTable.o\
 	ModMpiInterfaces.o\
 	ModMpi.o\
