@@ -11,24 +11,22 @@ Originally writen by Lars Daldorff (daldorff@umich.edu) 15 Jan 2013
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <iomanip>
 #include <stdlib.h>
 #include <string>
-#include <unistd.h>
 #include <stdio.h>
 #include <math.h>
 #include <vector>
 #include <array>
-#include <mpi.h>
+#include <list>
 #include "MDArray.h"
-
-using namespace std;
+#include "ReadParam.h"
+#include "Writer.h"
 
 class FluidPicInterface {
- protected:
+protected:
   static const int iErr = 11;
 
-  bool doCoupleAMPS; 
+  bool doCoupleAMPS;
 
   int nDim; // number of dimentions
 
@@ -131,12 +129,13 @@ class FluidPicInterface {
   unsigned long iSyncStep; // Iterator for sync with fluid
   long nSync;              //
 
-  int myrank;   // this process mpi rank
+  int myrank; // this process mpi rank
+  int nProcs;
 
   bool isFirstTime;
 
   int iRegion;
-  string sRegion;
+  std::string sRegion;
 
   // Do not include ghost cells.
   int nxcLocal, nycLocal, nzcLocal;
@@ -154,6 +153,11 @@ class FluidPicInterface {
 
   int iCycle;
 
+public:
+  std::list<Writer> writer_I;
+
+  ReadParam readParam;
+
 protected:
   static const int x_ = 0, y_ = 1, z_ = 2;
 
@@ -167,13 +171,13 @@ protected:
   // The second dimension: xmin, xmax, ymin, ymax, zmin, zmax.
   // double **plotRangeMin_ID, **plotRangeMax_ID;
   MDArray<double> plotRangeMin_ID, plotRangeMax_ID;
-  string *plotString_I;
-  string *plotVar_I;
+  std::string *plotString_I;
+  std::string *plotVar_I;
   bool doSaveBinary;
   double drSat; // A particle within drSat*dx from a satellite point will be
                 // wrote out.
 
-  vector<vector<array<double, 4> > > satInfo_III;
+  std::vector<std::vector<std::array<double, 4> > > satInfo_III;
 
   // Simulation start time.
   int iYear, iMonth, iDay, iHour, iMinute, iSecond;
@@ -207,7 +211,7 @@ protected:
   // polarity of the magnetic field. This feature can be used to distinguish
   // the particles from different sources.
   bool doSplitSpecies;
-  string splitType;
+  std::string splitType;
   int *iSPic2Mhd_I;
 
 public:
@@ -216,11 +220,11 @@ public:
   // double ****State_BGV; // node centered state variables
   MDArray<double> State_BGV;
 
-  // The min/max location of blocks. Do not include ghost cells. 
-  MDArray<double> BlockMin_BD, BlockMax_BD, CellSize_BD; 
+  // The min/max location of blocks. Do not include ghost cells.
+  MDArray<double> BlockMin_BD, BlockMax_BD, CellSize_BD;
 
-  // The ghost cell number in each direction in each side. 
-  int nG_D[nDimMax]; 
+  // The ghost cell number in each direction in each side.
+  int nG_D[nDimMax];
 
   // These variables are also used in PSKOutput.h
   int *iRho_I, *iRhoUx_I, *iRhoUy_I, *iRhoUz_I, iBx, iBy, iBz, iEx, iEy, iEz,
@@ -229,7 +233,7 @@ public:
   int nBCLayer;
   bool useRandomPerCell;
   bool doUseOldRestart;
-  string testFuncs;
+  std::string testFuncs;
   int iTest, jTest, kTest;
 
   int nPartGhost;
@@ -247,7 +251,6 @@ public:
   static const int nVecMax = 10;
   int vecIdxStart_I[nVecMax], nVec;
 
-
 public:
   /** constructor */
   FluidPicInterface();
@@ -259,33 +262,29 @@ public:
 
   void ReNormLength();
 
-  // Convert State_BGV to normalized PIC units. 
+  // Convert State_BGV to normalized PIC units.
   void ReNormVariables();
 
   void Moment2Velocity();
 
   void ReadFromGMinit(int *paramint, double *ParamRealRegion,
-                      double *ParamRealComm, stringstream *ss);
+                      double *ParamRealComm, std::stringstream *ss);
 
   void fixPARAM(double *&qom, int *&npcelx, int *&npcely, int *&npcelz,
                 int *ns);
 
   void checkParam();
 
-
   /** Get nomal and pendicular vector to magnetic field */
-  void MagneticBaseVectors(const double Bx, const double By,
-			   const double Bz,
-			   MDArray<double> &norm_DD) const;
-
-
+  void MagneticBaseVectors(const double Bx, const double By, const double Bz,
+                           MDArray<double> &norm_DD) const;
 
   void mhd_to_Pic_Vec(double const *vecIn_D, double *vecOut_D,
-                      bool isZeroOrigin = false)const;
+                      bool isZeroOrigin = false) const;
   void pic_to_Mhd_Vec(double const *vecIn_D, double *vecOut_D,
-                      bool isZeroOrigin = false)const;
-  string addPlasmaVar(string varString, int is) const;
-  string expandVariable(string inVars) const;
+                      bool isZeroOrigin = false) const;
+  std::string addPlasmaVar(std::string varString, int is) const;
+  std::string expandVariable(std::string inVars) const;
   double getSmoothFactor(int i, int j, int k) const;
   void divide_processors(int &npx, int &npy, int &npz, int nprocs);
   /** day of year **/
@@ -297,7 +296,7 @@ public:
   void find_sat_points(double **pointList_ID, long &nPoint, int nPointMax,
                        double plotRange_I[6], double xStart, double xEnd,
                        double yStart, double yEnd, double zStart, double zEnd);
-  void read_satellite_file(string filename);
+  void read_satellite_file(std::string filename);
   void PrintFluidPicInterface();
   void setStateVar(double *state_I, int *iPoint_I);
   void GetGridPnt(double *Pos_I);
@@ -307,10 +306,15 @@ public:
   void GetNgridPnt(int &nPoint);
   bool doGetFromGM(int i, int j, int k);
 
+  void writers_init();
+  void writers_write(double timeNow, int iCycle, bool doForceOutput,
+                     FuncFindPointList find_output_list, FuncGetField get_var);
 
-  void set_doCoupleAMPS(bool in){doCoupleAMPS=in;}
+  void set_doCoupleAMPS(bool in) { doCoupleAMPS = in; }
 
-  void set_myrank(int i){myrank = i;}
+  void set_myrank(int i) { myrank = i; }
+  void set_nProcs(int i) { nProcs = i; }
+  int get_nProcs() const { return nProcs; }
 
   /** get start index in for the total domain */
   int getGlobalStartIndex(int dir) { return (StartIdx_D[dir]); }
@@ -365,7 +369,6 @@ public:
     return (invtUnitPic);
   };
 
-
   /** Get time convertion units from internal IPIC3D units */
   void setSItime(double time) {
     SItime = time;
@@ -410,8 +413,8 @@ public:
   void updateSItime() {
     SItime += INdt;
     if (myrank == 0) {
-      cout << "SItime = " << SItime << " dt (s) = " << INdt
-           << " , normalized dt = " << INdt *(Si2NoL / Si2NoV) << endl;
+      std::cout << "SItime = " << SItime << " dt (s) = " << INdt
+           << " , normalized dt = " << INdt *(Si2NoL / Si2NoV) << std::endl;
     }
   }
 
@@ -426,8 +429,6 @@ public:
     }
   }
 
-
-
   // The begining 'physical' point of this IPIC region. Assume there is one
   // layer PIC ghost cell.
   double getphyMin(int i) const { return phyMin_D[i]; }
@@ -436,11 +437,11 @@ public:
 
   void setiRegion(int i) {
     iRegion = i;
-    stringstream ss;
+    std::stringstream ss;
     sRegion = ss.str();
   }
   int getiRegion() const { return (iRegion); }
-  string getsRegion() const { return sRegion; }
+  std::string getsRegion() const { return sRegion; }
 
   int getnDim() const { return (nDim); }
 
@@ -477,7 +478,7 @@ public:
   bool getUseRandomPerCell() const {
     return useRandomPerCell;
   };
-  string getTestFunc() const {
+  std::string getTestFunc() const {
     return testFuncs;
   };
   int getiTest() const {
@@ -500,13 +501,13 @@ public:
   double getdtOutput(int i) const {
     return dtOutput_I[i];
   };
-  string getplotString(int i) const {
+  std::string getplotString(int i) const {
     return plotString_I[i];
   };
   double getplotDx(int i) const {
     return plotDx_I[i] > 0 ? plotDx_I[i] : 1;
   };
-  string getplotVar(int i) const {
+  std::string getplotVar(int i) const {
     return plotVar_I[i];
   };
   double getplotRangeMin(int iPlot, int i) const {
@@ -529,33 +530,33 @@ public:
   };
   void setxStart(double v) {
     xStart = v;
-    const int iBlock = 0; 
-    BlockMin_BD(iBlock, x_) = v; 
+    const int iBlock = 0;
+    BlockMin_BD(iBlock, x_) = v;
   };
   void setxEnd(double v) {
     xEnd = v;
-    const int iBlock = 0; 
-    BlockMax_BD(iBlock, x_) = v; 
+    const int iBlock = 0;
+    BlockMax_BD(iBlock, x_) = v;
   };
   void setyStart(double v) {
     yStart = v;
-    const int iBlock = 0; 
-    BlockMin_BD(iBlock, y_) = v; 
+    const int iBlock = 0;
+    BlockMin_BD(iBlock, y_) = v;
   };
   void setyEnd(double v) {
     yEnd = v;
-    const int iBlock = 0; 
-    BlockMax_BD(iBlock, y_) = v; 
+    const int iBlock = 0;
+    BlockMax_BD(iBlock, y_) = v;
   };
   void setzStart(double v) {
     zStart = v;
-    const int iBlock = 0; 
-    BlockMin_BD(iBlock, z_) = v; 
+    const int iBlock = 0;
+    BlockMin_BD(iBlock, z_) = v;
   };
   void setzEnd(double v) {
     zEnd = v;
-    const int iBlock = 0; 
-    BlockMax_BD(iBlock, z_) = v; 
+    const int iBlock = 0;
+    BlockMax_BD(iBlock, z_) = v;
   };
   int getnPartGhost() const {
     return nPartGhost;
@@ -569,10 +570,8 @@ public:
   double getQiSpecies(int i) const {
     return QoQi_S[i];
   };
- 
-  double get_qom(int is) const{
-    return QoQi_S[is]/MoMi_S[is]; 
-  }
+
+  double get_qom(int is) const { return QoQi_S[is] / MoMi_S[is]; }
 
   double getcLightSI() const {
     return Unorm / 100; /*Unorm is in cgs unit*/
@@ -621,7 +620,7 @@ public:
       return i;
     }
   }
-  string get_splitType() const { return splitType; }
+  std::string get_splitType() const { return splitType; }
 
   void set_State_BGV(int nBlockIn, int nx, int ny, int nz, double *state_I,
                      int *iPoint_I) {
@@ -634,10 +633,10 @@ public:
 
   /** Get the Electic field as from the fluid description */
   void setFluidFieldsNode(double *Ex, double *Ey, double *Ez, double *Bx,
-			  double *By, double *Bz, const int i,
-			  const int j, const int k);
+                          double *By, double *Bz, const int i, const int j,
+                          const int k);
 
-  void CalcFluidState(const double * dataPIC_I, double *dataFluid_I)const;
+  void CalcFluidState(const double *dataPIC_I, double *dataFluid_I) const;
 
   //-----------long Inline functions or template functions.-------
 
@@ -657,8 +656,8 @@ public:
       *kg = StartIdx_D[2] + kl - 1;
   }
 
-  inline void getInterpolatedValue(const int iBlock, const int i,  int j, int k, double *Var,
-                                   const int iVar) const {
+  inline void getInterpolatedValue(const int iBlock, const int i, int j, int k,
+                                   double *Var, const int iVar) const {
     if (nNodeGst_D[1] == 1)
       j = 0;
     if (nNodeGst_D[2] == 1)
@@ -667,33 +666,33 @@ public:
   }
 
   /** Second order interpolation  for a given position */
-  inline void getInterpolatedValue(const int iBlock, const double x, const double y,
-                                   const double z, double *Var,
+  inline void getInterpolatedValue(const int iBlock, const double x,
+                                   const double y, const double z, double *Var,
                                    int iVar) const {
     int i1 = 0, j1 = 0, k1 = 0, i2 = 0, j2 = 0, k2 = 0;
     double dx1 = 0.5, dx2 = 0.5, dy1 = 0.5, dy2 = 0.5, dz1 = 0.5, dz2 = 0.5;
 
     // Get the index of the for the nodes surounding the cell
 
-    dx1 = (x - BlockMin_BD(iBlock,x_))/CellSize_BD(iBlock,x_) + nG_D[x_];
+    dx1 = (x - BlockMin_BD(iBlock, x_)) / CellSize_BD(iBlock, x_) + nG_D[x_];
     i1 = floor(dx1);
     i2 = i1 + 1;
-    dx1 -= i1; 
-    dx2 = 1- dx1;  
+    dx1 -= i1;
+    dx2 = 1 - dx1;
     if (nNodeGst_D[1] > 1) {
-      dy1 = (y - BlockMin_BD(iBlock,y_))/CellSize_BD(iBlock,y_) + nG_D[y_];  
-      j1 = floor(dy1); 
+      dy1 = (y - BlockMin_BD(iBlock, y_)) / CellSize_BD(iBlock, y_) + nG_D[y_];
+      j1 = floor(dy1);
       j2 = j1 + 1;
-      dy1 -= j1; 
-      dy2 = 1 - dy1; 
+      dy1 -= j1;
+      dy2 = 1 - dy1;
     }
 
     if (nNodeGst_D[2] > 1) {
-      dz1 = (z - BlockMin_BD(iBlock,z_))/CellSize_BD(iBlock,z_) + nG_D[z_];  
-      k1 = floor(dz1); 
+      dz1 = (z - BlockMin_BD(iBlock, z_)) / CellSize_BD(iBlock, z_) + nG_D[z_];
+      k1 = floor(dz1);
       k2 = k1 + 1;
-      dz1 -= k1; 
-      dz2 = 1 - dz1; 
+      dz1 -= k1;
+      dz2 = 1 - dz1;
     }
 
     *Var = dz2 * (dy2 * (dx2 * State_BGV(iBlock, i1, j1, k1, iVar) +
@@ -714,7 +713,6 @@ public:
     } else
       return (0);
   }
-
 
   /** nNodeGst_D includes 1 guard/ghost cell layer... */
   inline double getFluidNxc() const { return (nNodeGst_D[0] - 3 * NG); }
@@ -782,25 +780,26 @@ public:
 
   /** get Pxx from fluid */
   template <typename Type>
-    inline double getPICPxx(const Type x, const Type y, const Type z,
+  inline double getPICPxx(const Type x, const Type y, const Type z,
                           const int is) const {
-    int iBlock = 0; 
+    int iBlock = 0;
     return getPICPxx(iBlock, x, y, z, is);
   }
   template <typename Type>
-    inline double getPICPxx(const int iBlock, const Type x, const Type y, const Type z,
-                          const int is) const {
+  inline double getPICPxx(const int iBlock, const Type x, const Type y,
+                          const Type z, const int is) const {
     double Pxx;
     int iMHD;
     iMHD = is;
     if (doSplitSpecies)
       iMHD = iSPic2Mhd_I[is];
-    Pxx = getFluidPxx(iBlock, x, y, z, iMHD) * RatioPIC2MHD(iBlock, x, y, z, is);
+    Pxx =
+        getFluidPxx(iBlock, x, y, z, iMHD) * RatioPIC2MHD(iBlock, x, y, z, is);
     return Pxx;
   }
   template <typename Type>
-    inline double getFluidPxx(const int iBlock, const Type x, const Type y, const Type z,
-			      const int is) const {
+  inline double getFluidPxx(const int iBlock, const Type x, const Type y,
+                            const Type z, const int is) const {
     double Pxx;
     if (useAnisoP) {
       double Bx, By, Bz, Bt2, Ppar, P, Pperp;
@@ -819,34 +818,34 @@ public:
       Pxx = getFluidP(iBlock, x, y, z, is);
     }
     return (QoQi0_S[is] *
-            (Pxx / MoMi0_S[is] +
-             getFluidRhoNum(iBlock, x, y, z, is) * pow(getFluidUx(iBlock, x, y, z, is), 2)));
+            (Pxx / MoMi0_S[is] + getFluidRhoNum(iBlock, x, y, z, is) *
+                                     pow(getFluidUx(iBlock, x, y, z, is), 2)));
   }
-
 
   /** get Pyy from fluid */
   template <typename Type>
-    inline double getPICPyy(const Type x, const Type y, const Type z,
+  inline double getPICPyy(const Type x, const Type y, const Type z,
                           const int is) const {
-    int iBlock = 0; 
-    return getPICPyy(iBlock,x,y,z,is);
+    int iBlock = 0;
+    return getPICPyy(iBlock, x, y, z, is);
   }
 
   template <typename Type>
-    inline double getPICPyy(const int iBlock, const Type x, const Type y, const Type z,
-                          const int is) const {
+  inline double getPICPyy(const int iBlock, const Type x, const Type y,
+                          const Type z, const int is) const {
     double Pyy;
     int iMHD;
     iMHD = is;
     if (doSplitSpecies)
       iMHD = iSPic2Mhd_I[is];
-    Pyy = getFluidPyy(iBlock, x, y, z, iMHD) * RatioPIC2MHD(iBlock, x, y, z, is);
+    Pyy =
+        getFluidPyy(iBlock, x, y, z, iMHD) * RatioPIC2MHD(iBlock, x, y, z, is);
     return Pyy;
   }
 
   template <typename Type>
-    inline double getFluidPyy(const int iBlock, const Type x, const Type y, const Type z,
-			      const int is) const {
+  inline double getFluidPyy(const int iBlock, const Type x, const Type y,
+                            const Type z, const int is) const {
     double Pyy;
     if (useAnisoP) {
       double Bx, By, Bz, Bt2, Ppar, P, Pperp;
@@ -864,34 +863,34 @@ public:
       Pyy = getFluidP(iBlock, x, y, z, is);
     }
     return (QoQi0_S[is] *
-            (Pyy / MoMi0_S[is] +
-             getFluidRhoNum(iBlock, x, y, z, is) * pow(getFluidUy(iBlock, x, y, z, is), 2)));
+            (Pyy / MoMi0_S[is] + getFluidRhoNum(iBlock, x, y, z, is) *
+                                     pow(getFluidUy(iBlock, x, y, z, is), 2)));
   }
-
 
   /** get Pzz from fluid */
   template <typename Type>
-    inline double getPICPzz(const Type x, const Type y, const Type z,
+  inline double getPICPzz(const Type x, const Type y, const Type z,
                           const int is) const {
-    int iBlock = 0; 
-    return getPICPzz(iBlock, x, y, z, is); 
+    int iBlock = 0;
+    return getPICPzz(iBlock, x, y, z, is);
   }
 
   template <typename Type>
-    inline double getPICPzz(const int iBlock, const Type x, const Type y, const Type z,
-                          const int is) const {
+  inline double getPICPzz(const int iBlock, const Type x, const Type y,
+                          const Type z, const int is) const {
     double Pzz;
     int iMHD;
     iMHD = is;
     if (doSplitSpecies)
       iMHD = iSPic2Mhd_I[is];
-    Pzz = getFluidPzz(iBlock, x, y, z, iMHD) * RatioPIC2MHD(iBlock, x, y, z, is);
+    Pzz =
+        getFluidPzz(iBlock, x, y, z, iMHD) * RatioPIC2MHD(iBlock, x, y, z, is);
     return Pzz;
   }
 
   template <typename Type>
-    inline double getFluidPzz(const int iBlock, const Type x, const Type y, const Type z,
-			      const int is) const {
+  inline double getFluidPzz(const int iBlock, const Type x, const Type y,
+                            const Type z, const int is) const {
     double Pzz;
     if (useAnisoP) {
       double Bx, By, Bz, Bt2, Ppar, P, Pperp;
@@ -911,34 +910,34 @@ public:
     }
 
     return (QoQi0_S[is] *
-            (Pzz / MoMi0_S[is] +
-             getFluidRhoNum(iBlock, x, y, z, is) * pow(getFluidUz(iBlock, x, y, z, is), 2)));
+            (Pzz / MoMi0_S[is] + getFluidRhoNum(iBlock, x, y, z, is) *
+                                     pow(getFluidUz(iBlock, x, y, z, is), 2)));
   }
-
 
   /** get Pxy from fluid */
   template <typename Type>
-    inline double getPICPxy(const Type x, const Type y, const Type z,
+  inline double getPICPxy(const Type x, const Type y, const Type z,
                           const int is) const {
-    int iBlock = 0; 
-    return getPICPxy(iBlock, x, y, z, is); 
+    int iBlock = 0;
+    return getPICPxy(iBlock, x, y, z, is);
   }
 
   template <typename Type>
-    inline double getPICPxy(const int iBlock, const Type x, const Type y, const Type z,
-                          const int is) const {
+  inline double getPICPxy(const int iBlock, const Type x, const Type y,
+                          const Type z, const int is) const {
     double Pxy;
     int iMHD;
     iMHD = is;
     if (doSplitSpecies)
       iMHD = iSPic2Mhd_I[is];
-    Pxy = getFluidPxy(iBlock, x, y, z, iMHD) * RatioPIC2MHD(iBlock, x, y, z, is);
+    Pxy =
+        getFluidPxy(iBlock, x, y, z, iMHD) * RatioPIC2MHD(iBlock, x, y, z, is);
     return Pxy;
   }
 
   template <typename Type>
-    inline double getFluidPxy(const int iBlock, const Type x, const Type y, const Type z,
-                            const int is) const {
+  inline double getFluidPxy(const int iBlock, const Type x, const Type y,
+                            const Type z, const int is) const {
     double Pxy;
     if (useAnisoP) {
       double Bx, By, Bz, Bt2, Ppar, P, Pperp;
@@ -957,32 +956,34 @@ public:
       Pxy = 0;
     }
 
-    return (QoQi0_S[is] * (Pxy / MoMi0_S[is] + getFluidRhoNum(iBlock, x, y, z, is) *
-			   getFluidUx(iBlock, x, y, z, is) *
-			   getFluidUy(iBlock, x, y, z, is)));
+    return (QoQi0_S[is] *
+            (Pxy / MoMi0_S[is] + getFluidRhoNum(iBlock, x, y, z, is) *
+                                     getFluidUx(iBlock, x, y, z, is) *
+                                     getFluidUy(iBlock, x, y, z, is)));
   }
 
   /** get Pxz from fluid */
   template <typename Type>
-    inline double getPICPxz(const Type x, const Type y, const Type z,
+  inline double getPICPxz(const Type x, const Type y, const Type z,
                           const int is) const {
-    int iBlock = 0; 
-    return getPICPxz(iBlock, x, y, z, is); 
+    int iBlock = 0;
+    return getPICPxz(iBlock, x, y, z, is);
   }
   template <typename Type>
-    inline double getPICPxz(const int iBlock, const Type x, const Type y, const Type z,
-                          const int is) const {
+  inline double getPICPxz(const int iBlock, const Type x, const Type y,
+                          const Type z, const int is) const {
     double Pxz;
     int iMHD;
     iMHD = is;
     if (doSplitSpecies)
       iMHD = iSPic2Mhd_I[is];
-    Pxz = getFluidPxz(iBlock, x, y, z, iMHD) * RatioPIC2MHD(iBlock, x, y, z, is);
+    Pxz =
+        getFluidPxz(iBlock, x, y, z, iMHD) * RatioPIC2MHD(iBlock, x, y, z, is);
     return Pxz;
   }
   template <typename Type>
-    inline double getFluidPxz(const int iBlock, const Type x, const Type y, const Type z,
-                            const int is) const {
+  inline double getFluidPxz(const int iBlock, const Type x, const Type y,
+                            const Type z, const int is) const {
     double Pxz;
     if (useAnisoP) {
       double Bx, By, Bz, Bt2, Ppar, P, Pperp;
@@ -1001,33 +1002,35 @@ public:
       Pxz = 0;
     }
 
-    return (QoQi0_S[is] * (Pxz / MoMi0_S[is] + getFluidRhoNum(iBlock, x, y, z, is) *
-			   getFluidUx(iBlock, x, y, z, is) *
-			   getFluidUz(iBlock, x, y, z, is)));
+    return (QoQi0_S[is] *
+            (Pxz / MoMi0_S[is] + getFluidRhoNum(iBlock, x, y, z, is) *
+                                     getFluidUx(iBlock, x, y, z, is) *
+                                     getFluidUz(iBlock, x, y, z, is)));
   }
 
   /** get Pyz from fluid */
   template <typename Type>
-    inline double getPICPyz(const Type x, const Type y, const Type z,
+  inline double getPICPyz(const Type x, const Type y, const Type z,
                           const int is) const {
-    int iBlock = 0; 
-    return getPICPyz(iBlock, x, y, z, is); 
+    int iBlock = 0;
+    return getPICPyz(iBlock, x, y, z, is);
   }
 
   template <typename Type>
-    inline double getPICPyz(const int iBlock, const Type x, const Type y, const Type z,
-                          const int is) const {
+  inline double getPICPyz(const int iBlock, const Type x, const Type y,
+                          const Type z, const int is) const {
     double Pyz;
     int iMHD;
     iMHD = is;
     if (doSplitSpecies)
       iMHD = iSPic2Mhd_I[is];
-    Pyz = getFluidPyz(iBlock, x, y, z, iMHD) * RatioPIC2MHD(iBlock, x, y, z, is);
+    Pyz =
+        getFluidPyz(iBlock, x, y, z, iMHD) * RatioPIC2MHD(iBlock, x, y, z, is);
     return Pyz;
   }
   template <typename Type>
-    inline double getFluidPyz(const int iBlock, const Type x, const Type y, const Type z,
-                            const int is) const {
+  inline double getFluidPyz(const int iBlock, const Type x, const Type y,
+                            const Type z, const int is) const {
     double Pyz;
     if (useAnisoP) {
       double Bx, By, Bz, Bt2, Ppar, P, Pperp;
@@ -1046,22 +1049,23 @@ public:
       Pyz = 0;
     }
 
-    return (QoQi0_S[is] * (Pyz / MoMi0_S[is] + getFluidRhoNum(iBlock, x, y, z, is) *
-			   getFluidUy(iBlock, x, y, z, is) *
-			   getFluidUz(iBlock, x, y, z, is)));
+    return (QoQi0_S[is] *
+            (Pyz / MoMi0_S[is] + getFluidRhoNum(iBlock, x, y, z, is) *
+                                     getFluidUy(iBlock, x, y, z, is) *
+                                     getFluidUz(iBlock, x, y, z, is)));
   }
 
   /** get Jx from fluid */
   template <typename Type>
-    inline double getPICJx(const Type x, const Type y, const Type z,
+  inline double getPICJx(const Type x, const Type y, const Type z,
                          const int is) const {
-    int iBlock = 0; 
-    return getPICJx(iBlock, x, y, z, is); 
+    int iBlock = 0;
+    return getPICJx(iBlock, x, y, z, is);
   }
 
   template <typename Type>
-    inline double getPICJx(const int iBlock, const Type x, const Type y, const Type z,
-                         const int is) const {
+  inline double getPICJx(const int iBlock, const Type x, const Type y,
+                         const Type z, const int is) const {
     double Jx;
     int iMHD;
     iMHD = is;
@@ -1072,23 +1076,23 @@ public:
   }
 
   template <typename Type>
-    inline double getFluidJx(const int iBlock, const Type x, const Type y, const Type z,
-                           const int is) const {
+  inline double getFluidJx(const int iBlock, const Type x, const Type y,
+                           const Type z, const int is) const {
     return (QoQi0_S[is] * getFluidU(iBlock, x, y, z, is, iUx_I, iJx) *
             getFluidRhoNum(iBlock, x, y, z, is));
   }
 
   /** get Jy from fluid */
   template <typename Type>
-    inline double getPICJy(const Type x, const Type y, const Type z,
+  inline double getPICJy(const Type x, const Type y, const Type z,
                          const int is) const {
-    int iBlock = 0; 
-    return getPICJy(iBlock, x, y, z, is); 
+    int iBlock = 0;
+    return getPICJy(iBlock, x, y, z, is);
   }
 
   template <typename Type>
-    inline double getPICJy(const int iBlock, const Type x, const Type y, const Type z,
-                         const int is) const {
+  inline double getPICJy(const int iBlock, const Type x, const Type y,
+                         const Type z, const int is) const {
     double Jy;
     int iMHD;
     iMHD = is;
@@ -1098,22 +1102,22 @@ public:
     return Jy;
   }
   template <typename Type>
-    inline double getFluidJy(const int iBlock, const Type x, const Type y, const Type z,
-                           const int is) const {
+  inline double getFluidJy(const int iBlock, const Type x, const Type y,
+                           const Type z, const int is) const {
     return (QoQi0_S[is] * getFluidU(iBlock, x, y, z, is, iUy_I, iJy) *
             getFluidRhoNum(iBlock, x, y, z, is));
   }
 
   /** get Jz from fluid */
   template <typename Type>
-    inline double getPICJz(const Type x, const Type y, const Type z,
+  inline double getPICJz(const Type x, const Type y, const Type z,
                          const int is) const {
-    int iBlock = 0; 
-    return getPICJz(iBlock, x, y, z, is); 
+    int iBlock = 0;
+    return getPICJz(iBlock, x, y, z, is);
   }
   template <typename Type>
-    inline double getPICJz(const int iBlock, const Type x, const Type y, const Type z,
-                         const int is) const {
+  inline double getPICJz(const int iBlock, const Type x, const Type y,
+                         const Type z, const int is) const {
     double Jz;
     int iMHD;
     iMHD = is;
@@ -1123,22 +1127,22 @@ public:
     return Jz;
   }
   template <typename Type>
-    inline double getFluidJz(const int iBlock, const Type x, const Type y, const Type z,
-                           const int is) const {
+  inline double getFluidJz(const int iBlock, const Type x, const Type y,
+                           const Type z, const int is) const {
     return (QoQi0_S[is] * getFluidU(iBlock, x, y, z, is, iUz_I, iJz) *
             getFluidRhoNum(iBlock, x, y, z, is));
   }
 
   /** get bulk velocity Ux from fluid */
   template <typename Type>
-    inline double getPICUx(const Type x, const Type y, const Type z,
+  inline double getPICUx(const Type x, const Type y, const Type z,
                          const int is) const {
-    int iBlock = 0; 
-    return getPICUx(iBlock, x, y, z, is); 
+    int iBlock = 0;
+    return getPICUx(iBlock, x, y, z, is);
   }
   template <typename Type>
-    inline double getPICUx(const int iBlock, const Type x, const Type y, const Type z,
-                         const int is) const {
+  inline double getPICUx(const int iBlock, const Type x, const Type y,
+                         const Type z, const int is) const {
     double Ux;
     int iMHD;
     iMHD = is;
@@ -1148,22 +1152,22 @@ public:
     return Ux;
   }
   template <typename Type>
-    inline double getFluidUx(const int iBlock, const Type x, const Type y, const Type z,
-                           const int is) const {
+  inline double getFluidUx(const int iBlock, const Type x, const Type y,
+                           const Type z, const int is) const {
     return (getFluidU(iBlock, x, y, z, is, iUx_I, iJx));
   }
 
   /** get bulk velocity Uy from fluid */
   template <typename Type>
-    inline double getPICUy(const Type x, const Type y, const Type z,
+  inline double getPICUy(const Type x, const Type y, const Type z,
                          const int is) const {
-    int iBlock = 0; 
-    return getPICUy(iBlock, x, y, z, is); 
+    int iBlock = 0;
+    return getPICUy(iBlock, x, y, z, is);
   }
 
   template <typename Type>
-    inline double getPICUy(const int iBlock, const Type x, const Type y, const Type z,
-                         const int is) const {
+  inline double getPICUy(const int iBlock, const Type x, const Type y,
+                         const Type z, const int is) const {
     double Uy;
     int iMHD;
     iMHD = is;
@@ -1173,22 +1177,22 @@ public:
     return Uy;
   }
   template <typename Type>
-    inline double getFluidUy(const int iBlock, const Type x, const Type y, const Type z,
-                           const int is) const {
+  inline double getFluidUy(const int iBlock, const Type x, const Type y,
+                           const Type z, const int is) const {
     return (getFluidU(iBlock, x, y, z, is, iUy_I, iJy));
   }
 
   /** get bulk velocity Uz from fluid */
   template <typename Type>
-    inline double getPICUz(const Type x, const Type y, const Type z,
+  inline double getPICUz(const Type x, const Type y, const Type z,
                          const int is) const {
-    int iBlock = 0; 
-    return getPICUz(iBlock, x, y, z, is); 
+    int iBlock = 0;
+    return getPICUz(iBlock, x, y, z, is);
   }
 
   template <typename Type>
-    inline double getPICUz(const int iBlock, const Type x, const Type y, const Type z,
-                         const int is) const {
+  inline double getPICUz(const int iBlock, const Type x, const Type y,
+                         const Type z, const int is) const {
     double Uz;
     int iMHD;
     iMHD = is;
@@ -1198,15 +1202,16 @@ public:
     return Uz;
   }
   template <typename Type>
-    inline double getFluidUz(const int iBlock, const Type x, const Type y, const Type z,
-                           const int is) const {
+  inline double getFluidUz(const int iBlock, const Type x, const Type y,
+                           const Type z, const int is) const {
     return (getFluidU(iBlock, x, y, z, is, iUz_I, iJz));
   }
 
   /** get bulk velocity U in x, y or z from fluid */
   template <typename Type>
-    inline double getFluidU(const int iBlock, const Type x, const Type y, const Type z,
-                          const int is, const int *iU_I, const int iJ) const {
+  inline double getFluidU(const int iBlock, const Type x, const Type y,
+                          const Type z, const int is, const int *iU_I,
+                          const int iJ) const {
     // if(doSplitSpecies && !do_deposit_particle(is, x, y, z)) return 0;
     // Assume qe = -qi;
     double U, Rho, J, Rhoit, Qit, Rhot;
@@ -1271,14 +1276,14 @@ public:
 
   /** get thermal velocity at location x, y, z for fluid is */
   template <typename Type>
-    inline double getPICUth(const Type x, const Type y, const Type z,
+  inline double getPICUth(const Type x, const Type y, const Type z,
                           const int is) const {
-    int iBlock = 0; 
-    return getPICUth(iBlock, x, y, z, is); 
+    int iBlock = 0;
+    return getPICUth(iBlock, x, y, z, is);
   }
   template <typename Type>
-    inline double getPICUth(const int iBlock, const Type x, const Type y, const Type z,
-                          const int is) const {
+  inline double getPICUth(const int iBlock, const Type x, const Type y,
+                          const Type z, const int is) const {
     double Uth;
     int iMHD;
     iMHD = is;
@@ -1288,8 +1293,8 @@ public:
     return Uth;
   }
   template <typename Type>
-    inline double getFluidUth(const int iBlock, const Type x, const Type y, const Type z,
-                            const int is) const {
+  inline double getFluidUth(const int iBlock, const Type x, const Type y,
+                            const Type z, const int is) const {
     // if(doSplitSpecies && !do_deposit_particle(is, x, y, z)) return 0;
     double Uth = 0, p, ni;
 
@@ -1300,34 +1305,31 @@ public:
     return (Uth);
   }
 
-
   template <typename Type>
-    inline void setPICIsoUth(const int iBlock, const Type x, const Type y, const Type z,
-                             double *u, double *v, double *w,
-                             const double rand1, const double rand2,
-                             const double rand3, const double rand4,
-                             const int is) const {
-    
-    setFluidIsoUth(iBlock, x, y, z, u, v, w, rand1, rand2, rand3, rand4, is);
-  }
+  inline void setPICIsoUth(const int iBlock, const Type x, const Type y,
+                           const Type z, double *u, double *v, double *w,
+                           const double rand1, const double rand2,
+                           const double rand3, const double rand4,
+                           const int is) const {
 
-
-  template <typename Type>
-  inline void setPICIsoUth(const Type x, const Type y, const Type z,
-                             double *u, double *v, double *w,
-                             const double rand1, const double rand2,
-                             const double rand3, const double rand4,
-                             const int is) const {
-    const int iBlock = 0; 
     setFluidIsoUth(iBlock, x, y, z, u, v, w, rand1, rand2, rand3, rand4, is);
   }
 
   template <typename Type>
-    inline void setFluidIsoUth(const int iBlock, const Type x, const Type y, const Type z,
-                               double *u, double *v, double *w,
-                               const double rand1, const double rand2,
-                               const double rand3, const double rand4,
-                               const int is) const {
+  inline void setPICIsoUth(const Type x, const Type y, const Type z, double *u,
+                           double *v, double *w, const double rand1,
+                           const double rand2, const double rand3,
+                           const double rand4, const int is) const {
+    const int iBlock = 0;
+    setFluidIsoUth(iBlock, x, y, z, u, v, w, rand1, rand2, rand3, rand4, is);
+  }
+
+  template <typename Type>
+  inline void setFluidIsoUth(const int iBlock, const Type x, const Type y,
+                             const Type z, double *u, double *v, double *w,
+                             const double rand1, const double rand2,
+                             const double rand3, const double rand4,
+                             const int is) const {
     double harvest, prob, theta, Uth;
 
     // u = X velocity
@@ -1346,14 +1348,12 @@ public:
     harvest = rand4;
     theta = 2.0 * M_PI * harvest;
     (*w) = Uth * prob * cos(theta);
-
-
   }
 
   /** set thermal velocity in magnetic cordinates for a given position */
   template <typename Type>
-    inline void setPICAnisoUth(const int iBlock, const Type x, const Type y, const Type z,
-                             double *u, double *v, double *w,
+  inline void setPICAnisoUth(const int iBlock, const Type x, const Type y,
+                             const Type z, double *u, double *v, double *w,
                              const double rand1, const double rand2,
                              const double rand3, const double rand4,
                              const int is) const {
@@ -1366,14 +1366,13 @@ public:
                              const double rand1, const double rand2,
                              const double rand3, const double rand4,
                              const int is) const {
-    const int iBlock = 0; 
+    const int iBlock = 0;
     setFluidAnisoUth(iBlock, x, y, z, u, v, w, rand1, rand2, rand3, rand4, is);
   }
 
-
   template <typename Type>
-    inline void setFluidAnisoUth(const int iBlock, const Type x, const Type y, const Type z,
-                               double *u, double *v, double *w,
+  inline void setFluidAnisoUth(const int iBlock, const Type x, const Type y,
+                               const Type z, double *u, double *v, double *w,
                                const double rand1, const double rand2,
                                const double rand3, const double rand4,
                                const int is) const {
@@ -1384,8 +1383,8 @@ public:
     int Norm_, Perp1_, Perp2_, X_, Y_, Z_;
 
     if (useMultiFluid || useMultiSpecies || doSplitSpecies) {
-      cout << " setFluidanisoUth has not implemented for "
-              "multifluid/multispecies/doSplitSpecies!!!" << endl;
+      std::cout << " setFluidanisoUth has not implemented for "
+              "multifluid/multispecies/doSplitSpecies!!!" << std::endl;
       abort();
     }
 
@@ -1408,7 +1407,7 @@ public:
     Pperp = 0.5 * (3.0 * P - Ppar);
 
     // Get 3 vertors spaning the vector space
-    norm_DD.init(2, 3, 3);
+    norm_DD.init(3, 3);
     MagneticBaseVectors(Bx, By, Bz, norm_DD);
 
     // Get the thermal verlocities
@@ -1433,14 +1432,14 @@ public:
 
   /** get total pressure for species from fluid */
   template <typename Type>
-    inline double getPICP(const Type x, const Type y, const Type z,
+  inline double getPICP(const Type x, const Type y, const Type z,
                         const int is) const {
-    int iBlock = 0; 
-    return getPICP(iBlock, x, y, z, is); 
+    int iBlock = 0;
+    return getPICP(iBlock, x, y, z, is);
   }
   template <typename Type>
-    inline double getPICP(const int iBlock, const Type x, const Type y, const Type z,
-                        const int is) const {
+  inline double getPICP(const int iBlock, const Type x, const Type y,
+                        const Type z, const int is) const {
     double P;
     int iMHD;
     iMHD = is;
@@ -1450,8 +1449,8 @@ public:
     return P;
   }
   template <typename Type>
-    inline double getFluidP(const int iBlock, const Type x, const Type y, const Type z,
-                          const int is) const {
+  inline double getFluidP(const int iBlock, const Type x, const Type y,
+                          const Type z, const int is) const {
     // if(doSplitSpecies && !do_deposit_particle(is, x, y, z)) return 0;
     double P;
 
@@ -1493,31 +1492,32 @@ public:
 
   /** get parallel thermal presure for species from a fluid*/
   template <typename Type>
-    inline double getPICPpar(const Type x, const Type y, const Type z,
+  inline double getPICPpar(const Type x, const Type y, const Type z,
                            const int is) const {
-    int iBlock = 0; 
-    return getPICPpar(iBlock, x, y, z, is); 
+    int iBlock = 0;
+    return getPICPpar(iBlock, x, y, z, is);
   }
   template <typename Type>
-    inline double getPICPpar(const int iBlock, const Type x, const Type y, const Type z,
-                           const int is) const {
+  inline double getPICPpar(const int iBlock, const Type x, const Type y,
+                           const Type z, const int is) const {
     double Ppar;
     int iMHD;
     iMHD = is;
     if (doSplitSpecies)
       iMHD = iSPic2Mhd_I[is];
-    Ppar = getFluidPpar(iBlock, x, y, z, iMHD) * RatioPIC2MHD(iBlock, x, y, z, is);
+    Ppar =
+        getFluidPpar(iBlock, x, y, z, iMHD) * RatioPIC2MHD(iBlock, x, y, z, is);
     return Ppar;
   }
   template <typename Type>
-    inline double getFluidPpar(const int iBlock, const Type x, const Type y, const Type z,
-                             const int is) const {
+  inline double getFluidPpar(const int iBlock, const Type x, const Type y,
+                             const Type z, const int is) const {
     // if(doSplitSpecies && !do_deposit_particle(is, x, y, z)) return 0;
     // Need to check whether this function works correctly! -- Yuxi
     double P;
     if (useMultiSpecies || useMultiFluid || doSplitSpecies) {
-      cout << " getFluidPpar has not implemented for "
-              "multifluid/multispecies/doSplitSpecies!!" << endl;
+      std::cout << " getFluidPpar has not implemented for "
+              "multifluid/multispecies/doSplitSpecies!!" << std::endl;
       abort();
     }
 
@@ -1539,30 +1539,30 @@ public:
     return (P);
   }
 
-
   /** this should return NUMBER DENSITY from fluid */
   template <typename Type>
-    inline double getPICRhoNum(const Type x, const Type y, const Type z,
+  inline double getPICRhoNum(const Type x, const Type y, const Type z,
                              const int is) const {
-    int iBlock = 0; 
-    return getPICRhoNum(iBlock, x, y, z, is); 
+    int iBlock = 0;
+    return getPICRhoNum(iBlock, x, y, z, is);
   }
   template <typename Type>
-    inline double getPICRhoNum(const int iBlock, const Type x, const Type y, const Type z,
-                             const int is) const {
+  inline double getPICRhoNum(const int iBlock, const Type x, const Type y,
+                             const Type z, const int is) const {
     double RhoNum;
     int iMHD;
     iMHD = is;
     if (doSplitSpecies)
       iMHD = iSPic2Mhd_I[is];
-    RhoNum = getFluidRhoNum(iBlock, x, y, z, iMHD) * RatioPIC2MHD(iBlock, x, y, z, is);
+    RhoNum = getFluidRhoNum(iBlock, x, y, z, iMHD) *
+             RatioPIC2MHD(iBlock, x, y, z, is);
 
     return RhoNum;
   }
 
   template <typename Type>
-    inline double getFluidRhoNum(const int iBlock, const Type x, const Type y, const Type z,
-                               const int is) const {
+  inline double getFluidRhoNum(const int iBlock, const Type x, const Type y,
+                               const Type z, const int is) const {
     double Rho, NumDens;
 
     // if(doSplitSpecies && !do_deposit_particle(is, x, y, z)) return 0;
@@ -1591,74 +1591,72 @@ public:
     return (NumDens);
   }
 
-
   template <typename Type>
-    inline double getBx(const int iBlock, const Type x, const Type y, const Type z
-			) const {
-    double Bx; 
-    getInterpolatedValue(iBlock, x, y, z, &Bx, iBx); 
-    return Bx; 
+  inline double getBx(const int iBlock, const Type x, const Type y,
+                      const Type z) const {
+    double Bx;
+    getInterpolatedValue(iBlock, x, y, z, &Bx, iBx);
+    return Bx;
   }
 
   template <typename Type>
-    inline double getBy(const int iBlock, const Type x, const Type y, const Type z
-			) const {
-    double By; 
-    getInterpolatedValue(iBlock, x, y, z, &By, iBy); 
-    return By; 
+  inline double getBy(const int iBlock, const Type x, const Type y,
+                      const Type z) const {
+    double By;
+    getInterpolatedValue(iBlock, x, y, z, &By, iBy);
+    return By;
   }
 
   template <typename Type>
-    inline double getBz(const int iBlock, const Type x, const Type y, const Type z
-			) const {
-    double Bz; 
-    getInterpolatedValue(iBlock, x, y, z, &Bz, iBz); 
-    return Bz; 
+  inline double getBz(const int iBlock, const Type x, const Type y,
+                      const Type z) const {
+    double Bz;
+    getInterpolatedValue(iBlock, x, y, z, &Bz, iBz);
+    return Bz;
   }
 
   template <typename Type>
-    inline double getEx(const int iBlock, const Type x, const Type y, const Type z
-			) const {
-    double Ex; 
-    if(useElectronFluid){
-      getInterpolatedValue(iBlock, x, y, z, &Ex, iEx); 
-    }else{
+  inline double getEx(const int iBlock, const Type x, const Type y,
+                      const Type z) const {
+    double Ex;
+    if (useElectronFluid) {
+      getInterpolatedValue(iBlock, x, y, z, &Ex, iEx);
+    } else {
       Ex = (getFluidUz(iBlock, x, y, z, 0) * getBy(iBlock, x, y, z) -
-	    getFluidUy(iBlock, x, y, z, 0) * getBz(iBlock, x, y, z));
+            getFluidUy(iBlock, x, y, z, 0) * getBz(iBlock, x, y, z));
     }
-    return Ex; 
+    return Ex;
   }
 
   template <typename Type>
-    inline double getEy(const int iBlock, const Type x, const Type y, const Type z
-			) const {
-    double Ey; 
-    if(useElectronFluid){
-      getInterpolatedValue(iBlock, x, y, z, &Ey, iEy); 
-    }else{
+  inline double getEy(const int iBlock, const Type x, const Type y,
+                      const Type z) const {
+    double Ey;
+    if (useElectronFluid) {
+      getInterpolatedValue(iBlock, x, y, z, &Ey, iEy);
+    } else {
       Ey = (getFluidUx(iBlock, x, y, z, 0) * getBz(iBlock, x, y, z) -
-	    getFluidUz(iBlock, x, y, z, 0) * getBx(iBlock, x, y, z));
-
+            getFluidUz(iBlock, x, y, z, 0) * getBx(iBlock, x, y, z));
     }
-    return Ey; 
+    return Ey;
   }
 
   template <typename Type>
-    inline double getEz(const int iBlock, const Type x, const Type y, const Type z
-			) const {
-    double Ez; 
-    if(useElectronFluid){
-      getInterpolatedValue(iBlock, x, y, z, &Ez, iEz); 
-    }else{
+  inline double getEz(const int iBlock, const Type x, const Type y,
+                      const Type z) const {
+    double Ez;
+    if (useElectronFluid) {
+      getInterpolatedValue(iBlock, x, y, z, &Ez, iEz);
+    } else {
       Ez = (getFluidUy(iBlock, x, y, z, 0) * getBx(iBlock, x, y, z) -
-	    getFluidUx(iBlock, x, y, z, 0) * getBy(iBlock, x, y, z));	   
+            getFluidUx(iBlock, x, y, z, 0) * getBy(iBlock, x, y, z));
     }
-    return Ez; 
+    return Ez;
   }
 
   template <typename Type>
-    inline double RatioPIC2MHD(const int iBlock, const Type x, const Type y, const Type z,
-                             const int is) const {
+  inline double RatioPIC2MHD(const int iBlock, const Type x, const Type y,
+                             const Type z, const int is) const {
     double Ratio;
     if (doSplitSpecies) {
       int iMHD;
@@ -1705,15 +1703,13 @@ public:
 }; // End of class FluidPicInterface declaration.
 //----------------------------------------------------------------------
 
-
 double weightedValue(double ****V, const int ix, const int iy, const int iz,
-		     const int is, const double w000, const double w001,
-		     const double w010, const double w011, const double w100,
-		     const double w101, const double w110,
-		     const double w111);
+                     const int is, const double w000, const double w001,
+                     const double w010, const double w011, const double w100,
+                     const double w101, const double w110, const double w111);
 
 double weightedValue(double ***V, const int ix, const int iy, const int iz,
-		     const double w000, const double w001, const double w010,
-		     const double w011, const double w100, const double w101,
-		     const double w110, const double w111);
+                     const double w000, const double w001, const double w010,
+                     const double w011, const double w100, const double w101,
+                     const double w110, const double w111);
 #endif
