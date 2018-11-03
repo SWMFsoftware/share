@@ -9,13 +9,14 @@ module ModExactRS
   use ModUtilities, ONLY: CON_stop
 
   implicit none
-  real,private::GammaHere=1.6666666666666666
-  real        ::PStar,UnStar !pressure and velocity in the Star Region
-  real        ::RhoL, UnL, PL, RhoR, UnR, PR !Rho,Un,P: (L)eft and (R)ight
-  real,private::CL,CR       !Sound speeds
-  real::WL,WR       !Total perturbation speed 
+  real,private:: GammaHere=1.6666666666666666
+  real        :: PStar,UnStar !pressure and velocity in the Star Region
+  real        :: RhoL, UnL, PL, RhoR, UnR, PR !Rho,Un,P: (L)eft and (R)ight
+  real,private:: CL,CR       !Sound speeds
+  real:: WL,WR       !Total perturbation speed 
                             !(advection+speed of sound for weak wave)
                             !Shock wave speed for a shock.
+  !$omp threadprivate( GammaHere )
   !$omp threadprivate( PStar,UnStar,RhoL,UnL,PL,RhoR,UnR,PR,CL,CR,WL,WR )
 contains
   !========================================================================!
@@ -24,7 +25,7 @@ contains
     !Should be applied only if: 
     !FIRST, Gamma=const, and, 
     !SECOND, Gamma=const /= (5/3)
-    GammaHere=GammaIn
+    GammaHere = GammaIn
   end subroutine exact_rs_set_gamma
   !========================================================================!
   subroutine  exact_rs_pu_star(GammaLIn,GammaRIn)
@@ -65,20 +66,20 @@ contains
     real::Change,UVac,GammaL,GammaR
     real,parameter::cSafetyFactor=0.999 !Limits the speed of expansion
     if(present(GammaLIn))then
-       GammaL=GammaLIn
+       GammaL = GammaLIn
     else
-       GammaL=GammaHere
+       GammaL = GammaHere
     end if
-    CL=sqrt(GammaL*PL/RhoL)
+    CL = sqrt(GammaL*PL/RhoL)
     
     if(present(GammaRIn))then
-       GammaR=GammaRIn
+       GammaR = GammaRIn
     else
-       GammaR=GammaHere
+       GammaR = GammaHere
     end if
-    CR=sqrt(GammaR*PR/RhoR)
+    CR = sqrt(GammaR*PR/RhoR)
 
-    UVac=2.0*(CL/(GammaL-1.0)+CR/(GammaR-1.0))
+    UVac = 2.0*(CL/(GammaL-1.0)+CR/(GammaR-1.0))
 
     UDiff = UnR - UnL
 
@@ -90,22 +91,21 @@ contains
     !
     call guess_p(POld)
 
-    !Initialize loop:
-    Change=ChangeStart; iIter=0
-    do while(Change > TolP.and.iIter<nIterMax)
+    ! Initialize loop:
+    Change = ChangeStart; iIter = 0
+    do while(Change > TolP .and. iIter < nIterMax)
 
        call pressure_function(FL, FLD, POLD, RhoL, PL, CL,WL, GammaLIn)
        call pressure_function(FR, FRD, POLD, RhoR, PR, CR,WR, GammaRIn)
-       PStar      = POld - (FL + FR + UDiff)/(FLD + FRD)
-       Change= 2.0*abs((PStar - POld)/(PStar + POld))
-       POLD  = PStar; iIter=iIter+1
+       PStar  = POld - (FL + FR + UDiff)/(FLD + FRD)
+       Change = 2.0*abs((PStar - POld)/(PStar + POld))
+       POLD   = PStar; iIter=iIter+1
     end do
 
-    !     Compute velocity in Star Region
-
+    ! Compute velocity in Star Region
     UnStar = 0.50*(UnL + UnR + FR - FL)
-    WR= UnR + WR
-    WL= UnL - WL
+    WR = UnR + WR
+    WL = UnL - WL
   contains
     !====================================================!
     subroutine pressure_function(F,FD,P,RhoK,PK,CK,WK,GammaIn)
@@ -114,12 +114,12 @@ contains
       !              FL and FR in exact Riemann solver
       !              and their first derivatives 
       !
-      real,intent(in)::P,RhoK,PK,CK
-      real,intent(out)::F,FD,WK
-      real,optional,intent(in)::GammaIn
-      real::Gamma
+      real,intent(in):: P,RhoK,PK,CK
+      real,intent(out):: F,FD,WK
+      real,optional,intent(in):: GammaIn
+      real:: Gamma
       !Misc:
-      REAL::    BK, PRatio,PRatioPowG1, QRT
+      REAL:: BK, PRatio,PRatioPowG1, QRT
       !-------------------------------------------!
       if(present(GammaIn))then
          Gamma=GammaIn
