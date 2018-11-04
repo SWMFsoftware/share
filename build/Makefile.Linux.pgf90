@@ -123,11 +123,15 @@ Cflag4  = ${CFLAG} ${PRECISION} ${OPT4}
 CFLAGS = ${CFLAG} -Msave
 
 #
-# The linker flags. Lflag1 is for parallel code with the (NO)MPI library.
-# Lflag2 is for non-parallel code. Put here extra flags for the linking phase.
+# The linker flags. LflagMpi is for parallel code with the (NO)MPI library.
+# Lflag is for non-parallel code. Put here extra flags for the linking phase.
 #
-Lflag1  = ${PRECISION} ${MPILIB} ${CPPLIB} ${DEBUG}
-Lflag2  = ${PRECISION} ${DEBUG}
+Lflag    = ${PRECISION} ${OPENMPFLAG} ${CPPLIB} ${DEBUG}
+LflagMpi = ${Lflag} ${MPILIB}
+
+# For backward compatibility
+Lflag1 = ${LflagMpi}
+Lflag2 = ${Lflag}
 
 #
 # BLAS and LAPACK libraries
