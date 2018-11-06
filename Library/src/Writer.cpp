@@ -44,7 +44,7 @@ void Writer::init() {
       ss << subString;
       ss >> plotMin_D[idx];
       plotMin_D[idx] = plotMin_D[idx] * No2NoL - axisOrigin_D[idx];
-      plotMax_D[idx] = plotMin_D[idx]+1e-10;
+      plotMax_D[idx] = plotMin_D[idx] + 1e-10;
     }
 
     for (int iDim = 0; iDim < nDimMax; ++iDim) {
@@ -601,16 +601,17 @@ void Writer::write_field(double const timeNow, int const iCycle,
      << std::setfill('0') << std::setw(nLength) << rank << ".idl";
   filename = namePrefix + ss.str();
 
+  std::ofstream outFile;
   if (doSaveBinary) {
-
-    FILE* outFile;
+    outFile.open(filename.c_str(),
+                 std::fstream::out | std::fstream::trunc |
+                     std::fstream::binary); // Write binary file.
     int nRecord, nSizeDouble, nSizeInt;
     nSizeInt = sizeof(int);
     assert(nSizeInt == 4);
     nSizeDouble = sizeof(double);
     // nVar + dx. nVar already includes X/Y/Z.
     nRecord = (nVar + 1) * nSizeDouble;
-    outFile = fopen(filename.c_str(), "wb");
 
     double data0;
     for (long iPoint = 0; iPoint < nPoint; ++iPoint) {
@@ -618,20 +619,19 @@ void Writer::write_field(double const timeNow, int const iCycle,
       // use PostIDL.f90, we should follow the format of Fortran
       // binary output. Each line is a record. Before and after
       // each record, use 4 byte (nSizeInt)  to save the length of this record.
-      fwrite(&nRecord, nSizeInt, 1, outFile);
+      outFile.write(reinterpret_cast<char*>(&nRecord), nSizeInt);
+
       data0 = dx_D[x_] * No2OutL;
-      fwrite(&data0, nSizeDouble, 1, outFile);
+      outFile.write(reinterpret_cast<char*>(&data0), nSizeDouble);
       for (int iVar = 0; iVar < nVar; ++iVar) {
         data0 = value_II(iPoint, iVar) * No2Out_I[iVar];
-        fwrite(&data0, nSizeDouble, 1, outFile);
+        outFile.write(reinterpret_cast<char*>(&data0), nSizeDouble);
       }
-      fwrite(&nRecord, nSizeInt, 1, outFile);
+      outFile.write(reinterpret_cast<char*>(&nRecord), nSizeInt);
     }
 
-    fclose(outFile);
   } else {
 
-    std::ofstream outFile;
     outFile.open(filename.c_str(), std::fstream::out | std::fstream::trunc);
     outFile << std::scientific;
     outFile.precision(7);
@@ -643,9 +643,10 @@ void Writer::write_field(double const timeNow, int const iCycle,
       outFile << "\n";
     }
 
-    if (outFile.is_open())
-      outFile.close();
   } // doSaveBinary:else
+
+  if (outFile.is_open())
+    outFile.close();
 }
 
 int Writer::second_to_clock_time(int second) {
