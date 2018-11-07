@@ -6,6 +6,8 @@ COMPILE.c     = icc
 COMPILE.mpicc = mpicc
 COMPILE.mpicxx= mpicxx
 
+LINK.cpp = ${COMPILE.c} -lstdc++
+
 CPPLIB = -lstdc++ -lmpi_cxx
 
 #DEBUGC =  -g -traceback -ftrapuv -debug all

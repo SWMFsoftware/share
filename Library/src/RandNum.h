@@ -8,16 +8,17 @@
 #define IR 2836
 #define MASK 123459876
 
-class RandNum{
- private:
-  long idum; 
- public:
-  RandNum(){idum=1;}
-  ~RandNum(){}
-  void set_seed(long in){idum = in;}
+class RandNum {
+private:
+  long idum;
+
+public:
+  RandNum() { idum = 1; }
+  ~RandNum() {}
+  void set_seed(long in) { idum = in; }
 
   // Overloaded the () operator. Then argument list is empty
-  double operator()(){
+  double operator()() {
 
     // "minimal" random number generator of Park and Miller. Taken from
     // "numerical recipes in C"
@@ -36,9 +37,8 @@ class RandNum{
       idum += IM;
     ans = AM * idum;
     idum ^= MASK;
-    return ans;   
+    return ans;
   }
-
 };
 
 // cleaning

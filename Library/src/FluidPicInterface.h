@@ -414,7 +414,8 @@ public:
     SItime += INdt;
     if (myrank == 0) {
       std::cout << "SItime = " << SItime << " dt (s) = " << INdt
-           << " , normalized dt = " << INdt *(Si2NoL / Si2NoV) << std::endl;
+                << " , normalized dt = " << INdt *(Si2NoL / Si2NoV)
+                << std::endl;
     }
   }
 
@@ -1384,7 +1385,7 @@ public:
 
     if (useMultiFluid || useMultiSpecies || doSplitSpecies) {
       std::cout << " setFluidanisoUth has not implemented for "
-              "multifluid/multispecies/doSplitSpecies!!!" << std::endl;
+                   "multifluid/multispecies/doSplitSpecies!!!" << std::endl;
       abort();
     }
 
@@ -1517,7 +1518,7 @@ public:
     double P;
     if (useMultiSpecies || useMultiFluid || doSplitSpecies) {
       std::cout << " getFluidPpar has not implemented for "
-              "multifluid/multispecies/doSplitSpecies!!" << std::endl;
+                   "multifluid/multispecies/doSplitSpecies!!" << std::endl;
       abort();
     }
 

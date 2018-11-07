@@ -1,6 +1,6 @@
 /*
 
-The c/c++ interface for the timing functions that are defined 
+The c/c++ interface for the timing functions that are defined
 in In SWMF/util/TIMING/src/timing.f90
 
  */

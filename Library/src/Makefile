@@ -36,6 +36,7 @@ OBJECTS = \
 	linear_solver_wrapper_c.o\
 	FluidPicInterface.o\
 	Writer.o\
+	PlotFileIO.o\
 	ModLookupTable.o\
 	ModMpiInterfaces.o\
 	ModMpi.o\
@@ -91,6 +92,12 @@ ${BINDIR}/PostIDL.exe: PostIDL.o ${MY_LIB}
 
 PIDL: DEPEND
 	make ${BINDIR}/PostIDL.exe
+
+${BINDIR}/Convert2Tec.exe: FormatConverter.o ${MY_LIB}
+	${LINK.cpp} -o ${BINDIR}/Convert2Tec.exe FormatConverter.o PlotFileIO.o
+
+2TEC: DEPEND
+	make ${BINDIR}/Convert2Tec.exe
 
 clean: cleanfiles
 

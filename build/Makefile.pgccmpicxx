@@ -6,6 +6,8 @@ COMPILE.c     = pgcc
 COMPILE.mpicc = mpicc
 COMPILE.mpicxx= mpicxx
 
+LINK.cpp = ${COMPILE.c} -lstdc++
+
 CPPLIB = -lstdc++ -lmpi++
 
 #DEBUGC = -g

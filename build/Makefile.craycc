@@ -8,6 +8,8 @@ COMPILE.c     = cc
 COMPILE.mpicc = CC
 COMPILE.mpicxx= CC
 
+LINK.cpp = CC
+
 CPPLIB = 
 
 #DEBUGC = -g

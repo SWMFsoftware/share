@@ -1,12 +1,11 @@
 #include "FluidPicInterface.h"
 
-using std::cout; 
+using std::cout;
 using std::endl;
 using std::string;
 using std::stringstream;
-using std::vector; 
-using std::array; 
-
+using std::vector;
+using std::array;
 
 /** constructor */
 FluidPicInterface::FluidPicInterface() {

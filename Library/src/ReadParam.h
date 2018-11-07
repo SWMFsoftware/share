@@ -11,7 +11,8 @@
 class ReadParam {
 public:
   std::stringstream ss;
-  bool isVerbose; 
+  bool isVerbose;
+
 public:
   ReadParam() { isVerbose = true; }
   ~ReadParam() {}
