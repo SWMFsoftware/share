@@ -29,10 +29,10 @@ int main(int argc, char *argv[]) {
     abort();
   }
 
-  FileAgent agent;
 
   int nFile = commandLine.size() - 1;
   for (int i = 1; i <= nFile; ++i) {
+    FileAgent agent;
     std::cout << "Processing " << commandLine[i] << "\t\t\t " << i << " / "
               << nFile << std::endl;
     agent.read(commandLine[i]);
