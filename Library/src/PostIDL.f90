@@ -637,7 +637,7 @@ program post_idl
               end do; end do; end do
            end if
 
-        case('phi', 'theta', 'lat')
+        case('phi', 'theta', 'lon', 'lat')
            Coord_DC(iDim,1:n1,:,:) = Coord_DC(iDim,1:n1,:,:)*cRadToDeg
         end select
      end do
