@@ -1,5 +1,7 @@
 #include "PlotFileIO.h"
 
+std::string FileAgent::outFormat;
+
 void FileAgent::print() {
   std::cout << "fileIn     = " << fileIn << "\n";
   std::cout << "fileOut    = " << fileOut << "\n";
@@ -38,7 +40,79 @@ void FileAgent::print() {
 
 void FileAgent::write() {
   fileOut = fileIn;
-  write_tec();
+  if (outFormat == "vtk") {
+    write_vtk();
+  } else {
+    write_tec();
+  }
+}
+
+//==========================================================
+
+//==========================================================
+void FileAgent::write_vtk() {
+  fileOut.erase(fileOut.end() - 4, fileOut.end());
+  fileOut += ".vtk";
+
+  std::ofstream outFile;
+  outFile.open(fileOut.c_str(), std::ofstream::out | std::ofstream::trunc);
+
+  outFile << "# vtk DataFile Version 2.0"
+          << "\n";
+  outFile << fileOut << "\n";
+
+  outFile << (doWriteBinary ? "BINARY" : "ASCII") << "\n";
+
+  outFile << "DATASET STRUCTURED_GRID"
+          << "\n";
+  outFile << "DIMENSIONS " << nSize[0] << " ";
+  if (nDim > 1) {
+    outFile << nSize[1] << " ";
+  }
+  if (nDim > 2) {
+    outFile << nSize[2] << " ";
+  }
+  outFile << "\n";
+
+  outFile << "POINTS " << nPoint << " float\n";
+
+  nReal = i4;
+  float f;
+  for (int iPoint = 0; iPoint < nPoint; ++iPoint) {
+    for (int iDim = 0; iDim < nDim; ++iDim) {
+      if (doWriteBinary) {
+        f = data_II(iPoint, iDim);
+        SwapEnd(f);
+        outFile.write(reinterpret_cast<char *>(&f), nReal);
+      } else {
+        outFile << data_II(iPoint, iDim) << " ";
+      }
+    }
+    if (!doWriteBinary) {
+      outFile << "\n";
+    }
+  }
+
+  outFile << "POINT_DATA " << nPoint << "\n";
+  for (int iVar = nDim; iVar < nDim + nVar; ++iVar) {
+    outFile << "SCALARS " << varName_I[iVar] << " float \n";
+    outFile << "LOOKUP_TABLE default"
+            << "\n";
+
+    for (int iPoint = 0; iPoint < nPoint; ++iPoint) {
+      if (doWriteBinary) {
+        f = data_II(iPoint, iVar);
+        SwapEnd(f);
+        outFile.write(reinterpret_cast<char *>(&f), nReal);
+      } else {
+        outFile << data_II(iPoint, iVar) << "\n";
+      }
+    }
+  }
+
+  if (outFile.is_open()) {
+    outFile.close();
+  }
 }
 
 //==========================================================
@@ -316,4 +390,11 @@ void FileAgent::get_file_type() {
   if (inFile.is_open()) {
     inFile.close();
   }
+}
+
+//=================================================
+template <typename T> void SwapEnd(T &var) {
+  char *varArray = reinterpret_cast<char *>(&var);
+  for (long i = 0; i < static_cast<long>(sizeof(var) / 2); i++)
+    std::swap(varArray[sizeof(var) - 1 - i], varArray[i]);
 }

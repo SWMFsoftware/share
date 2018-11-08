@@ -99,6 +99,12 @@ ${BINDIR}/Convert2Tec.exe: FormatConverter.o ${MY_LIB}
 2TEC: DEPEND
 	make ${BINDIR}/Convert2Tec.exe
 
+${BINDIR}/Convert2Vtk.exe: FormatConverter.o ${MY_LIB}
+	${LINK.cpp} -o ${BINDIR}/Convert2Vtk.exe FormatConverter.o PlotFileIO.o
+
+2VTK: DEPEND
+	make ${BINDIR}/Convert2Vtk.exe
+
 clean: cleanfiles
 
 distclean: clean

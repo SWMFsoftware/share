@@ -7,18 +7,17 @@
 #include <vector>
 #include <fstream>
 #include <assert.h>
-#include <glob.h>   // glob(), globfree()
-#include <string.h> // memset()
-#include <stdexcept>
 #include "MDArray.h"
 
 class FileAgent {
 private:
   static const int i4 = 4;
   static const int i8 = 8;
+  static const bool doWriteBinary = true;
   int nReal;
 
 public:
+  static std::string outFormat;
   std::string fileIn;
   std::string fileOut;
   std::string fileInType;
@@ -41,8 +40,10 @@ public:
   template <typename real> void read_binary();
   void print();
   void write_tec();
+  void write_vtk();
   void write();
 };
 
-std::vector<std::string> glob(const std::string pattern);
+template <typename T> void SwapEnd(T& var);
+
 #endif
