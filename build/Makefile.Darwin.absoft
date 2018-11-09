@@ -52,8 +52,12 @@ Cflag4  = ${CFLAG} ${PRECISION} ${OPT4}
 CFLAGS = ${CFLAG} -s
 
 # Link with or without the MPI library
-Lflag1  = ${PRECISION} ${MPILIB} ${CPPLIB} ${DEBUG}
-Lflag2  = ${PRECISION} ${DEBUG}
+Lflag    = ${PRECISION} ${OPENMPFLAG} ${CPPLIB} ${DEBUG}
+LflagMpi = ${Lflag} ${MPILIB}
+
+# For backward compatibility
+Lflag1 = ${LflagMpi}
+Lflag2 = ${Lflag}
 
 # BLAS and LAPACK libraries
 LBLAS =

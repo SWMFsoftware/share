@@ -48,10 +48,13 @@ Cflag4NoP = ${CFLAG} ${OPT4}
 # To allow RCM to compile as double precision, add PRECISION flag
 CFLAGS = ${CFLAG} -O --sav
 
-# Add '-Bstatic' to link flags if segmentation fault occurs immediately
+# Link with or without the MPI library
+Lflag    = ${PRECISION} ${OPENMPFLAG} ${CPPLIB} ${DEBUG}
+LflagMpi = ${Lflag} ${MPILIB}
 
-Lflag1  = ${PRECISION} ${MPILIB} ${CPPLIB} ${DEBUG}
-Lflag2  = ${PRECISION} ${DEBUG}
+# For backward compatibility
+Lflag1 = ${LflagMpi}
+Lflag2 = ${Lflag}
 
 # BLAS and LAPACK libraries
 LBLAS =
