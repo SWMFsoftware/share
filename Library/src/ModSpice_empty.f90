@@ -42,6 +42,8 @@ contains
 
     character(len=*), parameter:: NameSub = 'spice_rot_matrix'
     !--------------------------------------------------------------------------
+    Rot_DD = 0.0
+
     call CON_stop(NameSub//': SPICE is not swithed on!')
 
   end subroutine spice_rot_matrix
@@ -55,6 +57,8 @@ contains
 
     character(len=*), parameter:: NameSub = 'spice_rot_vel_matrix'
     !--------------------------------------------------------------------------
+    Rot_II = 0.0
+
     call CON_stop(NameSub//': SPICE is not swithed on!')
 
   end subroutine spice_rot_vel_matrix
@@ -68,6 +72,8 @@ contains
 
     character(len=*), parameter:: NameSub = 'spice_get_distance'
     !--------------------------------------------------------------------------
+    Distance = 0.0
+
     call CON_stop(NameSub//': SPICE is not swithed on!')
 
   end subroutine spice_get_distance
