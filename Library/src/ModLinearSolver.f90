@@ -2383,7 +2383,7 @@ contains
     write(UNITTMP_,'(100es13.5)')      Gamma
     write(UNITTMP_,'(a79)') 'x rho rhou p gamma'
     do i=1,nCell
-       write(UNITTMP_,'(100es18.10))') float(i), State_GV(i, rho_:p_)
+       write(UNITTMP_,'(100es18.10)') float(i), State_GV(i, rho_:p_)
     end do
 
   end subroutine save_plot

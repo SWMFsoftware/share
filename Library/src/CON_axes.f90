@@ -148,7 +148,7 @@ module CON_axes
   use ModCoordTransform, ONLY: rot_matrix_x, rot_matrix_y, rot_matrix_z, &
        show_rot_matrix, cross_product, dir_to_xyz, xyz_to_dir
   use ModTimeConvert, ONLY: time_int_to_real,time_real_to_int
-  use ModPlanetConst, ONLY: DipoleStrengthPlanet_I, Earth_
+  use ModPlanetConst, ONLY: DipoleStrengthPlanet_I, Earth_, CAU
   use CON_planet, ONLY: UseSetMagAxis, UseSetRotAxis, UseAlignedAxes, &
        UseRealMagAxis, UseRealRotAxis, MagAxisThetaGeo, MagAxisPhiGeo, &
        MagAxisTheta, MagAxisPhi, DipoleStrength, RotAxisTheta, RotAxisPhi, &
@@ -161,7 +161,6 @@ module CON_axes
        HgiGse_DD, dLongitudeHgiDeg, dLongitudeHgi, SunEMBDistance, JulianDay
   use ModNumConst, ONLY: cHalfPi, cRadToDeg, cTwoPi, cTwoPi8, cUnit_DD, cTiny
   use ModConst, ONLY: rSun
-  use ModPlanetConst
   use ModUtilities, ONLY: CON_stop, CON_set_do_test
 
   !REVISION HISTORY:
@@ -1333,9 +1332,6 @@ contains
     if(maxval(abs(v2_D - Result_D)) > Epsilon3) &
          write(*,*)'test angular_velocity failed: GEO-GSE2 v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
-
-    
-
 
   end subroutine test_axes
 

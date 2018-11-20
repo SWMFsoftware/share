@@ -7878,7 +7878,7 @@ subroutine vrplot ( lun, pltsiz, elat, elon, a, n, x, y, z, nt, listc, lptr, &
 !
   y0 = wr + 3.0E+00 * t
   write ( lun, '(a)' ) title
-  write ( lun, '(a,g12.6,a)' ) '  stringwidth pop 2 div neg ', y0, ' moveto'
+  write ( lun, '(a,g12.5,a)' ) '  stringwidth pop 2 div neg ', y0, ' moveto'
   write ( lun, '(a)' ) title
   write ( lun, '(a)' ) '  show'
 !
