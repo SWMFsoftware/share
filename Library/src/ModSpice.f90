@@ -5,8 +5,6 @@ module ModSpice
   use ModUtilities, ONLY: CON_stop
   use ModKind, ONLY: Real8_
 
-  !dsfsdfjkl
-
   implicit none
   save
   private
