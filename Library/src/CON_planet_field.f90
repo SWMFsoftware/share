@@ -1,4 +1,4 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 !BOP
 !MODULE: CON_planet_field - provide value and mapping of magnetic field
@@ -7,10 +7,10 @@ module CON_planet_field
 
   !DESCRIPTION:
   ! This class provides the magnetic field of the planet
-  ! for an arbitrary spatial position at an arbitrary time. 
-  ! It also provides the mapping from an arbitrary point to a given 
+  ! for an arbitrary spatial position at an arbitrary time.
+  ! It also provides the mapping from an arbitrary point to a given
   ! radial distance.
-  ! The position as well as the magnetic field can be represented as 3 
+  ! The position as well as the magnetic field can be represented as 3
   ! scalars or 1 three-element array.
   ! The coordinate system and the normalization of the coordinates
   ! and the magnetic field can be given with string input arguments.
@@ -26,7 +26,7 @@ module CON_planet_field
 
   !PUBLIC MEMBER FUNCTIONS
   public :: get_planet_field  ! Get planet field at some time and place
-  public :: map_planet_field  ! Map planet field from a point to a radius 
+  public :: map_planet_field  ! Map planet field from a point to a radius
   public :: test_planet_field ! Test the methods in this module
 
   !REVISION HISTORY:
@@ -70,14 +70,14 @@ contains
 
     !DESCRIPTION:
     ! This is the fundamental subroutine that provides the magnetic
-    ! field at a given position at a given simulation time. 
+    ! field at a given position at a given simulation time.
     ! If called repeatedly, the subroutine remembers the last simulation time
     ! argument, so it does not recalculate the position of the magnetic axis.
     ! The position may be normalized with the radius of the planet.
-    ! The coordinate system and normalization information 
+    ! The coordinate system and normalization information
     ! for the position is given by the string TypeCoord.
     ! The first 3 characters should contain the coordinate system.
-    ! This may be followed (after some spaces) by the characters "NORM" 
+    ! This may be followed (after some spaces) by the characters "NORM"
     ! in all capitals. For example "MAG", "GSM NORM", "GSE NORMALIZED" etc.
 
     !EOP
@@ -119,7 +119,9 @@ contains
        RETURN
     end if
 
-    ! Update axes
+    ! Update axes (these routines depend on the MAG axes which is only
+    ! relevant for a dipole magnetic field. Moving this command to the
+    ! DIPOLE specific case.)
     call set_axes(TimeSim)
 
     ! The coord system name is stored in the first 3 characters
@@ -128,6 +130,9 @@ contains
     ! Calculate magnetic field
     select case(TypeBField)
     case('DIPOLE')
+
+
+
        ! Various powers of radial distance
        r2Inv = 1/r2
        r     = sqrt(r2)
@@ -159,6 +164,12 @@ contains
           call CON_stop(NameSub// &
                ' SWMF_ERROR: unimplemented NameCoordSystem='//NameCoordSystem)
        end select
+
+    case("MULTIPOLE")
+    ! As of now the multipole option is only implemented for a GSE/GEO type
+    ! coordinate system.
+      call calculate_multipole_field(Xyz_D, TimeSim, b_D)
+
        !case('QUADRUPOLE','OCTUPOLE')
        !   ! Transform to MAG system
        !   Xyz_D = coord_transform(TimeSim,Xyz_D,NameCoordSystem,'MAG')
@@ -234,6 +245,146 @@ contains
 
   end subroutine get_planet_field33
 
+  ! ===========================================================================
+  subroutine calculate_multipole_field(Xyz_D, TimeSim, b_D)
+    ! Calculate the (Bx, By, Bz) components of the magnetic field based
+    ! on Schimdt coefficients declared in CON_planet.f90
+    use ModNumConst,    ONLY: cPi, cTwoPi
+
+    real, intent(in) :: Xyz_D(3)
+    real, intent(in) :: TimeSim
+    real, intent(out) :: b_D(3)
+
+    integer :: n, m
+    real :: a, r, theta, phi, Br, Btheta, Bphi
+    real, allocatable :: P_II(:,:), diffP_II(:,:)
+
+    real :: sinmphi, cosmphi, sintheta, costheta, sinphi, cosphi
+    real :: a_r, inv_sintheta, sinphi_prev, cosphi_prev
+
+
+    r = sqrt(Xyz_D(1)**2 + Xyz_D(2)**2 + Xyz_D(3)**2)
+    theta = atan2(sqrt(Xyz_D(1)**2 + Xyz_D(2)**2), Xyz_D(3))
+    phi = atan2(Xyz_D(2), Xyz_D(1)) - TimeSim/RotPeriodPlanet*cTwoPi
+    if(theta < 0.0) theta = cPi/2 - theta
+    if(phi < 0.0) phi = phi + cTwoPi
+    a = 1.0 ! Radius of planet in units of calculation (mostly planet).
+
+    ! Additional variables to improve speed of calculation
+    sintheta = sin(theta)
+    costheta = cos(theta)
+    sinphi = sin(phi)
+    cosphi = cos(phi)
+    a_r = a/r
+    inv_sintheta = 0.0
+    if(abs(sintheta) > 1.0e-3) inv_sintheta = 1./sintheta
+
+    if(.not.allocated(P_II)) then
+      allocate(P_II(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
+      allocate(diffP_II(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
+    end if
+
+    call calculate_legendre_polynomials(theta, P_II, diffP_II)
+
+    Br = 0.0
+    Btheta = 0.0
+    Bphi = 0.0
+
+    do n=0,MaxHarmonicDegree
+
+      m=0
+      sinphi_prev = 0.0
+      cosphi_prev = 1.0
+      Br = Br + a*(a_r)**(n+2) * (n+1) * P_II(n,m) * g_Planet(n,m)
+      Btheta = Btheta - (a_r)**(n+2) * diffP_II(n,m) * g_Planet(n,m)
+      Bphi = Bphi + inv_sintheta*(a_r)**(n+2) * P_II(n,m)* m * (-h_Planet(n,m))
+
+      do m=1,n
+
+        sinmphi = sinphi_prev * cosphi + cosphi_prev * sinphi
+        cosmphi = cosphi_prev * cosphi - sinphi_prev * sinphi
+        Br = Br + a*(a_r)**(n+2) * (n+1) * P_II(n,m) * &
+          (g_Planet(n,m)*cosmphi + h_Planet(n,m)*sinmphi)
+
+        Btheta = Btheta - (a_r)**(n+2) * diffP_II(n,m) * &
+          (g_Planet(n,m)*cosmphi + h_Planet(n,m)*sinmphi)
+
+        Bphi = Bphi + inv_sintheta * (a_r)**(n+2) * P_II(n,m) * m * &
+            (g_Planet(n,m)*sinmphi - h_Planet(n,m)*cosmphi)
+
+        sinphi_prev = sinmphi
+        cosphi_prev = cosmphi
+
+      end do
+    end do
+
+    ! write(*,*) 'Bphi = ', Bphi
+    ! write(*,*) 'Conversion Factor = ', Io2No_V(UnitB_)
+
+    b_D(1) = (Br*sintheta*cosphi + Btheta*costheta*cosphi  &
+               - Bphi*sinphi) * 1e-9
+    b_D(2) = (Br*sintheta*sinphi + Btheta*costheta*sinphi &
+               - Bphi*cosphi) * 1e-9
+    b_D(3) = (Br*costheta - Btheta*sintheta) * 1e-9
+
+
+  end subroutine calculate_multipole_field
+
+  !============================================================================
+  subroutine calculate_legendre_polynomials(theta, P_II, diffP_II)
+    ! Subroutine to calculate the Schmidt normalized associated Legendre
+    ! polynomials P(n,m) and their derivatives wrt theta diffP(n,m) to be
+    ! used in the calculation of the magnetic field.
+    ! Note that P, diffP are calculated for each value of theta
+
+    ! This routine is optimized for performance. For straightforward alogrithm
+    ! please refer to ModUserJupiter<latest>.f90 or the reference
+    ! <insert reference here>
+
+    ! The Legendre polynomials calculated here are GAUSS NORMALIZED. Instead of
+    ! normalizing them to Schmidt-semi-normalized we normalize the Schmidt
+    ! coefficients instead at the beginning of the simulation.
+    ! See subroutine normalize_schmidt_coefficients in CON_planet.f90
+    real, intent(in) :: theta
+    real, intent(out) :: P_II(0:MaxHarmonicDegree, 0:MaxHarmonicDegree)
+    real, intent(out) :: diffP_II(0:MaxHarmonicDegree, 0:MaxHarmonicDegree)
+
+    integer :: m, n
+    real, allocatable :: K_II(:,:)
+
+    real :: sintheta, costheta
+    ! --------------------------------------------
+    if(.not.allocated(K_II)) then
+      allocate(K_II(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
+    end if
+
+    sintheta = sin(theta)
+    costheta = cos(theta)
+
+    P_II = 0.0
+    diffP_II = 0.0
+    K_II = 0.0
+
+    P_II(0,0) = 1.0
+    diffP_II(0,0) = 0.0
+
+    do n=1,MaxHarmonicDegree
+      P_II(n,n) = sintheta * P_II(n-1,n-1)
+      diffP_II(n,n) = sintheta * diffP_II(n-1,n-1) + costheta * P_II(n-1,n-1)
+
+      do m=0, n-1
+        if(n>1) K_II(n,m) = ((n-1.)**2 - m**2) / ((2.*n - 1.) * (2.*n - 3.))
+        P_II(n,m) = costheta*P_II(n-1,m) - K_II(n,m)*P_II(n-2,m)
+        diffP_II(n,m) = costheta*diffP_II(n-1,m) - sintheta*P_II(n-1,m) &
+                     - K_II(n,m)*diffP_II(n-2,m)
+      end do
+    end do
+
+    ! deallocate(K)
+    ! deallocate(S)
+
+  end subroutine calculate_legendre_polynomials
+
   !BOP ========================================================================
   !IROUTINE: map_planet_field - map planet field from a position to some radius
   !INTERFACE:
@@ -258,22 +409,22 @@ contains
     ! characters of the TypeCoord string. If the input coordinates are
     ! already normalized (given in units of planet radius), TypeCoord should
     ! contain the NORM string. Otherwise the coordinates are assumed to be
-    ! in SI units (meters). 
+    ! in SI units (meters).
     !
     ! If the DoNotConvertBack argument is present, the mapped point will remain
     ! in the SMG (when the input coordinate system is not corotating)
-    ! or MAG coordinates (when the input coordinate system rotates), 
-    ! otherwise it is converted back to the coordinate system of the 
+    ! or MAG coordinates (when the input coordinate system rotates),
+    ! otherwise it is converted back to the coordinate system of the
     ! input coordinates. The units for the output
     ! position are always the same as for the input coordinates.
     !
-    ! The routine also returns which hemisphere the point maps to: 
+    ! The routine also returns which hemisphere the point maps to:
     ! +1 for north and -1 for south.
     ! If the point does not map to the defined radius at all, 0 is returned,
     ! and the output position is set to a radial projection of the input
     ! position to the magnetic equator.
     !
-    ! If the DdirDxyz\_DD argument is present, the 2 x 3 Jacobian matrix 
+    ! If the DdirDxyz\_DD argument is present, the 2 x 3 Jacobian matrix
     ! dTheta/dx, dTheta/dy, dTheta/dz, dPhi/dx, dPhi/dy, dPhi/dz
     ! is returned.
 
@@ -283,7 +434,7 @@ contains
     ! an error occurs
     real, parameter :: rNormLimit = 0.9
 
-    ! If difference between the normalized input and mapping radii 
+    ! If difference between the normalized input and mapping radii
     ! is less than DrNormLimit a trivial mapping is done
     real, parameter :: DrNormLimit = 0.0001
 
