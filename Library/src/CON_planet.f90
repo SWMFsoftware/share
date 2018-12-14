@@ -425,32 +425,35 @@ contains
 
        call read_var('DtUpdateB0',DtUpdateB0)
 
-    case('#USEMULTIPOLE')
-       UseMultipoleBField = .true.
-       TypeBField="MULTIPOLE"
-       call read_var('MaxHarmonicDegree', MaxHarmonicDegree)
-       call read_var('NamePlanetHarmonicsFile', NamePlanetHarmonicsFile)
+    case('#MULTIPOLEB0')
 
-       if(.not.allocated(g_Planet)) then
-          allocate(g_Planet(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
-          allocate(h_Planet(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
+       call read_var('UseMultipoleBField', UseMultipoleBField)
+       if(UseMultipoleBField) then
+          TypeBField="MULTIPOLE"
+          call read_var('MaxHarmonicDegree', MaxHarmonicDegree)
+          call read_var('NamePlanetHarmonicsFile', NamePlanetHarmonicsFile)
+
+          if(.not.allocated(g_Planet)) then
+             allocate(g_Planet(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
+             allocate(h_Planet(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
+          end if
+
+          ! Read in the coefficients from the file
+          open(77, file=NamePlanetHarmonicsFile, status='old', action='read')
+          read(77, *) headerline
+          write(*, *) 'Reading Schmidt coefficients - n, m, g, h'
+          do n=0,MaxHarmonicDegree
+             do m=0,n
+                ! Read data from the file, default fortran format
+                read(77, *) n_loop, m_loop, g_Planet(n, m), h_Planet(n, m)
+                write(*, *) n_loop, m_loop, g_Planet(n, m), h_Planet(n, m)
+             end do
+          end do
+          close(77)
+
+          call normalize_schmidt_coefficients
        end if
-
-       ! Read in the coefficients from the file
-       open(77, file=NamePlanetHarmonicsFile, status='old', action='read')
-       read(77, *) headerline
-       write(*, *) 'Reading Schmidt coefficients - n, m, g, h'
-       do n=0,MaxHarmonicDegree
-         do m=0,n
-           ! Read data from the file, default fortran format
-           read(77, *) n_loop, m_loop, g_Planet(n, m), h_Planet(n, m)
-           write(*, *) n_loop, m_loop, g_Planet(n, m), h_Planet(n, m)
-         end do
-       end do
-       close(77)
-
-       call normalize_schmidt_coefficients
-
+       
     end select
 
   end subroutine read_planet_var
