@@ -1709,11 +1709,11 @@ void FluidPicInterface::writers_init() {
     wTmp.set_nProcs(get_nProcs());
     wTmp.set_nDim(getnDim());
     wTmp.set_iRegion(getiRegion());
-    wTmp.set_domainMin_D({ 0 });
-    wTmp.set_domainMax_D({ getFluidLx(), getFluidLy(), getFluidLz() });
-    wTmp.set_dx_D({ dx_D[x_], dx_D[y_], dx_D[z_] });
+    wTmp.set_domainMin_D({ { 0, 0, 0 } });
+    wTmp.set_domainMax_D({ { getFluidLx(), getFluidLy(), getFluidLz() } });
+    wTmp.set_dx_D({ { dx_D[x_], dx_D[y_], dx_D[z_] } });
     wTmp.set_axisOrigin_D(
-        { getFluidStartX(), getFluidStartY(), getFluidStartZ() });
+        { { getFluidStartX(), getFluidStartY(), getFluidStartZ() } });
     wTmp.set_nSpecies(nS);
     wTmp.set_units(getNo2SiL(), getNo2SiV(), getNo2SiB(), getNo2SiRho(),
                    getNo2SiP(), getNo2SiJ(), getrPlanet());
