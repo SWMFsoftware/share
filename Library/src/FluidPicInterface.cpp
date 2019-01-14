@@ -1265,7 +1265,7 @@ void FluidPicInterface::fixPARAM(double *&qom, int *&npcelx, int *&npcely,
     }
     if (!useMhdPe && !useElectronFluid)
       cout << "Pe/Ptotal = " << PeRatio << endl;
-    // cout << "===================================" << endl;
+    cout << "===================================" << endl;
   }
 }
 
@@ -1722,7 +1722,7 @@ void FluidPicInterface::writers_init() {
 
     //--------------------------------------------------
     wTmp.init();
-    wTmp.print();
+    //wTmp.print();
   }
 }
 
