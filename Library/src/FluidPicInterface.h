@@ -186,9 +186,9 @@ protected:
   double cflLimit;
   double maxDt; // maxDt = min(dxi/uth, dyi/uth, dzi/uth), i=0...nspecies-1
 
-  // If the maximum thermal velocity of one node exceeds maxUth, which is in
+  // If the maximum thermal velocity of one node exceeds uthLimit, which is in
   // normalized PIC unit, then save the output and stop runing.
-  double maxUth; //
+  double uthLimit; //
 
   // 1) If useSWMFDt is true, use the dt given by coupling frequency.
   // 2) If useSWMFDt is false and useFixedDt is true, use fixedDt, which is set
@@ -612,7 +612,7 @@ public:
 
   bool getdoSubCycling() const { return doSubCycling; }
 
-  double get_maxUth() const { return maxUth; }
+  double get_uthLimit() const { return uthLimit; }
 
   bool get_useUniformPart() const { return useUniformPart; }
 
