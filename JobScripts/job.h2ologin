@@ -15,6 +15,9 @@
 
 # Environment configuration-----------------------
 
+# Choose the allocation
+# If this fails, just use: qsub -A bawz jobscript
+#PBS -A bawz
 
 # To run on XE nodes
 #PBS -l nodes=2:ppn=32:xe
