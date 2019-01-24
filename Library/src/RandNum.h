@@ -1,6 +1,8 @@
 #ifndef RANDNUM_H
 #define RANDNUM_H
 
+#include <cstdint>
+
 #define IA 16807
 #define IM 2147483647
 #define AM (1.0 / IM)
@@ -10,12 +12,17 @@
 
 class RandNum {
 private:
-  long idum;
+  // This algorithm requires the seed occupies 4 bytes. It can be negative. 
+  int32_t idum;
 
 public:
   RandNum() { idum = 1; }
   ~RandNum() {}
-  void set_seed(long in) { idum = in; }
+  void set_seed(long in) { 
+    // The input seed 'in' can larger than 2^31-1, it will be truncated and 
+    // asigned to idum.
+    idum = in; 
+  }
 
   // Overloaded the () operator. Then argument list is empty
   double operator()() {
@@ -27,7 +34,7 @@ public:
     // the sequence; idum must not be alterd between calls or successive
     // deviates in a sequence.
 
-    long k;
+    int32_t k;
     double ans;
 
     idum ^= MASK;

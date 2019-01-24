@@ -367,7 +367,7 @@ void Writer::write(double const timeNow, int const iCycle,
   if (pointList_II.size() > 0)
     write_field(timeNow, iCycle, pointList_II, get_var);
 
-  std::cout << "After write_header \n" << (*this) << std::endl;
+  //std::cout << "After write_header \n" << (*this) << std::endl;
 }
 
 void Writer::write_header(double const timeNow, int const iCycle) {

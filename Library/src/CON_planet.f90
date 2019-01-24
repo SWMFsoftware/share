@@ -1,4 +1,4 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 !
 !BOP
@@ -8,13 +8,13 @@
 module CON_planet
 
   !DESCRIPTION:
-  ! Physical information about the planet. The planet is described 
+  ! Physical information about the planet. The planet is described
   ! with its name. Default values can be set with {\bf planet\_init}.
   ! Simplifying assumptions, such as no rotation, aligned magnetic
   ! and rotational axes etc. can be made.
   !
   ! This is a public class. The variables should be modified by CON only.
-  ! Components can only access the data through the inquiry methods 
+  ! Components can only access the data through the inquiry methods
   ! via the {\bf CON\_physics} class.
 
   !USES:
@@ -24,7 +24,7 @@ module CON_planet
   use ModUtilities, ONLY: CON_stop
 
   !REVISION HISTORY:
-  ! 01Aug03 - Aaron Ridly <ridley@umich.edu> and 
+  ! 01Aug03 - Aaron Ridly <ridley@umich.edu> and
   !           Gabor Toth <gtoth@umich.edu>   - initial prototype/prolog/code
   ! 23Mar03 - added get_planet subroutine for OO type access
   ! 06May04 - K.C. Hansen and G. Toth added Saturn
@@ -87,6 +87,12 @@ module CON_planet
   ! modified for this planet
   logical :: IsPlanetModified = .false.
 
+  ! Variables added for the multipole option for the magnetic field
+  logical :: UseMultipoleBField = .false.
+  integer :: MaxHarmonicDegree = -1
+  character (len=200) :: NamePlanetHarmonicsFile
+  real, allocatable :: g_Planet(:, :), h_Planet(:, :)
+
 contains
 
   !BOP ========================================================================
@@ -128,10 +134,10 @@ contains
     call time_int_to_real(TimeEquinox)
     TypeBField       = TypeBFieldPlanet_I(Earth_)
     DipoleStrength   = DipoleStrengthPlanet_I(Earth_)
-    MagAxisThetaGeo  = bAxisThetaPlanet_I(Earth_)     
-    MagAxisPhiGeo    = bAxisPhiPlanet_I(Earth_)       
+    MagAxisThetaGeo  = bAxisThetaPlanet_I(Earth_)
+    MagAxisPhiGeo    = bAxisPhiPlanet_I(Earth_)
 
-    
+
   end subroutine set_planet_defaults
 
   !BOP ========================================================================
@@ -141,13 +147,13 @@ contains
 
     !INPUT ARGUMENTS:
     character(len=*), intent(in) :: NamePlanetIn
-    
+
     !RETURN VALUE:
     logical :: IsKnown
 
     !DESCRIPTION:
     ! Initialize parameters for the planet identified by its name and
-    ! return true if the planet is known. If it is not known return false. 
+    ! return true if the planet is known. If it is not known return false.
     ! Store the name in either case. The planet data can be initialized at most
     ! once.
     !EOP
@@ -189,12 +195,12 @@ contains
     TiltRotation     = TiltPlanet_I(Planet_)
     IonosphereHeight = IonoHeightPlanet_I(Planet_)
     if (RotationPeriodPlanet_I(Planet_) == 0.0) then
-       OmegaRotation = 0.0 
+       OmegaRotation = 0.0
     else
        OmegaRotation = cTwoPi/RotationPeriodPlanet_I(Planet_)
     end if
     if (OrbitalPeriodPlanet_I(Planet_) == 0.0) then
-       OmegaOrbit = 0.0 
+       OmegaOrbit = 0.0
     else
        OmegaOrbit = cTwoPi/OrbitalPeriodPlanet_I(Planet_)
     end if
@@ -238,6 +244,10 @@ contains
     character (len=lNamePlanet) :: NamePlanetIn
     character (len=lStringLine) :: NamePlanetCommands=''
     logical :: UseNonDipole
+
+    integer :: m, n, m_loop, n_loop
+    character(len=100) :: headerline
+
     !-------------------------------------------------------------------------
 
     select case(NameCommand)
@@ -254,8 +264,8 @@ contains
             ' ERROR: #PLANET should precede '// &
             NamePlanetCommands)
 
+       ! If planet has not been initialized ...
        if ( .not. is_planet_init(NamePlanetIn) ) then
-
           call read_var('RadiusPlanet', RadiusPlanet)
           call read_var('MassPlanet',   MassPlanet)
           call read_var('OmegaPlanet',  OmegaPlanet)
@@ -267,44 +277,39 @@ contains
           call read_var('TiltRotation', TiltRotation)
           TiltRotation = TiltRotation * cDegToRad
           call read_var('TypeBField',   TypeBField)
-
           call upper_case(TypeBField)
 
           select case(TypeBField)
-
           case('NONE')
-
-             MagAxisTheta   = 0.0
-             MagAxisPhi     = 0.0
-             UseSetMagAxis  = .true.
-             UseRealMagAxis = .false.
-             DipoleStrength = 0.0
+            MagAxisTheta   = 0.0
+            MagAxisPhi     = 0.0
+            UseSetMagAxis  = .true.
+            UseRealMagAxis = .false.
+            DipoleStrength = 0.0
 
           case('DIPOLE','QUADRUPOLE','OCTUPOLE')
+            call read_var('MagAxisThetaGeo', MagAxisThetaGeo)
+            MagAxisThetaGeo = MagAxisThetaGeo * cDegToRad
+            call read_var('MagAxisPhiGeo',   MagAxisPhiGeo)
+            MagAxisPhiGeo = MagAxisPhiGeo * cDegToRad
+            call read_var('DipoleStrength',DipoleStrength)
 
-             call read_var('MagAxisThetaGeo', MagAxisThetaGeo)
-             MagAxisThetaGeo = MagAxisThetaGeo * cDegToRad
-             call read_var('MagAxisPhiGeo',   MagAxisPhiGeo)
-             MagAxisPhiGeo = MagAxisPhiGeo * cDegToRad
-             call read_var('DipoleStrength',DipoleStrength)
+            if (TypeBField == 'QUADRUPOLE') then
+              call CON_stop(NameSub// &
+              ' ERROR: quadrupole field unimplemented')
+            endif
 
-             if (TypeBField == 'QUADRUPOLE') then
-                call CON_stop(NameSub// &
-                     ' ERROR: quadrupole field unimplemented')
-             endif
+            if (TypeBField == 'OCTUPOLE') then
+              call CON_stop(NameSub// &
+                  ' ERROR: octupole field unimplemented')
+            endif
 
-             if (TypeBField == 'OCTUPOLE') then
-                call CON_stop(NameSub// &
-                     ' ERROR: octupole field unimplemented')
-             endif
+            case default
+              call CON_stop(NameSub// &
+              ' ERROR: TypeBfield not specified for planet.'//TypeBField)
 
-          case default
-             call CON_stop(NameSub// &
-                  ' ERROR: unimplemented TypeBField='//TypeBField)
-
-          end select
-
-       endif
+            end select
+       end if
 
     case('#IDEALAXES')
        ! This is a short version of setting one axis parallel with Z
@@ -415,11 +420,40 @@ contains
        else
           TypeBField="DIPOLE"
        end if
-       
+
     case('#UPDATEB0')
 
        call read_var('DtUpdateB0',DtUpdateB0)
 
+    case('#MULTIPOLEB0')
+
+       call read_var('UseMultipoleBField', UseMultipoleBField)
+       if(UseMultipoleBField) then
+          TypeBField="MULTIPOLE"
+          call read_var('MaxHarmonicDegree', MaxHarmonicDegree)
+          call read_var('NamePlanetHarmonicsFile', NamePlanetHarmonicsFile)
+
+          if(.not.allocated(g_Planet)) then
+             allocate(g_Planet(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
+             allocate(h_Planet(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
+          end if
+
+          ! Read in the coefficients from the file
+          open(77, file=NamePlanetHarmonicsFile, status='old', action='read')
+          read(77, *) headerline
+          write(*, *) 'Reading Schmidt coefficients - n, m, g, h'
+          do n=0,MaxHarmonicDegree
+             do m=0,n
+                ! Read data from the file, default fortran format
+                read(77, *) n_loop, m_loop, g_Planet(n, m), h_Planet(n, m)
+                write(*, *) n_loop, m_loop, g_Planet(n, m), h_Planet(n, m)
+             end do
+          end do
+          close(77)
+
+          call normalize_schmidt_coefficients
+       end if
+       
     end select
 
   end subroutine read_planet_var
@@ -432,7 +466,7 @@ contains
 
     character (len=*), parameter :: NameSub=NameMod//'::check_planet_var'
 
-    ! The rotation and magnetic axes are aligned if any of them is not a 
+    ! The rotation and magnetic axes are aligned if any of them is not a
     ! primary axis.
     UseAlignedAxes = (.not. IsRotAxisPrimary) .or. (.not. IsMagAxisPrimary)
 
@@ -477,5 +511,39 @@ contains
     if(present(DtUpdateB0Out))      DtUpdateB0Out       = DtUpdateB0
 
   end subroutine get_planet
+
+  ! ===========================================================================
+  subroutine normalize_schmidt_coefficients
+    ! Instead of normalizing the Legendre polynomials, from Gauss to Schmidt
+    ! -semi-normalized, we normalize the Schmidt coefficients instead for
+    ! a more efficient calculation. We only need to do this once at the
+    ! beginning of the run.
+    integer :: m, n
+    real, allocatable :: S(:,:)
+
+    ! --------------------------------------------
+    if(.not.allocated(S)) then
+      allocate(S(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
+    end if
+
+    S = 1.0
+
+    do n=1,MaxHarmonicDegree
+      S(n,0) = S(n-1,0) * (2.0*n - 1.0) / n
+      S(n,1) = S(n,0) * sqrt(n * 2. / (n+1))
+      g_Planet(n,0) = g_Planet(n,0) * S(n,0)
+      h_Planet(n,0) = h_Planet(n,0) * S(n,0)
+      g_Planet(n,1) = g_Planet(n,1) * S(n,1)
+      h_Planet(n,1) = h_Planet(n,1) * S(n,1)
+      do m=2, n
+        S(n,m) = S(n,m-1) * sqrt((n-m+1.) / (n+m))
+        g_Planet(n,m) = g_Planet(n,m) * S(n,m)
+        h_Planet(n,m) = h_Planet(n,m) * S(n,m)
+      end do
+    end do
+
+    deallocate(S)
+
+  end subroutine normalize_schmidt_coefficients
 
 end module CON_planet

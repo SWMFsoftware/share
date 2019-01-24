@@ -186,9 +186,9 @@ protected:
   double cflLimit;
   double maxDt; // maxDt = min(dxi/uth, dyi/uth, dzi/uth), i=0...nspecies-1
 
-  // If the maximum thermal velocity of one node exceeds maxUth, which is in
+  // If the maximum thermal velocity of one node exceeds uthLimit, which is in
   // normalized PIC unit, then save the output and stop runing.
-  double maxUth; //
+  double uthLimit; //
 
   // 1) If useSWMFDt is true, use the dt given by coupling frequency.
   // 2) If useSWMFDt is false and useFixedDt is true, use fixedDt, which is set
@@ -433,6 +433,8 @@ public:
   // The begining 'physical' point of this IPIC region. Assume there is one
   // layer PIC ghost cell.
   double getphyMin(int i) const { return phyMin_D[i]; }
+  double getphyMax(int i) const { return phyMax_D[i]; }
+  double getdx(int i) const { return dx_D[i]; }
   bool getdoRotate() const { return doRotate; }
   double getRDD(int i, int j) const { return R_DD[i][j]; }
 
@@ -453,12 +455,14 @@ public:
   int get_nFluid() const { return (nFluid); }
 
   double getSi2NoL() const { return (Si2NoL); }
+  double getSi2NoT() const {return Si2NoL/Si2NoV; }
   double getNo2SiL() const { return (No2SiL); }
   double getNo2SiRho() const { return (1. / Si2NoRho); }
   double getNo2SiV() const { return (1. / Si2NoV); }
   double getNo2SiB() const { return (1. / Si2NoB); }
   double getNo2SiP() const { return (1. / Si2NoP); }
   double getNo2SiJ() const { return (1. / Si2NoJ); }
+
 
   int getNxcLocal() const { return nxcLocal; }
   int getNycLocal() const { return nycLocal; }
@@ -608,7 +612,7 @@ public:
 
   bool getdoSubCycling() const { return doSubCycling; }
 
-  double get_maxUth() const { return maxUth; }
+  double get_uthLimit() const { return uthLimit; }
 
   bool get_useUniformPart() const { return useUniformPart; }
 
