@@ -42,6 +42,7 @@ module ModUtilities
   public:: CON_stop
   public:: CON_set_do_test
   public:: test_mod_utility
+  public:: norm2
 
   logical, public :: DoFlush = .true. ! parameter for flush_unit
   logical, public :: DoWriteCallSequence = .false. ! parameter for CON_stop
@@ -1104,5 +1105,12 @@ contains
          write(*,*)'Error: greatest_common_divisor(12,36)=', l,' should be 12'
 
   end subroutine test_mod_utility
+  !=========================================================================== 
+  function norm2(x) result(norm)
+    real, dimension(:),intent(in) :: x
+    real :: norm
+
+    norm = sqrt(sum(x**2))
+  end function norm2
 
 end module ModUtilities
