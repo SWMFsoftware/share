@@ -1106,11 +1106,19 @@ contains
 
   end subroutine test_mod_utility
   !=========================================================================== 
-  function norm2(x) result(norm)
-    real, dimension(:),intent(in) :: x
-    real :: norm
+  function norm2(x_I) result(norm)
 
-    norm = sqrt(sum(x**2))
+    ! Does the same as the intrinsic norm2 function in Fortran 2008
+    ! The reason for this implementation is that pgf90 does not have norm2
+
+    real, intent(in) :: x_I(:)
+    real:: norm
+    !-------------------------------------------------------------------------
+
+    ! norm = norm2(x_I)
+    norm = sqrt(sum(x_I**2))
+
   end function norm2
+  !=========================================================================== 
 
 end module ModUtilities
