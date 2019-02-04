@@ -81,6 +81,8 @@ OBJ_TIME_CONVERT = \
 	../src/ModIoUnit.o \
 	../src/ModUtility.o \
 	../src/ModUtility_c.o \
+	../src/ModMpi.o \
+	../src/ModMpiInterfaces.o \
 	../src/ModConst.o \
 	../src/ModNumConst.o \
 	../src/ModTimeConvert.o
@@ -105,6 +107,8 @@ OBJ_COORD_TRANSFORM = \
 	../src/ModIoUnit.o \
 	../src/ModUtility.o \
 	../src/ModUtility_c.o \
+	../src/ModMpi.o \
+	../src/ModMpiInterfaces.o \
 	../src/ModCoordTransform.o \
 	../src/ModNumConst.o
 
@@ -130,6 +134,8 @@ OBJ_FREQ = \
 	../src/ModIoUnit.o \
 	../src/ModUtility.o \
 	../src/ModUtility_c.o \
+	../src/ModMpi.o \
+	../src/ModMpiInterfaces.o \
 	../src/ModFreq.o
 
 test_freq_exe:
@@ -212,6 +218,8 @@ OBJ_LINEAR_ADVECTION = \
 	../src/ModIoUnit.o \
 	../src/ModUtility.o \
 	../src/ModUtility_c.o \
+	../src/ModMpi.o \
+	../src/ModMpiInterfaces.o \
 	../src/ModLinearAdvection.o 
 
 test_linear_advection_exe:
@@ -296,6 +304,8 @@ OBJ_INTERPOLATE = \
 	../src/ModIoUnit.o \
 	../src/ModUtility.o \
 	../src/ModUtility_c.o \
+	../src/ModMpi.o \
+	../src/ModMpiInterfaces.o \
 	../src/ModInterpolate.o
 
 test_interpolate_exe:
@@ -353,6 +363,8 @@ OBJ_INTERPOLATE_CELL_AMR = \
 	../src/ModIoUnit.o \
 	../src/ModUtility.o \
 	../src/ModUtility_c.o \
+	../src/ModMpi.o \
+	../src/ModMpiInterfaces.o \
 	test_interpolate_cell_amr.o
 
 test_interpolate_cell_amr_exe:
@@ -369,6 +381,7 @@ test_interpolate_cell_amr:
 #######################################################################
 OBJ_INITIAL_STATE = \
 	test_initial_state.o \
+	../src/ModMpi.o \
 	../src/ModMpiInterfaces.o \
 	../src/ModIoUnit.o \
 	../src/ModUtility.o \
@@ -469,6 +482,8 @@ OBJ_GEOPACK = \
 	../src/ModCoordTransform.o \
 	../src/ModNumConst.o \
 	../src/ModIoUnit.o \
+	../src/ModMpiInterfaces.o \
+	../src/ModMpi.o \
 	../src/ModUtility.o \
 	../src/ModUtility_c.o
 
@@ -642,6 +657,8 @@ OBJ_TRIANGULATE = \
 	test_triangulate.o \
 	../src/ModTriangulate.o \
 	../src/ModIoUnit.o \
+	../src/ModMpiInterfaces.o \
+	../src/ModMpi.o \
 	../src/ModUtility.o \
         ../src/ModUtility_c.o
 
