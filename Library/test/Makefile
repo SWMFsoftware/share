@@ -10,6 +10,7 @@ help:
 	@echo "You can test the following modules in ../src:"
 	@echo
 	@echo "   test_axes             - test CON_axes"
+	@echo "	  test_poisson_bracket  - test ModPoissonBracket"
 	@echo "   test_coord_transform  - test ModTimeConvert"
 	@echo "   test_freq             - test ModFreq"
 	@echo "   test_geopack          - test CON_geopack"
@@ -45,6 +46,7 @@ help:
 
 test:
 	-@make test_axes
+	-@make test_poisson_bracket
 	-@make test_coord_transform
 	-@make test_freq
 	-@make test_geopack
@@ -733,5 +735,31 @@ test_process_var_name_check:
 		test_process_var_name.log test_process_var_name.tmp \
 		> test_process_var_name.diff)
 	@ls -l test_process_var_name.diff
+
+#######################################################################
+OBJ_POISSON = \
+	test_poisson_bracket.o \
+	../src/blas.o \
+	../src/lapack.o \
+	../src/ModBlasLapack.o \
+	../src/ModIoUnit.o \
+	../src/ModUtility.o \
+	../src/ModUtility_c.o \
+	../src/ModMpi.o \
+	../src/ModMpiInterfaces.o \
+	../src/ModLinearSolver.o \
+	../src/ModPoissonBracket.o
+
+test_poisson_exe:
+	@(cd ../src; make ModPoissonBracket.o)
+	@make test_poisson_bracket.o
+	${LINK.f90} -o test_poisson.exe ${OBJ_POISSON} ${Lflag2}
+
+test_poisson_bracket:
+	@echo test_poisson_bracket starting	>  test_poisson.diff
+	@make test_poisson_exe			>> test_poisson.diff
+	@echo './test_poisson.exe'		>> test_poisson.diff
+	-@(./test_poisson.exe >  test_poisson.diff)
+	@ls -l test_poisson.diff
 
 #######################################################################
