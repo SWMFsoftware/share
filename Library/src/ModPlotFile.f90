@@ -120,7 +120,7 @@ contains
     integer, allocatable:: MinimumBlockIjk(:,:)
     real             :: Time, Coord, ResultMod, iBlockDxDyDz(3)
     logical          :: IsCartesian
-    real, allocatable :: Coord_D(:), Var_D(:)
+    real, allocatable :: Coord_D(:), Var_V(:)
     real, allocatable:: Param_I(:), Coord_ID(:,:), Var_IV(:,:)
     real, allocatable:: VarHdf5Output(:,:,:,:,:), XYZMinMax(:,:,:)
     real(Real4_), allocatable:: Param4_I(:), Coord4_ID(:,:), Var4_I(:)
@@ -348,7 +348,7 @@ contains
 
        end do; end do; end do;
     else
-       allocate(Coord_D(nDim), Var_D(nDim))
+       allocate(Coord_D(nDim), Var_V(nDim))
        allocate(Coord_ID(n1*n2*n3,nDim), Var_IV(n1*n2*n3,nVar))
        ! Fill in the Coord_ID coordinate array using the available information
        do iDim = 1, nDim
@@ -454,8 +454,8 @@ contains
           if(n2 > 1)write(UnitTmp_, "(i6)", ADVANCE="NO") j
           if(n1 > 1)write(UnitTmp_, "(i8)", ADVANCE="NO") i
           n = n + 1
-          Coord_D = Coord_ID(n,:); Var_D = Var_IV(n,:)
-          write(UnitTmp_, StringFormat) Coord_D, Var_D
+          Coord_D = Coord_ID(n,:); Var_V = Var_IV(n,:)
+          write(UnitTmp_, StringFormat) Coord_D, Var_V
        end do; end do; end do
 
        call close_file
@@ -475,8 +475,8 @@ contains
        n = 0
        do k = 1, n3; do j = 1, n2; do i = 1, n1
           n = n + 1
-          Coord_D = Coord_ID(n,:); Var_D = Var_IV(n,:)
-          write(UnitTmp_, StringFormat) Coord_D, Var_D
+          Coord_D = Coord_ID(n,:); Var_V = Var_IV(n,:)
+          write(UnitTmp_, StringFormat) Coord_D, Var_V
        end do; end do; end do
        call close_file
     case('real8')
