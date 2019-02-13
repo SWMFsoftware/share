@@ -742,12 +742,14 @@ OBJ_POISSON = \
 	../src/blas.o \
 	../src/lapack.o \
 	../src/ModBlasLapack.o \
+	../src/ModHdf5Utils.o \
 	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o \
 	../src/ModMpi.o \
 	../src/ModMpiInterfaces.o \
+	../src/ModPlotFile.o \
 	../src/ModLinearSolver.o \
+	../src/ModUtility.o \
+	../src/ModUtility_c.o \
 	../src/ModPoissonBracket.o
 
 test_poisson_exe:
@@ -760,6 +762,10 @@ test_poisson_bracket:
 	@make test_poisson_exe			>> test_poisson.diff
 	@echo './test_poisson.exe'		>> test_poisson.diff
 	-@(./test_poisson.exe >  test_poisson.diff)
+	-@(tar -xf test_poisson.ref.tar)
+	-@(${SCRIPTDIR}/DiffNum.pl -b -a=1e-6 \
+		test_poisson.out test_poisson.ref.out \
+						> test_poisson.diff)
 	@ls -l test_poisson.diff
 
 #######################################################################
