@@ -33,7 +33,7 @@ MPILIB =
 # INCL_EXTRA can be defined to add more search directories.
 SEARCH = -module ${INCLDIR} ${INCL_EXTRA}
 
-DEBUGFLAG = -C -gline
+DEBUGFLAG = -check arg_temp_created -check bounds -g -traceback -fpe0
 DEBUG     = 
 
 OPT0 = -O0
