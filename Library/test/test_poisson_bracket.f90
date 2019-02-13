@@ -36,14 +36,6 @@ contains
        LogMomentum_I(iQ)   = 0.50*log10(MomentumMin*MomentumMax)       
     end do
     VDF_G = 0.0; VDF_G(1:nQ, 172:189) = 1.0; Source_C = 0.0
-!    call save_plot_file(NameFile='Poisson_start.out', &
-!         TypeFileIn='ascii', nStepIn=0, TimeIn=0.0, &
-!         NameVarIn='Phi LogMomentum VDF'  , &
-!         CoordMinIn_D=(/0.50, LogMomentum_I(1 )/),&
-!         CoordMaxIn_D=(/nP - 0.50, LogMomentum_I(nQ)/),&
-!         StringFormatIn = '(4F10.3)'            ,&
-!         Coord2In_I = LogMomentum_I(1:nQ)           ,&
-!         VarIn_II = transpose(VDF_G(1:nQ,1:nP)))
     !\
     ! Compiutation
     !/
