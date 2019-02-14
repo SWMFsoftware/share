@@ -526,8 +526,8 @@ contains
 
     if(allocated(Param_I))   deallocate(Param_I)
     if(allocated(NameVar_I)) deallocate(NameVar_I)
-    if(allocated(Coord_ID))  deallocate(Coord_ID)
-    if(allocated( Var_IV))   deallocate(Var_IV)
+    if(allocated(Coord_ID)) &
+       deallocate(Coord_ID,Var_IV,Coord_D,Var_V)
 
   end subroutine save_plot_file
 
