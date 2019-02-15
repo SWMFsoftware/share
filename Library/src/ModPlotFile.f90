@@ -348,7 +348,7 @@ contains
 
        end do; end do; end do;
     else
-       allocate(Coord_D(nDim), Var_V(nDim))
+       allocate(Coord_D(nDim), Var_V(nVar))
        allocate(Coord_ID(n1*n2*n3,nDim), Var_IV(n1*n2*n3,nVar))
        ! Fill in the Coord_ID coordinate array using the available information
        do iDim = 1, nDim
