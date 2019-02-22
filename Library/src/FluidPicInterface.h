@@ -462,6 +462,7 @@ public:
   double getNo2SiB() const { return (1. / Si2NoB); }
   double getNo2SiP() const { return (1. / Si2NoP); }
   double getNo2SiJ() const { return (1. / Si2NoJ); }
+  double getNo2SiT() const {return Si2NoV/Si2NoL; }
 
 
   int getNxcLocal() const { return nxcLocal; }
@@ -527,6 +528,11 @@ public:
   bool getdoSaveBinary() const {
     return doSaveBinary;
   };
+
+  void set_doSaveBinary(bool in) {
+    doSaveBinary = in; 
+  };
+  
   double getSatRadius() const {
     return drSat * dx_D[0];
   };
