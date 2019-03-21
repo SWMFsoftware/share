@@ -235,6 +235,7 @@ contains
 
     use ModUtilities, ONLY: upper_case
     use ModReadParam, ONLY: read_var, lStringLine
+    use ModIoUnit,    ONLY: UnitTmp_
 
     character (len=*), intent(in) :: NameCommand
 
@@ -439,15 +440,15 @@ contains
           end if
 
           ! Read in the coefficients from the file
-          open(77, file=NamePlanetHarmonicsFile, status='old', action='read')
-          read(77, *) headerline
+          open(UnitTmp_, file=NamePlanetHarmonicsFile, status='old', action='read')
+          read(UnitTmp_, *) headerline
           do n=0,MaxHarmonicDegree
              do m=0,n
                 ! Read data from the file, default fortran format
-                read(77, *) n_loop, m_loop, g_Planet(n, m), h_Planet(n, m)
+                read(UnitTmp_, *) n_loop, m_loop, g_Planet(n, m), h_Planet(n, m)
              end do
           end do
-          close(77)
+          close(UnitTmp_)
 
           call normalize_schmidt_coefficients
        end if
