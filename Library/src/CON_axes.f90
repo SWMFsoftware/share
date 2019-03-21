@@ -222,7 +222,7 @@ module CON_axes
 
   ! Remaining coordinate transformation matrices to convert to/from GSE
   real, dimension(3,3) :: &
-       SmgGse_DD, GeoGse_DD, MagGse_DD
+       SmgGse_DD, GeoGse_DD, MagGse_DD, GseGeo_DD
 
 contains
 
@@ -734,8 +734,9 @@ contains
 
     ! Now calculate the transformation matrices for the rotating systems
     call set_gei_geo_matrix(TimeSim)
-
-    GeoGse_DD = transpose(matmul(GseGei_DD,GeiGeo_DD))
+    
+    GseGeo_DD = matmul(GseGei_DD, GeiGeo_DD)
+    GeoGse_DD = transpose(GseGeo_DD)
     MagGse_DD = matmul(MagGeo_DD,GeoGse_DD)
 
     if(DoTestMe)then

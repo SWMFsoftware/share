@@ -441,12 +441,10 @@ contains
           ! Read in the coefficients from the file
           open(77, file=NamePlanetHarmonicsFile, status='old', action='read')
           read(77, *) headerline
-          write(*, *) 'Reading Schmidt coefficients - n, m, g, h'
           do n=0,MaxHarmonicDegree
              do m=0,n
                 ! Read data from the file, default fortran format
                 read(77, *) n_loop, m_loop, g_Planet(n, m), h_Planet(n, m)
-                write(*, *) n_loop, m_loop, g_Planet(n, m), h_Planet(n, m)
              end do
           end do
           close(77)

@@ -119,9 +119,7 @@ contains
        RETURN
     end if
 
-    ! Update axes (these routines depend on the MAG axes which is only
-    ! relevant for a dipole magnetic field. Moving this command to the
-    ! DIPOLE specific case.)
+    ! Update axes
     call set_axes(TimeSim)
 
     ! The coord system name is stored in the first 3 characters
@@ -168,7 +166,7 @@ contains
     case("MULTIPOLE")
     ! As of now the multipole option is only implemented for a GSE/GEO type
     ! coordinate system.
-      call calculate_multipole_field(Xyz_D, TimeSim, b_D)
+      call calculate_multipole_field(Xyz_D, b_D)
 
        !case('QUADRUPOLE','OCTUPOLE')
        !   ! Transform to MAG system
@@ -246,36 +244,36 @@ contains
   end subroutine get_planet_field33
 
   ! ===========================================================================
-  subroutine calculate_multipole_field(Xyz_D, TimeSim, b_D)
+  subroutine calculate_multipole_field(XyzIn_D, b_D)
     ! Calculate the (Bx, By, Bz) components of the magnetic field based
     ! on Schimdt coefficients declared in CON_planet.f90
-    use ModNumConst,    ONLY: cPi, cTwoPi
+    ! use ModNumConst,    ONLY: cPi, cTwoPi
 
-    real, intent(in) :: Xyz_D(3)
-    real, intent(in) :: TimeSim
+    real, intent(in) :: XyzIn_D(3)
     real, intent(out) :: b_D(3)
 
     integer :: n, m
-    real :: a, r, theta, phi, Br, Btheta, Bphi
+    real :: theta, phi, Br, Btheta, Bphi, Xyz_D(3)
     real, allocatable :: P_II(:,:), diffP_II(:,:)
 
     real :: sinmphi, cosmphi, sintheta, costheta, sinphi, cosphi
     real :: a_r, inv_sintheta, sinphi_prev, cosphi_prev
 
+    Xyz_D = matmul(GseGeo_DD, XyzIn_D)
 
-    r = sqrt(Xyz_D(1)**2 + Xyz_D(2)**2 + Xyz_D(3)**2)
+    a_r = 1.0/sqrt(Xyz_D(1)**2 + Xyz_D(2)**2 + Xyz_D(3)**2)
     theta = atan2(sqrt(Xyz_D(1)**2 + Xyz_D(2)**2), Xyz_D(3))
-    phi = atan2(Xyz_D(2), Xyz_D(1)) - TimeSim/RotPeriodPlanet*cTwoPi
-    if(theta < 0.0) theta = cPi/2 - theta
-    if(phi < 0.0) phi = phi + cTwoPi
-    a = 1.0 ! Radius of planet in units of calculation (mostly planet).
+    phi = atan2(Xyz_D(2), Xyz_D(1))
+    ! if(theta < 0.0) theta = cPi/2 - theta
+    ! if(phi < 0.0) phi = phi + cTwoPi
+    ! a = 1.0 ! Radius of planet in units of calculation (mostly planet).
 
     ! Additional variables to improve speed of calculation
     sintheta = sin(theta)
     costheta = cos(theta)
     sinphi = sin(phi)
     cosphi = cos(phi)
-    a_r = a/r
+    
     inv_sintheta = 0.0
     if(abs(sintheta) > 1.0e-3) inv_sintheta = 1./sintheta
 
