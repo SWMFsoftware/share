@@ -112,7 +112,8 @@ FISHPAKSEARCH  = -I\${UTILDIR}/FISHPAK/lib
 FISHPAKLIB     = -L\${UTILDIR}/FISHPAK/lib -lFISHPAK           
 ";
 
-
+# Date of installation
+my $Date;
 
 # Default precision for installation
 my $DefaultPrecision = 'double';
@@ -157,6 +158,7 @@ foreach (@Arguments){
 			       $IsComponent=1 if $value =~ /^=c/i;
 			       $IsComponent=0 if $value =~ /^=s/i;
 			       $Install=1;                      next};
+    if(/^-date=(.*)/)         {$Date = $1;                      next};
     if(/^-uninstall$/i)       {$Uninstall=1;                    next};
     if(/^-compiler=(.*)$/i)   {$Compiler=$1; 
 			       $CompilerC=$1 if $Compiler =~ s/,(.+)//;
@@ -190,6 +192,22 @@ if(not $MakefileDefOrig and not $IsComponent){
     warn "$WARNING $Code cannot be used in stand alone mode!\n ".
 	"Switching to component mode...\n";
     $IsComponent = 1;
+}
+
+if($Date){
+    my $command = "\'checkout \`git rev-list -1 --before=\"$Date\" master\`\'";
+    foreach my $dir (".", "../.."){
+	my $gitall = "$dir/share/Scripts/gitall";
+	if(-e $gitall){
+	    $command = "$gitall $command";
+	    last;
+	}
+    }
+    die "$ERROR: could not find share/Scripts/gitall\n" 
+	unless $command =~ /gitall/;
+    print "setting checkout date=$Date\n";
+    &shell_command($command);
+    exit 0;
 }
 
 &print_help_ if $Help;
@@ -1085,6 +1103,7 @@ Information:
 
 (Un/Re)installation:
 
+-date=DATE      set checkout date to DATE (requires local Git history)
 -uninstall      uninstall code (make distclean)
 
 -install=c      (re)install code as an SWMF component (c)
@@ -1135,6 +1154,11 @@ Show current settings:
 Show current settings with more detail: 
 
     Config.pl -show
+
+Set checkout date (note this will overwrite the Config.pl script itself)
+Can be used after or together with -install or possibly -clone:
+
+    Config.pl -date='2018-12-31 19:00'
 
 Show available compiler choices:
 
