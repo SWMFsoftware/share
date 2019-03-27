@@ -109,21 +109,6 @@ contains
        Xyz_D = XyzIn_D / RadiusPlanet
     end if
 
-    Xyz_D = Xyz_D - MagCenter_D
-
-    ! radial distance squared
-    r2 = sum(Xyz_D**2)
-    if(r2 < 1E-12) then
-       ! return zero field if very small
-       b_D = 0
-       RETURN
-    end if
-
-    ! Update axes (these routines depend on the MAG axes which is only
-    ! relevant for a dipole magnetic field. Moving this command to the
-    ! DIPOLE specific case.)
-    call set_axes(TimeSim)
-
     ! The coord system name is stored in the first 3 characters
     NameCoordSystem = TypeCoord(1:3)
 
@@ -131,7 +116,18 @@ contains
     select case(TypeBField)
     case('DIPOLE')
 
+       Xyz_D = Xyz_D - MagCenter_D
 
+       ! radial distance squared
+       r2 = sum(Xyz_D**2)
+       if(r2 < 1E-12) then
+           ! return zero field if very small
+           b_D = 0
+           RETURN
+       end if
+
+       ! Update axes
+       call set_axes(TimeSim)
 
        ! Various powers of radial distance
        r2Inv = 1/r2
@@ -166,10 +162,22 @@ contains
        end select
 
     case("MULTIPOLE")
-    ! As of now the multipole option is only implemented for a GSE/GEO type
-    ! coordinate system.
-      call calculate_multipole_field(Xyz_D, TimeSim, b_D)
+       ! As of now the multipole option is only implemented for a GSE/GEO type
+       ! coordinate system.
+   
+       ! radial distance squared
+       r2 = sum(Xyz_D**2)
+       if(r2 < 1E-12) then
+          ! return zero field if very small
+          b_D = 0
+          RETURN
+       end if
 
+       ! Update axes
+       call set_axes(TimeSim)
+       call calculate_multipole_field(Xyz_D, b_D)
+
+       ! -------- Old piece of code -----------------------------------------
        !case('QUADRUPOLE','OCTUPOLE')
        !   ! Transform to MAG system
        !   Xyz_D = coord_transform(TimeSim,Xyz_D,NameCoordSystem,'MAG')
@@ -187,6 +195,8 @@ contains
        !
        !   ! Transform the magnetic field back to the input coordinate system
        !   b_D = coord_transform(TimeSim,b_D,'MAG',NameCoordSystem)
+       ! --------------------------------------------------------------------
+
     case default
        call CON_stop(NameSub//' SWMF_ERROR: unimplemented TypeBField='//&
             TypeBField)
@@ -246,36 +256,63 @@ contains
   end subroutine get_planet_field33
 
   ! ===========================================================================
-  subroutine calculate_multipole_field(Xyz_D, TimeSim, b_D)
+  subroutine calculate_multipole_field(XyzIn_D, b_D)
     ! Calculate the (Bx, By, Bz) components of the magnetic field based
     ! on Schimdt coefficients declared in CON_planet.f90
-    use ModNumConst,    ONLY: cPi, cTwoPi
+    use ModNumConst,    ONLY: cTwoPi
 
-    real, intent(in) :: Xyz_D(3)
-    real, intent(in) :: TimeSim
+    real, intent(in) :: XyzIn_D(3)
     real, intent(out) :: b_D(3)
 
     integer :: n, m
-    real :: a, r, theta, phi, Br, Btheta, Bphi
+    real :: theta, phi, Br, Btheta, Bphi, XyzGeo_D(3)
     real, allocatable :: P_II(:,:), diffP_II(:,:)
 
     real :: sinmphi, cosmphi, sintheta, costheta, sinphi, cosphi
     real :: a_r, inv_sintheta, sinphi_prev, cosphi_prev
-
-
-    r = sqrt(Xyz_D(1)**2 + Xyz_D(2)**2 + Xyz_D(3)**2)
-    theta = atan2(sqrt(Xyz_D(1)**2 + Xyz_D(2)**2), Xyz_D(3))
-    phi = atan2(Xyz_D(2), Xyz_D(1)) - TimeSim/RotPeriodPlanet*cTwoPi
-    if(theta < 0.0) theta = cPi/2 - theta
+    
+    ! ------------------------------------------------------------------
+    ! Convert input location to GEO coordinate system
+    ! We assume input coordinate system is GSE since 
+    ! mag-rot axes are aligned anyway.
+    ! If you want to be proper and use multipole in another 
+    ! coordinate system you could use transform_matrix
+    ! to find the appropriate transformation.
+    ! That may be unnecessarily slow.
+    ! Instead just replace GseGeo_DD to GsmGeo_DD e.g.
+    !
+    !    XyzGeo_D = matmul(GsmGeo_DD, XyzIn_D)
+    !
+    ! (also do this while re-converting to input coordsystem)
+    ! 
+    !   b_D = matmul(GeoGsm_DD, b_D)
+    !  
+    ! (GSM here is just an example. If mag axis is aligned with
+    !  rotation axis then GSE == GSM)
+    ! 
+    ! The purpose of this is to always calculate the multipole field
+    ! in the coordinate system it was originally designed in i.e. GEO
+    ! 
+    ! Reference for spherical harmonics - 
+    ! Wertz, J. R. (Ed.). (2012). Spacecraft attitude determination and 
+    !    control (Vol. 73). Springer Science & Business Media.
+    !    (Appendices G & H)
+    ! -----------------------------------------------------------------
+    
+    XyzGeo_D = matmul(GseGeo_DD, XyzIn_D)
+    
+    ! Assuming a=1.0 (planetary normalization done in get_planet_field)
+    a_r = 1.0/sqrt(XyzGeo_D(1)**2 + XyzGeo_D(2)**2 + XyzGeo_D(3)**2)
+    theta = atan2(sqrt(XyzGeo_D(1)**2 + XyzGeo_D(2)**2), XyzGeo_D(3))
+    phi = atan2(XyzGeo_D(2), XyzGeo_D(1))
     if(phi < 0.0) phi = phi + cTwoPi
-    a = 1.0 ! Radius of planet in units of calculation (mostly planet).
-
+    
     ! Additional variables to improve speed of calculation
     sintheta = sin(theta)
     costheta = cos(theta)
     sinphi = sin(phi)
     cosphi = cos(phi)
-    a_r = a/r
+    
     inv_sintheta = 0.0
     if(abs(sintheta) > 1.0e-3) inv_sintheta = 1./sintheta
 
@@ -297,8 +334,8 @@ contains
       cosphi_prev = 1.0
       Br = Br + (a_r)**(n+2) * (n+1) * P_II(n,m) * g_Planet(n,m)
       Btheta = Btheta - (a_r)**(n+2) * diffP_II(n,m) * g_Planet(n,m)
-      Bphi = Bphi + inv_sintheta*(a_r)**(n+2) * P_II(n,m)* m * (-h_Planet(n,m))
-
+      ! Bphi contribution is 0 for m=0. 
+      
       do m=1,n
 
         sinmphi = sinphi_prev * cosphi + cosphi_prev * sinphi
@@ -326,7 +363,8 @@ contains
     b_D(2) = (Br*sintheta*sinphi + Btheta*costheta*sinphi &
                - Bphi*cosphi) * 1e-9
     b_D(3) = (Br*costheta - Btheta*sintheta) * 1e-9
-
+    b_D = matmul(GeoGse_DD, b_D)
+        ! Reconvert to input coordinate system.
 
   end subroutine calculate_multipole_field
 

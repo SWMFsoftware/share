@@ -88,7 +88,7 @@ module CON_planet
   logical :: IsPlanetModified = .false.
 
   ! Variables added for the multipole option for the magnetic field
-  logical :: UseMultipoleBField = .false.
+  logical :: UseMultipoleB0 = .false.
   integer :: MaxHarmonicDegree = -1
   character (len=200) :: NamePlanetHarmonicsFile
   real, allocatable :: g_Planet(:, :), h_Planet(:, :)
@@ -235,6 +235,7 @@ contains
 
     use ModUtilities, ONLY: upper_case
     use ModReadParam, ONLY: read_var, lStringLine
+    use ModIoUnit,    ONLY: UnitTmp_
 
     character (len=*), intent(in) :: NameCommand
 
@@ -426,9 +427,23 @@ contains
        call read_var('DtUpdateB0',DtUpdateB0)
 
     case('#MULTIPOLEB0')
-
-       call read_var('UseMultipoleBField', UseMultipoleBField)
-       if(UseMultipoleBField) then
+       
+       call read_var('UseMultipoleB0', UseMultipoleB0)
+       if(UseMultipoleB0) then
+          
+          ! If multipole is used, #IDEALAXES commands are enforced.
+          ! Proxy-mag axis is aligned with the rotation axis.
+          IsPlanetModified = .true.
+          UseRealRotAxis   = .false.
+          IsRotAxisPrimary = .true.
+          UseSetRotAxis    = .true.
+          RotAxisTheta     = 0.0
+          RotAxisPhi       = 0.0
+          UseRealMagAxis   = .false.
+          IsMagAxisPrimary = .false.
+          UseSetMagAxis    = .false.
+          
+          ! Set multipole properties
           TypeBField="MULTIPOLE"
           call read_var('MaxHarmonicDegree', MaxHarmonicDegree)
           call read_var('NamePlanetHarmonicsFile', NamePlanetHarmonicsFile)
@@ -439,17 +454,15 @@ contains
           end if
 
           ! Read in the coefficients from the file
-          open(77, file=NamePlanetHarmonicsFile, status='old', action='read')
-          read(77, *) headerline
-          write(*, *) 'Reading Schmidt coefficients - n, m, g, h'
+          open(UnitTmp_, file=NamePlanetHarmonicsFile, status='old', action='read')
+          read(UnitTmp_, *) headerline
           do n=0,MaxHarmonicDegree
              do m=0,n
                 ! Read data from the file, default fortran format
-                read(77, *) n_loop, m_loop, g_Planet(n, m), h_Planet(n, m)
-                write(*, *) n_loop, m_loop, g_Planet(n, m), h_Planet(n, m)
+                read(UnitTmp_, *) n_loop, m_loop, g_Planet(n, m), h_Planet(n, m)
              end do
           end do
-          close(77)
+          close(UnitTmp_)
 
           call normalize_schmidt_coefficients
        end if
@@ -467,7 +480,7 @@ contains
     character (len=*), parameter :: NameSub=NameMod//'::check_planet_var'
 
     ! The rotation and magnetic axes are aligned if any of them is not a
-    ! primary axis.
+    ! primary axis or if multipoleB0 is used (implicitly). 
     UseAlignedAxes = (.not. IsRotAxisPrimary) .or. (.not. IsMagAxisPrimary)
 
     ! Warn if setting is unphysical
@@ -477,7 +490,11 @@ contains
 
     ! Check if there is a need to update the magnetic field
     DoUpdateB0 = DtUpdateB0 > 0.0 .and. DoTimeAccurate .and. UseRotation &
-         .and. .not.UseAlignedAxes
+         .and. .not.(UseAlignedAxes .and. .not.UseMultipoleB0)
+
+    ! Multipole B0 uses IdealAxes to set the proxy mag-rot axes, 
+    ! so it needs DoUpdateB0 to be True even when IdealAxes is used. 
+    ! If dipole is used with IdealAxes, no update is needed. 
 
   end subroutine check_planet_var
 
