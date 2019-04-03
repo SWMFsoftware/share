@@ -1,42 +1,50 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -s
 
-if($ARGV[0] =~ /-h/){
+if($h or $help){
     print "
 Recursively find all subdirectories that are Git repositories
 and execute the Git command passed in the arguments.
-The verbose output from Git status is suppressed unless the -v swich is used.
+The verbose output from Git status is suppressed unless the -v switch is used.
 
 Usage:
-  gitall [-h] [-v] GITCOMMAND
--h           print this help message
--v           provide verbose information for the status command
-GITCOMMAND   any Git command
+  gitall [-h] [-v] [-s[=N]] GITCOMMAND
+
+-h -help      print this help message
+-v -verbose   provide verbose information for the status command
+-s -sleep     sleep 5 seconds after each Git command to avoid ssh access issues
+-s=N -sleep=N sleep N seconds after each Git command (N should be more than 1)
+GITCOMMAND    any Git command
 
 Examples:
 
-Pull remote version into all Git subdirectories
-    gitall pull
-
-Show verbose status of all Git subdirectories
+Show verbose status of all Git subdirectories:
     gitall -v status
+
+Pull remote version into all Git subdirectories and sleep 5 seconds after each:
+    gitall -s pull
+
 ";
     exit 0;
 }
 
+my $Verbose = ($v or $verbose);
+my $Sleep   = ($s or $sleep);
+$Sleep = 5 if $Sleep == 1;
+
 use strict;
 
 my $gitcmd;                # The variable to receive the git command
-my $verbose=0;
 
 $gitcmd = join(' ',@ARGV);
-
+$gitcmd .= "; sleep $Sleep" if $Sleep;
 
 if($gitcmd){
-    $verbose = 1 if $gitcmd =~ s/-v//;
-
     my $pwd = `pwd`; chop($pwd);
     &execute_gitall($pwd);
 }
+
+exit 0;
+#==============================================================================
 
 sub execute_gitall(){
    my($dir) = @_;
@@ -53,7 +61,7 @@ sub execute_gitall(){
        if ($subdir eq ".git"){
            my $result = `cd $dir; git $gitcmd`;
 	   # remove verbose info
-	   if(not $verbose){
+	   if(not $Verbose){
 	       $result =~ s/On branch master//;
 	       $result =~ s/Your branch is up.to.date with .origin\/master.+//;
 	       $result =~ s/nothing to commit, working tree clean//;
