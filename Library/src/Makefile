@@ -48,7 +48,6 @@ OBJECTS = \
 	ModRandomNumber.o\
 	ModReadParam.o\
 	ModSort.o\
-	ModSpice.o\
 	ModTimeConvert.o\
 	ModTriangulate.o\
 	ModTriangulateSpherical.o\
