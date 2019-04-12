@@ -142,7 +142,7 @@ void FluidPicInterface::InitData() {
     -> E_CGS*C_CGS = 1e6*E_SI
     -> E_CGS = 1e6*E_SI/C_CGS = 1e6*E_SI/Unorm.
    */
-  Si2NoE = 1e6 * Unorm;
+  Si2NoE = 1e6 / Unorm;
 
   // Normalization: CGS -> non dimensional cgs
   Si2NoRho /= RHOnorm;
@@ -665,7 +665,7 @@ void FluidPicInterface::get_region_points(bool doCount, bool doGetPos,
               for (int iVar = 0; iVar < nVarFluid; iVar++) {
                 int idx;
                 idx = iVar + nVarFluid * (iPoint_I[ii] - 1);
-                State_BGV(iBlock, i, j, k, iVar) = state_I[idx];
+                State_BGV(iBlock, i, j, k, iVar) = state_I[idx];		
               }
               ii++;
 
@@ -957,13 +957,12 @@ void FluidPicInterface::setStateVar(double *state_I, int *iPoint_I) {
 void FluidPicInterface::PrintFluidPicInterface() {
 
   if (myrank == 0) {
-    cout << " nS = " << nS << endl;
-    cout << " Sum all particle masses = " << SumMass << endl;
-    cout << "useMultiFluid   = " << useMultiFluid << " nFluid = " << nFluid
-         << endl;
-    cout << " useMultiSpecies = " << useMultiSpecies
-         << " nSpecies =" << nSpecies << endl;
-    cout << " useElectronFluid = " << useElectronFluid << endl;
+    cout << "nS = " << nS  << " Sum all particle masses = " << SumMass << endl;
+    cout << "useMultiFluid   = " << (useMultiFluid? "T":"F");
+    if(useMultiFluid) cout<< " nFluid = " << nFluid << endl;
+    cout << "useMultiSpecies = " << (useMultiSpecies? "T":"F");
+    if(useMultiSpecies) cout<< " nSpecies =" << nSpecies << endl;
+    cout << "useElectronFluid = " << (useElectronFluid? "T":"F") << endl;
     for (int is = 0; is < nS; is++) {
       cout << "Q/Qi[" << is << "] = " << QoQi_S[is] << endl;
       cout << "M/Mi[" << is << "] = " << MoMi_S[is] << endl;
