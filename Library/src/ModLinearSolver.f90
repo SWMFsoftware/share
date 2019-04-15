@@ -995,18 +995,7 @@ contains
        RETURN
     end if
 
-    !hyzhou: adding openmp slows down the code??? Maybe not worth it?
-    ! This needs to be carefully tested!
-    !start = omp_get_wtime()    
-
-    !$omp parallel
-    !$omp workshare
-    DotProduct = dot_product(a_I, b_I)
-    !$omp end workshare
-    !$omp end parallel
-    
-    !finish = omp_get_wtime()
-    !write(*,*) 'elasped time=',finish-start
+    DotProduct = dot_product(a_I, b_I)    
     
     if(iComm == MPI_COMM_SELF) then
        dot_product_mpi = DotProduct
@@ -1700,9 +1689,11 @@ contains
 
     integer :: iBlock
     !------------------------------------------------------------------------
+    !$omp parallel do
     do iBlock = 1, nBlock
        x_VB(:,iBlock) = matmul(d_VVB(:,:,iBlock), x_VB(:,iBlock))
     end do
+    !$omp end parallel do
 
   end subroutine multiply_block_jacobi
   !============================================================================
@@ -2133,7 +2124,7 @@ contains
              n = 0
              !$omp parallel do private( n )
              do iBlock=1,nBlock; do k=1,nK; do j=1,nJ; do i=1,nI
-                n = (iBlock-1)*nI*nJ*nk*nVar ! openmp testing
+                n = (iBlock-1)*nI*nJ*nk*nVar
                 do iVar=1,nVar
                    n = n + 1
                    JacobiPrec_I(n) = 1.0 / Jac_VVCIB(iVar,iVar,i,j,k,1,iBlock)
