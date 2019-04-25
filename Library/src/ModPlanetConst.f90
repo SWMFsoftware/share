@@ -232,11 +232,37 @@ contains
      !\
      ! Uranus (70)
      !/
+     NamePlanet_I(Uranus_)                = 'URANUS'
+     rPlanet_I(Uranus_)                   = 25559.0e+3              ! [ m]
+     mPlanet_I(Uranus_)                   = 8.681e+25               ! [kg]
+     rOrbitPlanet_I(Uranus_)              = 19.2814 * cAU           ! [ m]
+     OrbitalPeriodPlanet_I(Uranus_)       = 30688.5 * cDay          ! [ s]
+     RotationPeriodPlanet_I(Uranus_)      = 17.2 * cHour            ! [ s]
+         ! Retrograde"ness" should be enforced due to the >90deg obliquity
+         ! instead of a negative rotation period.
+         ! Following lines assume Spring equinox.
+     iYearEquinoxPlanet_I(Uranus_)        = 1966                    ! [yr]
+     iMonthEquinoxPlanet_I(Uranus_)       =    2                    ! [mo]
+     iDayEquinoxPlanet_I(Uranus_)         =    3                    ! [dy]
+     iHourEquinoxPlanet_I(Uranus_)        =    0                    ! [hr]
+     iMinuteEquinoxPlanet_I(Uranus_)      =    0                    ! [mn]
+     iSecondEquinoxPlanet_I(Uranus_)      =    0                    ! [ s]
+     FracSecondEquinoxPlanet_I(Uranus_)   =  0.0                    ! [ s]
+     TiltPlanet_I(Uranus_)                = 97.9 * cDegToRad        ! [rad]
+
+     TypeBFieldPlanet_I(Uranus_)          = "DIPOLE"
+     DipoleStrengthPlanet_I(Uranus_)      = 22800.0e-9              ! [ T]
+     bAxisThetaPlanet_I(Uranus_)          = 58.6 * cDegToRad        ! [rad]
+     bAxisPhiPlanet_I(Uranus_)            = 289.1 * cDegToRad       ! [rad]
+                                       ! Not sure about ^ this value.
+     IonoHeightPlanet_I(Uranus_)          = 110000.0                ! [ m]
+
    
      !\
      ! Neptune (80)
      !/
-   
+
+     
      !\
      ! Pluto (90)
      !/

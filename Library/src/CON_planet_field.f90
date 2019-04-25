@@ -299,7 +299,7 @@ contains
     !    (Appendices G & H)
     ! -----------------------------------------------------------------
     
-    XyzGeo_D = matmul(GseGeo_DD, XyzIn_D)
+    XyzGeo_D = matmul(GeoGse_DD, XyzIn_D)
     
     ! Assuming a=1.0 (planetary normalization done in get_planet_field)
     a_r = 1.0/sqrt(XyzGeo_D(1)**2 + XyzGeo_D(2)**2 + XyzGeo_D(3)**2)
@@ -363,7 +363,7 @@ contains
     b_D(2) = (Br*sintheta*sinphi + Btheta*costheta*sinphi &
                - Bphi*cosphi) * 1e-9
     b_D(3) = (Br*costheta - Btheta*sintheta) * 1e-9
-    b_D = matmul(GeoGse_DD, b_D)
+    b_D = matmul(GseGeo_DD, b_D)
         ! Reconvert to input coordinate system.
 
   end subroutine calculate_multipole_field

@@ -430,15 +430,13 @@ contains
        
        call read_var('UseMultipoleB0', UseMultipoleB0)
        if(UseMultipoleB0) then
-          
-          ! If multipole is used, #IDEALAXES commands are enforced.
-          ! Proxy-mag axis is aligned with the rotation axis.
+
+          ! If multipole is used, the magnetic axis is aligned
+          ! with the rotation axis. Rotation axis may be real or 
+          ! user-specified using #ROTATIONAXIS command.
           IsPlanetModified = .true.
-          UseRealRotAxis   = .false.
+          UseRealRotAxis   = .true.
           IsRotAxisPrimary = .true.
-          UseSetRotAxis    = .true.
-          RotAxisTheta     = 0.0
-          RotAxisPhi       = 0.0
           UseRealMagAxis   = .false.
           IsMagAxisPrimary = .false.
           UseSetMagAxis    = .false.
