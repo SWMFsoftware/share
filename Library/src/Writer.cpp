@@ -95,6 +95,7 @@ void Writer::init() {
     plotVar = expand_variables("{all}");
     namePrefix += "_all";
   } else if (plotString.find("var") != std::string::npos) {
+    plotVar = expand_variables(plotVar);
     namePrefix += "_var";
   } else if (plotString.find("fluid") != std::string::npos) {
     plotVar = expand_variables("{fluid}");

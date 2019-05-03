@@ -1333,7 +1333,6 @@ double FluidPicInterface::getSmoothFactor(int i, int j, int k) const {
 
 string FluidPicInterface::expandVariable(string inVars) const {
   // Expand the plot variables inside { };
-  // Only support {fluid} so far.
   string::size_type pos1, pos2;
   string var0;
 
