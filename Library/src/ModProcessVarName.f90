@@ -34,27 +34,27 @@ module ModProcessVarName
        H_    = 1,  &
        Hp_   = 2,  &
        HpSw_ = 3,  &
-       H2p_  = 4,  &
-       O_    = 5,  &
-       Op_   = 6,  &
-       O2p_  = 7,  & 
-       He_   = 8,  &
-       He2p_ = 9,  &
-       OHp_  = 10, &
-       N_    = 11, &
-       Np_   = 12, &
-       COp_  = 13, & 
-       CO2p_ = 14, & 
-       H2O_  = 15, & 
-       H2Op_ = 16, & 
-       H3Op_ = 17, & 
-       Mp_   = 18, & 
-       Lp_   = 19, & 
-       MHCp_ = 20, & 
-       HHCp_ = 21, & 
-       HNIp_ = 22, & 
-       Sw_   = 23, & 
-       Iono_ = 24, & 
+       HpPs_ = 4, &
+       H2p_  = 5,  &
+       O_    = 6,  &
+       Op_   = 7,  &
+       O2p_  = 8,  & 
+       He_   = 9,  &
+       Hep_  = 10,  &
+       He2p_ = 11, &
+       OHp_  = 12, &
+       N_    = 13, &
+       Np_   = 14, &
+       COp_  = 15, & 
+       CO2p_ = 16, & 
+       H2O_  = 17, & 
+       H2Op_ = 18, & 
+       H3Op_ = 19, & 
+       Mp_   = 20, & 
+       Lp_   = 21, & 
+       MHCp_ = 22, & 
+       HHCp_ = 23, & 
+       HNIp_ = 24, & 
        Neu1_ = 25, & 
        Neu2_ = 26, & 
        Neu3_ = 27, & 
@@ -71,11 +71,13 @@ module ModProcessVarName
        'H   ',  &
        'Hp  ',  &
        'HpSw',  &
+       'HpPs',  &
        'H2p ',  &
        'O   ',  &
        'Op  ',  &
        'O2p ',  & 
        'He  ',  &
+       'Hep ',  &
        'He2p',  &
        'OHp ',  &
        'N   ',  &
@@ -90,8 +92,6 @@ module ModProcessVarName
        'MHCp',  &
        'HHCp',  &
        'HNIp',  &
-       'Sw  ',  &
-       'Iono',  &
        'Neu1',  &
        'Neu2',  &
        'Neu3',  &
@@ -442,18 +442,18 @@ contains
     Dictionary_III(HNIp_, Rho_,   2) = 'hnip'
 
     ! solar wind
-    Dictionary_III(Sw_, Rho_,   2) = 'swhrho'
-    Dictionary_III(Sw_, RhoUx_, 2) = 'swhmx'
-    Dictionary_III(Sw_, RhoUy_, 2) = 'swhmy'
-    Dictionary_III(Sw_, RhoUz_, 2) = 'swhmz'
-    Dictionary_III(Sw_, p_,     2) = 'swhp'
-    Dictionary_III(Sw_, Energy_,2) = 'swhe'
+    Dictionary_III(HpSw_, Rho_,   2) = 'swhrho'
+    Dictionary_III(HpSw_, RhoUx_, 2) = 'swhmx'
+    Dictionary_III(HpSw_, RhoUy_, 2) = 'swhmy'
+    Dictionary_III(HpSw_, RhoUz_, 2) = 'swhmz'
+    Dictionary_III(HpSw_, p_,     2) = 'swhp'
+    Dictionary_III(HpSw_, Energy_,2) = 'swhe'
 
-    Dictionary_III(Sw_, Rho_,   3) = 'rhosw'
-    Dictionary_III(Sw_, Energy_,3) = 'swe'
+    Dictionary_III(HpSw_, Rho_,   3) = 'rhosw'
+    Dictionary_III(HpSw_, Energy_,3) = 'swe'
 
     ! ionosphere
-    Dictionary_III(Iono_, Rho_,   2) = 'rhoion'
+    Dictionary_III(Hp_, Rho_,   2) = 'rhoion'
 
     ! Outer Heliosphere Pop1 / arbitrary neutral
     Dictionary_III(Neu1_, Rho_,   2) = 'neurho'
