@@ -416,7 +416,7 @@ void Writer::write_header(double const timeNow, int const iCycle) {
   outFile << "\n";
 
   outFile << "#TIMESIMULATION\n";
-  outFile << time << "\t TimeSimulation\n";
+  outFile << timeNow << "\t TimeSimulation\n";
   outFile << "\n";
 
   outFile << "#PLOTRANGE\n";
