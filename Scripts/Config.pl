@@ -92,6 +92,7 @@ our $Uninstall;             # True if code is uninstalled
 our $ShowGridSize;          # Show grid size for caller code
 our $NewGridSize;           # New grid size to be set in caller code
 our $Hdf5;                  # True if HDF5  lib is enabled
+our $NewHdf5;               # Set if -hdf5=... flag was used
 our $Hypre;                 # True if HYPRE lib is enabled
 our $Spice;                 # True if SPICE lib is enabled
 our $Fishpak;               # True if Fishpak lib is enabled
@@ -125,7 +126,6 @@ my $NewOptimize;
 my $NewDebug;
 my $NewMpi;
 my $NewOpenMp;
-my $NewHdf5;
 my $NewHypre;
 my $NewFishpak;
 my $NewSpice;
