@@ -13,7 +13,9 @@ include Makefile.RULES
 
 # This rule is used to regenerate ModMpiInterface.f90 from a modified 
 # SWMF_MPI_routines.dat
-MPIINTERFACE:
+#MPIINTERFACE:
+
+ModMpiInterfaces.f90: MpiTemplate.f90 SWMF_MPI_routines.dat
 	${SCRIPTDIR}/CreateModMpi.pl
 
 OBJECTS = \

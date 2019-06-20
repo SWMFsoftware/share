@@ -28,6 +28,7 @@ module ModMPiInterfaces
   public:: mpi_group_union
   public:: mpi_ibsend
   public:: mpi_init
+  public:: mpi_init_thread
   public:: mpi_initialized
   public:: mpi_irecv
   public:: mpi_irsend
@@ -383,6 +384,13 @@ module ModMPiInterfaces
      subroutine mpi_init(ierror)
        integer, intent(out) :: ierror
      end subroutine mpi_init
+  end interface
+
+  interface
+     subroutine mpi_init_thread(required, provided, ierror)
+       integer, intent(in) :: required
+       integer, intent(out) :: provided, ierror
+     end subroutine mpi_init_thread
   end interface
 
   interface

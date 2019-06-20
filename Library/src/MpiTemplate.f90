@@ -668,6 +668,11 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_init
 
+     subroutine mpi_init_thread(required, provided, ierror)
+       integer, intent(in) :: required
+       integer, intent(out) :: provided, ierror
+     end subroutine mpi_init_thread
+
      subroutine mpi_initialized(flag, ierror)
        logical, intent(out) :: flag
        integer, intent(out) :: ierror
