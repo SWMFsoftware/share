@@ -75,7 +75,7 @@ contains
   end function triple_superbee
   !==========================
   subroutine explicit(nQ, nP, VDF_G, Hamiltonian_N,   &
-       vInv_G, Source_C, DtIn, CFLIn, DtOut, CFLOut)
+       vInv_G, Source_C, PreBracketFactor_G, DtIn, CFLIn, DtOut, CFLOut)
     !\
     ! solve the contribution to the
     ! numerical flux from a single Poisson bracket,
@@ -106,6 +106,10 @@ contains
     !\
     !OPTIONAL:
     !/
+    !\
+    ! For the case of equation df/dt + Factor*{f, H} = 0
+    !/
+    real, optional, intent(in) :: PreBracketFactor_G(0:nQ+1,0:nP+1) 
     real, optional, intent(in) :: DtIn, CFLIn   !Options to set time step
     real, optional, intent(out):: DtOut, CFLOut !Options to report time step
     !\
@@ -164,6 +168,8 @@ contains
            min(0.0,-DeltaH_FY(iQ, iP-1))*VDF_G(iQ,iP-1)  &
            )/SumDeltaHPlus + VDF_G(iQ,iP)
        CFLCoef_G(iQ, iP) = vInv_G(iQ, iP)*SumDeltaHPlus
+       if(present(PreBracketFactor_G))CFLCoef_G(iQ, iP) = &
+            CFLCoef_G(iQ, iP)*PreBracketFactor_G(iQ,iP)
     end do; end do
     !\
     ! Set Dt and construct array Dt*SumDeltaH/Volume_C
@@ -209,7 +215,8 @@ contains
     !/
     Source_C = ( Flux_FX(0:nQ-1, 1:nP) - Flux_FX(1:nQ, 1:nP) +  &
          Flux_FY(1:nQ, 0:nP-1) - Flux_FY(1:nQ, 1:nP) )*Dt*vInv_G(1:nQ,1:nP)
-
+    if(present(PreBracketFactor_G))Source_C = Source_C*&
+         PreBracketFactor_G(1:nQ,1:nP)
     if(present(CFLOut))CFLOut = CFL
     if(present(DtOut ))DtOut  = Dt
   end subroutine explicit
