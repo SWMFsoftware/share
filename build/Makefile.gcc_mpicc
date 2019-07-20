@@ -13,6 +13,8 @@ CPPLIB = -lstdc++ -lmpi_cxx
 
 .SUFFIXES: .c .cpp
 
+OMPLIBC = -lgomp
+
 FLAGC = ${SEARCH_C} ${FLAGC_EXTRA} -c ${OPT3} ${OPENMPFLAG} ${DEBUGC}
 
 FLAGCC = ${FLAGC} -std=c++11

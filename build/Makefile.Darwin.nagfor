@@ -52,7 +52,7 @@ CFLAGS = ${CFLAG} -save
 
 # Link flags: LflagMpi for MPI parallel code, Lflag for serial code
 # The '-Bstatic' flag avoids segmentation fault for large number of blocks (?)
-Lflag    = ${PRECISION} ${OPENMPFLAG} ${CPPLIB} ${DEBUG} -Wl,-w -Wl=`which gcc` -lgomp
+Lflag    = ${PRECISION} ${OPENMPFLAG} ${CPPLIB} ${DEBUG} -Wl,-w -Wl=`which gcc` ${OMPLIBC}
 LflagMpi = ${Lflag} ${MPILIB}
 
 # For backward compatibility
