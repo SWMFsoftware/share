@@ -75,7 +75,7 @@ contains
   end function triple_superbee
   !==========================
   subroutine explicit(nQ, nP, VDF_G, Hamiltonian_N,   &
-       vInv_G, Source_C, PreBracketFactor_G, DtIn, CFLIn, DtOut, CFLOut)
+       Volume_G, Source_C, PreBracketFactor_G, DtIn, CFLIn, DtOut, CFLOut)
     !\
     ! solve the contribution to the
     ! numerical flux from a single Poisson bracket,
@@ -95,7 +95,11 @@ contains
     !\
     ! Inverse volume. One layer of face ghost cells is used
     !/  
-    real, intent(in) :: vInv_G(0:nQ+1,0:nP+1)
+    real, intent(in) :: Volume_G(0:nQ+1,0:nP+1)
+    !\
+    ! Inverse volume. One layer of face ghost cells is used
+    !/
+    real             ::vInv_G(0:nQ+1,0:nP+1)
     !\
     ! Contribution to the conservative source (flux divergence) for 
     ! the Poisson Bracket:
@@ -125,7 +129,7 @@ contains
     ! for two directions:
     !/
     real :: DeltaH_FX(-1:nQ+1,0:nP+1), DeltaH_FY(0:nQ+1,-1:nP+1)
-    real :: SumDeltaHPlus
+    real :: SumDeltaHPlus_G(0:nQ+1, 0:nP+1)
     !Fluxes
     real :: Flux_FX(0:nQ,1:nP), Flux_FY(1:nQ,0:nP)
     
@@ -142,6 +146,7 @@ contains
        if(.not.present(CflIn))call CON_stop(&
             'Either CflIn or DtIn should be provided in '//NameSub)
     end if
+    VInv_G = 1/Volume_G
     !\
     ! Calculate DeltaH:
     !/
@@ -157,19 +162,17 @@ contains
     ! Calculate DeltaMinusF and SumDeltaH
     !/   
     do iP = 0, nP+1; do iQ = 0, nQ+1
-       SumDeltaHPlus = max(0.0, DeltaH_FX(iQ,   iP)) +&
-                       max(0.0, DeltaH_FY(iQ,   iP)) +&
-                       max(0.0,-DeltaH_FX(iQ-1, iP)) +&
-                       max(0.0,-DeltaH_FY(iQ, iP-1))
+       SumDeltaHPlus_G(iQ, iP) = max(0.0, DeltaH_FX(iQ,   iP)) +&
+                                 max(0.0, DeltaH_FY(iQ,   iP)) +&
+                                 max(0.0,-DeltaH_FX(iQ-1, iP)) +&
+                                 max(0.0,-DeltaH_FY(iQ, iP-1))
        DeltaMinusF_G(iQ, iP) = (&
            min(0.0, DeltaH_FX(iQ,   iP))*VDF_G(iQ+1,iP) +&
            min(0.0, DeltaH_FY(iQ,   iP))*VDF_G(iQ,iP+1) +&
            min(0.0,-DeltaH_FX(iQ-1, iP))*VDF_G(iQ-1,iP) +&
            min(0.0,-DeltaH_FY(iQ, iP-1))*VDF_G(iQ,iP-1)  &
-           )/SumDeltaHPlus + VDF_G(iQ,iP)
-       CFLCoef_G(iQ, iP) = vInv_G(iQ, iP)*SumDeltaHPlus
-       if(present(PreBracketFactor_G))CFLCoef_G(iQ, iP) = &
-            CFLCoef_G(iQ, iP)*PreBracketFactor_G(iQ,iP)
+           )/SumDeltaHPlus_G(iQ, iP) + VDF_G(iQ,iP)
+       CFLCoef_G(iQ, iP) = vInv_G(iQ, iP)*SumDeltaHPlus_G(iQ, iP)
     end do; end do
     !\
     ! Set Dt and construct array Dt*SumDeltaH/Volume_C
@@ -181,19 +184,23 @@ contains
        CFL = CFLIn
        Dt = CFL/maxval(CFLCoef_G)
        CFLCoef_G = Dt*CFLCoef_G
-    end if
+    end if 
+    !\
+    ! First order monotone scheme
+    !/
+    Source_C = -SumDeltaHPlus_G(1:nQ, 1:nP)*DeltaMinusF_G(1:nQ, 1:nP)
     !\
     ! Calculate Face-X fluxes.
     !/
     do iP = 1, nP; do iQ = 0, nQ
        if(DeltaH_FX(iQ, iP) > 0.0)then
-          Flux_FX(iQ, iP) = DeltaH_FX(iQ, iP)*(VDF_G(iQ,   iP) + 0.50*&
+          Flux_FX(iQ, iP) = DeltaH_FX(iQ, iP)*0.50*&
                (1.0 - CFLCoef_G(iQ,   iP))                           *&
-               pair_superbee(DeltaMinusF_G(iQ, iP), DeltaMinusF_G(iQ+1, iP)))
+               pair_superbee(DeltaMinusF_G(iQ, iP), DeltaMinusF_G(iQ+1, iP))
        else
-          Flux_FX(iQ, iP) = DeltaH_FX(iQ, iP)*(VDF_G(iQ+1, iP) + 0.50*&
+          Flux_FX(iQ, iP) = DeltaH_FX(iQ, iP)*0.50*&
                (1.0 - CFLCoef_G(iQ+1, iP))                           *&
-               pair_superbee(DeltaMinusF_G(iQ, iP), DeltaMinusF_G(iQ+1, iP)))
+               pair_superbee(DeltaMinusF_G(iQ, iP), DeltaMinusF_G(iQ+1, iP))
        end if
     end do; end do
     !\
@@ -201,22 +208,20 @@ contains
     !/
     do iP = 0, nP; do iQ = 1, nQ
        if(DeltaH_FY(iQ, iP) > 0.0)then
-          Flux_FY(iQ, iP) = DeltaH_FY(iQ, iP)*(VDF_G(iQ, iP )  + 0.50*&
+          Flux_FY(iQ, iP) = DeltaH_FY(iQ, iP)*0.50*&
                (1.0 - CFLCoef_G(iQ,   iP))                           *&
-               pair_superbee(DeltaMinusF_G(iQ, iP), DeltaMinusF_G(iQ, iP+1)))
+               pair_superbee(DeltaMinusF_G(iQ, iP), DeltaMinusF_G(iQ, iP+1))
        else
-          Flux_FY(iQ, iP) = DeltaH_FY(iQ, iP)*(VDF_G(iQ, iP+1) + 0.50*&
+          Flux_FY(iQ, iP) = DeltaH_FY(iQ, iP)*0.50*&
                (1.0 - CFLCoef_G(iQ, iP+1))                           *&
-               pair_superbee(DeltaMinusF_G(iQ, iP), DeltaMinusF_G(iQ, iP+1)))
+               pair_superbee(DeltaMinusF_G(iQ, iP), DeltaMinusF_G(iQ, iP+1))
        end if
     end do; end do
     !\
     ! Finalize
     !/
-    Source_C = ( Flux_FX(0:nQ-1, 1:nP) - Flux_FX(1:nQ, 1:nP) +  &
+    Source_C = (Source_C + Flux_FX(0:nQ-1, 1:nP) - Flux_FX(1:nQ, 1:nP) +  &
          Flux_FY(1:nQ, 0:nP-1) - Flux_FY(1:nQ, 1:nP) )*Dt*vInv_G(1:nQ,1:nP)
-    if(present(PreBracketFactor_G))Source_C = Source_C*&
-         PreBracketFactor_G(1:nQ,1:nP)
     if(present(CFLOut))CFLOut = CFL
     if(present(DtOut ))DtOut  = Dt
   end subroutine explicit

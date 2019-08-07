@@ -17,7 +17,7 @@ contains
     real, parameter   :: qMax = 10.0, qMin = 0.01 
     real, parameter   :: DeltaPhi = cTwoPi/nP 
     real :: MomentumRatio, MomentumMin, MomentumMax
-    real :: VDF_G(-1:nQ+2, -1:nP+2), vInv_G(0:nQ+1, 0:nP+1)
+    real :: VDF_G(-1:nQ+2, -1:nP+2), Volume_G(0:nQ+1, 0:nP+1)
     real :: Hamiltonian_N(-1:nQ+1, -1:nP+1)
     real :: LogMomentum_I(0:nQ+1), Momentum2_I(-1:nQ+1)
     real :: Time, Dt, Source_C(nQ,nP)
@@ -31,8 +31,8 @@ contains
        MomentumMax = MomentumMin*MomentumRatio
        Momentum2_I( iQ) = MomentumMax**2
        Hamiltonian_N(iQ,:) = Hamiltonian(Momentum2_I(iQ))
-       vInv_G(iQ,:) = 2.0/(DeltaPhi*&
-            (Momentum2_I(iQ) - Momentum2_I(iQ-1)))
+       Volume_G(iQ,:) = 0.5*DeltaPhi*&
+            (Momentum2_I(iQ) - Momentum2_I(iQ-1))
        LogMomentum_I(iQ)   = 0.50*log10(MomentumMin*MomentumMax)       
     end do
     VDF_G = 0.0; VDF_G(1:nQ, 172:189) = 1.0; Source_C = 0.0
@@ -42,11 +42,11 @@ contains
     Time = 0.0; iStep = 0
     do 
        call explicit(nQ, nP, VDF_G, Hamiltonian_N,   &
-       vInv_G, Source_C, CFLIn=0.99, DtOut = Dt)
+       Volume_G, Source_C, CFLIn=0.99, DtOut = Dt)
        iStep = iStep +1
        if(Time + Dt >= tFinal)then
           call explicit(nQ, nP, VDF_G, Hamiltonian_N,   &
-               vInv_G, Source_C, DtIn = tFinal - Time)
+               Volume_G, Source_C, DtIn = tFinal - Time)
           VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
           EXIT
        else
