@@ -323,6 +323,9 @@ sub check_variables{
     # Remove '= reshape(#N,#M'
     $Vars =~ s/\s*=\s*reshape\([\#\d,]+//i;
 
+    # Remove '= [...]' array initialization
+    $Vars =~ s/\s*=\s*\[[^\[]+\]//;
+
     # Split up $Vars
     my @Vars = split(/\s*,\s*/, $Vars);
     my $Var;
