@@ -75,7 +75,7 @@ contains
   end function triple_superbee
   !==========================
   subroutine explicit(nQ, nP, VDF_G, Hamiltonian_N,   &
-       Volume_G, Source_C, PreBracketFactor_G, DtIn, CFLIn, DtOut, CFLOut)
+       Volume_G, Source_C, DtIn, CFLIn, DtOut, CFLOut)
     !\
     ! solve the contribution to the
     ! numerical flux from a single Poisson bracket,
@@ -107,13 +107,7 @@ contains
     ! df/dt = sum(Source_C), sum is taken over all Poisson brackets
     !/                  
     real, intent(out):: Source_C(1:nQ, 1:nP)  
-    !\
-    !OPTIONAL:
-    !/
-    !\
-    ! For the case of equation df/dt + Factor*{f, H} = 0
-    !/
-    real, optional, intent(in) :: PreBracketFactor_G(0:nQ+1,0:nP+1) 
+
     real, optional, intent(in) :: DtIn, CFLIn   !Options to set time step
     real, optional, intent(out):: DtOut, CFLOut !Options to report time step
     !\
