@@ -212,7 +212,7 @@ contains
   !BOP =======================================================================
   !IROUTINE: read_file - read parameter file
   !INTERFACE:
-  subroutine read_file(NameFile, iCommIn, NameRestartFile, IsQuiet)
+  subroutine read_file(NameFile, iCommIn, NameRestartFile, IsVerbose)
 
     use ModUtilities, ONLY: open_file, close_file
 
@@ -224,8 +224,8 @@ contains
     ! Name of the restart file to be read if a #RESTART command is found
     character (len=*), intent(in), optional:: NameRestartFile
 
-    ! Do not report number of lines if IsQuiet is present
-    logical, intent(in), optional:: IsQuiet
+    ! Do not report number of lines if IsVerbose is present and false
+    logical, intent(in), optional:: IsVerbose
     
     !EOP
     integer, parameter :: MaxNestedFile = 10
@@ -364,7 +364,9 @@ contains
             " MPI_ERROR: text could not be broadcast")
     end if
 
-    if(present(IsQuiet)) RETURN
+    if(present(IsVerbose))then
+       if(.not.IsVerbose) RETURN
+    end if
 
     if(iProc==0)write(*,'(a,i4,a)') NameSub// &
          ': read and broadcast nLine=',nLine,' lines of text'
