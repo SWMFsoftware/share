@@ -758,6 +758,7 @@ test_poisson_exe:
 	${LINK.f90} -o test_poisson.exe ${OBJ_POISSON} ${Lflag2}
 
 test_poisson_bracket:
+	rm -f test_poisson.out test_*poisson.ref.out test_multipoisson_0*.out
 	@echo test_poisson_bracket starting	>  test_poisson.diff
 	@make test_poisson_exe			>> test_poisson.diff
 	@echo './test_poisson.exe'		>> test_poisson.diff
@@ -766,6 +767,9 @@ test_poisson_bracket:
 	-@(${SCRIPTDIR}/DiffNum.pl -b -a=1e-6 \
 		test_poisson.out test_poisson.ref.out \
 						> test_poisson.diff)
+	-@(${SCRIPTDIR}/DiffNum.pl -b -a=1e-6 \
+		test_multipoisson_002.out test_multipoisson.ref.out \
+                                                >> test_poisson.diff)
 	@ls -l test_poisson.diff
 
 #######################################################################
