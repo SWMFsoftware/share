@@ -10,7 +10,7 @@ use strict;
 
 # Default compiler per machine or OS
 my %Compiler = (
-		"Linux"               => "nagfor",
+		"Linux"               => "gfortran,gcc_mpicc",
 		"Darwin"              => "nagfor,clang_mpicc",
 		"OSF1"                => "f90",
 		"IRIX64"              => "f90",

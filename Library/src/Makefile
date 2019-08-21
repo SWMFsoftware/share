@@ -78,8 +78,8 @@ ${MY_LIB}: ${OBJECTS} ModUtility_c.o
 
 LIB_NO_C:DEPEND
 	perl -pi -e 's/(iError = make_dir_c)/\!$$1/' ModUtility.f90
-	${MAKE} LIB_NO_C_
-	perl -pi -e 's/.(iError = make_dir_c)/$$1/' ModUtility.f90
+	-${MAKE} LIB_NO_C_
+	perl -pi -e 's/\!+(iError = make_dir_c)/$$1/' ModUtility.f90
 	@echo
 	@echo ${MY_LIB} has been brought up to date.
 	@echo

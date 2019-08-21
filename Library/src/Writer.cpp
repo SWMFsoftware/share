@@ -378,7 +378,7 @@ void Writer::write_header(double const timeNow, int const iCycle) {
   int time = timeNow; // double to int.
 
   std::stringstream ss;
-  ss << "_Aregion" << iRegion << "_" << ID << "_t" << std::setfill('0')
+  ss << "_region" << iRegion << "_" << ID << "_t" << std::setfill('0')
      << std::setw(8) << second_to_clock_time(time) << "_n" << std::setfill('0')
      << std::setw(8) << iCycle << ".h";
 
@@ -598,7 +598,7 @@ void Writer::write_field(double const timeNow, int const iCycle,
   } else {
     nLength = 4;
   }
-  ss << "_Aregion" << iRegion << "_" << ID << "_t" << std::setfill('0')
+  ss << "_region" << iRegion << "_" << ID << "_t" << std::setfill('0')
      << std::setw(8) << second_to_clock_time(timeNow) << "_n"
      << std::setfill('0') << std::setw(8) << iCycle << "_pe"
      << std::setfill('0') << std::setw(nLength) << rank << ".idl";
