@@ -1,0 +1,18 @@
+#!/bin/bash
+
+#SBATCH -J sub1               # Job name
+#SBATCH -o SWMF.o%j           # Name of stdout output file
+#SBATCH -e SWMF.e%j           # Name of stderr error file
+#SBATCH -p normal             # Queue (partition) name: normal or development
+#SBATCH -N 64                 # Total # of nodes 
+#SBATCH --tasks-per-node 56   # Number of MPI tasks per node. 
+#SBATCH -t 24:00:00           # Run time (hh:mm:ss)
+#SBATCH --mail-type=all       # Send email at begin and end of job
+###SBATCH --mail-user=your_email@umich.edu
+###SBATCH -A myproject       # Project/Allocation name (req'd if you have more than 1)
+
+# Any other commands must follow all #SBATCH directives...
+
+# Launch MPI code... 
+# Use ibrun instead of mpirun or mpiexec
+ibrun ./SWMF.exe  > runlog_`date +%y%m%d%H%M`

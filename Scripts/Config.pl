@@ -31,6 +31,7 @@ my %Compiler = (
                 "slogin"              => "ifortftn,intelcc",
                 "cetuslac"            => "mpixlf2008,mpixlc",
                 "miralac"             => "mpixlf2008,mpixlc",
+                "frontera"            => "mpif90,iccmpicxx",
 		);
 
 my $WARNING_='share/Scripts/Config.pl WARNING:';
@@ -42,10 +43,11 @@ my $IsStrict=1;  # If true, shell_command will stop on error
 # Obtain $OS, $DIR, and the machine name and provide it to caller script
 our $OS  = `uname`    or die "$ERROR_ could not obtain OS\n"; chop $OS;
 our $DIR = `/bin/pwd` or die "$ERROR_ could not obtain DIR\n"; chop $DIR;
-our $Machine = `hostname`; chop($Machine); $Machine =~ s/\..*//;
+our $Machine = `hostname`; chop($Machine); 
 
-# remove numbers from the machine name
-$Machine =~ s/\d+$//; 
+$Machine =~ s/^login\d*\.//; # remove "login\d+." from beginning
+$Machine =~ s/\..*//;        # keep the first word
+$Machine =~ s/\d+$//;        # remove numbers from the machine name
 
 # These are either obtained from the calling script or set here
 our $Component;             # The SWMF component the code is representing
