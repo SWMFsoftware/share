@@ -221,11 +221,15 @@ contains
     if(present(CFLOut))CFLOut = CFL
     if(present(DtOut ))DtOut  = Dt
   end subroutine explicit
+  
+
+
+
 
   
-  
   !============================================================================================================================================================
-  subroutine explicit3(nQ, nP, nR, VDF_G, Hamiltonian_N, Volume_G, Source_C, Hamiltonian01_N, Hamiltonian02_N, Hamiltonian03_N, Hamiltonian13_N, Hamiltonian23_N,   &
+  !============================================================================================================================================================
+  subroutine explicit3(nQ, nP, nR, VDF_G, Hamiltonian_N, Volume_G, Source_C, DeltaHamiltonian01_N, DeltaHamiltonian02_N, DeltaHamiltonian03_N, Hamiltonian13_N, Hamiltonian23_N,   &
       DtIn, CFLIn, DtOut, CFLOut)
     !\
     ! solve the contribution to the
@@ -246,9 +250,9 @@ contains
     ! The numbers in the name of Hamiltonian funcitons refer to the subscripts of Poisson brackets.
     ! Hamiltonian_N is necessary for this code. In any case, this Hamiltonian function always refer to the first non-time-dependent Hamiltonian in the equation.
     !/
-    real, intent(in) :: Hamiltonian_N(-1:nQ+1,-1:nP+1,-1:nR+1)!The second Hamiltonian function in our equation. It's necessary to the code. In every case, the "1" and "2" in the array always refer to the first and second subscript.
-    real, optional, intent(in) :: Hamiltonian01_N(-1:nQ+1,-1:nP+1,-1:nR+1,0:1), Hamiltonian02_N(-1:nQ+1,-1:nP+1,-1:nR+1,0:1), Hamiltonian03_N(-1:nQ+1,-1:nP+1,-1:nR+1,0:1)!The time dependent Hamiltonian functions. An optional part.
-    real, optional, intent(in) :: Hamiltonian13_N(-1:nQ+1,-1:nR+1,-1:nR+1), Hamiltonian23_N(-1:nQ+1,-1:nR+1,-1:nR+1)!The Hamiltonian functions in the Poisson bracket with corresponding subscript. An optional part.
+    real, intent(in) :: Hamiltonian_N(-1:nQ+1,-1:nP+1,0:nR+1)!The second Hamiltonian function in our equation. It's necessary to the code. In every case, the "1" and "2" in the array always refer to the first and second subscript.
+    real, optional, intent(in) :: DeltaHamiltonian01_N(-1:nQ+1,0:nP+1,0:nR+1), DeltaHamiltonian02_N(0:nQ+1,-1:nP+1,0:nR+1), DeltaHamiltonian03_N(0:nQ+1,0:nP+1,-1:nR+1)!The time dependent Hamiltonian functions. An optional part.
+    real, optional, intent(in) :: Hamiltonian13_N(-1:nQ+1,0:nP+1,-1:nR+1), Hamiltonian23_N(0:nQ+1,-1:nP+1,-1:nR+1)!The Hamiltonian functions in the Poisson bracket with corresponding subscript. An optional part.
     
     !\
     ! Total Volume. One layer of face ghost cells is used
@@ -296,6 +300,8 @@ contains
     !Time step
     real :: Dt, CFL
     character(LEN=*), parameter:: NameSub = 'calc_poisson_bracket'
+!!$!!
+    integer:: Loc_D(3)
     !---------
     if(present(DtIn))then
        Dt = DtIn
@@ -310,6 +316,7 @@ contains
     DeltaH_FX=0.0
     DeltaH_FY=0.0
     DeltaH_FZ=0.0
+
     !\
     !      Bracket {F,H12}_x,y         Bracket {F,H13}_x,z           Bracket {F,H23}_y,z
     !      Hamiltonian 12 (xy)         Hamiltonian 13 (xz)           Hamiltonian 23 (yz)
@@ -321,34 +328,55 @@ contains
     !      |                  |        |                   |         |                     |
     !      ---------->---------  x     ---------->----------  x      ------------>----------  y
     !/
-   
-    DeltaH_FX(-1:nQ+1,0:nP+1,0:nR+1) = Hamiltonian_N(-1:nQ+1,0:nP+1,0:nR+1) - Hamiltonian_N(-1:nQ+1,-1:nP,0:nR+1)
-    DeltaH_FY(0:nQ+1,-1:nP+1,0:nR+1) = Hamiltonian_N(-1:nQ,-1:nP+1,0:nR+1)  - Hamiltonian_N(0:nQ+1,-1:nP+1,0:nR+1)
+    DeltaH_FX(         -1:nQ+1, 0:nP+1,0:nR+1) = &
+         Hamiltonian_N(-1:nQ+1, 0:nP+1,0:nR+1) - &
+         Hamiltonian_N(-1:nQ+1,-1:nP  ,0:nR+1)
+    DeltaH_FY(          0:nQ+1,-1:nP+1,0:nR+1) = &
+         Hamiltonian_N(-1:nQ  ,-1:nP+1,0:nR+1) - &
+         Hamiltonian_N(0:nQ+1 ,-1:nP+1,0:nR+1)
+    
     if (present(Hamiltonian13_N)) then
-       DeltaH_FX(-1:nQ+1, 0:nP+1, 0:nR+1) = DeltaH_FX(-1:nQ+1, 0:nP+1, 0:nR+1) + Hamiltonian13_N(-1:nQ+1, 0:nP+1, 0:nR+1) - Hamiltonian13_N(-1:nQ+1, 0:nP+1, -1:nR)
-       DeltaH_FZ(0:nQ+1, 0:nP+1, -1:nR+1) = DeltaH_FZ(0:nQ+1, 0:nP+1, -1:nR+1) + Hamiltonian13_N(-1:nQ, 0:nP+1, -1:nR+1) - Hamiltonian13_N(0:nQ+1, 0:nP+1, -1:nR+1)
+       DeltaH_FX                 (-1:nQ+1, 0:nP+1, 0:nR+1) = &
+                        DeltaH_FX(-1:nQ+1, 0:nP+1, 0:nR+1) + &
+                  Hamiltonian13_N(-1:nQ+1, 0:nP+1, 0:nR+1) - &
+                  Hamiltonian13_N(-1:nQ+1, 0:nP+1, -1:nR)
+       DeltaH_FZ                 (0:nQ+1, 0:nP+1, -1:nR+1) = &
+                        DeltaH_FZ(0:nQ+1, 0:nP+1, -1:nR+1) + &
+                  Hamiltonian13_N(-1:nQ , 0:nP+1, -1:nR+1) - &
+                  Hamiltonian13_N(0:nQ+1, 0:nP+1, -1:nR+1)
     end if
     
     if (present(Hamiltonian23_N)) then
-       DeltaH_FY(0:nQ+1, -1:nP+1, 0:nR+1) = DeltaH_FY(0:nQ+1, -1:nP+1, 0:nR+1) + Hamiltonian23_N(0:nQ+1, -1:nP+1, 0:nR+1) - Hamiltonian23_N(0:nQ+1, -1:nP+1, -1:nR)
-       DeltaH_FZ(0:nQ+1, 0:nP+1, -1:nR+1) = DeltaH_FZ(0:nQ+1, 0:nP+1, -1:nR+1) + Hamiltonian23_N(0:nQ+1, -1:nP, -1:nR+1) - Hamiltonian23_N(0:nQ+1, 0:nP+1, -1:nR+1)
+       DeltaH_FY           (0:nQ+1, -1:nP+1, 0:nR+1) = &
+                  DeltaH_FY(0:nQ+1, -1:nP+1, 0:nR+1) + &
+            Hamiltonian23_N(0:nQ+1, -1:nP+1, 0:nR+1) - &
+            Hamiltonian23_N(0:nQ+1, -1:nP+1, -1:nR)
+       DeltaH_FZ           (0:nQ+1, 0:nP+1, -1:nR+1) = &
+                  DeltaH_FZ(0:nQ+1, 0:nP+1, -1:nR+1) + &
+            Hamiltonian23_N(0:nQ+1,  -1:nP, -1:nR+1) - &
+            Hamiltonian23_N(0:nQ+1, 0:nP+1, -1:nR+1)
     end if
-
+    
     !\
     !      Bracket {F,H01}_t,x         Bracket {F,H02}_t,y           Bracket {F,H03}_t,z
-    !      Hamiltonian 01 (tx)         Hamiltonian 02 (ty)           Hamiltonian 03 (tz)                                                                                                                                                                                       
-    !      x                           y                             z                                                                                                                                                                                                         
-    !      ----------<----------       ----------<---------          -----------<-----------                                                                                                                                                                                   
-    !                                                                                                                                                                                                                                                                          
-    !                                                                                                                                                                                                                                                                          
-    !                                                                                                                                                                                                                                                                          
-    !                                                                                                                                                                                                                                                                          
-    !      ---------->----------  t    ---------->----------  t      ----------->-----------  t                                                                                                                                                                                
+    !      Hamiltonian 01 (tx)         Hamiltonian 02 (ty)           Hamiltonian 03 (tz)                                                                                          
+    !      x                           y                             z                                      
+    !      ----------<----------       ----------<---------          -----------<-----------                                                                                                                 
+    !                                                                                                                                                                                                                              
+    !                                                                                                                                                                                                                       
+    !                                                                                                                                                                                
+    !                                                                                                       
+    !      ---------->----------  t    ---------->----------  t      ----------->-----------  t                   
     !/
-    if (present(Hamiltonian01_N)) DeltaH_FX(-1:nQ+1, 0:nP+1, 0:nR+1) = DeltaH_FX(-1:nQ+1, 0:nP+1, 0:nR+1) + Hamiltonian01_N(-1:nQ+1, 0:nP+1, 0:nR+1, 0) - Hamiltonian01_N(-1:nQ+1, 0:nP+1, 0:nR+1, 1)
-    if (present(Hamiltonian02_N)) DeltaH_FY(0:nQ+1, -1:nP+1, 0:nR+1) = DeltaH_FY(0:nQ+1, -1:nP+1, 0:nR+1) + Hamiltonian02_N(0:nQ+1, -1:nP+1, 0:nR+1, 0) - Hamiltonian02_N(0:nQ+1, -1:nP+1, 0:nR+1, 1)
-    if (present(Hamiltonian03_N)) DeltaH_FZ(0:nQ+1, 0:nP+1, -1:nR+1) = DeltaH_FZ(0:nQ+1, 0:nP+1, -1:nR+1) + Hamiltonian03_N(0:nQ+1, 0:nP+1, -1:nR+1, 0) - Hamiltonian03_N(0:nQ+1, 0:nP+1, -1:nR+1, 1)
-    
+    if (present(DeltaHamiltonian01_N)) DeltaH_FX(-1:nQ+1, 0:nP+1, 0:nR+1) = &
+                                       DeltaH_FX(-1:nQ+1, 0:nP+1, 0:nR+1) + &
+                            DeltaHamiltonian01_N(-1:nQ+1, 0:nP+1, 0:nR+1)
+    if (present(DeltaHamiltonian02_N)) DeltaH_FY(0:nQ+1, -1:nP+1, 0:nR+1) = &
+                                       DeltaH_FY(0:nQ+1, -1:nP+1, 0:nR+1) + &
+                            DeltaHamiltonian02_N(0:nQ+1, -1:nP+1, 0:nR+1)
+    if (present(DeltaHamiltonian03_N)) DeltaH_FZ(0:nQ+1, 0:nP+1, -1:nR+1) = &
+                                       DeltaH_FZ(0:nQ+1, 0:nP+1, -1:nR+1) + &
+                            DeltaHamiltonian03_N(0:nQ+1, 0:nP+1, -1:nR+1)
     
     ! Now, for each cell the value of DeltaH for face in positive 
     ! directions of iQ and iP may be found in the arrays, for
@@ -365,7 +393,6 @@ contains
                                       min(0.0,-DeltaH_FX(iQ-1, iP,   iR)) +&
                                       min(0.0,-DeltaH_FY(iQ, iP-1,   iR)) +&
                                       min(0.0,-DeltaH_FZ(iQ,   iP, iR-1))
-                                      
        DeltaMinusF_G(iQ, iP, iR) = -(&
            min(0.0, DeltaH_FX(iQ,   iP,   iR))*VDF_G(iQ+1,iP,iR) +&
            min(0.0, DeltaH_FY(iQ,   iP,   iR))*VDF_G(iQ,iP+1,iR) +&
@@ -376,7 +403,6 @@ contains
            )/SumDeltaHMinus_G(iQ,iP,iR) + VDF_G(iQ,iP,iR)
        
        CFLCoef_G(iQ, iP, iR) = - vInv_G(iQ, iP, iR)*SumDeltaHMinus_G(iQ,iP,iR)
-       
     end do; end do; end do
     
     !\
@@ -384,10 +410,10 @@ contains
     !/
     if(present(DtIn))then
        CFLCoef_G = Dt*CFLCoef_G
-       CFL = maxval(CFLCoef_G)
+       CFL = maxval(CFLCoef_G(1:nQ,1:nP,1:nR))
     else
        CFL = CFLIn
-       Dt = CFL/maxval(CFLCoef_G)
+       Dt = CFL/maxval(CFLCoef_G(1:nQ,1:nP,1:nR))
        CFLCoef_G = Dt*CFLCoef_G
     end if
     
@@ -445,7 +471,7 @@ contains
     ! Finalize
     !/
     Source_C = ( Source_C + Flux_FX(0:nQ-1, 1:nP, 1:nR) - Flux_FX(1:nQ, 1:nP, 1:nR) +  &
-         Flux_FY(1:nQ, 0:nP-1, 1:nR) - Flux_FY(1:nQ, 1:nP, 1:nR) +  Flux_FZ(1:nQ, 1:nP, 0:nR-1) - Flux_FZ(1:nQ, 1:nP, 1:nR) )*Dt*vInv_G(1:nQ,1:nP,1:nR)
+         Flux_FY(1:nQ, 0:nP-1, 1:nR) - Flux_FY(1:nQ, 1:nP, 1:nR) +  Flux_FZ(1:nQ, 1:nP, 0:nR-1) - Flux_FZ(1:nQ, 1:nP, 1:nR) )*Dt
     
     if(present(CFLOut))CFLOut = CFL
     if(present(DtOut ))DtOut  = Dt
