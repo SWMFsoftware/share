@@ -19,7 +19,7 @@
 #
 # To avoid having too many output files run
 #
-#    ./PostProc.pl -M -v -g -r=60 >& PostProc.log &
+#    ./PostProc.pl -m -v -g -r=60 &> PostProc.log &
 #
 # on the head node (post-processes every minute). 
 #
