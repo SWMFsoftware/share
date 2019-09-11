@@ -56,8 +56,8 @@
 # Memory per cpu
 #SBATCH --mem-per-cpu=2g
 
-# Wall time (max 2 weeks)
-#SBATCH --time=00:02:00
+# Wall time HH:MM:SS (max 2 weeks)
+#SBATCH --time=02:00:00
 
 # Either standard, largemem, or gpu
 #SBATCH --partition=standard
