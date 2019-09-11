@@ -176,7 +176,7 @@ module ModReadParam
 
   ! Text buffer to hold all the input lines
   integer, parameter :: MaxLine=1000
-  character (len=lStringLine) :: StringLine_I(MaxLine)
+  character(len=lStringLine) :: StringLine_I(MaxLine)
 
   character(len=lStringLine)  :: StringLine, StringParam
 
