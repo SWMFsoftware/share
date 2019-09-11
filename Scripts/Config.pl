@@ -10,7 +10,7 @@ use strict;
 
 # Default compiler per machine or OS
 my %Compiler = (
-		"Linux"               => "nagfor",
+		"Linux"               => "gfortran,gcc_mpicc",
 		"Darwin"              => "nagfor,clang_mpicc",
 		"OSF1"                => "f90",
 		"IRIX64"              => "f90",
@@ -22,6 +22,7 @@ my %Compiler = (
 		"nyx-login-intel"     => "ifortmpif90",
 		"nyx-login-amd"       => "ifortmpif90",
 		"flux-login"          => "ifortmpif90",
+		"gl-login"            => "mpiifort",
 		"hera"                => "mpiifort",
 		"ubgl"                => "mpxlf90,mpxlc",
 		"jaguarpf-ext"        => "ifortftn",
@@ -31,6 +32,7 @@ my %Compiler = (
                 "slogin"              => "ifortftn,intelcc",
                 "cetuslac"            => "mpixlf2008,mpixlc",
                 "miralac"             => "mpixlf2008,mpixlc",
+                "frontera"            => "mpif90,iccmpicxx",
 		);
 
 my $WARNING_='share/Scripts/Config.pl WARNING:';
@@ -42,10 +44,11 @@ my $IsStrict=1;  # If true, shell_command will stop on error
 # Obtain $OS, $DIR, and the machine name and provide it to caller script
 our $OS  = `uname`    or die "$ERROR_ could not obtain OS\n"; chop $OS;
 our $DIR = `/bin/pwd` or die "$ERROR_ could not obtain DIR\n"; chop $DIR;
-our $Machine = `hostname`; chop($Machine); $Machine =~ s/\..*//;
+our $Machine = `hostname`; chop($Machine); 
 
-# remove numbers from the machine name
-$Machine =~ s/\d+$//; 
+$Machine =~ s/^login\d*\.//; # remove "login\d+." from beginning
+$Machine =~ s/\..*//;        # keep the first word
+$Machine =~ s/\d+$//;        # remove numbers from the machine name
 
 # These are either obtained from the calling script or set here
 our $Component;             # The SWMF component the code is representing

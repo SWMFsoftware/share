@@ -38,7 +38,7 @@ OPT2 = -O2
 OPT3 = -O3
 OPT4 = -O4
 
-CFLAG = ${SEARCH} -c -w -ideclient ${OPENMPFLAG} ${DEBUG}
+CFLAG = ${SEARCH} -c -w -ideclient -Wc=`which gcc` ${OPENMPFLAG} ${DEBUG}
 
 Cflag0  = ${CFLAG} ${PRECISION} ${OPT0}
 Cflag1  = ${CFLAG} ${PRECISION} ${OPT1}
@@ -52,7 +52,7 @@ CFLAGS = ${CFLAG} -save
 
 # Link flags: LflagMpi for MPI parallel code, Lflag for serial code
 # The '-Bstatic' flag avoids segmentation fault for large number of blocks (?)
-Lflag    = ${PRECISION} ${OPENMPFLAG} ${CPPLIB} ${DEBUG} -Wl,-w
+Lflag    = ${PRECISION} ${OPENMPFLAG} ${CPPLIB} ${DEBUG} -Wl,-w -Wl=`which gcc` ${OMPLIBC}
 LflagMpi = ${Lflag} ${MPILIB}
 
 # For backward compatibility

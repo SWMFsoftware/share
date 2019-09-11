@@ -383,7 +383,6 @@ public:
   void setNormDt(double normDt) {
     dt = normDt;
     INdt = normDt * (No2SiL / No2SiV);
-    SItime += INdt;
   }
 
   /** set SI dt */
