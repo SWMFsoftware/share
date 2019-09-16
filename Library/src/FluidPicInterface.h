@@ -85,8 +85,10 @@ class TimeController{
     dtSI = useFixedDt? fixedDtSI:dtSICFL1;
   }
 
-  void setNormDt(double normDt){
+  void initDt(double normDt){
     dtSI = normDt*No2SiT; 
+    dtSICFL0 = dtSI; 
+    dtSICFL1 = dtSI; 
   }
   
   void setSIDt(double dtSIIn){
@@ -463,11 +465,6 @@ public:
     return timeCtr.SItime;
   };
 
-  /** set normalized dt */
-  void setNormDt(double normDt) {
-    timeCtr.setNormDt(normDt);
-    return;
-  }
 
   /** set SI dt */
   void setSIDt(double SIDt) {
