@@ -19,7 +19,7 @@
 #
 # To avoid having too many output files run
 #
-#    PostProc.pl -g -r=60 >& PostProc.log &
+#    ./PostProc.pl -m -v -g -r=60 &> PostProc.log &
 #
 # on the head node (post-processes every minute). 
 #
@@ -51,11 +51,11 @@
 # nProc = select*ncpus
 
 # To run on the 16-core Sandy Bridge nodes (2GB/core)
-#PBS -lselect=16:ncpus=16:model=san
+#PBS -l select=16:ncpus=16:model=san
 
 # To run with 2 MPI procs and 8 OpenMp threads use this (and see below)
 # (Note: the ompthreads=8 is the same as "setenv OMP_NUM_THREADS 8")
-#!! PBS -lselect=16:ncpus=16:mpiprocs=2:ompthreads=8:model=san
+#!! PBS -l select=16:ncpus=16:mpiprocs=2:ompthreads=8:model=san
 
 # To run on the 20-core Ivy Bridge nodes (3.2GB/core)
 ### PBS -l select=16:ncpus=20:model=ivy

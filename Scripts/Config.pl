@@ -22,6 +22,7 @@ my %Compiler = (
 		"nyx-login-intel"     => "ifortmpif90",
 		"nyx-login-amd"       => "ifortmpif90",
 		"flux-login"          => "ifortmpif90",
+		"gl-login"            => "mpiifort",
 		"hera"                => "mpiifort",
 		"ubgl"                => "mpxlf90,mpxlc",
 		"jaguarpf-ext"        => "ifortftn",
