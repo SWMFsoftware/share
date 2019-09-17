@@ -81,6 +81,8 @@ MPILIB =
 #
 #MPILIB = -L${LIBDIR} -lNOMPI
 
+#OPENMPFLAG = -mp
+
 #
 # This is the search path for used modules
 #
@@ -106,7 +108,7 @@ OPT4 = -O4
 
 # Flags that are always need for compilation:
 
-CFLAG = ${SEARCH} -c ${DEBUG}
+CFLAG = ${SEARCH} -c ${OPENMPFLAG} ${DEBUG}
 
 Cflag0  = ${CFLAG} ${PRECISION} ${OPT0} 
 Cflag1  = ${CFLAG} ${PRECISION} ${OPT1}

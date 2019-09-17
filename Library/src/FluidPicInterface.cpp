@@ -17,7 +17,6 @@ FluidPicInterface::FluidPicInterface() {
     EndIdx_D[iDim] = -1;
   }
   dt = 0.0;
-  ParamDt = 0.0;
 
   // form normalizationof length C/Wp 100;  //[m] ->[cm]
   nSync = 1;
@@ -193,6 +192,9 @@ void FluidPicInterface::InitData() {
   // Get back to SI units
   for (int iVar = 0; iVar < nVarCoupling; iVar++)
     No2Si_V[iVar] = 1.0 / Si2No_V[iVar];
+
+  timeCtr.Si2NoT = getSi2NoT();
+  timeCtr.No2SiT = getNo2SiT();
 }
 //-------------------------------------------------------------------------
 
@@ -550,7 +552,7 @@ void FluidPicInterface::ReadFromGMinit(int *paramint, double *ParamRealRegion,
   } else {
     Mnorm = 1.0;
   }
-
+  
   InitData();
   ReNormLength();
   checkParam();
