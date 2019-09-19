@@ -2,6 +2,11 @@
 
 # Job script for Great Lakes cluster at University of Michigan.
 #
+# To compile and run SWMF on Great Lakes use the Intel Compilers and IMPI.
+# Run this to make sure the modules run every login and job start:
+#
+#	echo "module load intel && module load impi" >> ~/.profile
+#
 # Customize this file and run inside the run directory
 #
 #	cd run
