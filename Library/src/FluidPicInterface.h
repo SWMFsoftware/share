@@ -22,6 +22,96 @@ Originally writen by Lars Daldorff (daldorff@umich.edu) 15 Jan 2013
 #include "ReadParam.h"
 #include "Writer.h"
 
+class TimeController{
+ private:
+  double dtSI;
+
+
+  // How to use varying timestep for ECSIM? 
+
+  // 1) At the beginning of one iteration, assume E,B fields and the particle 
+  // velocity are at t=t_n, and the particle location is at t=t_n+dt_n/2. 
+  // The mass matrix SHOULD be calculated with dtn. E,B fields and 
+  // the particle velocity HAVE to be updated from t=t_n to t=t_n+dt_n. BUT, the
+  // particle location can be updated to a different time besides
+  // t = t_n+dt_n/2*3. 
+
+  // 2) Here is the algorithm for one iteration (update E,B,V_p from t = t_n to
+  //    t = t_n+dt_n, update X_p from t=t_n+dt_n/2 to t= t_n+dt_n+dt_{n+1}/2):
+  // a) dtSICFL0 and dtSICFL1 are the time steps calculated from the 
+  //    CLF conditions at t=t_n and t=t_{n-1}, respectively. 
+  // b) dt_n = dtSICFL1
+  //    dt_{n+1} = dtSICFL0
+
+  double dtSICFL0, dtSICFL1; 
+
+ public:
+  double SItime;
+
+  double cflLimit;
+  bool useFixedDt;
+  double fixedDtSI; 
+  double maxDtSI;
+
+  double Si2NoT;
+  double No2SiT; 
+
+ public:
+  TimeController(){
+    useFixedDt = false; 
+    cflLimit = 0.4; 
+
+    dtSICFL0 = -1; 
+    dtSICFL1 = -1; 
+  }
+
+  double getDt()const{
+    return getSIDt()*Si2NoT; 
+  }
+
+  double getSIDt()const{
+    return dtSI; 
+  }
+
+  double getNextDt()const{
+    return (useFixedDt? fixedDtSI:dtSICFL0)*Si2NoT;
+  } 
+
+  double getPartLocDt()const{
+    return (useFixedDt? fixedDtSI:(dtSICFL1 + dtSICFL0)*0.5)*Si2NoT;
+  }
+
+  void calSIDt() {    
+    dtSI = useFixedDt? fixedDtSI:dtSICFL1;
+  }
+
+  void initDt(double normDt){
+    dtSI = normDt*No2SiT; 
+    dtSICFL0 = dtSI; 
+    dtSICFL1 = dtSI; 
+  }
+  
+  void setSIDt(double dtSIIn){
+    dtSI = dtSIIn; 
+  }
+
+  void setmaxDtSI(double dtIn){
+    maxDtSI = dtIn; 
+
+    dtSICFL1 = dtSICFL0;
+    dtSICFL0 = maxDtSI*cflLimit; 
+    if(dtSICFL1 <= 0){
+      dtSICFL1 = dtSICFL0;
+    }
+
+  }
+
+  void updateSItime(){
+    SItime +=getSIDt();
+  }
+};
+
+
 class FluidPicInterface {
 protected:
   static const int iErr = 11;
@@ -29,9 +119,6 @@ protected:
   bool doCoupleAMPS;
 
   int nDim; // number of dimentions
-
-  // The meaning of INdt is not clear -Yuxi
-  double INdt;
 
   // Min and Max of the physical domain in normalized PIC units.
   double phyMin_D[3], phyMax_D[3];
@@ -90,8 +177,7 @@ protected:
 
   double rPlanetSi;
 
-  double dt;      // scaled time step from fluid model
-  double ParamDt; // dt read in from input file
+  double dt;
 
   double tUnitPic;    // conversenfactor to time used in IPIC3D
   double invtUnitPic; // 1/tUnitPic
@@ -158,6 +244,8 @@ public:
 
   ReadParam readParam;
 
+  TimeController timeCtr; 
+
 protected:
   static const int x_ = 0, y_ = 1, z_ = 2;
 
@@ -182,10 +270,6 @@ protected:
   // Simulation start time.
   int iYear, iMonth, iDay, iHour, iMinute, iSecond;
 
-  // 'CFL' condition: uth*dt/dx < 1 needs to be satisfied for all species.
-  double cflLimit;
-  double maxDt; // maxDt = min(dxi/uth, dyi/uth, dzi/uth), i=0...nspecies-1
-
   // If the maximum thermal velocity of one node exceeds uthLimit, which is in
   // normalized PIC unit, then save the output and stop runing.
   double uthLimit; //
@@ -196,7 +280,7 @@ protected:
   //    command #TIMESTEP.
   // 3) If both useSWMFDt and useFixedDt are false, calculate dt using the
   // 'CFL' condition.
-  bool useSWMFDt, useFixedDt;
+  bool useFixedDt;
   double fixedDt; // In SI unit
 
   bool isPeriodicX, isPeriodicY,
@@ -371,62 +455,39 @@ public:
 
   /** Get time convertion units from internal IPIC3D units */
   void setSItime(double time) {
-    SItime = time;
+    //SItime = time;
+    timeCtr.SItime = time; 
   };
 
   /** Get time convertion units from internal IPIC3D units */
   double getSItime() {
-    return (SItime);
+    //return (SItime);
+    return timeCtr.SItime;
   };
 
-  /** set normalized dt */
-  void setNormDt(double normDt) {
-    dt = normDt;
-    INdt = normDt * (No2SiL / No2SiV);
-  }
 
   /** set SI dt */
-  void setSIDt(double SIDt, bool isSWMFDt) {
-    if (isSWMFDt && !useSWMFDt)
-      return;
-
-    INdt = SIDt;
-    dt = INdt * (Si2NoL / Si2NoV);
+  void setSIDt(double SIDt) {
+    timeCtr.setSIDt(SIDt);
     return;
   }
 
   double calSIDt() {
-    double dt0;
-    if (useSWMFDt) {
-      dt0 = INdt;
-    } else {
-      if (useFixedDt) {
-        dt0 = fixedDt;
-      } else {
-        dt0 = maxDt * cflLimit;
-      }
-    }
-    return dt0;
+    return timeCtr.getSIDt();    
   }
 
   void updateSItime() {
-    SItime += INdt;
+    timeCtr.updateSItime();
     if (myrank == 0) {
-      std::cout << "SItime = " << SItime << " dt (s) = " << INdt
-                << " , normalized dt = " << INdt *(Si2NoL / Si2NoV)
+      std::cout << "SItime = " << timeCtr.SItime << " dt (s) = " << timeCtr.getSIDt()
+                << " , normalized dt = " << timeCtr.getDt()
                 << std::endl;
     }
   }
 
   /** get fluid time step in IPIC3D units */
   double getFluidDt() const {
-    if (dt == 0.0) {
-      // cout<<"getFluidDt : "<<dt<<", "<<ParamDt<<endl;
-      return (ParamDt);
-    } else {
-      // cout<<"getFluidDt : "<<dt<<endl;
-      return (dt);
-    }
+    return timeCtr.getDt();
   }
 
   // The begining 'physical' point of this IPIC region. Assume there is one
@@ -535,9 +596,9 @@ public:
   double getSatRadius() const {
     return drSat * dx_D[0];
   };
-  void setmaxDt(double dt) {
-    maxDt = dt / (Si2NoL / Si2NoV);
-  };
+  /* void setmaxDt(double dt) { */
+  /*   maxDt = dt / (Si2NoL / Si2NoV); */
+  /* }; */
   void setxStart(double v) {
     xStart = v;
     const int iBlock = 0;
@@ -1224,7 +1285,7 @@ public:
                           const int iJ) const {
     // if(doSplitSpecies && !do_deposit_particle(is, x, y, z)) return 0;
     // Assume qe = -qi;
-    double U, Rho, J, Rhoit, Qit, Rhot;
+    double U, J, Rhoit, Qit, Rhot;
 
     if (useElectronFluid) {
       getInterpolatedValue(iBlock, x, y, z, &U, iU_I[is]);
@@ -1386,8 +1447,8 @@ public:
                                const double rand1, const double rand2,
                                const double rand3, const double rand4,
                                const int is) const {
-    double Bx, By, Bz, B, P, Ppar, Pperp, Uthperp, Uthpar, Uthperp1, Uthperp2;
-    double harvest, prob, theta;
+    double Bx, By, Bz, P, Ppar, Pperp, Uthperp, Uthpar, Uthperp1, Uthperp2;
+    double prob, theta;
     MDArray<double> norm_DD;
     // indexes for the norm_DD matix
     int Norm_, Perp1_, Perp2_, X_, Y_, Z_;
@@ -1669,10 +1730,6 @@ public:
                              const Type z, const int is) const {
     double Ratio;
     if (doSplitSpecies) {
-      int iMHD;
-      iMHD = is;
-      iMHD = iSPic2Mhd_I[is];
-
       if (splitType == "Bx" || splitType == "By" || splitType == "Bz") {
         int iVar;
         if (splitType == "Bx")

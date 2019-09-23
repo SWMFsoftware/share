@@ -17,7 +17,6 @@ FluidPicInterface::FluidPicInterface() {
     EndIdx_D[iDim] = -1;
   }
   dt = 0.0;
-  ParamDt = 0.0;
 
   // form normalizationof length C/Wp 100;  //[m] ->[cm]
   nSync = 1;
@@ -193,6 +192,9 @@ void FluidPicInterface::InitData() {
   // Get back to SI units
   for (int iVar = 0; iVar < nVarCoupling; iVar++)
     No2Si_V[iVar] = 1.0 / Si2No_V[iVar];
+
+  timeCtr.Si2NoT = getSi2NoT();
+  timeCtr.No2SiT = getNo2SiT();
 }
 //-------------------------------------------------------------------------
 
@@ -550,7 +552,7 @@ void FluidPicInterface::ReadFromGMinit(int *paramint, double *ParamRealRegion,
   } else {
     Mnorm = 1.0;
   }
-
+  
   InitData();
   ReNormLength();
   checkParam();
@@ -729,11 +731,8 @@ void FluidPicInterface::GetGridPnt(double *Pos_I) {
 
 void FluidPicInterface::setStateVar(double *state_I, int *iPoint_I) {
   const int x_ = 0, y_ = 1, z_ = 2;
-  int i, j, k, iVar;
-  int ii, jj, kk;
-  int idx;
+  int i, j, k;
 
-  int nDimArray = 5;
   State_BGV.clear();
   State_BGV.init(nBlock, nxnLG, nynLG, nznLG, nVarCoupling);
 
@@ -985,12 +984,9 @@ void FluidPicInterface::PrintFluidPicInterface() {
 void FluidPicInterface::read_satellite_file(string filename) {
   std::ifstream file;
   string line;
-  bool doStartRead;
   vector<array<double, 4> > satInfo_II;
   file.open(filename.c_str());
-  int len;
   while (getline(file, line)) {
-    len = line.length();
     if (line.substr(0, 6) == "#START")
       break;
   }
@@ -1021,8 +1017,6 @@ void FluidPicInterface::read_satellite_file(string filename) {
     satInfo_II.push_back(data);
   }
 
-  bool doTestMe;
-  doTestMe = true;
   int nline;
   nline = satInfo_II.size();
   for (int i = 0; i < nline; i++) {
@@ -1369,7 +1363,7 @@ string FluidPicInterface::expandVariable(string inVars) const {
 }
 
 string FluidPicInterface::addPlasmaVar(string varString, int is) const {
-  string::size_type pos1, pos2;
+  string::size_type pos1;
   stringstream ss;
   ss << is;
   string iString = ss.str();
@@ -1438,10 +1432,10 @@ void FluidPicInterface::CalcFluidState(const double *dataPIC_I,
    */
 
   double Rhoi, Pi;
-  double Rhoe, Pe;
+  double Rhoe;
   double Rho;
   double PeXX, PeYY, PeZZ, PeXY, PeXZ, PeYZ, PiXX, PiYY, PiZZ, PiXY, PiXZ, PiYZ;
-  double PtXX, PtYY, PtZZ, PtXY, PtXZ, PtYZ, BX, BY, BZ, Ex, Ey, Ez;
+  double PtXX, PtYY, PtZZ, PtXY, PtXZ, PtYZ, BX, BY, BZ;
   double PitXX, PitYY, PitZZ, PitXY, PitXZ, PitYZ;
   double Mx, My, Mz;    // Total momentum.
   double Mix, Miy, Miz; // Momentum of i species.

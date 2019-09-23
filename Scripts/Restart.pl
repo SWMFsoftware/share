@@ -448,9 +448,9 @@ sub link_tree_check{
 	$RestartInDirFound{$Comp} = $Dir;
 
 	if($Framework){
-	    # Check if the header file exists and check the simulation time
+	    # Check if the header file exists and check the simulation time	    
 	    my $HeaderFile = $HeaderFile{$Comp};
-	    &get_time_step("$RestartTree/$Comp/$HeaderFile") if $HeaderFile;
+	    &get_time_step("$RestartTree/$Comp/$HeaderFile") if $HeaderFile and $Comp ne "IE";
 	}
 
 	print "# Restart.pl has checked $Dir\n" if $Verbose;
