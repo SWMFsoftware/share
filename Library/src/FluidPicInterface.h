@@ -1285,7 +1285,7 @@ public:
                           const int iJ) const {
     // if(doSplitSpecies && !do_deposit_particle(is, x, y, z)) return 0;
     // Assume qe = -qi;
-    double U, Rho, J, Rhoit, Qit, Rhot;
+    double U, J, Rhoit, Qit, Rhot;
 
     if (useElectronFluid) {
       getInterpolatedValue(iBlock, x, y, z, &U, iU_I[is]);
@@ -1447,8 +1447,8 @@ public:
                                const double rand1, const double rand2,
                                const double rand3, const double rand4,
                                const int is) const {
-    double Bx, By, Bz, B, P, Ppar, Pperp, Uthperp, Uthpar, Uthperp1, Uthperp2;
-    double harvest, prob, theta;
+    double Bx, By, Bz, P, Ppar, Pperp, Uthperp, Uthpar, Uthperp1, Uthperp2;
+    double prob, theta;
     MDArray<double> norm_DD;
     // indexes for the norm_DD matix
     int Norm_, Perp1_, Perp2_, X_, Y_, Z_;
@@ -1730,10 +1730,6 @@ public:
                              const Type z, const int is) const {
     double Ratio;
     if (doSplitSpecies) {
-      int iMHD;
-      iMHD = is;
-      iMHD = iSPic2Mhd_I[is];
-
       if (splitType == "Bx" || splitType == "By" || splitType == "Bz") {
         int iVar;
         if (splitType == "Bx")
