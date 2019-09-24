@@ -2,13 +2,14 @@
 
 my $Help     = ($h or $H or $help);
 my $Undo     = ($u or $undo);
-my $OutCode  = ($o or $output or "check_variables.f90");
+#my $OutCode  = ($o or $output or "check_variables.f90");
 my $Verbose  = ($v or $verbose);
 
 # Allow in-place editing
 $^I = "";
 
 use strict;
+use English;
 
 &print_help if $Help or not @ARGV;
 
@@ -374,7 +375,7 @@ sub modify_file{
         # append addarg to call functions
         foreach my $fc (@{$Funcs{$key}{'callpos'}}){
           if($lines[$fc] =~ /(.*\bcall\s+\w+\()/ ){
-            $lines[$fc] = $1 . "&\n\t$str,&\n\t" . $';
+            $lines[$fc] = $1 . "\&\n\t$str,&\n\t" . $POSTMATCH;
           } else{
             $lines[$fc] =~ s/\n/\(\&\n\t$str\)\n/;
           }
