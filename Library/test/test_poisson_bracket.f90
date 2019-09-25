@@ -87,37 +87,39 @@ contains
   subroutine test_multipoisson_bracket(TimeOut)
     real,intent(in) :: TimeOut
     !Misc:
-    real,parameter :: tEachFile=100.0                                                   !time range of each input file
-    real           :: Time=0.0, Dt=0.0                                                  !simulation time, time step
-    real,parameter :: ProtonmassInGeV=cProtonmass*clightspeed**2/(10**9*cElectroncharge)!proton mass in unit of GeV/c^2
-    real,parameter :: ParticleRange1=2.0, ParticleRange2=4.0                            !parameter of the place of the initial particles
-    integer,parameter :: nQ = 130,  nP = 20,  nR = 20                                   !number of grid of s_L, \mu, ln(p^3/3) axis      
-    integer,parameter :: nVar = 22                                                      !number of vatiales in each line of the input files               
+    real,parameter :: tEachFile=100.0                                   !time range of each input file
+    real           :: Time=0.0, Dt=0.0                                  !simulation time, time step
+    real,parameter :: ProtonmassInGeV=cProtonmass*clightspeed**2/&
+         (1.0e9*cElectroncharge)!proton mass in unit of GeV/c^2
+    real,parameter :: ParticleRange1=2.0, ParticleRange2=4.0            !parameter of the place of the initial particles
+    integer,parameter :: nQ = 130,  nP = 20,  nR = 20                   !number of grid of s_L, \mu, ln(p^3/3) axis      
+    integer,parameter :: nVar = 22                                      !number of vatiales in each line of the input files               
     integer,parameter :: x_ = 2,y_ = 3,z_ = 4,ux_ = 7,uy_ = 8,uz_ = 9,&
-                        Bx_ = 10, By_= 11, Bz_ = 12                                     !Position of the variables in the input line
-    integer,parameter :: nStride = 25                                                   !stride of the data reading
-    integer,parameter :: iLagrIDSkipped = 20                                            !Lagr index that is gaped for field line at each time
-    real :: DeltaMu = 2.0/nP                                                            !\delta\mu for each grid along the \mu axis
-    real :: ParticleEnergyMin, ParticleEnergyMax                                        !Min and Max value for particle energy
-    real :: LnP3min, LnP3max                                                            !Ln(P^3/3)_min, Ln(P^3/3)_max
-    real :: DeltaP3_I(nR), DeltaLnP3                                                    ! \delta(P^3/3)  \deltaLn(P^3/3)
-    real :: Volume_G(0:nQ+1, 0:nP+1, 0:nR+1)                                            !control volume 
-    real :: VDF_G(-1:nQ+2, -1:nP+2, -1:nR+2)                                            !vdf
-    real :: VDFOutput_II(1:nQ, 1:nR)                                                    !vdf output
-    real :: Hamiltonian2_N(-1:nQ+1,-1:nP+1,0:nR+1)                                      !the Poisson bracket with regard to the first and second vars 
-    real :: Hamiltonian3_N(0:nQ+1,-1:nP+1,-1:nR+1)                                      !consider the case when there are more than one Poisson bracket
-    real :: DeltaHamiltonian1_N(0:nQ+1,0:nP+1,-1:nR+1)                                  !and when there is a Poisson bracket with respect to the time
-    real :: Source_C(nQ,nP,nR)                                                          !Source at each time step
-    real :: RawData1_II(nQ,nVar), RawData2_II(nQ,nVar)                                  !the raw data that is imported from MHD
-    real :: GapData                                                                     !Store the gaped data
-    real :: DeltaSOverB_C(1:nQ), DDeltaSOverBDt_C(1:nQ), InvB_C(1:nQ), bDuDt_C(1:nQ), DLnBDeltaSSquaredDt_C(1:nQ)!The data calculated directly from RawData
-    real :: tOutput                                                                     !Time of each output file
-    real :: HelioDist_I(nQ)                                                             !Heliocentric distance, for visualization
-    real :: Energy_I(nR)                                                                !Energy in unit of KeV, for output
-    integer :: m, iQ, iP, iR, iStep=0, iStride                                          !Loop integers
-    integer :: nOutputFile = 2                                                          !The number of output files
-    integer :: IndexOfFile                                                              !Number Index of File
-    character(LEN=3) :: NameFileSuffix                                                  !The number index of output files in character
+                        Bx_ = 10, By_= 11, Bz_ = 12                     !Position of the variables in the input line
+    integer,parameter :: nStride = 25                                   !stride of the data reading
+    integer,parameter :: iLagrIDSkipped = 20                            !Lagr index that is gaped for field line at each time
+    real :: DeltaMu = 2.0/nP                                            !\delta\mu for each grid along the \mu axis
+    real :: ParticleEnergyMin, ParticleEnergyMax                        !Min and Max value for particle energy
+    real :: LnP3min, LnP3max                                            !Ln(P^3/3)_min, Ln(P^3/3)_max
+    real :: DeltaP3_I(nR), DeltaLnP3                                    ! \delta(P^3/3)  \deltaLn(P^3/3)
+    real :: Volume_G(0:nQ+1, 0:nP+1, 0:nR+1)                            !control volume 
+    real :: VDF_G(-1:nQ+2, -1:nP+2, -1:nR+2)                            !vdf
+    real :: VDFOutput_II(1:nQ, 1:nR)                                    !vdf output
+    real :: Hamiltonian2_N(-1:nQ+1,-1:nP+1,0:nR+1)                      !the Poisson bracket with regard to the first and second vars 
+    real :: Hamiltonian3_N(0:nQ+1,-1:nP+1,-1:nR+1)                      !consider the case when there are more than one Poisson bracket
+    real :: DeltaHamiltonian1_N(0:nQ+1,0:nP+1,-1:nR+1)                  !and when there is a Poisson bracket with respect to the time
+    real :: Source_C(nQ,nP,nR)                                          !Source at each time step
+    real :: RawData1_II(nQ,nVar), RawData2_II(nQ,nVar)                  !the raw data that is imported from MHD
+    real :: GapData                                                     !Read the redundant data
+    real :: DeltaSOverB_C(1:nQ), DDeltaSOverBDt_C(1:nQ), InvB_C(1:nQ), &
+         bDuDt_C(1:nQ), DLnBDeltaSSquaredDt_C(1:nQ)                     !The data calculated directly from RawData
+    real :: tOutput                                                     !Time of each output file
+    real :: HelioDist_I(nQ)                                             !Heliocentric distance, for visualization
+    real :: Energy_I(nR)                                                !Energy in unit of KeV, for output
+    integer :: m, iQ, iP, iR, iStep=0, iStride                          !Loop integers
+    integer :: nOutputFile = 2                                          !The number of output files
+    integer :: IndexOfFile                                              !Number Index of File
+    character(LEN=3) :: NameFileSuffix                                  !The number index of output files in character
     
     
        
@@ -164,11 +166,23 @@ contains
     !/
     ParticleEnergyMin = 1.0e-3       !Min energy in unit of Gev
     ParticleEnergyMax = 1.0          !Max energy in unit of Gev
-    LnP3min = log(sqrt((ParticleEnergyMin + ProtonmassInGeV)**2 - ProtonmassInGeV**2)**3/3) !give the min value of Ln(P^3/3). We set the minimum of energy to be 1MeV, then Ln(p^3/3) can be calculated
-    LnP3max = log(sqrt((ParticleEnergyMax + ProtonmassInGeV)**2 - ProtonmassInGeV**2)**3/3) !give the max value of Ln(P^3/3). We set the maximum of energy to be 1GeV, then Ln(p^3/3) can be calculated 
-    DeltaLnP3 = (LnP3max - LnP3min)/nR !give the \DeltaLn(P^3/3)
+    !\
+    !give the min value of Ln(P^3/3). We set the minimum of energy 
+    !to be 1MeV, then Ln(p^3/3) can be calculated
+    !/
+    LnP3min = log(sqrt((ParticleEnergyMin + ProtonmassInGeV)**2 - ProtonmassInGeV**2)**3/3)
+    !\ 
+    !give the max value of Ln(P^3/3). We set the maximum of energy to be 1GeV, 
+    !then Ln(p^3/3) can be calculated 
+    !/
+    LnP3max = log(sqrt((ParticleEnergyMax + ProtonmassInGeV)**2 - ProtonmassInGeV**2)**3/3) 
+    !\
+    !get  \DeltaLn(P^3/3)
+    !/
+    DeltaLnP3 = (LnP3max - LnP3min)/nR 
     do iR=1,nR
-       DeltaP3_I(iR) = exp(LnP3min + iR*DeltaLnP3) - exp(LnP3min + (iR - 1)*DeltaLnP3)!give \deltaP^3/3 for each grid
+       !get \deltaP^3/3 for each grid
+       DeltaP3_I(iR) = exp(LnP3min + iR*DeltaLnP3) - exp(LnP3min + (iR - 1)*DeltaLnP3)
     end do
     
     !\                                       
@@ -179,9 +193,11 @@ contains
     do iR = 1,nR
        do iQ = 1,nQ
           if (iQ <= ParticleRange1) then
-             VDF_G(iQ,nP/2:nP,iR) = max(0.1*exp(-5.0/3.0*(LnP3min+iR*DeltaLnP3)),1.0e-7)!Assume the momentum of particls to be power distribution: f ~ p^-5
+             !Assume the momentum of particls to be power distribution: f ~ p^-5
+             VDF_G(iQ,nP/2:nP,iR) = max(0.1*exp(-5.0/3.0*(LnP3min+iR*DeltaLnP3)),1.0e-7)
           elseif (iQ <= ParticleRange2)then
-             VDF_G(iQ,nP/2:nP,iR) = max(0.1*exp(-5.0/3.0*(LnP3min+iR*DeltaLnP3))*&!using a linear slope for the middle part
+             !using a linear slope for the middle part
+             VDF_G(iQ,nP/2:nP,iR) = max(0.1*exp(-5.0/3.0*(LnP3min+iR*DeltaLnP3))*&
                   (ParticleRange2 - real(iQ))/ &
                   (ParticleRange2 - ParticleRange1),1.0e-7)
           end if
@@ -216,14 +232,15 @@ contains
     ! Calculate the Lagrangian particle positions
     !/   
     do iQ = 1, nQ
-       HelioDist_I(iQ) = sqrt(RawData1_II(iQ,x_)**2 + RawData1_II(iQ,y_)**2 + RawData1_II(iQ,z_)**2 )*clightspeed / rSun
+       HelioDist_I(iQ) = sqrt(RawData1_II(iQ,x_)**2 + RawData1_II(iQ,y_)**2 + RawData1_II(iQ,z_)**2 )*clightspeed/rSun
     end do
     
     !\
     ! Calculate the position for ln(p^3/3) axis: note that the energy is in the unit of KeV now
     !/
     do iR=1,nR
-       Energy_I(iR) = 6.0 + log10(sqrt((3.0*exp(LnP3min + (iR - 0.50)*DeltaLnP3))**(2.0/3.0) + ProtonmassInGeV**2) - ProtonmassInGeV)
+       Energy_I(iR) = 6.0 + log10(sqrt((3.0*exp(LnP3min + (iR - 0.50)*DeltaLnP3))**(2.0/3.0) + ProtonmassInGeV**2) &
+            - ProtonmassInGeV)
     end do
     
     !\
@@ -273,9 +290,26 @@ contains
           DeltaHamiltonian1_N = 0.0
           Hamiltonian2_N = 0.0
           Hamiltonian3_N = 0.0
-          call calc_hamiltonian_1(DDeltaSOverBDt_C                           ,DeltaHamiltonian1_N,DeltaP3_I,DeltaLnP3,LnP3min,LnP3max)!calculate Hamiltonian function which is in the time-dependent poisson bracket
-          call calc_hamiltonian_2(InvB_C                                     ,Hamiltonian2_N     ,DeltaP3_I,DeltaLnP3,LnP3min,LnP3max)!calculate the second Hamiltonian function 
-          call calc_hamiltonian_3(DeltaSOverB_C,bDuDt_C,DLnBDeltaSSquaredDt_C,Hamiltonian3_N     ,DeltaP3_I,DeltaLnP3,LnP3min,LnP3max)!calculate the third Hamiltonian function 
+          !calculate Hamiltonian function which is in the time-dependent poisson bracket
+          call calc_hamiltonian_1(DDeltaSOverBDt_C,   &
+                                  DeltaHamiltonian1_N,&
+                                  DeltaP3_I,          &
+                                  DeltaLnP3,          &     
+                                  LnP3min,LnP3max)
+          !calculate the second Hamiltonian function 
+          call calc_hamiltonian_2(InvB_C,             &
+                                  Hamiltonian2_N     ,&
+                                  DeltaP3_I,DeltaLnP3,&
+                                  LnP3min,LnP3max)
+          !\
+          !calculate the third Hamiltonian function
+          !/ 
+          call calc_hamiltonian_3(DeltaSOverB_C,      &
+                                  bDuDt_C,            &
+                                  DLnBDeltaSSquaredDt_C,&
+                                  Hamiltonian3_N     ,&
+                                  DeltaP3_I          ,&
+                                  DeltaLnP3,LnP3min,LnP3max)
           
           !\
           !calculate the total volume
@@ -295,12 +329,14 @@ contains
           !\
           ! Bgin the calculation of Source_C
           !/
-          call explicit3(nQ, nP, nR, VDF_G, Hamiltonian2_N, Volume_G, Source_C, DeltaHamiltonian03_N = DeltaHamiltonian1_N, Hamiltonian23_N = -Hamiltonian3_N,   &
+          call explicit3(nQ, nP, nR, VDF_G, Hamiltonian2_N, Volume_G, Source_C, &
+               DeltaHamiltonian03_N = DeltaHamiltonian1_N, Hamiltonian23_N = -Hamiltonian3_N,   &
                DtOut = Dt, CFLIn=0.99)
           
           iStep = iStep + 1
           if(Time + Dt >= tOutput)then
-             call explicit3(nQ, nP, nR, VDF_G, Hamiltonian2_N, Volume_G, Source_C, DeltaHamiltonian03_N = DeltaHamiltonian1_N, Hamiltonian23_N = -Hamiltonian3_N,   &
+             call explicit3(nQ, nP, nR, VDF_G, Hamiltonian2_N, Volume_G, Source_C,&
+                  DeltaHamiltonian03_N = DeltaHamiltonian1_N, Hamiltonian23_N = -Hamiltonian3_N,   &
                   DtIn = tOutput - Time)
              VDF_G(1:nQ, 1:nP, 1:nR) = VDF_G(1:nQ, 1:nP, 1:nR) + Source_C/Volume_G(1:nQ,1:nP,1:nR)
              
@@ -404,19 +440,27 @@ contains
       end do
       !calculate deltas
       do iQ=2,nQ-1
-         DeltaS_I(iQ) = sqrt((MidPoint_ID(iQ,x_) - MidPoint_ID(iQ-1,x_))**2 + (MidPoint_ID(iQ,y_) - MidPoint_ID(iQ-1,y_))**2 + (MidPoint_ID(iQ,z_) - MidPoint_ID(iQ-1,z_))**2)
+         DeltaS_I(iQ) = sqrt((MidPoint_ID(iQ,x_) - MidPoint_ID(iQ-1,x_))**2 + &
+              (MidPoint_ID(iQ,y_) - MidPoint_ID(iQ-1,y_))**2 + (MidPoint_ID(iQ,z_) &
+              - MidPoint_ID(iQ-1,z_))**2)
       end do
       !Linear interpolate the delats such that there will be nQ deltas
-      DeltaS_I(1)  = 2*sqrt((MidPoint_ID(1,   x_) - RawData1_II(1, x_))**2 + (MidPoint_ID(1,   y_) - RawData1_II(1, y_))**2 + (MidPoint_ID(1,   z_) - RawData1_II(1, z_))**2)
-      DeltaS_I(nQ) = 2*sqrt((MidPoint_ID(nQ-1,x_) - RawData1_II(nQ,x_))**2 + (MidPoint_ID(nQ-1,y_) - RawData1_II(nQ,y_))**2 + (MidPoint_ID(nQ-1,z_) - RawData1_II(nQ,z_))**2)
+      DeltaS_I(1)  = 2*sqrt((MidPoint_ID(1,   x_) - RawData1_II(1, x_))**2 +       &
+           (MidPoint_ID(1,   y_) - RawData1_II(1, y_))**2 + (MidPoint_ID(1,   z_)&
+           - RawData1_II(1, z_))**2)
+      DeltaS_I(nQ) = 2*sqrt((MidPoint_ID(nQ-1,x_) - RawData1_II(nQ,x_))**2 + &
+           (MidPoint_ID(nQ-1,y_) - RawData1_II(nQ,y_))**2 + (MidPoint_ID(nQ-1,z_) &
+           - RawData1_II(nQ,z_))**2)
       
       !\
       ! calculate part of hamiltonian function (1/2B) and \DeltaS/B at grid center
       !/
       do iQ=1,nQ
-         InvBOld_C(iQ) = 1.0/(2.0*sqrt(RawData1_II(iQ, Bx_)**2 + RawData1_II(iQ, By_)**2 + RawData1_II(iQ, Bz_)**2))
+         InvBOld_C(iQ) = 1.0/(2.0*sqrt(RawData1_II(iQ, Bx_)**2 + &
+              RawData1_II(iQ, By_)**2 + RawData1_II(iQ, Bz_)**2))
          DeltaSOverBOld_C(iQ) = DeltaS_I(iQ)*2.0*InvBOld_C(iQ)
-         LnBDeltaSSquaredOld_C(iQ) = log(sqrt(RawData1_II(iQ, Bx_)**2 + RawData1_II(iQ, By_)**2 + RawData1_II(iQ, Bz_)**2)*DeltaS_I(iQ)**2)
+         LnBDeltaSSquaredOld_C(iQ) = log(sqrt(RawData1_II(iQ, Bx_)**2 + &
+              RawData1_II(iQ, By_)**2 + RawData1_II(iQ, Bz_)**2)*DeltaS_I(iQ)**2)
       end do
       
       
@@ -428,19 +472,27 @@ contains
       end do
       !calculate deltas
       do iQ=2,nQ-1
-         DeltaS_I(iQ) = sqrt((MidPoint_ID(iQ,x_) - MidPoint_ID(iQ-1,x_))**2 + (MidPoint_ID(iQ,y_) - MidPoint_ID(iQ-1,y_))**2 + (MidPoint_ID(iQ,z_) - MidPoint_ID(iQ-1,z_))**2)
+         DeltaS_I(iQ) = sqrt((MidPoint_ID(iQ,x_) - MidPoint_ID(iQ-1,x_))**2 +   &
+         (MidPoint_ID(iQ,y_) - MidPoint_ID(iQ-1,y_))**2 + (MidPoint_ID(iQ,z_) - &
+              MidPoint_ID(iQ-1,z_))**2)
       end do
       !Linear interpolate the delats such that there will be nQ deltas
-      DeltaS_I(1)  = 2*sqrt((MidPoint_ID(1,   x_) - RawData2_II(1, x_))**2 + (MidPoint_ID(1,   y_) - RawData2_II(1, y_))**2 + (MidPoint_ID(1,   z_) - RawData2_II(1, z_))**2)
-      DeltaS_I(nQ) = 2*sqrt((MidPoint_ID(nQ-1,x_) - RawData2_II(nQ,x_))**2 + (MidPoint_ID(nQ-1,y_) - RawData2_II(nQ,y_))**2 + (MidPoint_ID(nQ-1,z_) - RawData2_II(nQ,z_))**2)
+      DeltaS_I(1)  = 2*sqrt((MidPoint_ID(1,   x_) - RawData2_II(1, x_))**2 + &
+           (MidPoint_ID(1,   y_) - RawData2_II(1, y_))**2 + (MidPoint_ID(1,   z_) - &
+           RawData2_II(1, z_))**2)
+      DeltaS_I(nQ) = 2*sqrt((MidPoint_ID(nQ-1,x_) - RawData2_II(nQ,x_))**2 + &
+           (MidPoint_ID(nQ-1,y_) - RawData2_II(nQ,y_))**2 + (MidPoint_ID(nQ-1,z_) - &
+           RawData2_II(nQ,z_))**2)
       
       !\
       ! calculate part of hamiltonian function (1/2B) and \DeltaS/B at grid center
       !/
       do iQ=1,nQ
-         InvBNew_C(iQ) = 1.0/(2.0*sqrt(RawData2_II(iQ, Bx_)**2 + RawData2_II(iQ, By_)**2 + RawData2_II(iQ, Bz_)**2))
+         InvBNew_C(iQ) = 1.0/(2.0*sqrt(RawData2_II(iQ, Bx_)**2 + RawData2_II(iQ, By_)**2 + &
+              RawData2_II(iQ, Bz_)**2))
          DeltaSOverBNew_C(iQ) = DeltaS_I(iQ)*2.0*InvBNew_C(iQ)
-         LnBDeltaSSquaredNew_C(iQ) = log(sqrt(RawData2_II(iQ, Bx_)**2 + RawData2_II(iQ, By_)**2 + RawData2_II(iQ, Bz_)**2)*DeltaS_I(iQ)**2)
+         LnBDeltaSSquaredNew_C(iQ) = log(sqrt(RawData2_II(iQ, Bx_)**2 + &
+              RawData2_II(iQ, By_)**2 + RawData2_II(iQ, Bz_)**2)*DeltaS_I(iQ)**2)
       end do
       
       
@@ -448,15 +500,19 @@ contains
       ! Calculate values for Current time
       !/
       !Calculate B at cell center
-      if (present(bDuDt_C)) B_C = RawData1_II(:,Bx_:Bz_) + (RawData2_II(:,Bx_:Bz_) - RawData1_II(:,Bx_:Bz_))/tEachFile*Time
+      if (present(bDuDt_C)) B_C = RawData1_II(:,Bx_:Bz_) + (RawData2_II(:,Bx_:Bz_) - &
+           RawData1_II(:,Bx_:Bz_))/tEachFile*Time
       !Calculate  (1/2B) 
       if (present(InvB_C)) InvB_C = InvBOld_C + (InvBNew_C - InvBOld_C)/tEachFile*Time
       !Calculate \deltas/B at current time
-      if (present(DeltaSOverB_C)) DeltaSOverB_C = DeltaSOverBOld_C + (DeltaSOverBNew_C - DeltaSOverBOld_C)/tEachFile*Time
+      if (present(DeltaSOverB_C)) DeltaSOverB_C = DeltaSOverBOld_C + (DeltaSOverBNew_C &
+           - DeltaSOverBOld_C)/tEachFile*Time
       !Calculate \deltas/B at the next time
-      if (present(DdeltaSOverBDt_C)) DDeltaSOverBDt_C = (DeltaSOverBNew_C - DeltaSOverBOld_C)/tEachFile
+      if (present(DdeltaSOverBDt_C)) DDeltaSOverBDt_C = (DeltaSOverBNew_C &
+           - DeltaSOverBOld_C)/tEachFile
       !Calculate Dln(B\deltas^2)/Dt
-      if (present(DLnBdeltaSSquaredDt_C)) DLnBdeltaSSquaredDt_C = (LnBDeltaSSquaredNew_C - LnBDeltaSSquaredOld_C)/tEachfile
+      if (present(DLnBdeltaSSquaredDt_C)) DLnBdeltaSSquaredDt_C = (LnBDeltaSSquaredNew_C&
+           - LnBDeltaSSquaredOld_C)/tEachfile
       !Calculate b*Du/Dt
       if (present(bDuDt_C)) then
          do iQ=1,nQ
@@ -473,7 +529,10 @@ contains
     end subroutine calc_initial_data
     
     
-    subroutine calc_hamiltonian_1(DdeltaSOverBDt_C,DeltaHamiltonian1_N,DeltaP3_I,DeltaLnP3,LnP3min,LnP3max)!calculate the first Hamiltonian function with time: p^3/3*\deltas/B
+    subroutine calc_hamiltonian_1(DdeltaSOverBDt_C,DeltaHamiltonian1_N,DeltaP3_I,DeltaLnP3,LnP3min,LnP3max)
+      !\
+      !calculate the first Hamiltonian function with time: p^3/3*\deltas/B\
+      !/
       real, intent(out) :: DeltaHamiltonian1_N(0:nQ+1,0:nP+1,-1:nR+1) 
       real, intent(in) :: DeltaP3_I(nR), DeltaLnP3, LnP3min, LnP3max
       real, intent(in) :: DDeltaSOverBDt_C(1:nQ)
@@ -504,8 +563,8 @@ contains
       
     end subroutine calc_hamiltonian_1
     
-    
-    subroutine calc_hamiltonian_2(InvB_C,Hamiltonian2_N,DeltaP3_I,DeltaLnP3,LnP3min,LnP3max)!calculate the second Hamiltonian function at each fixed time: (1-mu^2)v/2B 
+    !calculate the second Hamiltonian function at each fixed time: (1-mu^2)v/2B 
+    subroutine calc_hamiltonian_2(InvB_C,Hamiltonian2_N,DeltaP3_I,DeltaLnP3,LnP3min,LnP3max)
       real, intent(out) :: Hamiltonian2_N(-1:nQ+1, -1:nP+1, 0:nR+1)                                                                                                                                        
       real, intent(in) :: DeltaP3_I(nR),DeltaLnP3,LnP3min,LnP3max
       real, intent(in) :: InvB_C(nQ)
@@ -523,7 +582,8 @@ contains
       InvB_F(nQ) = InvB_C(nQ) + (InvB_C(nQ) - InvB_C(nQ-1))*0.5
       
       !\
-      ! calculate the real hamiltonian function, mutiply (1-mu^2) and v (nocite that v is a function of P^3/3)!!!
+      ! calculate the real hamiltonian function, mutiply (1-mu^2) and v (nocite that v is a 
+      ! function of P^3/3)!!!
       !/                   
       do iR=1,nR
          Momentum_I(iR) = (3.0*exp(LnP3min + (iR - 0.5)*DeltaLnP3))**(1.0/3.0)
@@ -531,9 +591,11 @@ contains
       do iQ=0,nQ
          do iP=0,nP
             do iR=1,nR
-               !Consider the law of relativity, v=1/sqrt(1+m^2*c^2/p^2), we can calculate v as a function of p
-               !Note that light speed is the unit of speed in our code, so we do not need to multiply a c^2 in the following expression
-               Hamiltonian2_N(iQ,iP,iR) = InvB_F(iQ)*(1.0 - (-1.0 + real(iP)*DeltaMu)**2)/sqrt(1 + ProtonmassInGeV**2/Momentum_I(iR)**2)
+               !Consider the law of relativity, v=1/sqrt(1+m^2*c^2/p^2), we can calculate v as 
+               !a function of p. Note that light speed is the unit of speed in our code, 
+               !so we do not need to multiply a c^2 in the following expression
+               Hamiltonian2_N(iQ,iP,iR) = InvB_F(iQ)*(1.0 - (-1.0 + real(iP)*DeltaMu)**2)&
+                    /sqrt(1 + ProtonmassInGeV**2/Momentum_I(iR)**2)
             end do
          end do
       end do
@@ -583,7 +645,9 @@ contains
       do iQ = 1, nQ
          do iP = 0, nP
             do iR = 0, nR
-               Hamiltonian3_N(iQ,iP,iR) = (1.0 - (-1.0 + real(iP)*DeltaMu)**2)/2.0*((-1.0 + real(iP)*DeltaMu)*exp(LnP3min + iR*DeltaLnP3)*DLnBDeltaSSquaredDt_C(iQ) + ProtonmassInGeV*Momentum_I(iR)**2*bDuDt_C(iQ))
+               Hamiltonian3_N(iQ,iP,iR) = (1.0 - (-1.0 + real(iP)*DeltaMu)**2)/2.0*&
+                    ((-1.0 + real(iP)*DeltaMu)*exp(LnP3min + iR*DeltaLnP3)*DLnBDeltaSSquaredDt_C(iQ) &
+                    + ProtonmassInGeV*Momentum_I(iR)**2*bDuDt_C(iQ))
             end do
          end do
       end do
