@@ -89,7 +89,7 @@ sub find_global_var{
       if($Verbose) {
         print "Print test info:\n";
         print "----------------\n";
-        foreach my $key (keys %Vars){
+        foreach my $key (sort keys %Vars){
           print "key=$key,Var=",$Vars{$key}{"name"},
           " ,Type=",$Vars{$key}{"type"},
           " ,Array=",$Vars{$key}{"array"},
@@ -284,17 +284,17 @@ sub find_function_tree{
 
   if($Verbose){
     print "========================\n";
-    foreach my $key (keys %Funcs) {
+    foreach my $key (sort keys %Funcs) {
       print "Func name: $key \n";
       print "Func args:",$Funcs{$key}{"args"},"\n";
       print "Func level:",$Funcs{$key}{"level"},"\n";
       print "Func line:",$Funcs{$key}{"pos"},"\n";
       print "Func call line:",@{$Funcs{$key}{'callpos'}},"\n"
       if $Funcs{$key}{'callpos'};
-      foreach my $f (keys %{$Funcs{$key}{'call'}}){
+      foreach my $f (sort keys %{$Funcs{$key}{'call'}}){
         print "Func call: $f\n";
       }
-      foreach my $f (keys %{$Funcs{$key}{'vars'}}){
+      foreach my $f (sort keys %{$Funcs{$key}{'vars'}}){
         print "Func used vars: $f\n";
       }
       print "========================\n";
@@ -308,9 +308,9 @@ sub find_function_tree{
 #=============================================================================
 sub modify_file{
 
-  foreach my $key (keys %Funcs) {
+  foreach my $key (sort keys %Funcs) {
 
-    foreach my $callfunc (keys %{$Funcs{$key}{'call'}}){
+    foreach my $callfunc (sort keys %{$Funcs{$key}{'call'}}){
       foreach my $var (sort keys %{$Funcs{$callfunc}{'vars'}}){
         # Add to the calling func arg list
         # If being called by others in this module
@@ -337,7 +337,7 @@ sub modify_file{
   }
 
   if($Verbose){
-    foreach my $key (keys %Funcs) {
+    foreach my $key (sort keys %Funcs) {
       print "--------------------\n";
       print "Func name: $key\n";
       if(exists $Funcs{$key}{'addarg'}){
@@ -352,7 +352,7 @@ sub modify_file{
   #   declaration inside subroutine
 
   my $str;
-  foreach my $key (keys %Funcs){
+  foreach my $key (sort keys %Funcs){
     if(exists $Funcs{$key}{'addarg'}){
       if($Verbose){
         print "Func:",$key," in line ",$Funcs{$key}{'pos'},"\n";
