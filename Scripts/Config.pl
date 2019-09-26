@@ -45,7 +45,7 @@ my $IsStrict=1;  # If true, shell_command will stop on error
 # Obtain $OS, $DIR, and the machine name and provide it to caller script
 our $OS  = `uname`    or die "$ERROR_ could not obtain OS\n"; chop $OS;
 our $DIR = `/bin/pwd` or die "$ERROR_ could not obtain DIR\n"; chop $DIR;
-our $Machine = `hostname`; chop($Machine); 
+our $Machine = `hostname -f`; chop($Machine); 
 
 $Machine =~ s/^login\d*\.//; # remove "login\d+." from beginning
 $Machine =~ s/\..*//;        # keep the first word
