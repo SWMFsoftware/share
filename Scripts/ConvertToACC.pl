@@ -170,8 +170,9 @@ sub process_line{
     # Remove public/private/target attributes
     $Type =~ s/,(public|private|target)\b//i;
 
-    # Remove intent
-    $Type =~ s/,intent\(\w+\)//i;
+    # Remove and store intent if present
+    my $Intent = "";
+    $Intent = ", $1" if $Type =~ s/,(intent\(\w+\))//i;
 
     # Remove (/.../) and [...] strings
     $Vars =~ s/\(\/[^\/]*\/\)//g;
@@ -206,6 +207,7 @@ sub process_line{
 	# Store information
 	$Vars{$key}{'name'}        = $Name;
 	$Vars{$key}{'type'}        = $Type;
+	$Vars{$key}{'intent'}      = $Intent;
 
 	if($dimension){
 	    $Vars{$key}{'array'}   = $dimension;
@@ -224,6 +226,7 @@ sub find_function_tree{
     my $namefunc = '';
     my $Args = "";
     my $ParentFunc = "";
+    my $Level1Func = "";
     my $iStart = 0;	    # index of the first line for continuation
 
     while(my ($i, $line) = each @lines){
@@ -247,15 +250,19 @@ sub find_function_tree{
 
 	if($Line =~ /^\s*subroutine\s+([\w]+)(.*)/ ) {
 	    $FuncLevel += 1;
-	    $ParentFunc = $NameFunc if $FuncLevel == 2;
-
-	    print "Level 2 function $1 of $NameFunc\n" if $FuncLevel == 2 and $Verbose;
-
 	    $NameFunc = $1;
 	    $namefunc = lc($NameFunc);
 	    $Args     = $2;
 	    # get rid of opening and closing parens
 	    $Args =~ s/^\(//; $Args =~ s/\)$//;
+
+	    # Store name of level 1 contained subroutine
+	    $Level1Func = $NameFunc if $FuncLevel == 1;
+	    $ParentFunc = ""        if $FuncLevel < 2;
+
+	    # Assign parent for level 2 contained subroutine
+	    $ParentFunc = $Level1Func if $FuncLevel == 2;
+	    print "Level 2 function $1 of $NameFunc\n" if $FuncLevel == 2 and $Verbose;
 
 	    # Store information
 	    $Funcs{$namefunc}{"args"}  = $Args;
@@ -270,8 +277,10 @@ sub find_function_tree{
 
 	    # Record all the global var occurence in this function
 	    while( $Line =~ /\b([a-zA-z]\w*)/g ){
-		$Funcs{$namefunc}{'vars'}{$1} = 1 
-		    if $Vars{lc($1)} or $Vars{$ParentFunc.'-'.lc($1)};
+		my $var = $1;
+		$Funcs{$namefunc}{'vars'}{$var} = 1 
+		    if ($Vars{lc($var)} or $Vars{$ParentFunc.'-'.lc($var)}) and
+		    not $Vars{$NameFunc.'-'.lc($var)};
 	    }
 	}
 
@@ -319,8 +328,14 @@ sub modify_file{
 
 	foreach my $callfunc (sort keys %{$Funcs{$key}{'call'}}){
 	    foreach my $var (sort keys %{$Funcs{$callfunc}{'vars'}}){
-		# Add to the calling func arg list
-		# If being called by others in this module
+
+		if($var eq "iFlux"){
+		    print "!!! function $key, called func=$callfunc\n";
+		}
+
+
+		# Add to the calling func arg list unless it is a local variable
+		# and it is called by other functions in this module
 
 		# This one cannot deal with case insensitive problems!
 		# e.g. iBLOCK vs iBlock
@@ -393,17 +408,11 @@ sub modify_file{
 	    my $parent = $Funcs{$key}{'parent'};
 
 	    # add var declarations
-	    if($key eq "get_mhd_flux"){
-		print "Working on get_mhd_flux\n";
-		print "addarg list: @{$Funcs{$key}{'addarg'}} \n";
-		print "parent: $parent\n";
-	    }
-
 	    foreach my $Var (@{$Funcs{$key}{'addarg'}}){
 		my $var = lc($Var);
 		$var = "$parent\-$var" if exists $Vars{"$parent\-$var"};
 		$addDeclare .= $whitespace . $Vars{$var}{'type'} .
-		    ', intent(inout):: ' .
+		    $Vars{$var}{'intent'} . ':: ' .
 		    $Vars{$var}{'name'} . $Vars{$var}{'array'} . "\n";
 		#splice @lines, $Funcs{$key}{'pos'}+$count, 0, $addDeclare;
 	    }
