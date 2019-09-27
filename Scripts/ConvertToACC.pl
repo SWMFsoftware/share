@@ -1,8 +1,9 @@
 #!/usr/bin/perl -s
 
 my $Help     = ($h or $H or $help);
-my $Undo     = ($u or $undo);
 my $Verbose  = ($v or $verbose);
+my $Declare  = ($d or $declare);
+my $Argument = ($a or $argument);
 
 # Allow in-place editing
 $^I = "";
@@ -37,9 +38,10 @@ foreach $source (@source){
 
     &find_global_var;
 
-    &find_function_tree;
-
-    &modify_file;
+    if($Argument){
+	&find_function_tree;
+	&modify_file;
+    }
 
     print "input source file:$source\n" if $Verbose;
     $source =~ s/\.f90/\_acc\.f90/;
@@ -67,7 +69,7 @@ sub find_global_var{
 
 	next if /^\s*$/;	# Skip lines with only whitespaces
 
-	next if /^\s*\!/ && !/^\s*(\!\$omp)/; # skip pure comment lines
+	next if /^\s*\!/ and not /^\s*(\!\$omp)/; # skip pure comment lines
 
 	# Skip module procedure lines
 	next if /^\s*module\s+procedure/i;
@@ -81,19 +83,29 @@ sub find_global_var{
 
 	next unless $Module;
 
+	if($Declare and /^\s*(contains|end\s module)/){
+	    my $declare;
+	    my $key;
+	    foreach $key (sort keys %Vars){
+		$declare .= 
+		    "  !\$acc declare create(".$Vars{$key}{'name'}.")\n";
+	    }
+	    $line = $declare . $line;
+
+	}
+
 	if(/^\s*(end\s+module)/i){
 
-	    #&add_var($line);
 	    print "end module $Module\n" if $Verbose;
 
 	    if($Verbose) {
 		print "Print test info:\n";
 		print "----------------\n";
 		foreach my $key (sort keys %Vars){
-		    print "key=$key,Var=",$Vars{$key}{"name"},
+		    print "key=$key,Var=",$Vars{$key}{'name'},
 		    " ,Type=",$Vars{$key}{'type'},
 		    " ,Array=",$Vars{$key}{'array'},
-		    " ,threadprivate=",$Vars{$key}{"threadprivate"},"\n";
+		    " ,threadprivate=",$Vars{$key}{'threadprivate'},"\n";
 		}
 		print "test info end\n";
 		print "-------------\n";
@@ -325,7 +337,6 @@ sub find_function_tree{
 sub modify_file{
 
     foreach my $key (sort keys %Funcs) {
-
 	foreach my $callfunc (sort keys %{$Funcs{$key}{'call'}}){
 	    foreach my $var (sort keys %{$Funcs{$callfunc}{'vars'}}){
 
@@ -334,11 +345,10 @@ sub modify_file{
 		}
 
 
-		# Add to the calling func arg list unless it is a local variable
-		# and it is called by other functions in this module
+		# Add to the calling function's arg list if the function
+		# is called in the module and the variable is not 
+		# declared in this function.
 
-		# This one cannot deal with case insensitive problems!
-		# e.g. iBLOCK vs iBlock
 		if(exists $Funcs{$key}{'callpos'} and
 		   not exists $Vars{"$key\-".lc($var)} and
 		   not $Funcs{$key}{'args'} =~ /$var/i){
@@ -447,8 +457,8 @@ sub modify_file{
 sub print_help{
     print
 	'
-Purpose: Enable OpenACC compilation by replacing global variable usage 
-with passed arguments. FILENAME.f90 will be processed into  FILENAME_acc.f90
+Purpose: Enable OpenACC compilation by modifying one or more Fortran 90+ files.
+FILENAME.f90 will be processed into  FILENAME_acc.f90
 
 Usage:
 
@@ -456,13 +466,19 @@ Usage:
 
   -h -help       Print help message and exit.
   -v -verbose    Verbose output.
+  -a -argument   Pass "global" variables as arguments
+  -d -declare    Declare module variables for the device.
   FILE1 FILE2    Files to be processed and modified.
 
 Examples:
 
-  ConvertToACC.pl -v ModFaceFlux.f90
+Add ACC declarations and arguments to ModFaceFlux.f90: 
 
-  ConvertToACC.pl *.f90
+  ConvertToACC.pl -v -a -d ModFaceFlux.f90
+
+Add ACC declarations to F90 files in srcBATL
+
+  ConvertToACC.pl -d srcBATL/*.f90
 
 ';
 
