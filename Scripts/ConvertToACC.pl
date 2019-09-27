@@ -62,7 +62,9 @@ sub find_global_var{
 
     my $IsInterface;	# true inside interfaces and type declarations
 
+    my $iLine = -1;
     foreach my $line (@lines){
+	$iLine++;
 
 	# Copy into $_ for easy manipulation
 	$_ = $line;
@@ -82,17 +84,6 @@ sub find_global_var{
 	}
 
 	next unless $Module;
-
-	if($Declare and /^\s*(contains|end\s module)/){
-	    my $declare;
-	    my $key;
-	    foreach $key (sort keys %Vars){
-		$declare .= 
-		    "  !\$acc declare create(".$Vars{$key}{'name'}.")\n";
-	    }
-	    $line = $declare . $line;
-
-	}
 
 	if(/^\s*(end\s+module)/i){
 
@@ -154,7 +145,7 @@ sub find_global_var{
 	# remove & and read continuation line
 	next if $Line =~ s/\s*\&$/ /;
 
-	&process_line if $Line =~ /::/;
+	&process_line($iLine) if $Line =~ /::/;
 
 	$Line = '';		# delete line
     }
@@ -164,6 +155,8 @@ sub find_global_var{
 
 #=============================================================================
 sub process_line{
+
+    my $iLine = shift;
 
     $_ = $Line;			# Use $_ for easier pattern matching
 
@@ -204,10 +197,11 @@ sub process_line{
 	$dim{$1} = $2;
     }
 
+    my $declare = '';
     foreach (split(',',$Vars)){
 	# Skip cell/face indexed variables
 	# What about Cmax_Dt?
-	next if /_[VD]?[CFGXYZ]/;
+	next if /_[VD]?[CFGXYZ]/ and not $Declare;
 
 	my $Name = $_;
 
@@ -226,7 +220,11 @@ sub process_line{
 	}else{
 	    $Vars{$key}{'array'}   = "$dim{$Name}";
 	}
+	$declare .= "  !\$acc declare create(".$Vars{$key}{'name'}.")\n"
+	    if $Declare and not $Subroutine;
+ 
     }
+    $lines[$iLine] .= $declare;
 
 }
 
