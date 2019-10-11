@@ -1107,6 +1107,7 @@ contains
   end subroutine test_mod_utility
   !=========================================================================== 
   function norm2(x_I) result(norm)
+    !$acc routine seq
 
     ! Does the same as the intrinsic norm2 function in Fortran 2008
     ! The reason for this implementation is that pgf90 does not have norm2

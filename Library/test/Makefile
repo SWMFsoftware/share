@@ -763,7 +763,7 @@ test_poisson_bracket:
 	@make test_poisson_exe			>> test_poisson.diff
 	@echo './test_poisson.exe'		>> test_poisson.diff
 	-@(./test_poisson.exe >  test_poisson.diff)
-	-@(tar -xf test_poisson.ref.tar)
+	-@(tar xzf test_poisson.ref.tgz)
 	-@(${SCRIPTDIR}/DiffNum.pl -b -a=1e-6 \
 		test_poisson.out test_poisson.ref.out \
 						> test_poisson.diff)
