@@ -17,6 +17,7 @@ my $AllParam      = ($param or $allparam);
 my $Pattern       = $p;
 my $Format        = ($f or $format); $Format = "-f=$Format" if $Format;
 my $NoPtec        = $noptec;
+my $JuliaTec      = $j;
 
 use strict;
 use File::Find;
@@ -132,7 +133,11 @@ REPEAT:{
 		if($Gzip){
 		    &shell("./pTEC A g");
 		}else{
-		    &shell("./pTEC A p r");
+		    if($JuliaTec){
+			&shell("julia -p $nThread convert2VTK.jl");
+		    }else{
+			&shell("./pTEC A p r");
+		    }
 		}
 	    }
             &concat_sat_log if $Concat;
