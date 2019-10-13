@@ -83,7 +83,7 @@ MPILIB =
 
 #OPENMPFLAG = -mp
 
-ACCFLAG = -acc -Minfo=all -ta=tesla:cc35 # cc70
+#ACCFLAG = -acc -Minfo=all -ta=tesla:cc35 # cc70
 
 #
 # This is the search path for used modules
