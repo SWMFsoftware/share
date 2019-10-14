@@ -96,7 +96,7 @@
 # #SBATCH --export=OMP_NUM_THREADS=8
 
 ## Run
-printf "START TIME: `date %Y%m%d`\n"
+printf "START TIME: `date +%Y%m%d`\n"
 # Run SWMF (the number of processors is already specified above)
 srun ./SWMF.exe
 
