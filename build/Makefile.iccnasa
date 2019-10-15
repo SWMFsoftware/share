@@ -1,4 +1,4 @@
-# C language related part of Makefile.conf: Makefile.icc
+# C language related part of Makefile.conf: Makefile.iccnasa
 C_COMPILER_NAME=icc
 # This file is for the Pleiades system where there is no mpicc or mpicxx
 
