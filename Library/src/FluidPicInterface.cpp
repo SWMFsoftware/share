@@ -33,6 +33,8 @@ FluidPicInterface::FluidPicInterface() {
   doNeedBCOnly = false;
 
   doCoupleAMPS = false;
+
+  doSplitSpecies = false;
 }
 //-------------------------------------------------------------------------
 
@@ -205,8 +207,14 @@ void FluidPicInterface::ReNormLength() {
     lenGst_D[i] *= Si2NoL;
     gstMin_D[i] *= Si2NoL;
     gstMax_D[i] *= Si2NoL;
-    phyMin_D[i] = gstMin_D[i] + dx_D[i];
-    phyMax_D[i] = gstMax_D[i] - dx_D[i];
+    if(i>=nDim){
+      // If MHD is 2D.
+      phyMin_D[i] = 0;
+      phyMax_D[i] = dx_D[i];
+    }else{
+      phyMin_D[i] = gstMin_D[i] + dx_D[i];
+      phyMax_D[i] = gstMax_D[i] - dx_D[i];
+    }
   }
 }
 //-------------------------------------------------------------------------
