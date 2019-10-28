@@ -32,6 +32,10 @@ FluidPicInterface::FluidPicInterface() {
   isFirstTime = true;
   doNeedBCOnly = false;
 
+  nPlotFile = 0;
+
+  xStart_I = xEnd_I = yStart_I = yEnd_I = zStart_I = zEnd_I = nullptr; 
+  
   doCoupleAMPS = false;
 
   doSplitSpecies = false;
@@ -56,12 +60,14 @@ FluidPicInterface::~FluidPicInterface() {
   delete[] iPpar_I;
   delete[] iP_I;
 
-  delete[] xStart_I;
-  delete[] xEnd_I;
-  delete[] yStart_I;
-  delete[] yEnd_I;
-  delete[] zStart_I;
-  delete[] zEnd_I;
+  if(xStart_I != nullptr){
+    delete[] xStart_I;
+    delete[] xEnd_I;
+    delete[] yStart_I;
+    delete[] yEnd_I;
+    delete[] zStart_I;
+    delete[] zEnd_I;
+  }
 
   delete[] Si2No_V;
   delete[] No2Si_V;
