@@ -17,7 +17,8 @@ public:
   ReadParam() { isVerbose = true; }
   ~ReadParam() {}
   ReadParam &operator=(const std::string &stringIn) {
-    ss << stringIn;
+    //ss << stringIn;
+    ss.str(stringIn);
     return (*this);
   }
   void set_verbose(bool in) { isVerbose = in; }
@@ -149,6 +150,15 @@ inline void char_to_string(std::string &ss, char *chararray, int length,
     chararray[i - 1] = '\n';
   ss.assign(chararray, length);
 }
+
+inline std::string char_to_string(char *chars, int length,
+				  int linelength) {
+  for (int i = linelength; i < length; i += linelength)
+    chars[i - 1] = '\n';
+  return std::string(chars, length);
+}
+
+
 
 inline std::stringstream *char_to_stringstream(char *chararray, int length,
                                                int linelength, int iProc) {
