@@ -32,7 +32,13 @@ FluidPicInterface::FluidPicInterface() {
   isFirstTime = true;
   doNeedBCOnly = false;
 
+  nPlotFile = 0;
+
+  xStart_I = xEnd_I = yStart_I = yEnd_I = zStart_I = zEnd_I = nullptr; 
+  
   doCoupleAMPS = false;
+
+  doSplitSpecies = false;
 }
 //-------------------------------------------------------------------------
 
@@ -54,12 +60,14 @@ FluidPicInterface::~FluidPicInterface() {
   delete[] iPpar_I;
   delete[] iP_I;
 
-  delete[] xStart_I;
-  delete[] xEnd_I;
-  delete[] yStart_I;
-  delete[] yEnd_I;
-  delete[] zStart_I;
-  delete[] zEnd_I;
+  if(xStart_I != nullptr){
+    delete[] xStart_I;
+    delete[] xEnd_I;
+    delete[] yStart_I;
+    delete[] yEnd_I;
+    delete[] zStart_I;
+    delete[] zEnd_I;
+  }
 
   delete[] Si2No_V;
   delete[] No2Si_V;
@@ -205,8 +213,14 @@ void FluidPicInterface::ReNormLength() {
     lenGst_D[i] *= Si2NoL;
     gstMin_D[i] *= Si2NoL;
     gstMax_D[i] *= Si2NoL;
-    phyMin_D[i] = gstMin_D[i] + dx_D[i];
-    phyMax_D[i] = gstMax_D[i] - dx_D[i];
+    if(i>=nDim){
+      // If MHD is 2D.
+      phyMin_D[i] = 0;
+      phyMax_D[i] = dx_D[i];
+    }else{
+      phyMin_D[i] = gstMin_D[i] + dx_D[i];
+      phyMax_D[i] = gstMax_D[i] - dx_D[i];
+    }
   }
 }
 //-------------------------------------------------------------------------
