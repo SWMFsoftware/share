@@ -278,13 +278,16 @@ contains
   !BOP =======================================================================
   !IROUTINE: ray_exchange - send information from send to receive buffers
   !INTERFACE:
-  subroutine ray_exchange(DoneMe,DoneAll)
+  subroutine ray_exchange(DoneMe, DoneAll, IsNeiProc_P)
 
     !INPUT ARGUMENTS:
     logical, intent(in) :: DoneMe
 
     !OUTPUT ARGUMENTS:
     logical, intent(out):: DoneAll
+
+    !OPTIONAL ARGUMENTS:
+    logical, intent(in), optional :: IsNeiProc_P(0:nProc-1)
 
     !DESCRIPTION:
     ! Send the Send\_P buffers to Recv buffers, empty the Send\_P buffers.
@@ -294,6 +297,8 @@ contains
     ! set to .false. for all PE-s. 
     ! If all PE-s have DoneMe true and all send buffers are
     ! empty then DoneAll is set to .true.
+    ! The optional argument IsNeiProc_P array stores the neighboring processor
+    ! information to avoid unnecessary communication.
     !EOP
 
     integer, parameter :: iTag = 1
@@ -302,16 +307,20 @@ contains
     character (len=*), parameter :: NameSub = NameMod//'::ray_exchange'
 
     !-------------------------------------------------------------------------
-
     ! Exchange number of rays in the send buffer
 
     ! Local copy (in case ray remains on the same PE)
+    nRayRecv_P = 0
     nRayRecv_P(iProc)=Send_P(iProc) % nRay
-
+    Send_P % nRay = 0
+    
     nRequest = 0
     iRequest_I = MPI_REQUEST_NULL
     do jProc = 0, nProc-1
-       if(jProc==iProc)CYCLE
+       if(jProc==iProc) CYCLE
+       if (present(IsNeiProc_P)) then
+          if(.not. IsNeiProc_P(jProc)) CYCLE
+       endif
        nRequest = nRequest + 1
        call MPI_irecv(nRayRecv_P(jProc),1,MPI_INTEGER,jProc,&
             iTag,iComm,iRequest_I(nRequest),iError)
@@ -322,11 +331,14 @@ contains
 
     ! Use ready-send
     do jProc = 0, nProc-1
-       if(jProc==iProc)CYCLE
+       if(jProc==iProc) CYCLE
+       if (present(IsNeiProc_P)) then
+          if(.not. IsNeiProc_P(jProc)) CYCLE
+       endif
        call MPI_rsend(Send_P(jProc) % nRay,1,MPI_INTEGER,jProc,&
             iTag,iComm,iError)
     end do
-
+    
     ! Wait for all messages to be received
     if(nRequest > 0)call MPI_waitall(nRequest,iRequest_I,iStatus_II,iError)
 
