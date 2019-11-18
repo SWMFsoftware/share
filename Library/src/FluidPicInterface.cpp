@@ -344,9 +344,10 @@ void FluidPicInterface::setFluidFieldsNode(double *Ex, double *Ey, double *Ez,
 }
 
 // Data recived from SWMF coupler
-void FluidPicInterface::ReadFromGMinit(int *paramint, double *ParamRealRegion,
-                                       double *ParamRealComm,
-                                       stringstream *ss) {
+void FluidPicInterface::ReadFromGMinit(const int *const paramint,
+                                       const double *const ParamRealRegion,
+                                       const double *const ParamRealComm,
+                                       const stringstream * const ss) {
 
   nDim = paramint[0];
   nVarFluid = paramint[2];
