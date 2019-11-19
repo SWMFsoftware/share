@@ -297,7 +297,7 @@ contains
     ! set to .false. for all PE-s. 
     ! If all PE-s have DoneMe true and all send buffers are
     ! empty then DoneAll is set to .true.
-    ! The optional argument IsNeiProc_P array stores the neighboring processor
+    ! The optional argument IsNeiProc\_P array stores the neighboring processor
     ! information to avoid unnecessary communication.
     !EOP
 
