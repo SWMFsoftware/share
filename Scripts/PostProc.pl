@@ -22,7 +22,7 @@ my $JuliaTec      = ($vtu or $vtk or $vtu or $VTU);
 use strict;
 use File::Find;
 
-my $rsync = 'rsync -avz';
+my $rsync = 'rsync -avzt';
 my $exclude = " --exclude '*.idl' --exclude '*.tec' --exclude '*.dat'".
     " --exclude '*.[hHTS]'";
 
@@ -250,7 +250,7 @@ if(-f "runlog"){
 &shell_info("./Restart.pl -o $NameOutput/RESTART");
 
 if($Rsync){
-    &shell_info("rsync -avz $NameOutput/ $Rsync");
+    &shell_info("rsync -avzt $NameOutput/ $Rsync");
     print "$INFO: rsync is complete\n";
 }
 
