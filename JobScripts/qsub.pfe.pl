@@ -10,7 +10,7 @@ my @machine = @ARGV;
 
 
 # Default for machine types
-@machine = ('Ivy', 'San', 'Has', 'Bro', 'Sky_ele', 'Bro_ele') if not @machine;
+@machine = ('Ivy', 'San', 'Has', 'Bro', 'Sky_ele', 'Bro_ele', 'Cas_ait') if not @machine;
 
 
 if(not $script or $script =~ /\-+h/i){
@@ -21,8 +21,9 @@ Submit generic job script to multiple machine types.
 Use a unique NAME argument to identify the jobs.
 Only the first four characters of the NAME are used. Default NAME is the 
 last 4 characters of the directory name where the job is submitted from.
-If no machine is specified, 6 jobs will be submitted for the 6 machine types 
-(IvyBridge, SandyBridge, Haswell, Broadwell, Broadwell_Electra, Skylake_Electra). 
+If no machine is specified, 7 jobs will be submitted for the 7 machine types:
+IvyBridge, SandyBridge, Haswell, Broadwell, Broadwell_Electra, Skylake_Electra,
+and Cascadelake_Aitken. 
 Otherwise,the job will be submitted for the listed machines.
 
 The machine name(s) must be provided strictly as:
