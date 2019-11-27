@@ -45,6 +45,7 @@
                            # Options: normal, skx-normal, skx-dev, skx-large
 #SBATCH -N 1		   # Total # of nodes 
 #SBATCH -n 1		   # Total # of mpi tasks
+#SBATCH -c 1		   # Total # of cpu per task
 #SBATCH -t 24:00:00	   # Run time (hh:mm:ss)
 #SBATCH --mail-user=
 #SBATCH --mail-type=all    # Send email at begin and end of job
@@ -66,7 +67,7 @@ export OMP_NUM_THREADS=1
 # Launch MPI code... 
 # Use ibrun instead of mpirun or mpiexec
 
-ibrun ./PostProc.pl -r=60 -s=0.95 -noptec -n=1 >& PostProc.log
+ibrun ./PostProc.pl -r=60 -noptec -n=1 >& PostProc.log
 
 # ---------------------------------------------------
 
