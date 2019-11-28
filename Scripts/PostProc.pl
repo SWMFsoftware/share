@@ -134,7 +134,7 @@ REPEAT:{
 		    &shell("./pTEC A g");
 		}else{
 		    if($JuliaTec){
-			&shell("julia -p $nThread convert2VTK.jl");
+			&shell("export JULIA_NUM_THREADS=$nThread; julia convert2VTK.jl");
 		    }else{
 			&shell("./pTEC A p r");
 		    }
