@@ -533,7 +533,7 @@ contains
             call CON_stop(NameSub// &
             ' ERROR: decreasing index in '//trim(Ptr%NameFile)//':', iIndex)
        if (maxval(Index_II(2:n,iIndex) - Index_II(1:n-1,iIndex)) &
-            > (1+1e-6)*Ptr%dIndex_I(iIndex)) &
+            > 1.3*Ptr%dIndex_I(iIndex)) &
             call CON_stop(NameSub// &
             ' ERROR: non-uniform index in '//trim(Ptr%NameFile)//':', iIndex)
     end do
