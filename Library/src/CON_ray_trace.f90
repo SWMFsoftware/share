@@ -310,9 +310,9 @@ contains
     ! Exchange number of rays in the send buffer
 
     ! Local copy (in case ray remains on the same PE)
-    nRayRecv_P = 0
+    ! nRayRecv_P = 0
     nRayRecv_P(iProc)=Send_P(iProc) % nRay
-    Send_P % nRay = 0
+    ! Send_P % nRay = 0
     
     nRequest = 0
     iRequest_I = MPI_REQUEST_NULL
