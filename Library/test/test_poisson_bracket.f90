@@ -340,7 +340,7 @@ contains
                   dHamiltonian03_FZ = DeltaHamiltonian1_N,         &
                   DtIn = tOutput - Time)
              VDF_G(1:nQ, 1:nP, 1:nR) = VDF_G(1:nQ, 1:nP, 1:nR) + Source_C/Volume_G(1:nQ,1:nP,1:nR)
-             
+             Time = tOutput
              Source_C = 0.0
              EXIT
           else
