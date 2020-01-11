@@ -223,10 +223,10 @@ contains
        else
           CFLCoef_G = Dt*CFLCoef_G
        end if
-       CFL = maxval(CFLCoef_G)
+       CFL = maxval(CFLCoef_G(1:nI,1:nJ))
     else
        CFL = CFLIn
-       Dt = CFL/maxval(CFLCoef_G)
+       Dt = CFL/maxval(CFLCoef_G(1:nI,1:nJ))
        if(UseTimeDependentVolume)then
           !Calculate the volume at upper time level
           vInv_G = 1.0/(Volume_G + Dt*DVolumeDt_G)
