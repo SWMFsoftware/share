@@ -88,195 +88,53 @@ contains
     ! Distribution function with gc. Two layers of face ghostcels 
     ! and one level of corner ghost cells are used
     !/
-    real, intent(in) :: VDF_G(-1:nI+2,-1:nJ+2) 
+    real, intent(in) :: VDF_G(-1:nI+2,-1:nJ+2,1) 
     !\ 
     ! Hamiltonian function in nodes. One layer of ghost nodes is used
     !/
-    real, optional, intent(in) :: Hamiltonian_N(-1:nI+1,-1:nJ+1) 
+    real, optional, intent(in) :: Hamiltonian_N(-1:nI+1,-1:nJ+1,1) 
     !\
     ! Increment in the Hamiltonian function for the Poisson bracket
     ! with respect to time, \{f,H_{01}\}_{t,x}. Is face-X centered.
     ! One layer of the ghost faces is needed.
     !/
-    real, optional, intent(in) :: dHamiltonian01_FX(-1:nI+1, 0:nJ+1)
+    real, optional, intent(in) :: dHamiltonian01_FX(-1:nI+1, 0:nJ+1,1)
     !\
     ! Increment in the Hamiltonian function for the Poisson bracket
     ! with respect to time, \{f,H_{02}\}_{t,y}. Is face-Y centered.
     ! One layer of the ghost faces is needed.
     !/ 
-    real, optional, intent(in) :: dHamiltonian02_FY( 0:nI+1,-1:nJ+1) 
+    real, optional, intent(in) :: dHamiltonian02_FY( 0:nI+1,-1:nJ+1,1) 
     !\
     ! Cell volume. One layer of face ghost cells is used
     !/  
-    real,           intent(in) :: Volume_G(0:nI+1,0:nJ+1)
+    real,           intent(in) :: Volume_G(0:nI+1,0:nJ+1,1)
     !\
     ! If non-canonical variables are used with time-dependent Jacobian,
     ! the cell volume changes in time. Need the volume derivative
     !/
-    real, optional, intent(in) :: DVolumeDt_G(0:nI+1,0:nJ+1)
-    logical :: UseTimeDependentVolume = .false. !=present(DVolumeDt_G)
-    !\
-    ! Inverse volume. One layer of face ghost cells is used
-    !/
-    real                       :: vInv_G(0:nI+1,0:nJ+1)
+    real, optional, intent(in) :: DVolumeDt_G(0:nI+1,0:nJ+1,1)
     !\
     ! Contribution to the conservative source (flux divergence) from 
     ! the Poisson Bracket:
     !
     ! f(t+dt) - f(t) = Source_C
     !/                  
-    real,           intent(out):: Source_C(1:nI, 1:nJ)
+    real,           intent(out):: Source_C(1:nI,1:nJ,1)
 
     real, optional, intent(in) :: DtIn, CFLIn   !Options to set time step
     real, optional, intent(out):: DtOut, CFLOut !Options to report time step
-    !\
-    ! Local variables
-    !/
-    !Loop variables:
-    integer :: i, j
-    
-    ! Variations of VDF (one layer of ghost cell values):
-    real :: DeltaMinusF_G(0:nI+1, 0:nJ+1)
-    !\
-    ! Variations of Hamiltonian functions (one layer of ghost cells, 
-    ! for two directions:
-    !/
-    real :: DeltaH_FX(-1:nI+1,0:nJ+1), DeltaH_FY(0:nI+1,-1:nJ+1)
-    real, dimension(0:nI+1, 0:nJ+1) :: SumDeltaHPlus_G, SumDeltaHMinus_G
-    !Fluxes
-    real :: Flux_FX(0:nI,1:nJ), Flux_FY(1:nI,0:nJ)
-    
-    ! Local CFL number:
-    real :: CFLCoef_G(0:nI+1,0:nJ+1)
-    
-    !Time step
-    real :: Dt, CFL
     character(LEN=*), parameter:: NameSub = NameMod//':explicit2'
     !---------
-    if(present(DtIn))then
-       Dt = DtIn
-    else
-       if(.not.present(CflIn))call CON_stop(&
-            'Either CflIn or DtIn should be provided in '//NameSub)
-    end if
-    UseTimeDependentVolume = present(DVolumeDt_G)
-    DeltaH_FX = 0.0; DeltaH_FY = 0.0; VInv_G = 1/Volume_G
-    if(present(Hamiltonian_N) )then
-       !\
-       ! Calculate DeltaH:
-       !/
-       DeltaH_FX(-1:nI+1, 0:nJ+1) = DeltaH_FX(-1:nI+1, 0:nJ+1) + &
-            Hamiltonian_N(-1:nI+1, 0:nJ+1) - Hamiltonian_N(-1:nI+1,-1:nJ  )
-       DeltaH_FY(0 :nI+1,-1:nJ+1) = DeltaH_FY(0 :nI+1,-1:nJ+1) + &
-            Hamiltonian_N(-1:nI  ,-1:nJ+1) - Hamiltonian_N(0:nI+1 ,-1:nJ+1)
-    end if
-    if(present(dHamiltonian01_FX))&
-         DeltaH_FX = DeltaH_FX + dHamiltonian01_FX
-    if(present(dHamiltonian02_FY))&
-         DeltaH_FY = DeltaH_FY + dHamiltonian02_FY
-
-    ! Now, for each cell the value of DeltaH for face in positive 
-    ! directions of i and j may be found in the arrays, for
-    ! negative directions the should be taken with opposite sign
-
-    !\
-    ! Calculate DeltaMinusF and SumDeltaH
-    !/   
-    do j = 0, nJ+1; do i = 0, nI+1
-       SumDeltaHPlus_G(i, j) = max(0.0, DeltaH_FX(i,   j)) +&
-                               max(0.0, DeltaH_FY(i,   j)) +&
-                               max(0.0,-DeltaH_FX(i-1, j)) +&
-                               max(0.0,-DeltaH_FY(i, j-1))
-       DeltaMinusF_G(i, j) = &
-            min(0.0, DeltaH_FX(i,   j))*VDF_G(i+1,j) +&
-            min(0.0, DeltaH_FY(i,   j))*VDF_G(i,j+1) +&
-            min(0.0,-DeltaH_FX(i-1, j))*VDF_G(i-1,j) +&
-            min(0.0,-DeltaH_FY(i, j-1))*VDF_G(i,j-1)
-       if(UseTimeDependentVolume)then
-          !\
-          ! Local CFL and \delta^-f are expressed via SumDeltaHMinus
-          !/
-          SumDeltaHMinus_G(i, j) = min(0.0, DeltaH_FX(i,   j)) +&
-                                   min(0.0, DeltaH_FY(i,   j)) +&
-                                   min(0.0,-DeltaH_FX(i-1, j)) +&
-                                   min(0.0,-DeltaH_FY(i, j-1))
-          DeltaMinusF_G(i, j) = DeltaMinusF_G(i, j) &
-               /max(-SumDeltaHMinus_G(i, j), 1.0e-31) + VDF_G(i,j)
-       else
-          DeltaMinusF_G(i, j) = DeltaMinusF_G(i, j) &
-               /SumDeltaHPlus_G(i, j) + VDF_G(i,j)
-       end if
-       ! If UseTimeDependentVolume.and.present(DtIn), the CFL exressed
-       ! in terms of \delta^+H is useless. Otherwise
-       CFLCoef_G(i, j) = vInv_G(i, j)*SumDeltaHPlus_G(i, j)
-    end do; end do
-    !\
-    ! Set CFL and time step
-    !/
-    if(present(DtIn))then
-       if(UseTimeDependentVolume)then
-          !Calculate the volume at upper time level
-          vInv_G = 1.0/(Volume_G + Dt*DVolumeDt_G)
-          !Calculate CFL in terms of \delta^-H and
-          !V(+\Delta t):
-          CFLCoef_G = -Dt*vInv_G*SumDeltaHMinus_G
-       else
-          CFLCoef_G = Dt*CFLCoef_G
-       end if
-       CFL = maxval(CFLCoef_G(1:nI,1:nJ))
-    else
-       CFL = CFLIn
-       Dt = CFL/maxval(CFLCoef_G(1:nI,1:nJ))
-       if(UseTimeDependentVolume)then
-          !Calculate the volume at upper time level
-          vInv_G = 1.0/(Volume_G + Dt*DVolumeDt_G)
-          !Calculate CFL in terms of \delta^-H and
-          !V(+\Delta t):
-          CFLCoef_G = -Dt*vInv_G*SumDeltaHMinus_G
-       else
-          CFLCoef_G = Dt*CFLCoef_G
-       end if
-    end if 
-    if(present(CFLOut))CFLOut = CFL
-    if(present(DtOut ))DtOut  = Dt
-    !\
-    ! First order monotone scheme
-    !/
-    Source_C = -CFLCoef_G(1:nI, 1:nJ)*DeltaMinusF_G(1:nI, 1:nJ)
-    !\
-    ! Calculate second order Face-X fluxes.
-    !/
-    do j = 1, nJ; do i = 0, nI
-       if(DeltaH_FX(i, j) > 0.0)then
-          Flux_FX(i, j) = DeltaH_FX(i, j)*&
-               (1.0 - CFLCoef_G(i,   j))                           *&
-               pair_superbee(DeltaMinusF_G(i, j), DeltaMinusF_G(i+1, j))
-       else
-          Flux_FX(i, j) = DeltaH_FX(i, j)*&
-               (1.0 - CFLCoef_G(i+1, j))                           *&
-               pair_superbee(DeltaMinusF_G(i, j), DeltaMinusF_G(i+1, j))
-       end if
-    end do; end do
-    !\
-    ! Calculate second order Face-Y fluxes.
-    !/
-    do j = 0, nJ; do i = 1, nI
-       if(DeltaH_FY(i, j) > 0.0)then
-          Flux_FY(i, j) = DeltaH_FY(i, j)*&
-               (1.0 - CFLCoef_G(i,   j))                           *&
-               pair_superbee(DeltaMinusF_G(i, j), DeltaMinusF_G(i, j+1))
-       else
-          Flux_FY(i, j) = DeltaH_FY(i, j)*&
-               (1.0 - CFLCoef_G(i, j+1))                           *&
-               pair_superbee(DeltaMinusF_G(i, j), DeltaMinusF_G(i, j+1))
-       end if
-    end do; end do
-    !\
-    ! Finalize
-    !/
-    Source_C = Source_C + Dt*vInv_G(1:nI,1:nJ)*(        &
-         Flux_FX(0:nI-1, 1:nJ) - Flux_FX(1:nI, 1:nJ) +  &
-         Flux_FY(1:nI, 0:nJ-1) - Flux_FY(1:nI, 1:nJ)    )
+    call explicit3(nI, nJ, 1, VDF_G, Volume_G, Source_C,     &
+       Hamiltonian_N,                                        &
+       dHamiltonian01_FX= dHamiltonian01_FX,                 &
+       dHamiltonian02_FY= dHamiltonian02_FY,                 &
+       DVolumeDt_G=DVolumeDt_G,                              &
+       DtIn=DtIn,                                            &
+       CFLIn=CFLIn,                                          &
+       DtOut=DtOut,                                          &
+       CFLOut=CFLOut)
   end subroutine explicit2
   !========================================================================
   subroutine explicit3(nI, nJ, nK, VDF_G, Volume_G, Source_C,            &!
@@ -371,7 +229,7 @@ contains
     real :: Flux_FZ(1:nI,1:nJ,0:nK)
     
     ! Local CFL number:
-    real :: CFLCoef_G(0:nI+1,0:nJ+1,0:nK+1)
+    real :: CFLCoef_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
     
     !Time step
     real :: Dt
@@ -588,4 +446,5 @@ contains
          Flux_FZ(1:nI, 1:nJ, 0:nK-1) - Flux_FZ(1:nI, 1:nJ, 1:nK))* &
          Dt*vInv_G(1:nI,1:nJ,1:nK)
   end subroutine explicit3
+  !=======================
 end module ModPoissonBracket
