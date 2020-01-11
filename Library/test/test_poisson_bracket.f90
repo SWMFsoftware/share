@@ -99,7 +99,8 @@ contains
     real :: ParticleEnergyMin, ParticleEnergyMax                        !Min and Max value for particle energy
     real :: LnP3min, LnP3max                                            !Ln(P^3/3)_min, Ln(P^3/3)_max
     real :: DeltaP3_I(nR), DeltaLnP3                                    ! \delta(P^3/3)  \deltaLn(P^3/3)
-    real :: Volume_G(0:nQ+1, 0:nP+1, 0:nR+1)                            !control volume 
+    real :: Volume_G(0:nQ+1,0:nP+1,0:nR+1)                          !control volume
+    real :: DVolumeDt_G (0:nQ+1,0:nP+1,0:nR+1) = 0.0  
     real :: VDF_G(-1:nQ+2, -1:nP+2, -1:nR+2)                            !vdf
     real :: VDFOutput_II(1:nQ, 1:nR)                                    !vdf output
     real :: Hamiltonian2_N(-1:nQ+1,-1:nP+1,0:nR+1)                      !the Poisson bracket with regard to the first and second vars 
@@ -119,7 +120,7 @@ contains
     character(LEN=3) :: NameFileSuffix                                  !The number index of output files in character
     
     
-       
+    DVolumeDt_G = 0.0
     !\
     ! Import data from files
     !/
@@ -326,25 +327,28 @@ contains
           !\
           ! Begin the calculation of Source_C
           !/
+         
           call explicit(nQ, nP, nR, VDF_G,  Volume_G, Source_C,  &
                Hamiltonian2_N,                                   &
                Hamiltonian23_N = -Hamiltonian3_N,                &
                dHamiltonian03_FZ = DeltaHamiltonian1_N,          &
+               DVolumeDt_G = DVolumeDt_G,                        &
                DtOut = Dt, CFLIn=0.99)
-          
           iStep = iStep + 1
           if(Time + Dt >= tOutput)then
              call explicit(nQ, nP, nR, VDF_G,  Volume_G, Source_C, &
                   Hamiltonian2_N,                                  &
                   Hamiltonian23_N = -Hamiltonian3_N,               &
                   dHamiltonian03_FZ = DeltaHamiltonian1_N,         &
+                  DVolumeDt_G = DVolumeDt_G,                       &
                   DtIn = tOutput - Time)
-             VDF_G(1:nQ, 1:nP, 1:nR) = VDF_G(1:nQ, 1:nP, 1:nR) + Source_C/Volume_G(1:nQ,1:nP,1:nR)
+             VDF_G(1:nQ, 1:nP, 1:nR) = VDF_G(1:nQ, 1:nP, 1:nR) + Source_C
              Time = tOutput
              Source_C = 0.0
              EXIT
           else
              Time = Time + Dt
+             Source_C = Source_C*Volume_G(1:nQ,1:nP,1:nR)
              !\
              ! Update DeltaSOverB_C for the calculation of volume
              !/
@@ -1047,7 +1051,7 @@ contains
           if (Diffuornot == 0) then
              call explicit(nQ, nP, nR, VDF_G, Volume_G, Source_C,&
                   Hamiltonian2_N, DtIn = Dt)!Note that we use a fixed time step here
-             VDF_G(1:nQ, 1:nP, 1:nR) = VDF_G(1:nQ, 1:nP, 1:nR) + Source_C/Volume_G(1:nQ,1:nP,1:nR)
+             VDF_G(1:nQ, 1:nP, 1:nR) = VDF_G(1:nQ, 1:nP, 1:nR) + Source_C
              Source_C=0.0
              call calc_scatter(Dt)
           else
