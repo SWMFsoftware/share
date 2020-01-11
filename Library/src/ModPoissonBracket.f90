@@ -374,7 +374,7 @@ contains
     real :: CFLCoef_G(0:nI+1,0:nJ+1,0:nK+1)
     
     !Time step
-    real :: Dt, CFL
+    real :: Dt
     character(LEN=*), parameter:: NameSub =NameMod//':explicit3'
     !---------
     if(present(DtIn))then
@@ -493,24 +493,37 @@ contains
           !/
           DeltaMinusF_G(i,j,k) = DeltaMinusF_G(i,j,k)           &
                /max(-SumDeltaHMinus_G(i,j,k), 1.0e-31) + VDF_G(i,j,k)
+          CFLCoef_G(i,j,k) = -SumDeltaHMinus_G(i,j,k)
        else
           DeltaMinusF_G(i,j,k) = DeltaMinusF_G(i,j,k)           &
                /max(  SumDeltaHPlus_G(i,j,k), 1.0e-31) + VDF_G(i,j,k)
+          CFLCoef_G(i,j,k) = vInv_G(i,j,k)*SumDeltaHPlus_G(i,j,k)
        end if
-       CFLCoef_G(i, j, k) = - vInv_G(i, j, k)*SumDeltaHMinus_G(i,j,k)
     end do; end do; end do
     !\
     ! Set CFL and time step
     !/
-    if(present(DtIn))then
-       CFLCoef_G = Dt*CFLCoef_G
-       CFL = maxval(CFLCoef_G(1:nI,1:nJ,1:nK))
+    if(UseTimeDependentVolume)then
+       !Solve time step from equation
+       ! CFLIn = \Delta t*(-\sum\delta^-H)/(\Delta t*dV/dt + V)
+       if(.not.present(DtIn)) Dt = CFLIn/maxval(vInv_G(1:nI,1:nJ,1:nK)*&
+            (CFLCoef_G(1:nI,1:nJ,1:nK) - CFLIn*DVolumeDt_G(1:nI,1:nJ,1:nK)))
+       !Calculate the volume at upper time level
+       !V(+\Delta t):
+       vInv_G = 1.0/(Volume_G + Dt*DVolumeDt_G)
+       CFLCoef_G = Dt*vInv_G*CFLCoef_G
     else
-       CFL = CFLIn
-       Dt = CFL/maxval(CFLCoef_G(1:nI,1:nJ,1:nK))
+       if(.not.present(DtIn))&
+            Dt = CFLIn/maxval(CFLCoef_G(1:nI,1:nJ,1:nK))
        CFLCoef_G = Dt*CFLCoef_G
     end if
-    if(present(CFLOut))CFLOut = CFL
+    if(present(CFLOut))then
+       if(present(DtIn))then
+          CFLOut = maxval(CFLCoef_G(1:nI,1:nJ,1:nK))
+       else
+          CFLOut = CFLIn
+       end if
+    end if
     if(present(DtOut ))DtOut  = Dt
     !\            
     ! First order monotone scheme
