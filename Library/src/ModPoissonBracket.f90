@@ -34,7 +34,6 @@ module ModPoissonBracket
   end interface explicit
   !PUBLIC MEMBER FUNCTION:
   public :: explicit
-  !  public :: explicit3
   character(LEN=*), parameter:: NameMod = 'ModPoissonBracket'
 contains
   !=========================================================
@@ -57,24 +56,8 @@ contains
                         0.50*max(AbsArg1,AbsArg2)  ),Arg1)
   end function pair_superbee
   !========================================================
-  real function triple_superbee(Arg1, Arg2, Arg3)
-    real, intent(in):: Arg1, Arg2, Arg3
-    real :: AbsArg_I(3)
-    !------------
-    if(Arg1*Arg2 .le. 0.0 .or. Arg2*Arg3 .le. 0.0)then
-       triple_superbee = 0.0
-       RETURN
-    end if
-    AbsArg_I(1) = abs(Arg1)
-    AbsArg_I(2) = abs(Arg2)
-    AbsArg_I(3) = abs(Arg3)
-    triple_superbee = sign(min(minval(AbsArg_I),  &
-                          0.50*maxval(AbsArg_I)   ),Arg1)
-  end function triple_superbee
-  !========================================================
-
   subroutine explicit2(nI, nJ, VDF_G, Volume_G, Source_C,    &
-       Hamiltonian_N, dHamiltonian01_FX, dHamiltonian02_FY,  &
+       Hamiltonian12_N, dHamiltonian01_FX, dHamiltonian02_FY,&
        DVolumeDt_G,                                          &
        DtIn, CFLIn, DtOut, CFLOut)
     !\
@@ -88,46 +71,46 @@ contains
     ! Distribution function with gc. Two layers of face ghostcels 
     ! and one level of corner ghost cells are used
     !/
-    real, intent(in) :: VDF_G(-1:nI+2,-1:nJ+2,1) 
+    real, intent(in) :: VDF_G(-1:nI+2,-1:nJ+2) 
     !\ 
     ! Hamiltonian function in nodes. One layer of ghost nodes is used
     !/
-    real, optional, intent(in) :: Hamiltonian_N(-1:nI+1,-1:nJ+1,1) 
+    real, optional, intent(in) :: Hamiltonian12_N(-1:nI+1,-1:nJ+1) 
     !\
     ! Increment in the Hamiltonian function for the Poisson bracket
     ! with respect to time, \{f,H_{01}\}_{t,x}. Is face-X centered.
     ! One layer of the ghost faces is needed.
     !/
-    real, optional, intent(in) :: dHamiltonian01_FX(-1:nI+1, 0:nJ+1,1)
+    real, optional, intent(in) :: dHamiltonian01_FX(-1:nI+1, 0:nJ+1)
     !\
     ! Increment in the Hamiltonian function for the Poisson bracket
     ! with respect to time, \{f,H_{02}\}_{t,y}. Is face-Y centered.
     ! One layer of the ghost faces is needed.
     !/ 
-    real, optional, intent(in) :: dHamiltonian02_FY( 0:nI+1,-1:nJ+1,1) 
+    real, optional, intent(in) :: dHamiltonian02_FY( 0:nI+1,-1:nJ+1) 
     !\
     ! Cell volume. One layer of face ghost cells is used
     !/  
-    real,           intent(in) :: Volume_G(0:nI+1,0:nJ+1,1)
+    real,           intent(in) :: Volume_G(0:nI+1,0:nJ+1)
     !\
     ! If non-canonical variables are used with time-dependent Jacobian,
     ! the cell volume changes in time. Need the volume derivative
     !/
-    real, optional, intent(in) :: DVolumeDt_G(0:nI+1,0:nJ+1,1)
+    real, optional, intent(in) :: DVolumeDt_G(0:nI+1,0:nJ+1)
     !\
     ! Contribution to the conservative source (flux divergence) from 
     ! the Poisson Bracket:
     !
     ! f(t+dt) - f(t) = Source_C
     !/                  
-    real,           intent(out):: Source_C(1:nI,1:nJ,1)
+    real,           intent(out):: Source_C(1:nI,1:nJ)
 
     real, optional, intent(in) :: DtIn, CFLIn   !Options to set time step
     real, optional, intent(out):: DtOut, CFLOut !Options to report time step
     character(LEN=*), parameter:: NameSub = NameMod//':explicit2'
     !---------
     call explicit3(nI, nJ, 1, VDF_G, Volume_G, Source_C,     &
-       Hamiltonian_N,                                        &
+       Hamiltonian12_N=Hamiltonian12_N,                      &
        dHamiltonian01_FX= dHamiltonian01_FX,                 &
        dHamiltonian02_FY= dHamiltonian02_FY,                 &
        DVolumeDt_G=DVolumeDt_G,                              &
@@ -136,11 +119,11 @@ contains
        DtOut=DtOut,                                          &
        CFLOut=CFLOut)
   end subroutine explicit2
-  !========================================================================
-  subroutine explicit3(nI, nJ, nK, VDF_G, Volume_G, Source_C,            &!
-       Hamiltonian_N, Hamiltonian13_N, Hamiltonian23_N,                  &!
-       dHamiltonian01_FX, dHamiltonian02_FY, dHamiltonian03_FZ,          &!
-       DVolumeDt_G,                                                      &!
+  !=======================================================================
+  subroutine explicit3(nI, nJ, nK, VDF_G, Volume_G, Source_C,            &
+       Hamiltonian12_N, Hamiltonian13_N, Hamiltonian23_N,                &
+       dHamiltonian01_FX, dHamiltonian02_FY, dHamiltonian03_FZ,          &
+       DVolumeDt_G,                                                      &
        DtIn, CFLIn, DtOut, CFLOut)
     !\
     ! solve the contribution to the numerical flux from multiple Poisson 
@@ -162,7 +145,7 @@ contains
     ! 1. Hamiltonian function for the Poisson bracket \{f,H_{12}}_{x,y}
     !    Node-centered at XY plane, cell-centered with respect to Z
     !    (In other words, Z-aligned-edge-centered)
-    real, optional, intent(in) :: Hamiltonian_N(-1:nI+1,-1:nJ+1,&
+    real, optional, intent(in) :: Hamiltonian12_N(-1:nI+1,-1:nJ+1,&
          1/nK:nK+1-1/nK)
     ! 2. Hamiltonian function for the Poisson bracket \{f,H_{13}}_{x,z}
     !    Node-centered at XZ plane, cell-centered with respect to Y
@@ -178,8 +161,6 @@ contains
     real, optional, intent(in) :: dHamiltonian02_FY(0:nI+1,-1:nJ+1,&
          1/nK:nK+1-1/nK)
     real, optional, intent(in) :: dHamiltonian03_FZ(0:nI+1,0:nJ+1,-1:nK+1)
-
-    
     !\
     ! Total Volume. One layer of face ghost cells is used
     !/  
@@ -261,13 +242,13 @@ contains
     ! |                  |    |                   |    |                   |
     ! 0--------->--------1x   0---------->--------1x   0---------->--------1y
     !/
-    if (present(Hamiltonian_N)) then
+    if (present(Hamiltonian12_N)) then
        DeltaH_FX = DeltaH_FX(-1:nI+1, 0:nJ+1,iKStart:iKLast) + &
-               Hamiltonian_N(-1:nI+1, 0:nJ+1,iKStart:iKLast) - &
-               Hamiltonian_N(-1:nI+1,-1:nJ  ,iKStart:iKLast)
+               Hamiltonian12_N(-1:nI+1, 0:nJ+1,iKStart:iKLast) - &
+               Hamiltonian12_N(-1:nI+1,-1:nJ  ,iKStart:iKLast)
        DeltaH_FY = DeltaH_FY( 0:nI+1,-1:nJ+1,iKStart:iKLast) + &
-               Hamiltonian_N(-1:nI  ,-1:nJ+1,iKStart:iKLast) - &
-               Hamiltonian_N(0:nI+1 ,-1:nJ+1,iKStart:iKLast)
+               Hamiltonian12_N(-1:nI  ,-1:nJ+1,iKStart:iKLast) - &
+               Hamiltonian12_N(0:nI+1 ,-1:nJ+1,iKStart:iKLast)
     end if
     
     if (present(Hamiltonian13_N)) then
