@@ -100,6 +100,7 @@ our $NewHdf5;               # Set if -hdf5=... flag was used
 our $Hypre;                 # True if HYPRE lib is enabled
 our $Spice;                 # True if SPICE lib is enabled
 our $Fishpak;               # True if Fishpak lib is enabled
+our $Amrex;                 # True if AMREX lib is enabled
 
 # The name of the parallel HDF5 Fortran and C compilers
 my $H5pfc = "h5pfc";
@@ -109,6 +110,12 @@ my $H5pcc = "h5pcc";
 my $HypreDefinition = "# HYPRE library definitions
 HYPRELIB     = -L\${UTILDIR}/HYPRE/lib -lHYPRE
 HYPRESEARCH  = -I\${UTILDIR}/HYPRE/include
+";             	    
+
+# This string should be added into Makefile.conf when AMREX is enabled
+my $AmrexDefinition = "# AMREX library definitions
+AMREXLIB     = -L\${UTILDIR}/AMREX/InstallDir/lib -lamrex
+AMREXSEARCH  = -I\${UTILDIR}/AMREX/InstallDir/include
 ";             	    
 
 # This string should be added into Makefile.conf when Fishpak is enabled
@@ -131,6 +138,7 @@ my $NewDebug;
 my $NewMpi;
 my $NewOpenMp;
 my $NewHypre;
+my $NewAmrex;
 my $NewFishpak;
 my $NewSpice;
 my $IsCompilerSet;
@@ -180,6 +188,8 @@ foreach (@Arguments){
     if(/^-fishpak$/i)         {$NewFishpak="yes";               next};
     if(/^-nohypre$/i)         {$NewHypre="no";                  next};
     if(/^-nofishpak$/i)       {$NewFishpak="no";                next};
+    if(/^-amrex$/i)           {$NewAmrex="yes";                 next};
+    if(/^-noamrex$/i)         {$NewAmrex="no";                  next};
     if(/^-spice=(.*)$/i)      {$NewSpice=$1;                    next};
     if(/^-nospice$/i)         {$NewSpice="no";                  next};
     if(/^-O[0-5]$/i)          {$NewOptimize=$_;                 next};  
@@ -313,6 +323,9 @@ if($Compiler eq "nagfor" and $Debug eq "yes" and
 # Link with HYPRE library if required
 &set_hypre_ if $NewHypre and $NewHypre ne $Hypre;
 
+# Link with AMREX library if required
+&set_amrex_ if $NewAmrex and $NewAmrex ne $Amrex;
+
 # Link with FISHPAK library if required 
 &set_fishpak_ if $NewFishpak and $NewFishpak ne $Fishpak;
 
@@ -366,6 +379,7 @@ sub get_settings_{
     $Mpi       = "yes";
     $Hdf5      = "no";
     $Hypre     = "no";
+    $Amrex     = "no";
     $Fishpak   = "no";
     $Spice     = "no";
   TRY:{
@@ -394,6 +408,7 @@ sub get_settings_{
 	  $Mpi   = "no"  if /^\s*MPILIB\s*=.*\-lNOMPI/;
 	  $Hdf5  = "yes" if /^\# HDF5=YES/;
 	  $Hypre = "yes" if /^\s*HYPRELIB/;
+	  $Amrex = "yes" if /^\s*AMREXLIB/;
 	  $Fishpak = "yes" if /^\s*FISHPAKLIB/;
 	  $Spice = "$1"  if /^\s*SPICELIB\s*=\s*(\S*)/;
           $Optimize = $1 if /^\s*OPT[0-5]\s*=\s*(-O[0-5])/;
@@ -449,6 +464,7 @@ Linked with HDF5:  $Hdf5
 Linked with HYPRE: $Hypre
 Linked with FISHPAK: $Fishpak
 Linked with SPICE: $Spice
+Linked with AMREX: $Amrex
 ";
 
 }
@@ -830,6 +846,71 @@ sub set_hypre_{
 
 ##############################################################################
 
+sub set_amrex_{
+
+    # Check if library is present
+    if($NewAmrex eq "yes" and not -d "util/AMREX"){
+	&shell_command("git clone herot:/GIT/FRAMEWORK/AMREX util/AMREX");
+	if(not -d "util/AMREX"){
+	    print "Warning: could not git clone util/AMREX";
+	    return;
+	}
+    }
+
+    
+    if($NewAmrex eq "yes" and not -e "util/AMREX/InstallDir/lib/libamrex.a"){
+	&shell_command("cd util/AMREX; ./configure; rm -rf util/AMREX/InstallDir");
+	my $makefileamrex = "util/AMREX/GNUmakefile";
+
+	my $installdir = "InstallDir";
+	my $AmrexCompiler="intel";
+	$AmrexCompiler="gnu" if $Compiler eq "gfortran";
+	my $AmrexDebug = "FALSE";
+	$AmrexDebug = "TRUE" if $Debug eq "yes";
+	
+	die "$ERROR File $makefileamrex does not exist!\n" unless -f $makefileamrex;	
+	@ARGV = ($makefileamrex);
+	while(<>){
+	    if($installdir  ne "")     {s/^AMREX_INSTALL_DIR =.*/AMREX_INSTALL_DIR  = $installdir/;};
+	    if($AmrexCompiler  ne "")     {s/^COMP =.*/COMP = $AmrexCompiler/;};
+	    if($AmrexDebug     ne "")     {s/^DEBUG =.*/DEBUG = $AmrexDebug/;};
+	    print;
+	}    
+		
+	$IsStrict = 0;
+	&shell_command("cd util/AMREX; make -j 4; make install");
+	$IsStrict = 1;
+	if($ErrorCode){
+	    print "$ERROR cd util/AMREX; make install failed with ".
+		"error $ErrorCode\n";
+	    print "!!! renaming util/AMREX to util/AMREX_FAILED !!!\n";
+	    shell_command("rm -rf util/AMREX_FAILED; ",
+			  "mv util/AMREX util/AMREX_FAILED");
+	    return;
+	}
+    }
+
+    $Amrex = $NewAmrex;
+
+    print "Enabling AMREX library in $MakefileConf\n" if $Amrex eq "yes";
+    print "Disabling AMREX library in $MakefileConf\n" if $Amrex eq "no";
+    if(not $DryRun){
+	@ARGV = ($MakefileConf);
+	while(<>){
+	    if($Amrex eq "no") { s/\${AMREXLIB}//g; };
+	    if($Amrex eq "yes"){ s/^(Lflag\s+.*)/$1 \${AMREXLIB}/; };
+	    
+	    # Add/remove AMREX related definitions after MPILIB
+	    $_ .= $AmrexDefinition if $Amrex eq "yes" and /-lNOMPI/;
+	    $_ = "" if $Amrex eq "no" and /AMREX/i;
+	    print;
+	}
+    }
+
+}
+
+##############################################################################
+
 sub set_fishpak_{
 
     # Check if library is present 
@@ -1094,6 +1175,7 @@ Usage: Config.pl [-help] [-verbose] [-dryrun] [-show] [-compiler]
                  [-uninstall]
                  [-single|-double] [-debug|-nodebug] [-mpi|-nompi]
                  [-hdf5|-nohdf5] [-hypre|-nohypre] [-spice=SPICELIB|-nospice]
+		 [-amrex|-noamrex]
                  [-O0|-O1|-O2|-O3|-O4|-O5]
 
 If called without arguments, the current settings are shown.
@@ -1142,6 +1224,8 @@ Compilation:
 -nohypre        do not link with HYPRE library
 -spice=SPICELIB link with SPICE library SPICELIB for coordinate transforms
 -nospice        do not link with SPICE library
+-amrex          link with AMREX library 
+-noamrex        do not link with AMREX library 
 -O0             set all optimization levels to -O0
 -O1             set optimization levels to at most -O1
 -O2             set optimization levels to at most -O2
