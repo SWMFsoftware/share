@@ -897,8 +897,8 @@ sub set_amrex_{
     if(not $DryRun){
 	@ARGV = ($MakefileConf);
 	while(<>){
-	    if($Amrex eq "no") { s/\${AMREXLIB}//g; };
-	    if($Amrex eq "yes"){ s/^(Lflag\s+.*)/$1 \${AMREXLIB}/; };
+	    if($Amrex eq "no") { s/\$\{AMREXLIB}//g; };
+	    if($Amrex eq "yes"){ s/^(Lflag\s+.*)/$1 \$\{AMREXLIB}/; };
 	    
 	    # Add/remove AMREX related definitions after MPILIB
 	    $_ .= $AmrexDefinition if $Amrex eq "yes" and /-lNOMPI/;
