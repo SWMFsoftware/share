@@ -65,11 +65,16 @@ module CON_ray_trace
 
   ! Private variables
 
-  ! Ray buffers
-  type(RayPtr), pointer :: Send_P(:)     ! Rays to send to other PE-s
-  type(RayPtr)          :: Recv          ! Rays received from all other PE-s
-  integer, pointer      :: nRayRecv_P(:) ! Number of rays recv from other PE-s
-
+  ! Ray buffers for neighboring communication
+  type(RayPtr), pointer :: SendNei_P(:)     ! Buffer for sending rays to start PE-s     
+  type(RayPtr), target  :: RecvNei          ! Rays received from end PE-s    
+  integer, pointer      :: nRayRecvNei_P(:) ! Number of rays recv from end PE-s
+  
+  ! Ray buffers for end communication
+  type(RayPtr), pointer :: SendEnd_P(:)     ! Buffer for sending rays to start PE-s     
+  type(RayPtr), target  :: RecvEnd          ! Rays received from end PE-s    
+  integer, pointer      :: nRayRecvEnd_P(:) ! Number of rays recv from end PE-s 
+  
   ! MPI variables
   integer               :: iComm=MPI_COMM_NULL, nProc, iProc ! MPI group info
   integer               :: nRequest
@@ -112,18 +117,32 @@ contains
     allocate(iRequest_I(nProc), iStatus_II(MPI_STATUS_SIZE, nProc))
 
     ! Initialize send buffers
-    allocate(Send_P(0:nProc-1))
+    allocate(SendNei_P(0:nProc-1))
     do jProc=0, nProc-1
-       Send_P(jProc) % nRay   = 0
-       Send_P(jProc) % MaxRay = 0
-       nullify(Send_P(jProc) % Ray_VI)
+       SendNei_P(jProc) % nRay   = 0
+       SendNei_P(jProc) % MaxRay = 0
+       nullify(SendNei_P(jProc) % Ray_VI)
     end do
 
     ! Initialize receive buffer
-    allocate(nRayRecv_P(0:nProc-1))
-    Recv % nRay   = 0
-    Recv % MaxRay = 0
-    nullify(Recv % Ray_VI)
+    allocate(nRayRecvNei_P(0:nProc-1))
+    RecvNei % nRay   = 0
+    RecvNei % MaxRay = 0
+    nullify(RecvNei % Ray_VI)
+
+    ! Initialize send buffers to start
+    allocate(SendEnd_P(0:nProc-1))
+    do jProc=0, nProc-1
+       SendEnd_P(jProc) % nRay   = 0
+       SendEnd_P(jProc) % MaxRay = 0
+       nullify(SendEnd_P(jProc) % Ray_VI)
+    end do
+
+    ! Initialize receive buffer from end
+    allocate(nRayRecvEnd_P(0:nProc-1))
+    RecvEnd % nRay   = 0
+    RecvEnd % MaxRay = 0
+    nullify(RecvEnd % Ray_VI)
 
   end subroutine ray_init
 
@@ -143,20 +162,35 @@ contains
     ! Deallocate MPI variables
     deallocate(iRequest_I, iStatus_II)
 
-    ! Deallocate send buffers
-    if(associated(Send_P))then
+    ! Deallocate general send buffers
+    if(associated(SendNei_P))then
        do jProc = 0, nProc-1
-          if(associated(Send_P(jProc) % Ray_VI)) &
-               deallocate(Send_P(jProc) % Ray_VI)
+          if(associated(SendNei_P(jProc) % Ray_VI)) &
+               deallocate(SendNei_P(jProc) % Ray_VI)
        end do
     end if
-    deallocate(Send_P)
+    deallocate(SendNei_P)
+
+    ! Deallocate to start send buffers
+    if(associated(SendEnd_P))then
+       do jProc = 0, nProc-1
+          if(associated(SendEnd_P(jProc) % Ray_VI)) &
+               deallocate(SendEnd_P(jProc) % Ray_VI)
+       end do
+    end if
+    deallocate(SendEnd_P)
 
     ! Deallocate recv buffer
-    if(associated(nRayRecv_P))deallocate(nRayRecv_P)
-    if(associated(Recv % Ray_VI))deallocate(Recv % Ray_VI)
-    Recv % nRay   = 0
-    Recv % MaxRay = 0
+    if(associated(nRayRecvNei_P))deallocate(nRayRecvNei_P)
+    if(associated(RecvNei % Ray_VI))deallocate(RecvNei % Ray_VI)
+    RecvNei % nRay   = 0
+    RecvNei % MaxRay = 0
+
+    ! Deallocate from end recv buffer
+    if(associated(nRayRecvEnd_P))deallocate(nRayRecvEnd_P)
+    if(associated(RecvEnd % Ray_VI))deallocate(RecvEnd % Ray_VI)
+    RecvEnd % nRay   = 0
+    RecvEnd % MaxRay = 0
 
     iComm = MPI_COMM_NULL
 
@@ -174,7 +208,7 @@ contains
     real,    intent(in) :: XyzEnd_D(3)         ! End posistion
     real,    intent(in) :: Length              ! Length of the ray so far
     logical, intent(in) :: IsParallel,DoneRay  ! Direction and status of trace
-
+    
     !DESCRIPTION:
     ! Put ray information into send buffer. If DoneRay is true, the
     ! information will be sent ot iProcStart, otherwise it will be
@@ -188,14 +222,15 @@ contains
     ! Where should we send the ray
     if(DoneRay)then
        iProcTo = iProcStart  ! Send back result to the PE that started tracing
+       ! put ray info into the send to start buffer
+       call append_ray(SendEnd_P(iProcTo))
     else
        iProcTo = iProcEnd    ! Send to PE which can continue the tracing
+       call append_ray(SendNei_P(iProcTo))
     end if
 
     if(iProcTo<0)&
          call CON_stop(NameSub//' SWMF_error: PE lookup to be implemented')
-
-    call append_ray(Send_P(iProcTo))
 
   contains
 
@@ -237,8 +272,11 @@ contains
   !IROUTINE: ray_get - get ray information from the receive buffer
   !INTERFACE:
   subroutine ray_get(&
-       IsFound,iProcStart,iStart_D,XyzEnd_D,Length,IsParallel,DoneRay)
+       IsFound,iProcStart,iStart_D,XyzEnd_D,Length,IsParallel,DoneRay,IsEnd)
 
+    !INPUT ARGUMENTS:
+    logical, optional, intent(in) :: IsEnd ! if get ray from end proc
+    
     !OUTPUT ARGUMENTS:
     logical, intent(out) :: IsFound            ! true if there are still rays
     integer, intent(out) :: iProcStart         ! PE-s for start and end pos.
@@ -246,39 +284,56 @@ contains
     real,    intent(out) :: XyzEnd_D(3)        ! End position
     real,    intent(out) :: Length             ! Length of the current ray
     logical, intent(out) :: IsParallel,DoneRay ! Direction and status of trace
-
+    
     !DESCRIPTION:
     ! Provide the last ray for the component to store or to work on.
     ! If no ray is found in the receive buffer, IsFound=.false. is returned.
     !EOP
 
+    ! local variables
+    ! Pointers for choosing the buffer
+    type(RayPtr), pointer :: SendPtr_P(:)
+    type(RayPtr), pointer :: RecvPtr
+    integer, pointer      :: nRayRecvPtr_P(:)
+    
     character (len=*), parameter :: NameSub = NameMod//'::ray_get'
 
     integer :: iRay
     !-------------------------------------------------------------------------
 
-    iRay    = Recv%nRay 
+    if(present(IsEnd) .and. IsEnd) then
+       SendPtr_P     => SendEnd_P
+       RecvPtr       => RecvEnd
+       nRayRecvPtr_P => nRayRecvEnd_P
+    else
+       SendPtr_P     => SendNei_P
+       RecvPtr       => RecvNei
+       nRayRecvPtr_P => nRayRecvNei_P
+    end if
+    
+    iRay    = RecvPtr%nRay 
     IsFound = iRay > 0
 
     if(.not.IsFound) RETURN  ! No more rays in the buffer
 
     ! Copy last ray into output arguments
-    iStart_D     = nint(Recv % Ray_VI(RayStartI_:RayStartBlock_,iRay))
-    iProcStart   = nint(Recv % Ray_VI(RayStartProc_,iRay))
-    XyzEnd_D     = Recv % Ray_VI(RayEndX_:RayEndZ_,iRay)
-    Length       = Recv % Ray_VI(RayLength_, iRay)
-    IsParallel   = Recv % Ray_VI(RayDir_,iRay)  > 0.0
-    DoneRay      = Recv % Ray_VI(RayDone_,iRay) > 0.5
+    iStart_D     = nint(RecvPtr % Ray_VI(RayStartI_:RayStartBlock_,iRay))
+    iProcStart   = nint(RecvPtr % Ray_VI(RayStartProc_,iRay))
+    XyzEnd_D     = RecvPtr % Ray_VI(RayEndX_:RayEndZ_,iRay)
+    Length       = RecvPtr % Ray_VI(RayLength_, iRay)
+    IsParallel   = RecvPtr % Ray_VI(RayDir_,iRay)  > 0.0
+    DoneRay      = RecvPtr % Ray_VI(RayDone_,iRay) > 0.5
 
     ! Remove ray from buffer
-    Recv % nRay = iRay - 1
+    RecvPtr % nRay = iRay - 1
 
   end subroutine ray_get
 
   !BOP =======================================================================
   !IROUTINE: ray_exchange - send information from send to receive buffers
   !INTERFACE:
-  subroutine ray_exchange(DoneMe, DoneAll, IsNeiProc_P)
+
+  subroutine ray_exchange(DoneMe, DoneAll, IsNeiProcIn_P)
 
     !INPUT ARGUMENTS:
     logical, intent(in) :: DoneMe
@@ -287,7 +342,7 @@ contains
     logical, intent(out):: DoneAll
 
     !OPTIONAL ARGUMENTS:
-    logical, intent(in), optional :: IsNeiProc_P(0:nProc-1)
+    logical, intent(in), optional :: IsNeiProcIn_P(0:nProc-1)
 
     !DESCRIPTION:
     ! Send the Send\_P buffers to Recv buffers, empty the Send\_P buffers.
@@ -304,25 +359,39 @@ contains
     integer, parameter :: iTag = 1
     integer :: jProc, iRay, nRayRecv
 
+    ! Pointers for choosing the buffer
+    type(RayPtr), pointer :: SendPtr_P(:)
+    type(RayPtr), pointer :: RecvPtr
+    integer, pointer      :: nRayRecvPtr_P(:)
+    
     character (len=*), parameter :: NameSub = NameMod//'::ray_exchange'
 
     !-------------------------------------------------------------------------
     ! Exchange number of rays in the send buffer
 
+    if (present(IsNeiProcIn_P)) then
+       SendPtr_P     => SendNei_P
+       RecvPtr       => RecvNei
+       nRayRecvPtr_P => nRayRecvNei_P
+    else
+       SendPtr_P     => SendEnd_P
+       RecvPtr       => RecvEnd
+       nRayRecvPtr_P => nRayRecvEnd_P
+    end if
+
     ! Local copy (in case ray remains on the same PE)
-    ! nRayRecv_P = 0
-    nRayRecv_P(iProc)=Send_P(iProc) % nRay
-    ! Send_P % nRay = 0
+    nRayRecvPtr_P = 0
+    nRayRecvPtr_P(iProc)=SendPtr_P(iProc) % nRay
     
     nRequest = 0
     iRequest_I = MPI_REQUEST_NULL
     do jProc = 0, nProc-1
        if(jProc==iProc) CYCLE
-       if (present(IsNeiProc_P)) then
-          if(.not. IsNeiProc_P(jProc)) CYCLE
+       if (present(IsNeiProcIn_P)) then
+          if(.not. IsNeiProcIn_P(jProc)) CYCLE
        endif
        nRequest = nRequest + 1
-       call MPI_irecv(nRayRecv_P(jProc),1,MPI_INTEGER,jProc,&
+       call MPI_irecv(nRayRecvPtr_P(jProc),1,MPI_INTEGER,jProc,&
             iTag,iComm,iRequest_I(nRequest),iError)
     end do
 
@@ -332,67 +401,69 @@ contains
     ! Use ready-send
     do jProc = 0, nProc-1
        if(jProc==iProc) CYCLE
-       if (present(IsNeiProc_P)) then
-          if(.not. IsNeiProc_P(jProc)) CYCLE
+       if (present(IsNeiProcIn_P)) then
+          if(.not. IsNeiProcIn_P(jProc)) CYCLE
        endif
-       call MPI_rsend(Send_P(jProc) % nRay,1,MPI_INTEGER,jProc,&
+       call MPI_rsend(SendPtr_P(jProc) % nRay,1,MPI_INTEGER,jProc,&
             iTag,iComm,iError)
     end do
-    
+
     ! Wait for all messages to be received
     if(nRequest > 0)call MPI_waitall(nRequest,iRequest_I,iStatus_II,iError)
 
-    nRayRecv = Recv % nRay + sum(nRayRecv_P)
+    nRayRecv = RecvPtr % nRay + sum(nRayRecvPtr_P)
 
     ! Extend receive buffer as needed
-    if(nRayRecv > Recv % MaxRay) call extend_buffer(Recv,nRayRecv+100)
+    if(nRayRecv > RecvPtr % MaxRay) call extend_buffer(RecvPtr,nRayRecv+100)
 
     ! Exchange ray information
-    iRay = Recv % nRay + 1
+    iRay = RecvPtr % nRay + 1
 
     ! Local copy if any
-    if(nRayRecv_P(iProc) > 0)then
-       Recv % Ray_VI(:,iRay:iRay+nRayRecv_P(iProc)-1) = &
-            Send_P(iProc) % Ray_VI(:,1:Send_P(iProc) % nRay)
-       iRay = iRay + nRayRecv_P(iProc)
+    if(nRayRecvPtr_P(iProc) > 0)then
+       RecvPtr % Ray_VI(:,iRay:iRay+nRayRecvPtr_P(iProc)-1) = &
+            SendPtr_P(iProc) % Ray_VI(:,1:SendPtr_P(iProc) % nRay)
+       iRay = iRay + nRayRecvPtr_P(iProc)
     end if
 
     nRequest   = 0
     iRequest_I = MPI_REQUEST_NULL
     do jProc = 0, nProc-1
        if(jProc==iProc)CYCLE
-       if(nRayRecv_P(jProc)==0)CYCLE
+       if(nRayRecvPtr_P(jProc)==0)CYCLE
        nRequest = nRequest + 1
 
-       call MPI_irecv(Recv % Ray_VI(1,iRay),nRayRecv_P(jProc)*nRayInfo,&
+       call MPI_irecv(RecvPtr % Ray_VI(1,iRay),nRayRecvPtr_P(jProc)*nRayInfo,&
                MPI_REAL,jProc,iTag,iComm,iRequest_I(nRequest),iError)
-       iRay = iRay + nRayRecv_P(jProc)
+       iRay = iRay + nRayRecvPtr_P(jProc)
     end do
+    
+    call MPI_barrier(iComm, iError)
 
     ! Wait for all receive commands to be posted for all processors
     call MPI_barrier(iComm, iError)
 
     do jProc = 0, nProc-1
        if(jProc==iProc)CYCLE
-       if(Send_P(jProc) % nRay == 0) CYCLE
+       if(SendPtr_P(jProc) % nRay == 0) CYCLE
 
-       call MPI_rsend(Send_P(jProc) % Ray_VI(1,1),&
-            Send_P(jProc) % nRay*nRayInfo,MPI_REAL,jProc,iTag,iComm,iError)
+       call MPI_rsend(SendPtr_P(jProc) % Ray_VI(1,1),&
+            SendPtr_P(jProc) % nRay*nRayInfo,MPI_REAL,jProc,iTag,iComm,iError)
     enddo
-
+    
     ! Wait for all messages to be received
     if(nRequest > 0)call MPI_waitall(nRequest,iRequest_I,iStatus_II,iError)
-
+    
     ! Update number of received rays
-    Recv % nRay = nRayRecv
+    RecvPtr % nRay = nRayRecv
 
     ! Reset send buffers
     do jProc = 0, nProc-1
-       Send_P(jProc) % nRay = 0
+       SendPtr_P(jProc) % nRay = 0
     end do
 
     ! Check if all PE-s are done
-    DoneAll = DoneMe .and. (Recv % nRay == 0)
+    DoneAll = DoneMe .and. (RecvPtr % nRay == 0)
     if(nProc > 1)&
          call MPI_allreduce(MPI_IN_PLACE, DoneAll, 1, MPI_LOGICAL, MPI_LAND, &
          iComm, iError)
@@ -467,20 +538,21 @@ contains
          " Length=",10.0*iProc+1.0, &
          " IsParallel, DoneRay=",.false.,.false.
 
+    ! pass rays to the left neighbor iProc-1
     call ray_put(iProc, (/110+iProc,120+iProc,130+iProc,140+iProc/), &
          mod(nProc+iProc-1,nProc), (/210.+iProc,220.+iProc,230.+iProc/), &
          10.0*iProc+1.0,.false.,.false.)
 
     do jProc = 0, nProc-1
        write(*,"(a,i2,i2,i4,i4,100f5.0)")'iProc,jProc,Send_P(jProc)=',&
-            iProc,jProc,Send_P(jProc) % MaxRay,&
-            Send_P(jProc) % nRay, &
-            Send_P(jProc) % Ray_VI(:,1:Send_P(jProc) % nRay)
+            iProc,jProc,SendNei_P(jProc) % MaxRay,&
+            SendNei_P(jProc) % nRay, &
+            SendNei_P(jProc) % Ray_VI(:,1:SendNei_P(jProc) % nRay)
     end do
 
     if(iProc==0) write(*,'(a)')'ray_put done'
 
-    call ray_exchange(.true., DoneAll)
+    call ray_exchange(.true., DoneAll, (/.true./))
 
     write(*,*)'ray_exchange done, DoneAll=',DoneAll
 
@@ -496,7 +568,7 @@ contains
 
     if(iProc==0) write(*,'(a)')'ray_get done'
 
-    call ray_exchange(.true., DoneAll)
+    call ray_exchange(.true., DoneAll, (/.true./))
 
     if(iProc==0) write(*,'(a,l1)')'ray_exchange repeated, DoneAll=',DoneAll
 
