@@ -866,6 +866,7 @@ sub set_amrex_{
 	my $installdir = "InstallDir";
 	my $AmrexCompiler="intel";
 	$AmrexCompiler="gnu" if $Compiler eq "gfortran";
+	$AmrexCompiler="nag" if $Compiler eq "nagfor";
 	my $AmrexDebug = "FALSE";
 	$AmrexDebug = "TRUE" if $Debug eq "yes";
 	
