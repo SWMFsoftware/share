@@ -301,14 +301,15 @@ contains
     integer :: iRay
     !-------------------------------------------------------------------------
 
-    if(present(IsEnd) .and. IsEnd) then
-       SendPtr_P     => SendEnd_P
-       RecvPtr       => RecvEnd
-       nRayRecvPtr_P => nRayRecvEnd_P
-    else
-       SendPtr_P     => SendNei_P
-       RecvPtr       => RecvNei
-       nRayRecvPtr_P => nRayRecvNei_P
+    SendPtr_P     => SendNei_P
+    RecvPtr       => RecvNei
+    nRayRecvPtr_P => nRayRecvNei_P
+    if(present(IsEnd)) then
+       if(IsEnd) then
+          SendPtr_P     => SendEnd_P
+          RecvPtr       => RecvEnd
+          nRayRecvPtr_P => nRayRecvEnd_P
+       end if
     end if
     
     iRay    = RecvPtr%nRay 
@@ -511,10 +512,17 @@ contains
     integer :: iStart_D(4)
     real    :: XyzEnd_D(3), Length
     logical :: IsParallel,DoneRay, DoneAll
+    logical, allocatable :: IsNeiProc_P(:)
     integer :: jProc
     !------------------------------------------------------------------------
 
     call ray_init(MPI_COMM_WORLD)
+
+    ! initialize the neighboring processor array
+    allocate(IsNeiProc_P(0:nProc-1))
+    IsNeiProc_P = .false.
+    if (iProc > 0) IsNeiProc_P(iProc-1) = .true.
+    ! if (iProc < nProc-1) IsNeighbor_P(iProc+1) = .true.
 
     if(iProc==0) write(*,'(a,i4,i4)')'ray_init done, iProc,nProc=',iProc,nProc
 
@@ -552,7 +560,7 @@ contains
 
     if(iProc==0) write(*,'(a)')'ray_put done'
 
-    call ray_exchange(.true., DoneAll, (/.true./))
+    call ray_exchange(.true., DoneAll, IsNeiProc_P)
 
     write(*,*)'ray_exchange done, DoneAll=',DoneAll
 
@@ -568,7 +576,7 @@ contains
 
     if(iProc==0) write(*,'(a)')'ray_get done'
 
-    call ray_exchange(.true., DoneAll, (/.true./))
+    call ray_exchange(.true., DoneAll, IsNeiProc_P)
 
     if(iProc==0) write(*,'(a,l1)')'ray_exchange repeated, DoneAll=',DoneAll
 
