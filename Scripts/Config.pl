@@ -324,7 +324,7 @@ if($Compiler eq "nagfor" and $Debug eq "yes" and
 &set_hypre_ if $NewHypre and $NewHypre ne $Hypre;
 
 # Link with AMREX library if required
-&set_amrex_ if $NewAmrex and $NewAmrex ne $Amrex;
+&set_amrex_ if $NewAmrex;
 
 # Link with FISHPAK library if required 
 &set_fishpak_ if $NewFishpak and $NewFishpak ne $Fishpak;
@@ -857,28 +857,17 @@ sub set_amrex_{
 	    return;
 	}
     }
-
     
     if($NewAmrex eq "yes" and not -e "util/AMREX/InstallDir/lib/libamrex.a"){
-	&shell_command("cd util/AMREX; ./configure; rm -rf util/AMREX/InstallDir");
-	my $makefileamrex = "util/AMREX/GNUmakefile";
-
 	my $installdir = "InstallDir";
 	my $AmrexCompiler="intel";
 	$AmrexCompiler="gnu" if $Compiler eq "gfortran";
 	$AmrexCompiler="nag" if $Compiler eq "nagfor";
-	my $AmrexDebug = "FALSE";
-	$AmrexDebug = "TRUE" if $Debug eq "yes";
+
+	&shell_command("cd util/AMREX;", 
+		       "./configure --prefix $installdir --debug $Debug --comp $AmrexCompiler --enable-fortran-api no;",
+		       "rm -rf util/AMREX/InstallDir");
 	
-	die "$ERROR File $makefileamrex does not exist!\n" unless -f $makefileamrex;	
-	@ARGV = ($makefileamrex);
-	while(<>){
-	    if($installdir  ne "")     {s/^AMREX_INSTALL_DIR =.*/AMREX_INSTALL_DIR  = $installdir/;};
-	    if($AmrexCompiler  ne "")     {s/^COMP =.*/COMP = $AmrexCompiler/;};
-	    if($AmrexDebug     ne "")     {s/^DEBUG =.*/DEBUG = $AmrexDebug/;};
-	    print;
-	}    
-		
 	$IsStrict = 0;
 	&shell_command("cd util/AMREX; make -j 4; make install");
 	$IsStrict = 1;
