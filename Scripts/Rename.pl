@@ -18,6 +18,8 @@
 # 09/23/2005        added -common=XX option
 #EOP
 
+push @INC, '.';
+
 $Help=$h; 
 $Input=$i;
 $List=$l; 

@@ -7,10 +7,12 @@ and execute the Git command passed in the arguments.
 The verbose output from Git status is suppressed unless the -v switch is used.
 
 Usage:
-  gitall [-h] [-v] [-s[=N]] GITCOMMAND
+  gitall [-h] [-v] [-l] [-q] [-s[=N]] GITCOMMAND
 
 -h -help      print this help message
+-l -list      list all subdirectories that the Git command would be run on
 -v -verbose   provide verbose information for the status command
+-q -quiet     execute the Git command without printing the gitall annotations
 -s -sleep     sleep 5 seconds after each Git command to avoid ssh access issues
 -s=N -sleep=N sleep N seconds after each Git command (N should be more than 1)
 GITCOMMAND    any Git command
@@ -30,6 +32,8 @@ Pull remote version into all Git subdirectories and sleep 5 seconds after each:
 my $Verbose = ($v or $verbose);
 my $Sleep   = ($s or $sleep);
 $Sleep = 5 if $Sleep == 1;
+my $List    = ($l or $list);
+my $Quiet   = ($q or $quiet);
 
 use strict;
 
@@ -59,15 +63,23 @@ sub execute_gitall(){
    my $subdir;
    foreach $subdir (@subdirs){
        if ($subdir eq ".git"){
-           my $result = `cd $dir; git $gitcmd`;
-	   # remove verbose info
-	   if(not $Verbose){
-	       $result =~ s/On branch master//;
-	       $result =~ s/Your branch is up.to.date with .origin\/master.+//;
-	       $result =~ s/nothing to commit, working tree clean//;
-	       $result =~ s/^\s*$//g;
+	   if(not $List){
+	       my $result = `cd $dir; git $gitcmd`;
+	       # remove verbose info
+	       if(not $Verbose){
+		   $result =~ s/On branch master//;
+		   $result =~ s/Your branch is up.to.date with .origin\/master.+//;
+		   $result =~ s/nothing to commit, working tree clean//;
+		   $result =~ s/^\s*$//g;
+	       }
+	       if(not $Quiet){
+		   print "=========== $dir:\n $result \n" if $result;
+	       }else{
+		   print "$result" if $result;
+	       }
+	   }else{
+	       print "$dir\n"
 	   }
-           print "=========== $dir:\n $result \n" if $result;
 
        }else{
            &execute_gitall("$dir/$subdir");
