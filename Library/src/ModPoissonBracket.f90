@@ -10,16 +10,13 @@
 !
 ! For a contribution to the Liuville (kinetic) equation:
 ! 
-! df/dt + \sum{df/dq_l dH/dp_l - df/dp_l dH/dq_l}=0,
+! df/dt + \sum_l{df/dq_l dH_l/dp_l - df/dp_l dH_l/dq_l}=0,
 !
 ! in which f in the (unknown) distribution function, 
-! q_l are generalized coordinates,
-! p_l are canonically conjugate generalized momenta,
-! H is the (known!) Hamiltonian function,
+! q_l and p_l are generalized coordinates,
+! H_l are the (known!) Hamiltonian functions.
 ! 
-! the methods in the module solve the contribution to the
-! numerical flux from a single Poisson bracket,
-! df/dq_l dH/dp_l - df/dp_l dH/dq_l
+! See	arXiv:1910.12636 [physics.comp-ph]
 !
 !INTERFACE:
 
@@ -28,25 +25,24 @@ module ModPoissonBracket
   !USES:
   use ModMpi
   use ModUtilities,    ONLY: CON_stop
-  use ModLinearSolver, ONLY: bicgstab, prehepta, &
-                             upper_hepta_scalar, lower_hepta_scalar, & 
-                             get_precond_matrix
-  !\     
-  ! bicgstab             BiCGSTAB iterative solver
-  ! prehepta             LU preconditioner for up to hepta block-diagonal 
-  ! upper_hepta_scalar   multiply with upper scalar triangular matrix
-  ! lower_hepta_scalar   multiply with lower scalar triangular matrix
-  ! get_precond_matrix   get preconditioner matrix
   implicit none
   SAVE
   private ! except
-
+  interface explicit
+     module procedure explicit2
+     module procedure explicit3
+  end interface explicit
   !PUBLIC MEMBER FUNCTION:
   public :: explicit
-  public :: explicit3
+  character(LEN=*), parameter:: NameMod = 'ModPoissonBracket'
 contains
+  !=========================================================
   ! A choice of limiter functions
   real function pair_superbee(Arg1, Arg2)
+    !\
+    !  Used to limit only two distribution function variations
+    !  \delta^-f in the neighboring cells
+    !/
     real, intent(in):: Arg1, Arg2
     real :: AbsArg1, AbsArg2
     !------------
@@ -56,252 +52,169 @@ contains
     end if
     AbsArg1 = abs(Arg1)
     AbsArg2 = abs(Arg2)
-    pair_superbee = sign(min(2*min(AbsArg1,AbsArg2),max(AbsArg1,AbsArg2)),&
-         Arg1)
+    pair_superbee = sign(min(min(AbsArg1,AbsArg2), &
+                        0.50*max(AbsArg1,AbsArg2)  ),Arg1)
   end function pair_superbee
-  !===============
-  real function triple_superbee(Arg1, Arg2, Arg3)
-    real, intent(in):: Arg1, Arg2, Arg3
-    real :: AbsArg_I(3)
-    !------------
-    if(Arg1*Arg2 .le. 0.0 .or. Arg2*Arg3 .le. 0.0)then
-       triple_superbee = 0.0
-       RETURN
-    end if
-    AbsArg_I(1) = abs(Arg1)
-    AbsArg_I(2) = abs(Arg2)
-    AbsArg_I(3) = abs(Arg3)
-    triple_superbee = sign(min(2*minval(AbsArg_I),maxval(AbsArg_I)),&
-         Arg1)
-  end function triple_superbee
-  !=========================================================================
-  
-  subroutine explicit(nQ, nP, VDF_G, Hamiltonian_N,   &
-       Volume_G, Source_C, DtIn, CFLIn, DtOut, CFLOut)
+  !========================================================
+  subroutine explicit2(nI, nJ, VDF_G, Volume_G, Source_C,    &
+       Hamiltonian12_N, dHamiltonian01_FX, dHamiltonian02_FY,&
+       DVolumeDt_G,                                          &
+       DtIn, CFLIn, DtOut, CFLOut)
     !\
     ! solve the contribution to the
     ! numerical flux from a single Poisson bracket,
     ! df/dq_l dH/dp_l - df/dp_l dH/dq_l
     !/
-    integer, intent(in) :: nQ           !number of cells along coordinate axis 
-    integer, intent(in) :: nP           !number of cells along momentum   axis
+    integer, intent(in) :: nI    !# of cells along coordinate 1 
+    integer, intent(in) :: nJ    !# of cells along coord. 2 (momentum)   
     !\
-    !Distribution function with gc. Two layers of face ghostcels and one level
-    !of corner ghost cells are used
+    ! Distribution function with gc. Two layers of face ghostcels 
+    ! and one level of corner ghost cells are used
     !/
-    real, intent(in) :: VDF_G(-1:nQ+2,-1:nP+2) 
+    real, intent(in) :: VDF_G(-1:nI+2,-1:nJ+2) 
     !\ 
     ! Hamiltonian function in nodes. One layer of ghost nodes is used
     !/
-    real, intent(in) :: Hamiltonian_N(-1:nQ+1,-1:nP+1)  
+    real, optional, intent(in) :: Hamiltonian12_N(-1:nI+1,-1:nJ+1) 
     !\
-    ! Inverse volume. One layer of face ghost cells is used
-    !/  
-    real, intent(in) :: Volume_G(0:nQ+1,0:nP+1)
-    !\
-    ! Inverse volume. One layer of face ghost cells is used
+    ! Increment in the Hamiltonian function for the Poisson bracket
+    ! with respect to time, \{f,H_{01}\}_{t,x}. Is face-X centered.
+    ! One layer of the ghost faces is needed.
     !/
-    real             ::vInv_G(0:nQ+1,0:nP+1)
+    real, optional, intent(in) :: dHamiltonian01_FX(-1:nI+1, 0:nJ+1)
     !\
-    ! Contribution to the conservative source (flux divergence) for 
+    ! Increment in the Hamiltonian function for the Poisson bracket
+    ! with respect to time, \{f,H_{02}\}_{t,y}. Is face-Y centered.
+    ! One layer of the ghost faces is needed.
+    !/ 
+    real, optional, intent(in) :: dHamiltonian02_FY( 0:nI+1,-1:nJ+1) 
+    !\
+    ! Cell volume. One layer of face ghost cells is used
+    !/  
+    real,           intent(in) :: Volume_G(0:nI+1,0:nJ+1)
+    !\
+    ! If non-canonical variables are used with time-dependent Jacobian,
+    ! the cell volume changes in time. Need the volume derivative
+    !/
+    real, optional, intent(in) :: DVolumeDt_G(0:nI+1,0:nJ+1)
+    !\
+    ! Contribution to the conservative source (flux divergence) from 
     ! the Poisson Bracket:
     !
-    ! df/dt = sum(Source_C), sum is taken over all Poisson brackets
+    ! f(t+dt) - f(t) = Source_C
     !/                  
-    real, intent(out):: Source_C(1:nQ, 1:nP)  
+    real,           intent(out):: Source_C(1:nI,1:nJ)
 
     real, optional, intent(in) :: DtIn, CFLIn   !Options to set time step
     real, optional, intent(out):: DtOut, CFLOut !Options to report time step
-    !\
-    ! Local variables
-    !/
-    !Loop variables:
-    integer :: iQ, iP
-    
-    ! Variations of VDF (one layer of ghost cell values):
-    real :: DeltaMinusF_G(0:nQ+1, 0:nP+1)
-    !\
-    ! Variations of Hamiltonian functions (one layer of ghost faces, 
-    ! for two directions:
-    !/
-    real :: DeltaH_FX(-1:nQ+1,0:nP+1), DeltaH_FY(0:nQ+1,-1:nP+1)
-    real :: SumDeltaHPlus_G(0:nQ+1, 0:nP+1)
-    !Fluxes
-    real :: Flux_FX(0:nQ,1:nP), Flux_FY(1:nQ,0:nP)
-    
-    ! Local CFL number:
-    real :: CFLCoef_G(0:nQ+1,0:nP+1)
-    
-    !Time step
-    real :: Dt, CFL
-    character(LEN=*), parameter:: NameSub = 'calc_poisson_bracket'
+    character(LEN=*), parameter:: NameSub = NameMod//':explicit2'
     !---------
-    if(present(DtIn))then
-       Dt = DtIn
-    else
-       if(.not.present(CflIn))call CON_stop(&
-            'Either CflIn or DtIn should be provided in '//NameSub)
-    end if
-    VInv_G = 1/Volume_G
+    call explicit3(nI, nJ, 1, VDF_G, Volume_G, Source_C,     &
+       Hamiltonian12_N=Hamiltonian12_N,                      &
+       dHamiltonian01_FX= dHamiltonian01_FX,                 &
+       dHamiltonian02_FY= dHamiltonian02_FY,                 &
+       DVolumeDt_G=DVolumeDt_G,                              &
+       DtIn=DtIn,                                            &
+       CFLIn=CFLIn,                                          &
+       DtOut=DtOut,                                          &
+       CFLOut=CFLOut)
+  end subroutine explicit2
+  !=======================================================================
+  subroutine explicit3(nI, nJ, nK, VDF_G, Volume_G, Source_C,            &
+       Hamiltonian12_N, Hamiltonian13_N, Hamiltonian23_N,                &
+       dHamiltonian01_FX, dHamiltonian02_FY, dHamiltonian03_FZ,          &
+       DVolumeDt_G,                                                      &
+       DtIn, CFLIn, DtOut, CFLOut)
     !\
-    ! Calculate DeltaH:
+    ! solve the contribution to the numerical flux from multiple Poisson 
+    ! brackets, 1,2,3 enumerate phase coordinates,  0 relating to time.
     !/
-    DeltaH_FX(-1:nQ+1, 0:nP+1) = Hamiltonian_N(-1:nQ+1,   0:nP+1) - &
-                            Hamiltonian_N(-1:nQ+1, -1:nP  )
-    DeltaH_FY(0 :nQ+1,-1:nP+1) = Hamiltonian_N(-1:nQ,    -1:nP+1) - &
-                            Hamiltonian_N(0:nQ+1 , -1:nP+1)
-    ! Now, for each cell the value of DeltaH for face in positive 
-    ! directions of iQ and iP may be found in the arrays, for
-    ! negative directions the should be taken with opposite sign
-
+    integer, intent(in) :: nI     !# of cells along coordinate 1
+    integer, intent(in) :: nJ     !# of cells along coordinate 2
+    integer, intent(in) :: nK     !# of cells along coordinate 3
+    integer :: iKStart , iKLast 
     !\
-    ! Calculate DeltaMinusF and SumDeltaH
-    !/   
-    do iP = 0, nP+1; do iQ = 0, nQ+1
-       SumDeltaHPlus_G(iQ, iP) = max(0.0, DeltaH_FX(iQ,   iP)) +&
-                                 max(0.0, DeltaH_FY(iQ,   iP)) +&
-                                 max(0.0,-DeltaH_FX(iQ-1, iP)) +&
-                                 max(0.0,-DeltaH_FY(iQ, iP-1))
-       DeltaMinusF_G(iQ, iP) = (&
-           min(0.0, DeltaH_FX(iQ,   iP))*VDF_G(iQ+1,iP) +&
-           min(0.0, DeltaH_FY(iQ,   iP))*VDF_G(iQ,iP+1) +&
-           min(0.0,-DeltaH_FX(iQ-1, iP))*VDF_G(iQ-1,iP) +&
-           min(0.0,-DeltaH_FY(iQ, iP-1))*VDF_G(iQ,iP-1)  &
-           )/SumDeltaHPlus_G(iQ, iP) + VDF_G(iQ,iP)
-       CFLCoef_G(iQ, iP) = vInv_G(iQ, iP)*SumDeltaHPlus_G(iQ, iP)
-    end do; end do
-    !\
-    ! Set Dt and construct array Dt*SumDeltaH/Volume_C
+    ! Distribution function with gc. Two layers of face ghostcels 
+    ! and one level of corner ghost cells are used
     !/
-    if(present(DtIn))then
-       CFLCoef_G = Dt*CFLCoef_G
-       CFL = maxval(CFLCoef_G)
-    else
-       CFL = CFLIn
-       Dt = CFL/maxval(CFLCoef_G)
-       CFLCoef_G = Dt*CFLCoef_G
-    end if 
-    !\
-    ! First order monotone scheme
-    !/
-    Source_C = -SumDeltaHPlus_G(1:nQ, 1:nP)*DeltaMinusF_G(1:nQ, 1:nP)
-    !\
-    ! Calculate Face-X fluxes.
-    !/
-    do iP = 1, nP; do iQ = 0, nQ
-       if(DeltaH_FX(iQ, iP) > 0.0)then
-          Flux_FX(iQ, iP) = DeltaH_FX(iQ, iP)*0.50*&
-               (1.0 - CFLCoef_G(iQ,   iP))                           *&
-               pair_superbee(DeltaMinusF_G(iQ, iP), DeltaMinusF_G(iQ+1, iP))
-       else
-          Flux_FX(iQ, iP) = DeltaH_FX(iQ, iP)*0.50*&
-               (1.0 - CFLCoef_G(iQ+1, iP))                           *&
-               pair_superbee(DeltaMinusF_G(iQ, iP), DeltaMinusF_G(iQ+1, iP))
-       end if
-    end do; end do
-    !\
-    ! Calculate Face-Y fluxes.
-    !/
-    do iP = 0, nP; do iQ = 1, nQ
-       if(DeltaH_FY(iQ, iP) > 0.0)then
-          Flux_FY(iQ, iP) = DeltaH_FY(iQ, iP)*0.50*&
-               (1.0 - CFLCoef_G(iQ,   iP))                           *&
-               pair_superbee(DeltaMinusF_G(iQ, iP), DeltaMinusF_G(iQ, iP+1))
-       else
-          Flux_FY(iQ, iP) = DeltaH_FY(iQ, iP)*0.50*&
-               (1.0 - CFLCoef_G(iQ, iP+1))                           *&
-               pair_superbee(DeltaMinusF_G(iQ, iP), DeltaMinusF_G(iQ, iP+1))
-       end if
-    end do; end do
-    !\
-    ! Finalize
-    !/
-    Source_C = (Source_C + Flux_FX(0:nQ-1, 1:nP) - Flux_FX(1:nQ, 1:nP) +  &
-         Flux_FY(1:nQ, 0:nP-1) - Flux_FY(1:nQ, 1:nP) )*Dt*vInv_G(1:nQ,1:nP)
-    if(present(CFLOut))CFLOut = CFL
-    if(present(DtOut ))DtOut  = Dt
-  end subroutine explicit
-  
-
-
-
-
-  
-  !============================================================================================================================================================
-  !============================================================================================================================================================
-  subroutine explicit3(nQ, nP, nR, VDF_G, Hamiltonian_N, Volume_G, Source_C, DeltaHamiltonian01_N, DeltaHamiltonian02_N, DeltaHamiltonian03_N, Hamiltonian13_N, Hamiltonian23_N,   &
-      DtIn, CFLIn, DtOut, CFLOut)
-    !\
-    ! solve the contribution to the
-    ! numerical flux from three Poisson brackets with four subscripts, where "0" always refers to time!
-    ! For our particular case: {f,H_1}_0,3+{f,H_2}_1,2+{f,H_3}_3,2=0
-    ! In our particular cause: 0:t, 1: s_L, 2: \mu, 3:p^3/3,
-    !/
-    integer, intent(in) :: nQ           !number of cells along the first axis, which is s_L axis in our case
-    integer, intent(in) :: nP           !number of cells along the second axis, which is \mu axis in our case
-    integer, intent(in) :: nR           !number of cells along the third axis, which is p^3/3 axis in our case (note we actually take a "ln" for the p^3/3 axis)
-    !\
-    !Distribution function with gc. Two layers of face ghostcels and one level
-    !of corner ghost cells are used
-    !/
-    real, intent(in) :: VDF_G(-1:nQ+2,-1:nP+2,-1:nR+2) 
+    real, intent(in) :: VDF_G(-1:nI+2,-1:nJ+2,&
+         -1 + 2*(1/nK):nK + 2*(1 - 1/nK))
     !\ 
-    ! Hamiltonian functions in nodes. One layer of ghost nodes is used. At most three Hamiltonian functions are allowed
-    ! The numbers in the name of Hamiltonian funcitons refer to the subscripts of Poisson brackets.
-    ! Hamiltonian_N is necessary for this code. In any case, this Hamiltonian function always refer to the first non-time-dependent Hamiltonian in the equation.
+    ! Hamiltonian functions in nodes. One layer of ghost nodes is used. 
     !/
-    real, intent(in) :: Hamiltonian_N(-1:nQ+1,-1:nP+1,0:nR+1)!The second Hamiltonian function in our equation. It's necessary to the code. In every case, the "1" and "2" in the array always refer to the first and second subscript.
-    real, optional, intent(in) :: DeltaHamiltonian01_N(-1:nQ+1,0:nP+1,0:nR+1), DeltaHamiltonian02_N(0:nQ+1,-1:nP+1,0:nR+1), DeltaHamiltonian03_N(0:nQ+1,0:nP+1,-1:nR+1)!The time dependent Hamiltonian functions. An optional part.
-    real, optional, intent(in) :: Hamiltonian13_N(-1:nQ+1,0:nP+1,-1:nR+1), Hamiltonian23_N(0:nQ+1,-1:nP+1,-1:nR+1)!The Hamiltonian functions in the Poisson bracket with corresponding subscript. An optional part.
-    
+    ! 1. Hamiltonian function for the Poisson bracket \{f,H_{12}}_{x,y}
+    !    Node-centered at XY plane, cell-centered with respect to Z
+    !    (In other words, Z-aligned-edge-centered)
+    real, optional, intent(in) :: Hamiltonian12_N(-1:nI+1,-1:nJ+1,&
+         1/nK:nK+1-1/nK)
+    ! 2. Hamiltonian function for the Poisson bracket \{f,H_{13}}_{x,z}
+    !    Node-centered at XZ plane, cell-centered with respect to Y
+    !    (In other words, Y-aligned-edge-centered)
+    real, optional, intent(in) :: Hamiltonian13_N(-1:nI+1,0:nJ+1,-1:nK+1)
+    ! 3. Hamiltonian function for the Poisson bracket \{f,H_{23}}_{y,z}
+    !    Node-centered at YZ plane, cell-centered with respect to X
+    !    (In other words, X-aligned-edge-centered)
+    real, optional, intent(in) :: Hamiltonian23_N(0:nI+1,-1:nJ+1,-1:nK+1)
+
+    real, optional, intent(in) :: dHamiltonian01_FX(-1:nI+1,0:nJ+1,&
+         1/nK:nK+1-1/nK)
+    real, optional, intent(in) :: dHamiltonian02_FY(0:nI+1,-1:nJ+1,&
+         1/nK:nK+1-1/nK)
+    real, optional, intent(in) :: dHamiltonian03_FZ(0:nI+1,0:nJ+1,-1:nK+1)
     !\
     ! Total Volume. One layer of face ghost cells is used
     !/  
-    real, intent(in) :: Volume_G(0:nQ+1,0:nP+1,0:nR+1)
+    real, intent(in) :: Volume_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
+    !\
+    ! If non-canonical variables are used with time-dependent Jacobian,
+    ! the cell volume changes in time. Need the volume derivative
+    !/
+    real, optional, intent(in) :: DVolumeDt_G(0:nI+1,0:nJ+1,&
+         1/nK:nK+1-1/nK)
+    logical :: UseTimeDependentVolume = .false. !=present(DVolumeDt_G)
     !\
     ! Inverse volume. One layer of face ghost cells is used
     !/
-    real :: vInv_G(0:nQ+1,0:nP+1,0:nR+1)
+    real :: vInv_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
     !\
     ! Contribution to the conservative source (flux divergence) for 
     ! the Poisson Bracket:
     !/
     !send the source_c back to the main code
-    real, intent(out) :: Source_C(1:nQ, 1:nP, 1:nR)  
+    real, intent(out) :: Source_C(1:nI, 1:nJ, 1:nK)  
     !\
     !OPTIONAL PARAMETERS:
-    !/                                                                                                                                                                                                                                     
+    !/                            
     real, optional, intent(in) :: DtIn, CFLIn   !Options to set time step
     real, optional, intent(out):: DtOut, CFLOut !Options to report time step
     !\
     ! Local variables
     !/
     !Loop variables:
-    integer :: iQ, iP, iR
+    integer :: i, j, k
     
     ! Variations of VDF (one layer of ghost cell values):
-    real :: DeltaMinusF_G(0:nQ+1, 0:nP+1, 0:nR+1)
+    real :: DeltaMinusF_G(0:nI+1, 0:nJ+1, 0:nK+1)
     !\
-    ! Variations of Hamiltonian functions (one layer of ghost faces, 
-    ! for three directions:
-    ! Note that the ranges of different subscripts in the following matrix are different because they depend on the specific direction.
-    ! The "X", "Y" and "Z" in the following arrays refer to the corredponding direction of axis.
+    ! face-centered vriations of Hamiltonian functions. 
+    ! one layer of ghost faces
     !/
-    real :: DeltaH_FX(-1:nQ+1,0:nP+1,0:nR+1)
-    real :: DeltaH_FY(0:nQ+1,-1:nP+1,0:nR+1)
-    real :: DeltaH_FZ(0:nQ+1,0:nP+1,-1:nR+1)
-    real :: SumDeltaHMinus_G(0:nQ+1,0:nP+1,0:nR+1)
+    real :: DeltaH_FX(-1:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
+    real :: DeltaH_FY(0:nI+1,-1:nJ+1,1/nK:nK+1-1/nK)
+    real :: DeltaH_FZ(0:nI+1,0:nJ+1,-1:nK+1)
+    real, dimension(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK) :: &
+         SumDeltaHPlus_G, SumDeltaHMinus_G
     !Fluxes:
-    real :: Flux_FX(0:nQ,1:nP,1:nR), Flux_FY(1:nQ,0:nP,1:nR), Flux_FZ(1:nQ,1:nP,0:nR)
+    real :: Flux_FX(0:nI,1:nJ,1:nK)
+    real :: Flux_FY(1:nI,0:nJ,1:nK) 
+    real :: Flux_FZ(1:nI,1:nJ,0:nK)
     
     ! Local CFL number:
-    real :: CFLCoef_G(0:nQ+1,0:nP+1,0:nR+1)
+    real :: CFLCoef_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
     
     !Time step
-    real :: Dt, CFL
-    character(LEN=*), parameter:: NameSub = 'calc_poisson_bracket'
-!!$!!
-    integer:: Loc_D(3)
+    real :: Dt
+    character(LEN=*), parameter:: NameSub =NameMod//':explicit3'
     !---------
     if(present(DtIn))then
        Dt = DtIn
@@ -309,172 +222,210 @@ contains
        if(.not.present(CflIn))call CON_stop(&
             'Either CflIn or DtIn should be provided in '//NameSub)
     end if
-    vInv_G=1.0/Volume_G
+    UseTimeDependentVolume = present(DVolumeDt_G)
+    iKStart  = 1/nK ;  iKLast  = nK +    1 - 1/nK
+    vInv_G = 1.0/Volume_G
     !\
-    ! Calculate DeltaH:
+    ! Nullify arrays:
     !/
-    DeltaH_FX=0.0
-    DeltaH_FY=0.0
-    DeltaH_FZ=0.0
-
+    DeltaH_FX = 0.0; DeltaH_FY = 0.0; DeltaH_FZ = 0.0
+    Flux_FX   = 0.0; Flux_FY   = 0.0; Flux_FZ   = 0.0
+    SumDeltaHPlus_G = 0.0;     SumDeltaHMinus_G = 0.0
     !\
-    !      Bracket {F,H12}_x,y         Bracket {F,H13}_x,z           Bracket {F,H23}_y,z
-    !      Hamiltonian 12 (xy)         Hamiltonian 13 (xz)           Hamiltonian 23 (yz)
-    !      y                           z                             z     
-    !      ----------<--------         ----------<----------         -----------<----------- 
-    !      |                  |        |                   |         |                     |
-    !      v                  ^        v                   |         v                     ^ 
-    !      |                  |        |                   |         |                     |
-    !      |                  |        |                   |         |                     |
-    !      ---------->---------  x     ---------->----------  x      ------------>----------  y
+    ! Bracket {F,H12}_{x,y}   Bracket {F,H13}_{x,z}    Bracket {F,H23}_{y,z}
+    ! Hamiltonian 12 (xy)     Hamiltonian 13 (xz)      Hamiltonian 23 (yz)
+    ! y                       z                        z
+    ! 1---------<---------    1---------<----------    1----------<--------- 
+    ! |                  |    |                   |    |                   |
+    ! v       1,1,1      ^    v       1,1,1       |    v       1,1,1       ^ 
+    ! |                  |    |                   |    |                   |
+    ! |                  |    |                   |    |                   |
+    ! 0--------->--------1x   0---------->--------1x   0---------->--------1y
     !/
-    DeltaH_FX(         -1:nQ+1, 0:nP+1,0:nR+1) = &
-         Hamiltonian_N(-1:nQ+1, 0:nP+1,0:nR+1) - &
-         Hamiltonian_N(-1:nQ+1,-1:nP  ,0:nR+1)
-    DeltaH_FY(          0:nQ+1,-1:nP+1,0:nR+1) = &
-         Hamiltonian_N(-1:nQ  ,-1:nP+1,0:nR+1) - &
-         Hamiltonian_N(0:nQ+1 ,-1:nP+1,0:nR+1)
+    if (present(Hamiltonian12_N)) then
+       DeltaH_FX = DeltaH_FX(-1:nI+1, 0:nJ+1,iKStart:iKLast) + &
+               Hamiltonian12_N(-1:nI+1, 0:nJ+1,iKStart:iKLast) - &
+               Hamiltonian12_N(-1:nI+1,-1:nJ  ,iKStart:iKLast)
+       DeltaH_FY = DeltaH_FY( 0:nI+1,-1:nJ+1,iKStart:iKLast) + &
+               Hamiltonian12_N(-1:nI  ,-1:nJ+1,iKStart:iKLast) - &
+               Hamiltonian12_N(0:nI+1 ,-1:nJ+1,iKStart:iKLast)
+    end if
     
     if (present(Hamiltonian13_N)) then
-       DeltaH_FX                 (-1:nQ+1, 0:nP+1, 0:nR+1) = &
-                        DeltaH_FX(-1:nQ+1, 0:nP+1, 0:nR+1) + &
-                  Hamiltonian13_N(-1:nQ+1, 0:nP+1, 0:nR+1) - &
-                  Hamiltonian13_N(-1:nQ+1, 0:nP+1, -1:nR)
-       DeltaH_FZ                 (0:nQ+1, 0:nP+1, -1:nR+1) = &
-                        DeltaH_FZ(0:nQ+1, 0:nP+1, -1:nR+1) + &
-                  Hamiltonian13_N(-1:nQ , 0:nP+1, -1:nR+1) - &
-                  Hamiltonian13_N(0:nQ+1, 0:nP+1, -1:nR+1)
+       DeltaH_FX = DeltaH_FX(-1:nI+1, 0:nJ+1, 0:nK+1) + &
+             Hamiltonian13_N(-1:nI+1, 0:nJ+1, 0:nK+1) - &
+             Hamiltonian13_N(-1:nI+1, 0:nJ+1,-1:nK  )
+       DeltaH_FZ = DeltaH_FZ( 0:nI+1, 0:nJ+1,-1:nK+1) + &
+             Hamiltonian13_N(-1:nI  , 0:nJ+1,-1:nK+1) - &
+             Hamiltonian13_N( 0:nI+1, 0:nJ+1,-1:nK+1)
     end if
     
     if (present(Hamiltonian23_N)) then
-       DeltaH_FY           (0:nQ+1, -1:nP+1, 0:nR+1) = &
-                  DeltaH_FY(0:nQ+1, -1:nP+1, 0:nR+1) + &
-            Hamiltonian23_N(0:nQ+1, -1:nP+1, 0:nR+1) - &
-            Hamiltonian23_N(0:nQ+1, -1:nP+1, -1:nR)
-       DeltaH_FZ           (0:nQ+1, 0:nP+1, -1:nR+1) = &
-                  DeltaH_FZ(0:nQ+1, 0:nP+1, -1:nR+1) + &
-            Hamiltonian23_N(0:nQ+1,  -1:nP, -1:nR+1) - &
-            Hamiltonian23_N(0:nQ+1, 0:nP+1, -1:nR+1)
+       DeltaH_FY = DeltaH_FY( 0:nI+1,-1:nJ+1, 0:nK+1) + &
+             Hamiltonian23_N( 0:nI+1,-1:nJ+1, 0:nK+1) - &
+             Hamiltonian23_N( 0:nI+1,-1:nJ+1,-1:nK  )
+       DeltaH_FZ = DeltaH_FZ( 0:nI+1, 0:nJ+1,-1:nK+1) + &
+             Hamiltonian23_N( 0:nI+1,-1:nJ  ,-1:nK+1) - &
+             Hamiltonian23_N( 0:nI+1, 0:nJ+1,-1:nK+1)
     end if
     
     !\
-    !      Bracket {F,H01}_t,x         Bracket {F,H02}_t,y           Bracket {F,H03}_t,z
-    !      Hamiltonian 01 (tx)         Hamiltonian 02 (ty)           Hamiltonian 03 (tz)                                                                                          
-    !      x                           y                             z                                      
-    !      ----------<----------       ----------<---------          -----------<-----------                                                                                                                 
-    !                                                                                                                                                                                                                              
-    !                                                                                                                                                                                                                       
-    !                                                                                                                                                                                
-    !                                                                                                       
-    !      ---------->----------  t    ---------->----------  t      ----------->-----------  t                   
+    ! Bracket {F,H01}_t,x    Bracket {F,H02}_t,y      Bracket {F,H03}_t,z
+    ! Hamiltonian 01 (tx)    Hamiltonian 02 (ty)      Hamiltonian 03 (tz)
+    ! x                      y                        z
+    ! ----------<--------    ----------<---------     -----------<-------
+    !
+    !
+    !
+    !
+    ! ---------->--------t   ---------->---------t    ----------->-------t
     !/
-    if (present(DeltaHamiltonian01_N)) DeltaH_FX(-1:nQ+1, 0:nP+1, 0:nR+1) = &
-                                       DeltaH_FX(-1:nQ+1, 0:nP+1, 0:nR+1) + &
-                            DeltaHamiltonian01_N(-1:nQ+1, 0:nP+1, 0:nR+1)
-    if (present(DeltaHamiltonian02_N)) DeltaH_FY(0:nQ+1, -1:nP+1, 0:nR+1) = &
-                                       DeltaH_FY(0:nQ+1, -1:nP+1, 0:nR+1) + &
-                            DeltaHamiltonian02_N(0:nQ+1, -1:nP+1, 0:nR+1)
-    if (present(DeltaHamiltonian03_N)) DeltaH_FZ(0:nQ+1, 0:nP+1, -1:nR+1) = &
-                                       DeltaH_FZ(0:nQ+1, 0:nP+1, -1:nR+1) + &
-                            DeltaHamiltonian03_N(0:nQ+1, 0:nP+1, -1:nR+1)
+    if (present(dHamiltonian01_FX))&
+         DeltaH_FX = DeltaH_FX + dHamiltonian01_FX
+    if (present(dHamiltonian02_FY))&
+         DeltaH_FY = DeltaH_FY + dHamiltonian02_FY
+    if (present(dHamiltonian03_FZ))& 
+         DeltaH_FZ = DeltaH_FZ + dHamiltonian03_FZ
     
     ! Now, for each cell the value of DeltaH for face in positive 
-    ! directions of iQ and iP may be found in the arrays, for
+    ! directions of i and j may be found in the arrays, for
     ! negative directions the should be taken with opposite sign
     
     !\
     ! Calculate DeltaMinusF and SumDeltaH
     !/   
-    do iR=0, nR+1; do iP = 0, nP+1; do iQ = 0, nQ+1
-       
-       SumDeltaHMinus_G(iQ, iP, iR) = min(0.0, DeltaH_FX(iQ,   iP,   iR)) +&
-                                      min(0.0, DeltaH_FY(iQ,   iP,   iR)) +&
-                                      min(0.0, DeltaH_FZ(iQ,   iP,   iR)) +&
-                                      min(0.0,-DeltaH_FX(iQ-1, iP,   iR)) +&
-                                      min(0.0,-DeltaH_FY(iQ, iP-1,   iR)) +&
-                                      min(0.0,-DeltaH_FZ(iQ,   iP, iR-1))
-       DeltaMinusF_G(iQ, iP, iR) = -(&
-           min(0.0, DeltaH_FX(iQ,   iP,   iR))*VDF_G(iQ+1,iP,iR) +&
-           min(0.0, DeltaH_FY(iQ,   iP,   iR))*VDF_G(iQ,iP+1,iR) +&
-           min(0.0, DeltaH_FZ(iQ,   iP,   iR))*VDF_G(iQ,iP,iR+1) +&
-           min(0.0,-DeltaH_FX(iQ-1, iP, iR))*VDF_G(iQ-1,iP,iR) +&
-           min(0.0,-DeltaH_FY(iQ, iP-1, iR))*VDF_G(iQ,iP-1,iR) +&
-           min(0.0,-DeltaH_FZ(iQ, iP, iR-1))*VDF_G(iQ,iP,iR-1)  &
-           )/SumDeltaHMinus_G(iQ,iP,iR) + VDF_G(iQ,iP,iR)
-       
-       CFLCoef_G(iQ, iP, iR) = - vInv_G(iQ, iP, iR)*SumDeltaHMinus_G(iQ,iP,iR)
+    do k=iKStart, iKLast; do j = 0, nJ+1; do i = 0, nI+1
+       SumDeltaHPlus_G(i,j,k) = max(0.0, DeltaH_FX(i,  j,  k)) +&
+                                max(0.0, DeltaH_FY(i,  j,  k)) +&
+                                max(0.0,-DeltaH_FX(i-1,j,  k)) +&
+                                max(0.0,-DeltaH_FY(i,j-1,  k))
+
+       if(UseTimeDependentVolume)SumDeltaHMinus_G(i,j,k) =      &
+                                min(0.0, DeltaH_FX(i,  j,  k)) +&
+                                min(0.0, DeltaH_FY(i,  j,  k)) +&
+                                min(0.0,-DeltaH_FX(i-1,j,  k)) +&
+                                min(0.0,-DeltaH_FY(i,j-1,  k))
+
+       DeltaMinusF_G(i, j, k) = &
+               min(0.0, DeltaH_FX(i,   j,   k))*VDF_G(i+1,j,k) +&
+               min(0.0, DeltaH_FY(i,   j,   k))*VDF_G(i,j+1,k) +&
+               min(0.0,-DeltaH_FX(i-1, j,   k))*VDF_G(i-1,j,k) +&
+               min(0.0,-DeltaH_FY(i, j-1,   k))*VDF_G(i,j-1,k)
+       if(nK>1)then
+          !Add three-dimensional effects.
+          SumDeltaHPlus_G(i,j,k) = SumDeltaHPlus_G(i,j,k)      +&
+                                    max(0.0, DeltaH_FZ(i,j,k)) +&
+                                    max(0.0,-DeltaH_FZ(i,j,k-1))
+
+          if(UseTimeDependentVolume)SumDeltaHMinus_G(i,j,k) =   &
+                                    SumDeltaHMinus_G(i,j,k)    +&
+                                    min(0.0, DeltaH_FZ(i,j,k)) +&
+                                    min(0.0,-DeltaH_FZ(i,j,k-1))
+
+          DeltaMinusF_G(i, j, k) = DeltaMinusF_G(i, j, k)      +&
+               min(0.0, DeltaH_FZ(i,   j,   k))*VDF_G(i,j,k+1) +&
+               min(0.0,-DeltaH_FZ(i,   j, k-1))*VDF_G(i,j,k-1)
+       end if
+       if(UseTimeDependentVolume)then
+          !\
+          ! Local CFL and \delta^-f are expressed via SumDeltaHMinus
+          !/
+          DeltaMinusF_G(i,j,k) = DeltaMinusF_G(i,j,k)           &
+               /max(-SumDeltaHMinus_G(i,j,k), 1.0e-31) + VDF_G(i,j,k)
+          CFLCoef_G(i,j,k) = -SumDeltaHMinus_G(i,j,k)
+       else
+          DeltaMinusF_G(i,j,k) = DeltaMinusF_G(i,j,k)           &
+               /max(  SumDeltaHPlus_G(i,j,k), 1.0e-31) + VDF_G(i,j,k)
+          CFLCoef_G(i,j,k) = vInv_G(i,j,k)*SumDeltaHPlus_G(i,j,k)
+       end if
     end do; end do; end do
-    
     !\
-    ! Set Dt and construct array Dt*SumDeltaH/Volume_C
+    ! Set CFL and time step
     !/
-    if(present(DtIn))then
-       CFLCoef_G = Dt*CFLCoef_G
-       CFL = maxval(CFLCoef_G(1:nQ,1:nP,1:nR))
+    if(UseTimeDependentVolume)then
+       !Solve time step from equation
+       ! CFLIn = \Delta t*(-\sum\delta^-H)/(\Delta t*dV/dt + V)
+       if(.not.present(DtIn)) Dt = CFLIn/maxval(vInv_G(1:nI,1:nJ,1:nK)*&
+            (CFLCoef_G(1:nI,1:nJ,1:nK) - CFLIn*DVolumeDt_G(1:nI,1:nJ,1:nK)))
+       !Calculate the volume at upper time level
+       !V(+\Delta t):
+       vInv_G = 1.0/(Volume_G + Dt*DVolumeDt_G)
+       CFLCoef_G = Dt*vInv_G*CFLCoef_G
     else
-       CFL = CFLIn
-       Dt = CFL/maxval(CFLCoef_G(1:nQ,1:nP,1:nR))
+       if(.not.present(DtIn))&
+            Dt = CFLIn/maxval(CFLCoef_G(1:nI,1:nJ,1:nK))
        CFLCoef_G = Dt*CFLCoef_G
     end if
-    
-    !\                                                                                                                                                                                                                            
-    ! First order monotone scheme                                                                                                                                                                                                 
-    !/
-    Source_C = SumDeltaHMinus_G(1:nQ, 1:nP, 1:nR)*DeltaMinusF_G(1:nQ, 1:nP, 1:nR)
-    
-    !\                                                                                                                                                                                                                                  
-    ! Calculate Face-X fluxes.                                                                                                                                                                                                                   
-    !/                              
-    do iR=1, nR; do iP = 1, nP; do iQ = 0, nQ
-       if(DeltaH_FX(iQ, iP, iR) > 0.0)then
-          Flux_FX(iQ, iP, iR) = DeltaH_FX(iQ, iP, iR)*0.50*&
-               (1.0 - CFLCoef_G(iQ,   iP,  iR))                           *&
-               pair_superbee(DeltaMinusF_G(iQ, iP, iR), DeltaMinusF_G(iQ+1, iP, iR))
+    if(present(CFLOut))then
+       if(present(DtIn))then
+          CFLOut = maxval(CFLCoef_G(1:nI,1:nJ,1:nK))
        else
-          Flux_FX(iQ, iP, iR) = DeltaH_FX(iQ, iP, iR)*0.50*&
-               (1.0 - CFLCoef_G(iQ+1, iP,  iR))                           *&
-               pair_superbee(DeltaMinusF_G(iQ, iP, iR), DeltaMinusF_G(iQ+1, iP, iR))
+          CFLOut = CFLIn
+       end if
+    end if
+    if(present(DtOut ))DtOut  = Dt
+    !\            
+    ! First order monotone scheme
+    !/
+    Source_C = -CFLCoef_G(1:nI,1:nJ,1:nK)*DeltaMinusF_G(1:nI,1:nJ,1:nK)
+    !\
+    ! Calculate Face-X fluxes.
+    !/
+    do k=1, nK; do j = 1, nJ; do i = 0, nI
+       if(DeltaH_FX(i,j,k) > 0.0)then
+          Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*               &
+               (1.0 - CFLCoef_G(i,j,k))*pair_superbee(     &
+               DeltaMinusF_G(i,j,k), DeltaMinusF_G(i+1,j,k))
+       else
+          Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*               &
+               (1.0 - CFLCoef_G(i+1,j,k))*pair_superbee(   &
+               DeltaMinusF_G(i,j,k), DeltaMinusF_G(i+1,j,k))
        end if
     end do; end do; end do
     
     !\
     ! Calculate Face-Y fluxes.
     !/
-    do iR=1, nR; do iP = 0, nP; do iQ = 1, nQ
-       if(DeltaH_FY(iQ, iP, iR) > 0.0)then
-          Flux_FY(iQ, iP, iR) = DeltaH_FY(iQ, iP, iR)*0.50*&
-               (1.0 - CFLCoef_G(iQ,   iP,  iR))                           *&
-               pair_superbee(DeltaMinusF_G(iQ, iP, iR), DeltaMinusF_G(iQ, iP+1, iR))
+    do k=1, nK; do j = 0, nJ; do i = 1, nI
+       if(DeltaH_FY(i,j,k) > 0.0)then
+            Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*             &
+               (1.0 - CFLCoef_G(i,j,k))*pair_superbee(     &
+               DeltaMinusF_G(i,j,k), DeltaMinusF_G(i,j+1,k))
        else
-          Flux_FY(iQ, iP, iR) = DeltaH_FY(iQ, iP, iR)*0.50*&
-               (1.0 - CFLCoef_G(iQ, iP+1,  iR))                           *&
-               pair_superbee(DeltaMinusF_G(iQ, iP, iR), DeltaMinusF_G(iQ, iP+1, iR))
+          Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*               &
+               (1.0 - CFLCoef_G(i,j+1,k))*pair_superbee(   &
+               DeltaMinusF_G(i,j,k), DeltaMinusF_G(i,j+1,k))
        end if
     end do; end do; end do
-    
+    if(nK==1)then
+       !\
+       ! Two-dimensional formulation
+       !/
+       Source_C(1:nI,1:nJ,1) = Source_C(1:nI,1:nJ,1) + (&
+            Flux_FX(0:nI-1, 1:nJ  , 1) - Flux_FX(1:nI, 1:nJ, 1)  + &
+            Flux_FY(1:nI  , 0:nJ-1, 1) - Flux_FY(1:nI, 1:nJ, 1)) * &
+            Dt*vInv_G(1:nI,1:nJ,1)
+       RETURN
+    end if
     !\
     ! Calculate Face-Z fluxes.
     !/
-    do iR=0, nR; do iP = 1, nP; do iQ = 1, nQ
-       if(DeltaH_FZ(iQ, iP, iR) > 0.0)then
-          Flux_FZ(iQ, iP, iR) = DeltaH_FZ(iQ, iP, iR)*0.50*&
-               (1.0 - CFLCoef_G(iQ,   iP,  iR))                           *&
-               pair_superbee(DeltaMinusF_G(iQ, iP, iR), DeltaMinusF_G(iQ, iP, iR+1))
+    do k=0, nK; do j = 1, nJ; do i = 1, nI
+       if(DeltaH_FZ(i,j,k) > 0.0)then
+          Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*               &
+               (1.0 - CFLCoef_G(i,j,k))*pair_superbee(     &
+               DeltaMinusF_G(i,j,k), DeltaMinusF_G(i,j,k+1))
        else
-          Flux_FZ(iQ, iP, iR) = DeltaH_FZ(iQ, iP, iR)*0.50*&
-               (1.0 - CFLCoef_G(iQ, iP,  iR+1))                           *&
-               pair_superbee(DeltaMinusF_G(iQ, iP, iR), DeltaMinusF_G(iQ, iP, iR+1))
+          Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*               &
+               (1.0 - CFLCoef_G(i,j,k+1))*pair_superbee(   &
+               DeltaMinusF_G(i,j,k), DeltaMinusF_G(i,j,k+1))
        end if
     end do; end do; end do
-    
-    !\
-    ! Finalize
-    !/
-    Source_C = ( Source_C + Flux_FX(0:nQ-1, 1:nP, 1:nR) - Flux_FX(1:nQ, 1:nP, 1:nR) +  &
-         Flux_FY(1:nQ, 0:nP-1, 1:nR) - Flux_FY(1:nQ, 1:nP, 1:nR) +  Flux_FZ(1:nQ, 1:nP, 0:nR-1) - Flux_FZ(1:nQ, 1:nP, 1:nR) )*Dt
-    
-    if(present(CFLOut))CFLOut = CFL
-    if(present(DtOut ))DtOut  = Dt
+    Source_C = Source_C + (&
+         Flux_FX(0:nI-1, 1:nJ, 1:nK) - Flux_FX(1:nI, 1:nJ, 1:nK) + &
+         Flux_FY(1:nI, 0:nJ-1, 1:nK) - Flux_FY(1:nI, 1:nJ, 1:nK) + &
+         Flux_FZ(1:nI, 1:nJ, 0:nK-1) - Flux_FZ(1:nI, 1:nJ, 1:nK))* &
+         Dt*vInv_G(1:nI,1:nJ,1:nK)
   end subroutine explicit3
-  
+  !=======================
 end module ModPoissonBracket

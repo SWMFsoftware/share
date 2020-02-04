@@ -753,7 +753,7 @@ OBJ_POISSON = \
 	../src/ModPoissonBracket.o
 
 test_poisson_exe:
-	@(cd ../src; make ModPoissonBracket.o)
+	@(cd ../src; make LIB; make ModPoissonBracket.o)
 	@make test_poisson_bracket.o
 	${LINK.f90} -o test_poisson.exe ${OBJ_POISSON} ${Lflag2}
 
@@ -763,11 +763,11 @@ test_poisson_bracket:
 	@make test_poisson_exe			>> test_poisson.diff
 	@echo './test_poisson.exe'		>> test_poisson.diff
 	-@(./test_poisson.exe >  test_poisson.diff)
-	-@(tar -xf test_poisson.ref.tar)
-	-@(${SCRIPTDIR}/DiffNum.pl -b -a=1e-6 \
+	-@(tar -xzf test_poisson.ref.tgz)
+	-@(${SCRIPTDIR}/DiffNum.pl -b -a=1e-7 \
 		test_poisson.out test_poisson.ref.out \
 						> test_poisson.diff)
-	-@(${SCRIPTDIR}/DiffNum.pl -b -a=1e-6 \
+	-@(${SCRIPTDIR}/DiffNum.pl -b -a=1e-7 \
 		test_multipoisson_002.out test_multipoisson.ref.out \
                                                 >> test_poisson.diff)
 	@ls -l test_poisson.diff

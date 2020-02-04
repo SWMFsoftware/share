@@ -18,7 +18,7 @@ CPPLIB =
 
 FLAGC = ${SEARCH_C} ${FLAGC_EXTRA} -c ${OPT3} ${DEBUGC}
 
-FLAGCC = ${FLAGC} -hstd=c++11
+FLAGCC = ${FLAGC} -hstd=c++14
 
 .c.o:
 	${COMPILE.c} ${FLAGC} $< -o $@

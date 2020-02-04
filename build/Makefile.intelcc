@@ -18,7 +18,7 @@ CPPLIB = -lstdc++
 
 FLAGC = ${SEARCH_C} ${FLAGC_EXTRA} -c ${OPT3} ${OPENMPFLAG} ${DEBUGC}
 
-FLAGCC = ${FLAGC} -std=c++11
+FLAGCC = ${FLAGC} -std=c++14
 
 .c.o:
 	${COMPILE.c} ${FLAGC} $< -o $@

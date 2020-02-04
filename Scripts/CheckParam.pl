@@ -1,5 +1,6 @@
 #!/usr/bin/perl -s
-#  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+#  Copyright (C) 2002 Regents of the University of Michigan, 
+#  portions used with permission 
 #  For more information, see http://csem.engin.umich.edu/tools/swmf
 
 # Read a parameter file and verify its correctness based on an XML description.
@@ -337,10 +338,9 @@ sub read_line{
 		use strict;
 		$nLine++; 
 		chop $paramValue;
-		$paramValue =~ s/^ +//;   # Remove leading spaces
-		$paramValue =~ s/   .*//; # Remove everything after 3 spaces
-		$paramValue =~ s/\t.*//;  # Remove everything after a TAB
-		$paramValue =~ s/\s+$//;  # Remove trailing spaces
+		$paramValue =~ s/^ +//;        # Remove leading spaces
+		$paramValue =~ s/(   |\t).*//; # Remove after TAB or 3 spaces
+		$paramValue =~ s/\s+$//;       # Remove trailing spaces
 
 		print "read script parameter = $paramValue\n" if $Debug;
 	    }else{
@@ -616,10 +616,10 @@ sub read_parameter{
     $paramValue = &read_line or return 0;
     chop $paramValue;
 
-    $paramValue =~ s/^\s+//;  # Remove leading spaces
-    $paramValue =~ s/   .*//; # Remove everything after 3 spaces
-    $paramValue =~ s/\t.*//;  # Remove everything after a TAB
-    $paramValue =~ s/\s+$//;  # Remove trailing spaces
+    $paramValue =~ s/^\s+//;     # Remove leading spaces
+    $paramValue =~ s/\t.*// or   # Remove everything after a TAB
+	$paramValue =~ s/   .*//;# or remove everything after 3 spaces
+    $paramValue =~ s/\s+$//;     # Remove trailing spaces
 
     $paramValue = uc($paramValue) if $case eq "upper";
     $paramValue = lc($paramValue) if $case eq "lower";

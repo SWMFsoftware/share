@@ -17,11 +17,12 @@ my $AllParam      = ($param or $allparam);
 my $Pattern       = $p;
 my $Format        = ($f or $format); $Format = "-f=$Format" if $Format;
 my $NoPtec        = $noptec;
+my $JuliaTec      = ($vtu or $vtk or $vtu or $VTU);
 
 use strict;
 use File::Find;
 
-my $rsync = 'rsync -avz';
+my $rsync = 'rsync -avzt';
 my $exclude = " --exclude '*.idl' --exclude '*.tec' --exclude '*.dat'".
     " --exclude '*.[hHTS]'";
 
@@ -132,7 +133,11 @@ REPEAT:{
 		if($Gzip){
 		    &shell("./pTEC A g");
 		}else{
-		    &shell("./pTEC A p r");
+		    if($JuliaTec){
+			&shell("export JULIA_NUM_THREADS=$nThread; julia convert2VTK.jl");
+		    }else{
+			&shell("./pTEC A p r");
+		    }
 		}
 	    }
             &concat_sat_log if $Concat;
@@ -245,7 +250,7 @@ if(-f "runlog"){
 &shell_info("./Restart.pl -o $NameOutput/RESTART");
 
 if($Rsync){
-    &shell_info("rsync -avz $NameOutput/ $Rsync");
+    &shell_info("rsync -avzt $NameOutput/ $Rsync");
     print "$INFO: rsync is complete\n";
 }
 
@@ -381,7 +386,8 @@ Usage:
 
    PostProc.pl [-h] [-v] [-c] [-g] [-m | -M] [-noptec]
                [-r=REPEAT [-s=STOP] | DIR] [-n=NTHREAD] [-p=PATTERN] [-param|-allparam]
-
+               [-vtu]
+ 
    -h -help    Print help message and exit.
 
    -v -verbose Print verbose information.
@@ -409,6 +415,9 @@ Usage:
                is run in the background with repeat flag. Default is 2 days.
 
    -p=PATTERN  Pass pattern to pIDL so it only processes the files that match.
+
+   -vtu -vtk   Concatenate unstructured 3D outputs to *.dat and convert to VTK format 
+               (.vtu) using Julia.
 
    -param      Copy and/or rsync PARAM.* and LAYOUT.* files.
    -allparam   Same as -param.
@@ -449,6 +458,10 @@ PostProc.pl -M -cat -n=8 RESULTS/run23
    and PARAM.* and LAYOUT.* files to another machine and print verbose info:
 
 PostProc.pl -g -param -rsync=ME@OTHERMACHINE:My/Results -v
+
+   Post-process the .tec files, convert to unstructured VTK format:
+
+PostProc.pl -vtk
 
    Repeat post-processing every 360 seconds for files matching "IO2/x=",
    pipe standard output and error into a log file and stop after 3 days:

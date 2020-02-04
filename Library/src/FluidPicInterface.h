@@ -351,8 +351,10 @@ public:
 
   void Moment2Velocity();
 
-  void ReadFromGMinit(int *paramint, double *ParamRealRegion,
-                      double *ParamRealComm, std::stringstream *ss);
+  void ReadFromGMinit(const int *const paramint,
+                      const double *const ParamRealRegion,
+                      const double *const ParamRealComm,
+                      const std::stringstream * const ss);
 
   void fixPARAM(double *&qom, int *&npcelx, int *&npcely, int *&npcelz,
                 int *ns);

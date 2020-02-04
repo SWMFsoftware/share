@@ -464,11 +464,14 @@ contains
     integer, intent(in) :: iTable
 
     type(TableType), pointer:: Ptr
-    integer :: nVar
+    integer :: nVar, iIndex, n
 
     ! since number of parameters is not known in advance, this array is needed
     real, allocatable:: TableParam_I(:)
     integer, allocatable:: nIndex_I(:)
+
+    ! Indexes in an array to check uniformity
+    real, allocatable:: Index_II(:,:)
 
     character(len=*), parameter:: NameSub = 'load_lookup_table'
     !------------------------------------------------------------------------
@@ -505,18 +508,37 @@ contains
 
     if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
     allocate(Ptr%Value_VC(Ptr%nValue,nIndex_I(1),nIndex_I(2),nIndex_I(3),&
-         nIndex_I(4),nIndex_I(5)))
-
-    deallocate(TableParam_I, nIndex_I)
+         nIndex_I(4),nIndex_I(5)),     &
+         Index_II(maxval(nIndex_I),5)  )
 
     call read_plot_file( Ptr%NameFile,    &
          TypeFileIn    = Ptr%TypeFile,    &
          CoordMinOut_D = Ptr%IndexMin_I,  &
          CoordMaxOut_D = Ptr%IndexMax_I,  &
-         VarOut_VI5    = Ptr%Value_VC)
+         VarOut_VI5    = Ptr%Value_VC,    &
+         Coord1Out_I   = Index_II(:,1),   &
+         Coord2Out_I   = Index_II(:,2),   &
+         Coord3Out_I   = Index_II(:,3),   &
+         Coord4Out_I   = Index_II(:,4),   &
+         Coord5Out_I   = Index_II(:,5)    )
 
-    ! Calculate increments
+    ! Calculate increments assuming uniform grid
     Ptr%dIndex_I = (Ptr%IndexMax_I - Ptr%IndexMin_I)/(Ptr%nIndex_I - 1)
+
+    ! Check monotonicity and uniformity of index arrays
+    do iIndex = 1, Ptr%nIndex
+       n = nIndex_I(iIndex)
+       if(n < 3) CYCLE
+       if(any(Index_II(2:n,iIndex) < Index_II(1:n-1,iIndex))) &
+            call CON_stop(NameSub// &
+            ' ERROR: decreasing index in '//trim(Ptr%NameFile)//':', iIndex)
+       if (maxval(Index_II(2:n,iIndex) - Index_II(1:n-1,iIndex)) &
+            > 1.3*Ptr%dIndex_I(iIndex)) &
+            call CON_stop(NameSub// &
+            ' ERROR: non-uniform index in '//trim(Ptr%NameFile)//':', iIndex)
+    end do
+
+    deallocate(TableParam_I, nIndex_I, Index_II)
 
   end subroutine load_lookup_table
 
@@ -541,7 +563,7 @@ contains
     integer:: iProc, nProc, iError
     integer:: i1, n1, nValue
     logical:: IsLog1
-    real   :: Index1Min, Index2Min, dIndex1, Index1
+    real   :: Index1Min, dIndex1, Index1
     real, allocatable:: Value_VC(:,:)
     type(TableType), pointer:: Ptr
 

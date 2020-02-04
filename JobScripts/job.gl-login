@@ -53,17 +53,20 @@
 
 ## Configuration
 # Number of nodes
-#SBATCH --nodes=16
+# min-max (helps with start times)
+#SBATCH --nodes=16-32
 
 # Number of processes per node
-#SBATCH --ntasks-per-node=36
+# Do not change unless you want multiple instances
+# of SWMF
+#SBATCH --ntasks-per-node=1
 
 # Number of cores or threads per node
 # (might be needed for OpenMP)
-# #SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=36
 
 # Memory per cpu
-#SBATCH --mem-per-cpu=2g
+#SBATCH --mem-per-cpu=1g
 
 # Wall time HH:MM:SS (max 2 weeks)
 #SBATCH --time=02:00:00
@@ -93,10 +96,10 @@
 # (For the SWMF the LAYOUT.in may be able to achieve something similar)
 # #SBATCH --export=MPI_DSM_DISTRIBUTE=0
 # #SBATCH --export=KMP_AFFINITY=disabled
-# #SBATCH --export=OMP_NUM_THREADS=8
+# #SBATCH --export=OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
 ## Run
-printf "START TIME: `date %Y%m%d`\n"
+printf "START TIME: `date +%Y%m%d`\n"
 # Run SWMF (the number of processors is already specified above)
 srun ./SWMF.exe
 

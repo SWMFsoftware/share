@@ -15,7 +15,7 @@ void timing_start_c(size_t* nameLen, char* name);
 void timing_stop_c(size_t* nameLen, char* name);
 }
 
-inline void timing_start(string name) {
+inline void timing_start(std::string name) {
   size_t nameLen;
   nameLen = name.length();
   char* nameChar = new char[nameLen + 1];
@@ -24,7 +24,7 @@ inline void timing_start(string name) {
   delete[] nameChar;
 }
 
-inline void timing_stop(string name) {
+inline void timing_stop(std::string name) {
   size_t nameLen;
   nameLen = name.length();
   char* nameChar = new char[nameLen + 1];
