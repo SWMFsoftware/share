@@ -181,7 +181,7 @@ module CON_axes
   integer, parameter, private :: x_=1, y_=2, z_=3
 
   ! Difference between 01/01/1965 00:00:00 and 01/01/1854 12:00:00 in seconds
-  real(Real8_), parameter :: tStartCarrington   = -3.5027856D+9
+  real(Real8_), parameter :: tStartCarringtonCoord  = -3.5027856D+9
 
   real, parameter :: OmegaCarrington = cTwoPi/(25.38D0*24*3600)
 
@@ -527,7 +527,7 @@ contains
          dLongitudeHgr = modulo( &
               + dLongitudeHgi &                         ! HGI logtitude offset
               + atan2(HgiGse_DD(2,1), HgiGse_DD(1,1)) & ! HGI_lon of anti-Earth
-              - OmegaCarrington*(tStart - tStartCarrington), & ! HGI-HGR angle
+              - OmegaCarrington*(tStart - tStartCarringtonCoord), & ! HGI-HGR angle
               cTwoPi8)                                         !     at tSim=0
 
          ! Reset dLongitudeHgrDeg to be a valid but negative value
@@ -643,7 +643,7 @@ contains
        ! this matrix transforms from HGI to HGR, so a point at rest 
        ! in HGI rotates BACKWARDS in HGR
 
-       Angle = modulo(-OmegaCarrington*(TimeSim + tStart - tStartCarrington), &
+       Angle = modulo(-OmegaCarrington*(TimeSim + tStart - tStartCarringtonCoord), &
             cTwoPi8)
 
        ! Modify angle by the offsets
