@@ -151,6 +151,12 @@ module ModConst
   real, parameter:: rSun              = 0.696E+9               ! [ m]
   real, parameter:: mSun              = 1.99E+30               ! [kg]
   real, parameter:: RotationPeriodSun = 25.38 * cSecondPerDay  ! [ s]
+  ! Time difference in seconds between 0th Carrington Rotation on 
+  ! 1853-Oct-13 14:26:17(approx) and the base year 1965-Jan-01
+  ! 12:00:00
+  real(Real8_), parameter:: tStartCarringtonRotation = -3.5097064D+9 ! [s]
+  real, parameter:: CarringtonSynodicPeriod = 27.2753D0 * cSecondPerDay ! [s]
+
 
 contains
   !============================================================================
