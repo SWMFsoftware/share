@@ -7,14 +7,15 @@ and execute the Git command passed in the arguments.
 The verbose output from Git status is suppressed unless the -v switch is used.
 
 Usage:
-  gitall [-h] [-v] [-l] [-q] [-s[=N]] GITCOMMAND
+  gitall [-h] [-v] [-l] [-q] [-s[=N]] [-r] GITCOMMAND
 
 -h -help      print this help message
--l -list      list all subdirectories that the Git command would be run on
+-l -list      list all subdirectories that are repositories
 -v -verbose   provide verbose information for the status command
 -q -quiet     execute the Git command without printing the gitall annotations
 -s -sleep     sleep 5 seconds after each Git command to avoid ssh access issues
 -s=N -sleep=N sleep N seconds after each Git command (N should be more than 1)
+-r -reference print the Git references
 GITCOMMAND    any Git command
 
 Examples:
@@ -25,6 +26,9 @@ Show verbose status of all Git subdirectories:
 Pull remote version into all Git subdirectories and sleep 5 seconds after each:
     gitall -s pull
 
+Print the references for each Git repository:
+    gitall -r
+
 ";
     exit 0;
 }
@@ -34,6 +38,7 @@ my $Sleep   = ($s or $sleep);
 $Sleep = 5 if $Sleep == 1;
 my $List    = ($l or $list);
 my $Quiet   = ($q or $quiet);
+my $Reference = ($r or $reference);
 
 use strict;
 
@@ -42,7 +47,7 @@ my $gitcmd;                # The variable to receive the git command
 $gitcmd = join(' ',@ARGV);
 $gitcmd .= "; sleep $Sleep" if $Sleep;
 
-if($gitcmd){
+if($gitcmd or $Reference or $List){
     my $pwd = `pwd`; chop($pwd);
     &execute_gitall($pwd);
 }
@@ -63,7 +68,7 @@ sub execute_gitall(){
    my $subdir;
    foreach $subdir (@subdirs){
        if ($subdir eq ".git"){
-	   if(not $List){
+	   if(not ($List or $Reference)){
 	       my $result = `cd $dir; git $gitcmd`;
 	       # remove verbose info
 	       if(not $Verbose){
@@ -77,10 +82,29 @@ sub execute_gitall(){
 	       }else{
 		   print "$result" if $result;
 	       }
-	   }else{
+	   }elsif ($Reference){
+	       my @repopath = split(m"/",$dir);
+	       my $reponame = pop(@repopath);
+	       
+	       # for each repo, get the local reference
+	       # this hash references the heads on the user's system
+	       my $localref = `cd $dir; git show heads/master --no-patch --no-notes --format="%cd %h" --date=short`;
+	       chop($localref);
+	       
+	       # for each repo, get the original reference
+	       # this hash references the head in the repo that the user's
+	       # repo was cloned from
+	       my $originalref = `cd $dir; git show origin/master --no-patch --no-notes --format="%cd %h" --date=short`;
+	       chop($originalref);
+	       
+	       if (not $localref cmp $originalref){
+		   print "$reponame original $originalref\n";
+	       }else{
+		   print "$reponame local $localref\n";
+	       }
+	   }elsif ($List){
 	       print "$dir\n"
 	   }
-
        }else{
            &execute_gitall("$dir/$subdir");
        }
