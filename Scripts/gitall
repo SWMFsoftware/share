@@ -69,7 +69,7 @@ sub execute_gitall(){
    foreach $subdir (@subdirs){
        if ($subdir eq ".git"){
 	   if(not ($List or $Reference)){
-	       my $result = `cd $dir; git $gitcmd`;
+	       my $result = `cd $dir; git $gitcmd 2>&1`;
 	       # remove verbose info
 	       if(not $Verbose){
 		   $result =~ s/On branch master//;
