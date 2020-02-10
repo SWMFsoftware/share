@@ -65,12 +65,10 @@ void print_git_info(){
 ';
 }elsif($Reference =~ /f/i){
     print "
-subroutine print_git_info
   write(*,'(100(a/))') &
        'Main dir=",$pwd,"', &
        '", join("', &
        '", @RefList),"'
-end subroutine print_git_info
 ";
 }else{
     print join("\n", @RefList),"\n";
@@ -103,15 +101,18 @@ sub execute_gitall(){
 	       
 	       # for each repo, get the local reference
 	       # this hash references the heads on the user's system
-	       my $localref = `cd $dir; git show heads/master --no-patch --no-notes --format="%cd %h" --date=short`;
-	       chop($localref);
+	       my $localref = 
+		   `cd $dir; git show master --format="%cd %h" --date=short`;
+	       $localref =~ s/\n.*//s;
 	       
 	       # for each repo, get the original reference
 	       # this hash references the head in the repo that the user's
 	       # repo was cloned from
-	       my $originalref = `cd $dir; git show origin/master --no-patch --no-notes --format="%cd %h" --date=short`;
-	       chop($originalref);
-	       # Use original ref
+	       my $originalref = 
+		   `cd $dir; git show origin --format="%cd %h" --date=short`;
+	       $originalref =~ s/\n.*//s;
+	       
+	       # Use original ref if it is the same as local ref
 	       my $ref = $localref eq $originalref ? 
 		   "original $originalref" : "local    $localref";
 	       $ref .= " " x (30-length $ref);
