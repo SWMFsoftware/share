@@ -33,11 +33,10 @@ Print the references for each Git repository:
     exit 0;
 }
 
-my $Verbose = ($v or $verbose);
-my $Sleep   = ($s or $sleep);
-$Sleep = 5 if $Sleep == 1;
-my $List    = ($l or $list);
-my $Quiet   = ($q or $quiet);
+my $Verbose   = ($v or $verbose);
+my $Sleep     = ($s or $sleep); $Sleep = 5 if $Sleep == 1;
+my $List      = ($l or $list);
+my $Quiet     = ($q or $quiet);
 my $Reference = ($r or $reference);
 
 use strict;
@@ -47,9 +46,29 @@ my $gitcmd;                # The variable to receive the git command
 $gitcmd = join(' ',@ARGV);
 $gitcmd .= "; sleep $Sleep" if $Sleep;
 
+my @RefList; 
+
 if($gitcmd or $Reference or $List){
     my $pwd = `pwd`; chop($pwd);
     &execute_gitall($pwd);
+}
+
+@RefList = sort(@RefList);
+if($Reference =~ /c/i){
+    print '#include <iostream>
+void print_git_info(){
+   std::cout << "',join('\n"'."\n".'         << "', @RefList),'\n";
+}
+';
+}elsif($Reference =~ /f/i){
+    print "
+subroutine print_git_info
+    write(*,'(100(a70/))') &\n      '", 
+    join("', &\n      '", @RefList),"'
+end subroutine print_git_info
+";
+}else{
+    print join("\n", @RefList),"\n";
 }
 
 exit 0;
@@ -98,9 +117,9 @@ sub execute_gitall(){
 	       chop($originalref);
 	       
 	       if (not $localref cmp $originalref){
-		   print "$reponame original $originalref\n";
+		   push @RefList, "$reponame original $originalref";
 	       }else{
-		   print "$reponame local $localref\n";
+		   push @RefList, "$reponame local $localref";
 	       }
 	   }elsif ($List){
 	       print "$dir\n"
