@@ -194,7 +194,14 @@ foreach (@Arguments){
     if(/^-nospice$/i)         {$NewSpice="no";                  next};
     if(/^-O[0-5]$/i)          {$NewOptimize=$_;                 next};  
     if(/^-g(rid)?$/)          {$ShowGridSize=1;                 next};
-    if(/^-g(rid)?=([\d,]+)$/) {$NewGridSize=$+;                 next};
+    if(/^-g(rid)?=([\d,\/,]+)$/) {
+	$NewGridSize=$+;
+	# Replace a/b fraction with its value
+	while($NewGridSize =~ s/(\d+)\/(\d+)/x/){
+	    my $x = int($1/$2); $NewGridSize =~ s/x/$x/;
+	}
+	next
+    };
 
     if(/^-g(rid)?=(.*)$/ and $IsComponent){
 	die "$ERROR: incorrect grid size -g=$+\n"};
