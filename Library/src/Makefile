@@ -4,8 +4,8 @@
 
 include ../../../Makefile.def
 include ../../../Makefile.conf
-include Makefile.DEPEND
-include Makefile.RULES
+-include Makefile.DEPEND
+-include Makefile.RULES
 
 # These modules provide the "infrastructure" for SWMF and components.
 # A component does not have to use the whole library.
@@ -109,4 +109,4 @@ ${BINDIR}/Convert2Vtk.exe: FormatConverter.o ${MY_LIB}
 clean: cleanfiles
 
 distclean: clean
-	rm -f Makefile.DEPEND ModHdf5Utils.f90 ModSpice.f90
+	rm -f ModHdf5Utils.f90 ModSpice.f90
