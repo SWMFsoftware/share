@@ -102,14 +102,14 @@ sub execute_gitall(){
 	       # for each repo, get the local reference
 	       # this hash references the heads on the user's system
 	       my $localref = 
-		   `cd $dir; git show master --format="%cd %h" --date=short`;
+		   `cd $dir; git show master --no-patch --format="%cd %h" --date=short`;
 	       $localref =~ s/\n.*//s;
 	       
 	       # for each repo, get the original reference
 	       # this hash references the head in the repo that the user's
 	       # repo was cloned from
 	       my $originalref = 
-		   `cd $dir; git show origin --format="%cd %h" --date=short`;
+		   `cd $dir; git show origin --no-patch --format="%cd %h" --date=short`;
 	       $originalref =~ s/\n.*//s;
 	       
 	       # Use original ref if it is the same as local ref
