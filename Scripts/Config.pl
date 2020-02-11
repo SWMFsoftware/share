@@ -83,6 +83,7 @@ our $MakefileConf     = 'Makefile.conf';
 our $MakefileConfOrig = 'share/build/Makefile';
 our $MakefileRules    = 'Makefile.RULES';
 our $MakefileDepend   = 'Makefile.DEPEND';
+our $ShowGitInfo      = 'show_git_info.h';
 
 # These options are set here and provided to the calling script
 our $Help;                  # Print help message
@@ -244,7 +245,8 @@ if($Uninstall){
 	    if -d "util" and not $IsComponent;
 	&shell_command("make allclean");
 	&shell_command("rm -f Makefile.def Makefile.conf dataCRASH ".
-		       "src*/$MakefileDepend src*/$MakefileRules");
+		       "*/*/src*/$MakefileDepend */*/src*/$MakefileRules */*/src/$ShowGitInfo ".
+		       "src*/$MakefileDepend src*/$MakefileRules src/$ShowGitInfo");
 	&shell_command("rm -f data") if -l "data";
 	exit 0;
     }
