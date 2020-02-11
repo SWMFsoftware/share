@@ -1,7 +1,6 @@
 include ../Makefile.def
 
 install:
-	touch ${SHAREDIR}/show_git_info.h
 
 clean:
 	cd Library/src; make clean
@@ -13,5 +12,5 @@ distclean: clean
 	cd Library/src; make distclean
 	cd Library/test;make distclean
 	cd Prologs;     make distclean
-	rm -f Library/src/mpif*.h *~ */*~ ${SHAREDIR}/show_git_info.h
+	rm -f Library/src/mpif*.h *~ */*~
 
