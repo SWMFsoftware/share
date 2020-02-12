@@ -22,7 +22,6 @@ module ModUtilities
 
   private ! except
 
-  public:: show_git_info
   public:: make_dir
   public:: check_dir
   public:: fix_dir_name
@@ -62,10 +61,6 @@ module ModUtilities
   end interface
 
 contains
-  !============================================================================
-  subroutine show_git_info
-    include 'show_git_info.h'
-  end subroutine show_git_info
   !============================================================================
   subroutine CON_set_do_test(String, DoTest, DoTestMe)
 
