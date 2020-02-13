@@ -1518,7 +1518,7 @@ void FluidPicInterface::CalcFluidState(const double *dataPIC_I,
             (BX * PiXX * BX + BY * PiYY * BY + BZ * PiZZ * BZ +
              2.0 * BX * PiXY * BY + 2.0 * BX * PiXZ * BZ +
              2.0 * BY * PiYZ * BZ) /
-            (BX * BX + BY * BY + BZ * BZ);
+            (BX * BX + BY * BY + BZ * BZ + 1e-10);
       }
     }
   } else {
@@ -1657,12 +1657,12 @@ void FluidPicInterface::CalcFluidState(const double *dataPIC_I,
           data_I[iPpar_I[0]] = (BX * PitXX * BX + BY * PitYY * BY +
                                 BZ * PitZZ * BZ + 2.0 * BX * PitXY * BY +
                                 2.0 * BX * PitXZ * BZ + 2.0 * BY * PitYZ * BZ) /
-                               (BX * BX + BY * BY + BZ * BZ);
+                               (BX * BX + BY * BY + BZ * BZ +1e-10);
         else
           data_I[iPpar_I[0]] = (BX * PtXX * BX + BY * PtYY * BY +
                                 BZ * PtZZ * BZ + 2.0 * BX * PtXY * BY +
                                 2.0 * BX * PtXZ * BZ + 2.0 * BY * PtYZ * BZ) /
-                               (BX * BX + BY * BY + BZ * BZ);
+                               (BX * BX + BY * BY + BZ * BZ +1e-10);
       } // useAnisoP
 
       // Isotropic Pressure.
