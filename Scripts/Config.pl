@@ -153,6 +153,8 @@ my $MpiCompiler;
 my $MpiHeaderFile = "share/Library/src/mpif.h";
 my $Optimize;
 my $ShowCompiler;
+my $GetGitInfo;
+my $gitall;
 
 # Obtain current settings
 &get_settings_;
@@ -166,6 +168,7 @@ foreach (@Arguments){
     if(/^-verbose$/i)         {$Verbose=1;                      next};
     if(/^-h(elp)?$/i)         {$Help=1;                         next};
     if(/^-show$/i)            {$Show=1;                         next};
+    if(/^-gitinfo/i)          {$GetGitInfo=1;                   next};
     if(/^-(single|double)$/i) {$NewPrecision=lc($1);            next};
     if(/^-install(=.*)?$/)    {my $value=$1;
 			       $IsComponent=1 if $value =~ /^=c/i;
@@ -216,17 +219,17 @@ if(not $MakefileDefOrig and not $IsComponent){
     $IsComponent = 1;
 }
 
-if($Date){
-    my $command = "\'checkout \`git rev-list -1 --before=\"$Date\" master\`\'";
-    foreach my $dir (".", "../.."){
-	my $gitall = "$dir/share/Scripts/gitall";
-	if(-e $gitall){
-	    $command = "$gitall $command";
-	    last;
-	}
+# Find the gitall script
+foreach my $dir ($DIR, "$DIR/../.."){
+    if(-e "$dir/share/Scripts/gitall"){
+	$gitall = "$dir/share/Scripts/gitall";
+	last;
     }
-    die "$ERROR: could not find share/Scripts/gitall\n" 
-	unless $command =~ /gitall/;
+}
+
+if($Date){
+    die "$ERROR: could not find share/Scripts/gitall\n" unless $gitall;
+    my $command = "$gitall \'checkout \`git rev-list -1 --before=\"$Date\" master\`\'";
     print "setting checkout date=$Date\n";
     &shell_command($command);
     exit 0;
@@ -350,6 +353,11 @@ if($Compiler eq "nagfor" and $Debug eq "yes" and
 
 # Recreate Makefile.RULES with the current settings
 &create_makefile_rules;
+
+# (re)create gitinfo.txt file in the main directory
+if($GetGitInfo or ($Install and not $IsComponent)){
+    shell_command("share/Scripts/gitall -r > gitinfo.txt; ls -l \`pwd\`/gitinfo.txt")
+}
 
 # Return into the component directory
 chdir $DIR if $IsComponent;
@@ -1170,7 +1178,7 @@ of the SWMF/component script (starting with the text 'Additional ...').
 This script edits the appropriate Makefile-s, copies files and executes 
 shell commands. The script can also show the current settings.
 
-Usage: Config.pl [-help] [-verbose] [-dryrun] [-show] [-compiler] 
+Usage: Config.pl [-help] [-verbose] [-dryrun] [-gitinfo] [-show] [-compiler] 
                  [-install[=s|=c] [-compiler=FC[,CC] [-nompi]]
                  [-uninstall]
                  [-single|-double] [-debug|-nodebug] [-mpi|-nompi]
@@ -1184,6 +1192,7 @@ Information:
 
 -h  -help       show help message.
 -dryrun         dry run (do not modify anything, just show actions).
+-gitinfo        update the gitinfo.txt file in the main directory.
 -show           show current settings.
 -verbose        show verbose information.
 
@@ -1196,7 +1205,7 @@ Information:
 -install=s      (re)install code as a stand-alone (s) code
 -install        install code as a stand-alone if it is not yet installed,
                 or reinstall the same way as it was installed originally:
-                (re)creates Makefile.conf, Makefile.def, make install
+                (re)creates Makefile.conf, Makefile.def, gitinfo.txt; make install
 
 -compiler       show available compiler choices for this operating system (OS)
 -compiler=FC    create Makefile.conf from a non-default F90 compiler FC
@@ -1239,9 +1248,9 @@ Show current settings:
 
     Config.pl
 
-Show current settings with more detail: 
+Show current settings with more detail and update gitinfo.txt: 
 
-    Config.pl -show
+    Config.pl -show -gitinfo
 
 Set checkout date (note this will overwrite the Config.pl script itself)
 Can be used after or together with -install or possibly -clone:
