@@ -140,6 +140,7 @@ module ModReadParam
   use ModMpi
   use ModIoUnit, ONLY: io_unit_new, StdIn_, StdOut_
   use ModUtilities, ONLY: CON_stop
+  use ModTimeConvert,   ONLY: time_int_to_real
 
   implicit none
 
@@ -698,49 +699,100 @@ contains
 
   !===========================================================================
 
-  subroutine read_real(RealVar,iError)
+  subroutine read_real(RealVar,iError,StartTimeIn)
     ! Read a real variable
     ! Arguments
     real, intent(out)             :: RealVar
     integer, optional, intent(out):: iError
+    real, optional, intent(in)    :: StartTimeIn
     !-------------------------------------------------------------------------
-    call read_var_r(' ', RealVar, iError)
+    call read_var_r(' ', RealVar, iError, StartTimeIn)
   end subroutine read_real
 
   !===========================================================================
 
-  subroutine read_var_r(Name, RealVar, iError)
+  subroutine read_var_r(Name, RealVar, iError, StartTimeIn)
 
     ! Read a real variable described by Name
-    
+
     ! Arguments
     character (len=*), intent(in)   :: Name
     real, intent(out)               :: RealVar
+    real, optional, intent(in)      :: StartTimeIn
     integer, optional, intent(out)  :: iError
 
     ! Local variable
     real :: Numerator, Denominator, RealTmp
+    integer :: iTime_I(7)
     integer :: i, iReadError
+    character(len=50) :: NameEcho
     !-------------------------------------------------------------------------
     call read_line_param('real', Name, iError)
 
-    ! Check for fraction
-    i = index(StringParam,'/')
-    if(i<1)then
-       ! Simple real number
-       read(StringParam,*,iostat=iReadError) RealTmp
-       if(iReadError/=0)      call read_error('real',Name,iError)
-    else
+    NameEcho = trim(Name)
+
+    if (index(StringParam,'/') > 0) then
        ! Fraction: Numerator/Denominator
+       i = index(StringParam,'/')
        read(StringParam(1:i-1),*,iostat=iReadError) Numerator
        if(iReadError/=0)      call read_error('numerator',Name,iError)
        read(StringParam(i+1:lStringLine),*,iostat=iReadError) Denominator
        if(iReadError/=0)      call read_error('denominator',Name,iError)
        if(Denominator == 0.0) call read_error('zero denominator',Name,iError)
        RealTmp = Numerator / Denominator
+    else if (index(StringParam,'UT') > 0) then
+       ! UT string form
+       if(.not.present(StartTimeIn)) then
+          call read_error('need start time in the UT time string', Name,iError)
+       end if
+       read(StringParam, '(i4,1x,5(i2,1x),i3)', iostat=iReadError) iTime_I
+       if(iReadError/=0)      call read_error('UT time string',Name,iError)
+       call time_int_to_real(iTime_I, RealTmp)
+       RealTmp = RealTmp - StartTimeIn
+       Write(NameEcho, '(a,1x,es15.8)' ) Name, RealTmp
+    else if (index(StringParam, 'w') > 0) then
+       ! in how many weeks
+       i = index(StringParam,'w')
+       read(StringParam(1:i-1), *, iostat=iReadError) RealTmp
+       if(iReadError/=0)      call read_error('week',Name,iError)
+       RealTmp = RealTmp*3600*24*7
+       Write(NameEcho, '(a,1x,es15.8)' ) Name, RealTmp
+    else if (index(StringParam, 'd') > 0) then
+       ! in how many days
+       i = index(StringParam,'d')
+       read(StringParam(1:i-1), *, iostat=iReadError) RealTmp
+       if(iReadError/=0)      call read_error('day',Name,iError)
+       RealTmp = RealTmp*3600*24
+       Write(NameEcho, '(a,1x,es15.8)' ) Name, RealTmp
+    else if (index(StringParam, 'h') > 0) then
+       ! in how many hours       
+       i = index(StringParam,'h')
+       read(StringParam(1:i-1), *, iostat=iReadError) RealTmp
+       if(iReadError/=0)      call read_error('hour',Name,iError)
+       RealTmp = RealTmp*3600
+       Write(NameEcho, '(a,1x,es15.8)' ) Name, RealTmp
+    else if (index(StringParam, 'm') > 0) then
+       ! in how many minutes
+       i = index(StringParam,'m')
+       read(StringParam(1:i-1), *, iostat=iReadError) RealTmp
+       if(iReadError/=0)      call read_error('minute',Name,iError)
+       RealTmp = RealTmp*60
+       Write(NameEcho, '(a,1x,es15.8)' ) Name, RealTmp
+    else if (index(StringParam, 's') > 0) then
+       ! in how many seconds       
+       i = index(StringParam,'s')
+       read(StringParam(1:i-1), *, iostat=iReadError) RealTmp
+       if(iReadError/=0)      call read_error('second',Name,iError)
+       RealTmp = RealTmp
+       Write(NameEcho, '(a,1x,es15.8)' ) Name, RealTmp
+    else
+       ! Simple real number
+       read(StringParam,*,iostat=iReadError) RealTmp
+       if(iReadError/=0)      call read_error('real',Name,iError)
     end if
-    if(DoEcho)call read_echo(Name)
+
     RealVar=RealTmp
+    if(DoEcho)call read_echo(NameEcho)
 
   end subroutine read_var_r
 
