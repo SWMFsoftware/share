@@ -741,7 +741,7 @@ contains
        read(StringParam(i+1:lStringLine),*,iostat=iReadError) Real2
        if(iReadError/=0)      call read_error('denominator',Name,iError)
        if(Real2 == 0.0) call read_error('zero denominator',Name,iError)
-       RealTmp = Rea1/Real2
+       RealTmp = Real1/Real2
     elseif (index(StringParam,'*') > 0) then
        ! Multiplication: Real1*Real2
        i = index(StringParam,'*')
