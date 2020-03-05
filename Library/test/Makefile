@@ -388,6 +388,7 @@ OBJ_INITIAL_STATE = \
 	../src/ModIoUnit.o \
 	../src/ModUtility.o \
 	../src/ModUtility_c.o \
+	../src/ModTimeConvert.o \
 	../src/ModReadParam.o \
 	../src/ModHdf5Utils.o \
 	../src/ModPlotFile.o \
@@ -512,6 +513,7 @@ OBJ_AXES = \
 	../src/ModMpi.o \
 	../src/ModMpiInterfaces.o \
 	../src/ModCoordTransform.o \
+	../src/ModTimeConvert.o \
 	../src/ModReadParam.o \
 	../src/ModTimeConvert.o \
 	../src/ModIoUnit.o \
@@ -549,6 +551,7 @@ OBJ_PLANET_FIELD = \
 	../src/ModCoordTransform.o \
 	../src/ModNumConst.o \
 	../src/ModConst.o \
+	../src/ModTimeConvert.o \
 	../src/ModReadParam.o \
 	../src/ModTimeConvert.o \
 	../src/ModIoUnit.o \
@@ -603,6 +606,7 @@ OBJ_LOOKUP_TABLE = \
 	../src/ModNumConst.o \
 	../src/ModMpi.o \
 	../src/ModMpiInterfaces.o \
+	../src/ModTimeConvert.o \
 	../src/ModReadParam.o \
 	../src/ModInterpolate.o \
 	../src/ModIoUnit.o \
