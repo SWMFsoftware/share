@@ -515,7 +515,6 @@ OBJ_AXES = \
 	../src/ModCoordTransform.o \
 	../src/ModTimeConvert.o \
 	../src/ModReadParam.o \
-	../src/ModTimeConvert.o \
 	../src/ModIoUnit.o \
 	../src/ModUtility.o \
 	../src/ModUtility_c.o \
@@ -553,7 +552,6 @@ OBJ_PLANET_FIELD = \
 	../src/ModConst.o \
 	../src/ModTimeConvert.o \
 	../src/ModReadParam.o \
-	../src/ModTimeConvert.o \
 	../src/ModIoUnit.o \
 	../src/ModUtility.o \
 	../src/ModUtility_c.o
