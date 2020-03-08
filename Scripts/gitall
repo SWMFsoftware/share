@@ -7,7 +7,7 @@ and execute the Git command passed in the arguments.
 The verbose output from Git status is suppressed unless the -v switch is used.
 
 Usage:
-  gitall [-h] [-v] [-l] [-q] [-s[=N]] [-r] GITCOMMAND
+  gitall [-h] [-v] [-l] [-q] [-s[=N]] [-r[=c|=f]] GITCOMMAND
 
 -h -help      print this help message
 -l -list      list all subdirectories that are repositories
@@ -15,8 +15,10 @@ Usage:
 -q -quiet     execute the Git command without printing the gitall annotations
 -s -sleep     sleep 5 seconds after each Git command to avoid ssh access issues
 -s=N -sleep=N sleep N seconds after each Git command (N should be more than 1)
--r -reference print the Git references
-GITCOMMAND    any Git command
+-r -reference print Git references 
+-r=c          print Git references as a C header with a print statement
+-r=f          print Git references as a Fortran write statement
+GITCOMMAND    any Git command (cannot be combined with 
 
 Examples:
 
@@ -28,6 +30,9 @@ Pull remote version into all Git subdirectories and sleep 5 seconds after each:
 
 Print the references for each Git repository:
     gitall -r
+
+Create a C header file to be compiled into the executable
+    gitall -r=c > src/gitinfo.h
 
 ";
     exit 0;
