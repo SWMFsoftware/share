@@ -118,13 +118,12 @@ protected:
 
   bool doCoupleAMPS;
 
+  int nCellPerPatch; 
+  
   int nDim; // number of dimentions
 
   // Min and Max of the physical domain in normalized PIC units.
   double phyMin_D[3], phyMax_D[3];
-
-  // In normalized PIC units, but in MHD coordinates.
-  double gstMin_D[3], gstMax_D[3];
 
   // The length of the computational domain in normalized PIC units, including
   // the ghost cell layers.
@@ -402,6 +401,8 @@ public:
   void set_nProcs(int i) { nProcs = i; }
   int get_nProcs() const { return nProcs; }
 
+  int get_nCellPerPatch()const{return nCellPerPatch;}
+  
   /** get start index in for the total domain */
   int getGlobalStartIndex(int dir) { return (StartIdx_D[dir]); }
 

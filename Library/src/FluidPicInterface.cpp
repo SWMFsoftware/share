@@ -211,15 +211,12 @@ void FluidPicInterface::ReNormLength() {
   for (int i = 0; i < 3; i++) {
     dx_D[i] *= Si2NoL;
     lenGst_D[i] *= Si2NoL;
-    gstMin_D[i] *= Si2NoL;
-    gstMax_D[i] *= Si2NoL;
+    phyMin_D[i] *= Si2NoL;
+    phyMax_D[i] *= Si2NoL;
     if(i>=nDim){
       // If MHD is 2D.
       phyMin_D[i] = 0;
       phyMax_D[i] = dx_D[i];
-    }else{
-      phyMin_D[i] = gstMin_D[i] + dx_D[i];
-      phyMax_D[i] = gstMax_D[i] - dx_D[i];
     }
   }
 }
@@ -364,6 +361,8 @@ void FluidPicInterface::ReadFromGMinit(const int *const paramint,
   iEy = iEx + 1;
   iEz = iEy + 1;
 
+  nCellPerPatch = paramint[8];
+
   useElectronFluid = iEx > 1;
 
   if (useElectronFluid) {
@@ -421,7 +420,7 @@ void FluidPicInterface::ReadFromGMinit(const int *const paramint,
   iPpar_I = new int[nS];
   iP_I = new int[nS];
 
-  int n = 8;
+  int n = 9;
   if (useMultiSpecies) {
     // MultiSpecies. Densities of each species are known. Total velocity
     // and total pressure are known.
@@ -495,10 +494,13 @@ void FluidPicInterface::ReadFromGMinit(const int *const paramint,
 
   n = 0;
   for (int i = 0; i < 3; i++) {
-    gstMin_D[i] = ParamRealRegion[n++]; // Lmin
-    lenGst_D[i] = ParamRealRegion[n++];
+    phyMin_D[i] = ParamRealRegion[n++]; // Lmin
+    phyMax_D[i] = phyMin_D[i] + ParamRealRegion[n++];
     dx_D[i] = ParamRealRegion[n++]; // dx
-    gstMax_D[i] = gstMin_D[i] + lenGst_D[i];
+    lenGst_D[i] = phyMax_D[i] - phyMin_D[i];
+  }
+  for(int i = 0; i < nDim; i++){
+    lenGst_D[i] += 2*dx_D[i];
   }
 
   for (int i = 0; i < 3; i++) {
@@ -1518,7 +1520,7 @@ void FluidPicInterface::CalcFluidState(const double *dataPIC_I,
             (BX * PiXX * BX + BY * PiYY * BY + BZ * PiZZ * BZ +
              2.0 * BX * PiXY * BY + 2.0 * BX * PiXZ * BZ +
              2.0 * BY * PiYZ * BZ) /
-            (BX * BX + BY * BY + BZ * BZ + 1e-10);
+            (BX * BX + BY * BY + BZ * BZ + 1e-40);
       }
     }
   } else {
@@ -1657,12 +1659,12 @@ void FluidPicInterface::CalcFluidState(const double *dataPIC_I,
           data_I[iPpar_I[0]] = (BX * PitXX * BX + BY * PitYY * BY +
                                 BZ * PitZZ * BZ + 2.0 * BX * PitXY * BY +
                                 2.0 * BX * PitXZ * BZ + 2.0 * BY * PitYZ * BZ) /
-                               (BX * BX + BY * BY + BZ * BZ +1e-10);
+                               (BX * BX + BY * BY + BZ * BZ + 1e-40);
         else
           data_I[iPpar_I[0]] = (BX * PtXX * BX + BY * PtYY * BY +
                                 BZ * PtZZ * BZ + 2.0 * BX * PtXY * BY +
                                 2.0 * BX * PtXZ * BZ + 2.0 * BY * PtYZ * BZ) /
-                               (BX * BX + BY * BY + BZ * BZ +1e-10);
+                               (BX * BX + BY * BY + BZ * BZ + 1e-40);
       } // useAnisoP
 
       // Isotropic Pressure.
