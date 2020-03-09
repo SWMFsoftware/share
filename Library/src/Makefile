@@ -54,6 +54,8 @@ OBJECTS = \
 	ModTriangulate.o\
 	ModTriangulateSpherical.o\
 	ModUtility.o\
+	ModGridInfo.o\
+	GridInfo.o\
 	CON_axes.o\
 	CON_geopack.o\
 	CON_line_extract.o\
