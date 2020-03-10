@@ -13,7 +13,7 @@ The steps to perform in situ comparison:
    produce the figures in the output directory. The corresponding satellite
    as well as the time range will be determined by the script, so that users
    don't need to enter anything information. The default directories for
-   the simulation results and the output are '../simdata/' and '../output/', 
+   the simulation results and the output are './simdata/' and './output/', 
    respectively. Users could change them by using dir_sim and dir_plot.
 
 The steps to perform remote (light of sight) comparison:
@@ -23,8 +23,8 @@ The steps to perform remote (light of sight) comparison:
    the files with the patten 'los*dat' in the simulation results directory and
    produce the figures in the output directory. The corresponding satellite
    as well as the event time will be determined by the script. The default 
-   directories for the simulation results and the output are '../simdata/' 
-   and '../output/', respectively. Users could change them by using dir_sim 
+   directories for the simulation results and the output are './simdata/' 
+   and './output/', respectively. Users could change them by using dir_sim 
    and dir_plot. The script will also write a log file log_compare_remote.log.
    It is recommended to read the log file after running the script to see
    if everything is correct.

@@ -11,8 +11,8 @@ pro compare_EUV, TimeEvent=TimeEvent, varnames=varnames, nvars=nvars,        $
   if (not keyword_set(UseTimePlotName)) then UseTimePlotName = 0
   if (not keyword_set(TypePlotFile))    then TypePlotFile    = 'png'
 
-  if (not keyword_set(dir_obs))  then dir_obs  ='../obsdata/'
-  if (not keyword_set(dir_plot)) then dir_plot ='../output/'
+  if (not keyword_set(dir_obs))  then dir_obs  ='./obsdata/'
+  if (not keyword_set(dir_plot)) then dir_plot ='./output/'
 
   if (not keyword_set(xs_map)) then xs_map = 512
   if (not keyword_set(ys_map)) then ys_map = 512

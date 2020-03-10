@@ -739,7 +739,7 @@ pro set_FilePlotName, TimeEvent, UseTimePlotName = UseTimePlotName,   $
                       InstPlt = InstPlt, dir_plot = dir_plot
 
   if (not keyword_set(InstPlt))  then InstPlt = ''
-  if (not keyword_set(dir_plot)) then dir_plot = '../output/'
+  if (not keyword_set(dir_plot)) then dir_plot = './output/'
 
   ;; set string to be used in the filename for plotting 
   TimeStrFile = utc2str(anytim2utc(TimeEvent))

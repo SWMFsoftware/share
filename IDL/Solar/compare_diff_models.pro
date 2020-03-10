@@ -4,8 +4,8 @@ pro compare_diff_models, dir_sim=dir_sim, dir_plot=dir_plot,                  $
                          legendNames=legendNames, CharSizeLocal=CharSizeLocal,$
                          DoPlotTe=DoPlotTe
 
-  if (not keyword_set(dir_sim))   then dir_sim  = '../simdata/'
-  if (not keyword_set(dir_plot))  then dir_plot = '../output/'
+  if (not keyword_set(dir_sim))   then dir_sim  = './simdata/'
+  if (not keyword_set(dir_plot))  then dir_plot = './output/'
   if (not keyword_set(CharSizeLocal))   then CharSizeLocal = 2.5
 
   file1 = dir_sim+file1

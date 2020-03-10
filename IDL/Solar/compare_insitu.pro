@@ -4,8 +4,8 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
                     UseTimePlotName=UseTimePlotName,        $
                     CharSizeLocal=CharSizeLocal
 
-  if (not keyword_set(dir_sim))   then dir_sim  = '../simdata/'
-  if (not keyword_set(dir_plot))  then dir_plot = '../output/'
+  if (not keyword_set(dir_sim))   then dir_sim  = './simdata/'
+  if (not keyword_set(dir_plot))  then dir_plot = './output/'
   if (not keyword_set(extra_plt_info)) then begin
      extra_plt_info = ''
   endif else begin

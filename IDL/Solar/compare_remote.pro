@@ -5,8 +5,8 @@ pro compare_remote, dir_sim=dir_sim, dir_plot=dir_plot,     $
                     TypePlotFile=TypePlotFile,              $
                     xs_map=xs_map, ys_map=ys_map
 
-  if (not keyword_set(dir_sim))  then dir_sim  = '../simdata/'
-  if (not keyword_set(dir_plot)) then dir_plot = '../output/'
+  if (not keyword_set(dir_sim))  then dir_sim  = './simdata/'
+  if (not keyword_set(dir_plot)) then dir_plot = './output/'
   if (not keyword_set(extra_plt_info)) then begin
      extra_plt_info = ''
   endif else begin
