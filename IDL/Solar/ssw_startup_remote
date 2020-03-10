@@ -1,0 +1,4 @@
+ssw_path,'$HOME/ssw/stereo/'
+register_stereo_spice_dlm
+.r procedures_local
+@idlrc
