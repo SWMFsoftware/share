@@ -605,14 +605,14 @@ pro determine_NameSat, TimeEvent, ObsXyz, NameSat, file_sim=file_sim
   StbXyz   = get_stereo_coord(TimeEvent,'B')
   EarthXyz = get_stereo_coord(TimeEvent,'Earth')
 
-  StaXyz   = StaXyz[0:2]/7.E5
-  StbXyz   = StbXyz[0:2]/7.E5
-  EarthXyz = EarthXyz[0:2]/7.E5
+  StaXyz   = StaXyz[0:2]/6.957e5
+  StbXyz   = StbXyz[0:2]/6.957e5
+  EarthXyz = EarthXyz[0:2]/6.957e5
 
   ;; within 0.1 AU (2.15 Rs ~ 0.1 AU)
-  if (total((ObsXyz-StaXyz)^2)   le 2.15) then NameSat='sta'
-  if (total((ObsXyz-StbXyz)^2)   le 2.15) then NameSat='stb'
-  if (total((ObsXyz-EarthXyz)^2) le 2.15) then NameSat='earth'
+  if (total((ObsXyz-StaXyz)^2)   le 3.0) then NameSat='sta'
+  if (total((ObsXyz-StbXyz)^2)   le 3.0) then NameSat='stb'
+  if (total((ObsXyz-EarthXyz)^2) le 3.0) then NameSat='earth'
 
   if (NameSat eq 'none') then begin
      print, 'Could not determine Sat for ', file_sim
