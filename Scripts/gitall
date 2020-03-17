@@ -7,7 +7,7 @@ and execute the Git command passed in the arguments.
 The verbose output from Git status is suppressed unless the -v switch is used.
 
 Usage:
-  gitall [-h] [-v] [-l] [-q] [-s[=N]] [-r[=c|=f]] GITCOMMAND
+  gitall [-h] [-v] [-l] [-q] [-s[=N]] [-r[=c|=f]] [-remote[=URL]] [COMMANDS]
 
 -h -help      print this help message
 -l -list      list all subdirectories that are repositories
@@ -18,7 +18,9 @@ Usage:
 -r -reference print Git references 
 -r=c          print Git references as a C header with a print statement
 -r=f          print Git references as a Fortran write statement
-GITCOMMAND    any Git command (cannot be combined with 
+-remote       switch remote to git@gitlab.umich.edu:swmf_software/
+-remote=URL   switch remote to URL
+COMMANDS      any Git command (cannot be combined with -r or -remote)
 
 Examples:
 
@@ -34,6 +36,9 @@ Print the references for each Git repository:
 Create a C header file to be compiled into the executable
     gitall -r=c > src/gitinfo.h
 
+Switch to the UM GitLab remote server
+    gitall -remote
+
 ";
     exit 0;
 }
@@ -43,8 +48,12 @@ my $Sleep     = ($s or $sleep); $Sleep = 5 if $Sleep == 1;
 my $List      = ($l or $list);
 my $Quiet     = ($q or $quiet);
 my $Reference = ($r or $reference);
+my $Remote    = ($remote);
 
 use strict;
+
+# Default remote
+$Remote = 'git@gitlab.umich.edu:swmf_software' if $Remote eq "1";
 
 my $gitcmd;                # The variable to receive the git command
 
@@ -54,7 +63,7 @@ $gitcmd .= "; sleep $Sleep" if $Sleep;
 my @RefList; 
 my $pwd = `pwd`; chop($pwd);
 
-if($gitcmd or $Reference or $List){
+if($gitcmd or $Reference or $List or $Remote){
     &execute_gitall($pwd);
 }
 
@@ -96,12 +105,19 @@ sub execute_gitall(){
    foreach $subdir (@subdirs){
        if ($subdir eq ".git"){
 	   if($List){
-	       print "$dir\n"
+	       print "$dir\n";
+	   }elsif ($Remote){
+	       # get current remote repo name
+	       my $reponame = `cd $dir; git remote get-url origin`;
+	       $reponame =~ s/.*\///;
+	       # set new remote
+	       `cd $dir; git remote set-url origin $Remote/$reponame`;
 	   }elsif ($Reference){
 	       my $reponame = "  $dir";
 	       $reponame =~ s/$pwd\/// 
 		   or $reponame="Git repo=".`git remote get-url origin`;
 	       chomp($reponame);
+
 	       $reponame .= " " x (35-length $reponame);
 	       
 	       # for each repo, get the local reference
