@@ -814,7 +814,7 @@ sub set_hypre_{
 
     # Check if library is present
     if($NewHypre eq "yes" and not -d "util/HYPRE"){
-	&shell_command("git clone herot:/GIT/FRAMEWORK/HYPRE util/HYPRE");
+	&shell_command("sleep 5; git clone herot:/GIT/FRAMEWORK/HYPRE util/HYPRE");
 	if(not -d "util/HYPRE"){
 	    print "Warning: could not git clone util/HYPRE";
 	    return;
@@ -868,7 +868,7 @@ sub set_amrex_{
 
     # Check if library is present
     if($NewAmrex eq "yes" and not -d "util/AMREX"){
-	&shell_command("git clone herot:/GIT/FRAMEWORK/AMREX util/AMREX");
+	&shell_command("sleep 5; git clone herot:/GIT/FRAMEWORK/AMREX util/AMREX");
 	if(not -d "util/AMREX"){
 	    print "Warning: could not git clone util/AMREX";
 	    return;
