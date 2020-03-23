@@ -10,7 +10,6 @@ help:
 	@echo "You can test the following modules in ../src:"
 	@echo
 	@echo "   test_axes             - test CON_axes"
-	@echo "	  test_poisson_bracket  - test ModPoissonBracket"
 	@echo "   test_coord_transform  - test ModTimeConvert"
 	@echo "   test_freq             - test ModFreq"
 	@echo "   test_geopack          - test CON_geopack"
@@ -26,6 +25,7 @@ help:
 	@echo "   test_planet_field     - test CON_planet_field"
 	@echo "   test_plot_file        - test ModPlotFile"
 	@echo "   test_process_var_name - test ModProcessVarName"
+	@echo "   test_poisson_bracket  - test ModPoissonBracket"
 	@echo "   test_random_number    - test ModRandomNumber"
 	@echo "   test_ray_trace        - test CON_ray_trace"
 	@echo "   test_sort             - test ModSort"
@@ -46,7 +46,6 @@ help:
 
 test:
 	-@make test_axes
-	-@make test_poisson_bracket
 	-@make test_coord_transform
 	-@make test_freq
 	-@make test_geopack
@@ -61,6 +60,7 @@ test:
 	-@make test_lookup_table
 	-@make test_planet_field
 	-@make test_plot_file
+	-@make test_poisson_bracket
 	-@make test_random_number
 	-@make test_ray_trace
 	-@make test_sort
@@ -78,21 +78,11 @@ distclean: clean
 		test_process_var_name.log
 
 #######################################################################
-OBJ_TIME_CONVERT = \
-	test_time_convert.o \
-	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o \
-	../src/ModMpi.o \
-	../src/ModMpiInterfaces.o \
-	../src/ModConst.o \
-	../src/ModNumConst.o \
-	../src/ModTimeConvert.o
-
 test_time_convert_exe:
-	@(cd ../src; make ModTimeConvert.o)
+	@(cd ../src; make LIB)
 	@make test_time_convert.o
-	${LINK.f90} -o test_time_convert.exe ${OBJ_TIME_CONVERT} ${Lflag2}
+	${LINK.f90} -o test_time_convert.exe test_time_convert.o \
+		-L${LIBDIR} -lSHARE ${Lflag}
 
 test_time_convert:
 	@echo test_time_convert starting        > test_time_convert.diff
@@ -104,21 +94,11 @@ test_time_convert:
 	@ls -l test_time_convert.diff
 
 #######################################################################
-OBJ_COORD_TRANSFORM = \
-	test_coord_transform.o \
-	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o \
-	../src/ModMpi.o \
-	../src/ModMpiInterfaces.o \
-	../src/ModCoordTransform.o \
-	../src/ModNumConst.o
-
 test_coord_transform_exe:
-	@(cd ../src; make ModCoordTransform.o)
+	@(cd ../src; make LIB)
 	@make test_coord_transform.o
-	${LINK.f90} -o test_coord_transform.exe ${OBJ_COORD_TRANSFORM} \
-		${Lflag2}
+	${LINK.f90} -o test_coord_transform.exe test_coord_transform.o \
+		-L${LIBDIR} -lSHARE ${Lflag}
 
 test_coord_transform: 
 	@echo test_coord_transform starting     > test_coord_transform.diff
@@ -131,19 +111,11 @@ test_coord_transform:
 	@ls -l test_coord_transform.diff
 
 #######################################################################
-OBJ_FREQ = \
-	test_freq.o \
-	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o \
-	../src/ModMpi.o \
-	../src/ModMpiInterfaces.o \
-	../src/ModFreq.o
-
 test_freq_exe:
-	@(cd ../src; make ModFreq.o)
+	@(cd ../src; make LIB)
 	@make test_freq.o
-	${LINK.f90} -o test_freq.exe ${OBJ_FREQ} ${Lflag2}
+	${LINK.f90} -o test_freq.exe test_freq.o \
+		-L${LIBDIR} -lSHARE ${Lflag}
 
 test_freq:
 	@echo test_freq starting		>  test_freq.diff
@@ -154,22 +126,11 @@ test_freq:
 	@ls -l test_freq.diff
 
 #######################################################################
-OBJ_LINEAR_SOLVER = \
-	test_linear_solver.o \
-	../src/blas.o \
-	../src/lapack.o \
-	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o \
-	../src/ModMpi.o \
-	../src/ModMpiInterfaces.o \
-	../src/ModBlasLapack.o \
-	../src/ModLinearSolver.o
-
 test_linear_solver_exe:
-	@(cd ../src; make blas.o lapack.o ModLinearSolver.o)
+	@(cd ../src; make LIB)
 	@make test_linear_solver.o 
-	${LINK.f90} -o test_linear_solver.exe ${OBJ_LINEAR_SOLVER} ${Lflag1}
+	${LINK.f90} -o test_linear_solver.exe test_linear_solver.o \
+		-L${LIBDIR} -lSHARE ${LflagMpi}
 
 test_linear_solver:
 	@echo test_linear_solver starting 	>  test_linear_solver.diff
@@ -184,27 +145,11 @@ test_linear_solver:
 #######################################################################
 SEARCH_C = -I${SHAREDIR}
 
-OBJ_LINEAR_WRAPPER = \
-        ../src/blas.o \
-        ../src/lapack.o \
-        ../src/ModMpi.o \
-        ../src/ModMpiInterfaces.o \
-        ../src/ModBlasLapack.o \
-        ../src/ModLinearSolver.o \
-	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o \
-	../src/linear_solver_wrapper.o \
-	../src/linear_solver_wrapper_c.o \
-	test_linear_wrapper.o
-
 test_linear_wrapper_exe:
-	@(cd ../src; make blas.o lapack.o ModLinearSolver.o \
-		ModUtility.o ModUtility_c.o \
-		linear_solver_wrapper.o linear_solver_wrapper_c.o)
-	@make test_linear_wrapper.o 
-	${LINK.f90} ${NOMAINFLAG} -o test_linear_wrapper.exe \
-		${OBJ_LINEAR_WRAPPER} ${Lflag1}
+	(cd ../src; make LIB)
+	make test_linear_wrapper.o
+	${LINK.f90} ${NOMAINFLAG} -o test_linear_wrapper.exe test_linear_wrapper.o \
+		-L${LIBDIR} -lSHARE ${LflagMpi}
 
 test_linear_wrapper:
 	@echo test_linear_wrapper starting 	>  test_linear_wrapper.diff	
@@ -215,20 +160,11 @@ test_linear_wrapper:
 	@ls -l test_linear_wrapper.diff
 
 #######################################################################
-OBJ_LINEAR_ADVECTION = \
-	test_linear_advection.o \
-	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o \
-	../src/ModMpi.o \
-	../src/ModMpiInterfaces.o \
-	../src/ModLinearAdvection.o 
-
 test_linear_advection_exe:
-	@(cd ../src; make ModLinearAdvection.o)
+	@(cd ../src; make LIB)
 	@make test_linear_advection.o
-	${LINK.f90} -o test_linear_advection.exe ${OBJ_LINEAR_ADVECTION} \
-		${Lflag2}
+	${LINK.f90} -o test_linear_advection.exe test_linear_advection.o \
+		-L${LIBDIR} -lSHARE ${Lflag}
 
 test_linear_advection:
 	@echo test_linear_advection starting	>  test_linear_advection.diff
@@ -241,14 +177,11 @@ test_linear_advection:
 	@ls -l test_linear_advection.diff
 
 #######################################################################
-OBJ_SORT = \
-	test_sort.o \
-	../src/ModSort.o
-
 test_sort_exe:
-	@(cd ../src; make ModSort.o)
+	@(cd ../src; make LIB)
 	@make test_sort.o
-	${LINK.f90} -o test_sort.exe ${OBJ_SORT} ${Lflag2}
+	${LINK.f90} -o test_sort.exe test_sort.o \
+		-L${LIBDIR} -lSHARE ${Lflag}
 
 test_sort:
 	@echo test_sort starting		>  test_sort.diff
@@ -261,20 +194,11 @@ test_sort:
 test_hypergeometric.o: test_hypergeometric.f90
 	${COMPILE.f90} ${Cflag0} test_hypergeometric.f90
 
-OBJ_HYPERGEOMETRIC = \
-	../src/ModKind.o \
-	../src/ModMpi.o\
-	../src/ModNumConst.o \
-	../src/ModHyperGeometric.o \
-	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o \
-	test_hypergeometric.o
-
 test_hypergeometric_exe:
-	@(cd ../src; make ModKind.o; make ModMpi.o; make ModNumConst.o; make ModHyperGeometric.o)
+	@(cd ../src; make LIB)
 	@make test_hypergeometric.o
-	${LINK.f90} -o test_hypergeometric.exe ${OBJ_HYPERGEOMETRIC} ${Lflag2}
+	${LINK.f90} -o test_hypergeometric.exe test_hypergeometric.o \
+		-L${LIBDIR} -lSHARE ${Lflag}
 
 test_hypergeometric:
 	@echo test_hypergeometric starting     >  test_hypergeometric.diff
@@ -283,14 +207,11 @@ test_hypergeometric:
 	-@(./test_hypergeometric.exe > test_hypergeometric.diff)
 	@ls -l test_hypergeometric.diff
 #######################################################################
-OBJ_IO_UNIT = \
-	test_io_unit.o \
-	../src/ModIoUnit.o
-
 test_io_unit_exe:
-	@(cd ../src; make ModIoUnit.o)
+	@(cd ../src; make LIB)
 	@make test_io_unit.o
-	${LINK.f90} -o test_io_unit.exe ${OBJ_IO_UNIT} ${Lflag2}
+	${LINK.f90} -o test_io_unit.exe test_io_unit.o \
+		-L${LIBDIR} -lSHARE ${Lflag}
 
 test_io_unit:
 	@echo test_io_unit starting			>  test_io_unit.diff
@@ -301,19 +222,11 @@ test_io_unit:
 	@ls -l test_io_unit.diff
 
 #######################################################################
-OBJ_INTERPOLATE = \
-	test_interpolate.o \
-	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o \
-	../src/ModMpi.o \
-	../src/ModMpiInterfaces.o \
-	../src/ModInterpolate.o
-
 test_interpolate_exe:
-	@(cd ../src; make ModInterpolate.o)
+	@(cd ../src; make LIB)
 	@make test_interpolate.o
-	${LINK.f90} -o test_interpolate.exe ${OBJ_INTERPOLATE} ${Lflag2}
+	${LINK.f90} -o test_interpolate.exe test_interpolate.o \
+		-L${LIBDIR} -lSHARE ${Lflag}
 
 test_interpolate:
 	@echo test_interpolate starting		>  test_interpolate.diff
@@ -327,23 +240,11 @@ test_interpolate:
 test_interpolate_amr.o: test_interpolate_amr.f90
 	${COMPILE.f90} ${Cflag0} test_interpolate_amr.f90
 
-OBJ_INTERPOLATE_AMR = \
-	../src/ModKind.o \
-	../src/ModNumConst.o \
-	../src/ModRandomNumber.o \
-	../src/ModInterpolateAMR.o \
-	../src/ModIoUnit.o \
-	../src/ModMpi.o \
-	../src/ModMpiInterfaces.o \
-	../src/ModMpiOrig.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o \
-	test_interpolate_amr.o
-
 test_interpolate_amr_exe:
-	@(cd ../src; make ModKind.o ModNumConst.o ModRandomNumber.o ModMpiOrig.o ModMpiInterfaces.o ModMpi.o ModIoUnit.o ModUtility_c.o ModUtility.o ModInterpolateAMR.o)
+	@(cd ../src; make LIB)
 	@make test_interpolate_amr.o
-	${LINK.f90} -o test_interpolate_amr.exe ${OBJ_INTERPOLATE_AMR} ${Lflag2}
+	${LINK.f90} -o test_interpolate_amr.exe test_interpolate_amr.o \
+		-L${LIBDIR} -lSHARE ${Lflag}
 
 test_interpolate_amr:
 	@echo test_interpolate_amr starting     >  test_interpolate_amr.diff
@@ -357,22 +258,11 @@ test_interpolate_amr:
 test_interpolate_cell_amr.o: test_interpolate_cell_amr.f90
 	${COMPILE.f90} ${Cflag0} test_interpolate_cell_amr.f90
 
-OBJ_INTERPOLATE_CELL_AMR = \
-	../src/ModKind.o \
-	../src/ModRandomNumber.o \
-	../src/ModInterpolateAMR.o \
-	../src/ModInterpolateCellAMR.o \
-	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o \
-	../src/ModMpi.o \
-	../src/ModMpiInterfaces.o \
-	test_interpolate_cell_amr.o
-
 test_interpolate_cell_amr_exe:
-	@(cd ../src; make ModKind.o; make ModRandomNumber.o; make ModInterpolateAMR.o; make ModInterpolateCellAMR.o)
+	@(cd ../src; make LIB)
 	@make test_interpolate_cell_amr.o
-	${LINK.f90} -o test_interpolate_cell_amr.exe ${OBJ_INTERPOLATE_CELL_AMR} ${Lflag2}
+	${LINK.f90} -o test_interpolate_cell_amr.exe test_interpolate_cell_amr.o \
+		-L${LIBDIR} -lSHARE ${Lflag}
 
 test_interpolate_cell_amr:
 	@echo test_interpolate_cell_amr starting > test_interpolate_cell_amr.diff
@@ -381,23 +271,11 @@ test_interpolate_cell_amr:
 	-@(./test_interpolate_cell_amr.exe > test_interpolate_cell_amr.diff)
 	@ls -l test_interpolate_cell_amr.diff
 #######################################################################
-OBJ_INITIAL_STATE = \
-	test_initial_state.o \
-	../src/ModMpi.o \
-	../src/ModMpiInterfaces.o \
-	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o \
-	../src/ModTimeConvert.o \
-	../src/ModReadParam.o \
-	../src/ModHdf5Utils.o \
-	../src/ModPlotFile.o \
-	../src/ModInitialState.o
-
 test_initial_state_exe:
-	@(cd ../src; make ModInitialState.o)
+	@(cd ../src; make LIB)
 	make test_initial_state.o
-	${LINK.f90} -o test_initial_state.exe ${OBJ_INITIAL_STATE} ${Lflag1}
+	${LINK.f90} -o test_initial_state.exe test_initial_state.o \
+		-L${LIBDIR} -lSHARE ${LflagMpi}
 
 test_initial_state:
 	@echo test_initial_state starting	 >  test_initial_state.diff
@@ -411,14 +289,11 @@ test_initial_state:
 	@ls -l test_initial_state.diff
 
 #######################################################################
-OBJ_RANDOM_NUMBER = \
-	../src/ModRandomNumber.o
-
 test_random_number_exe:
-	@(cd ../src; make ModRandomNumber.o)
+	@(cd ../src; make LIB)
 	@make test_random_number.o
-	${LINK.f90} -o test_random_number.exe \
-		test_random_number.o ${OBJ_RANDOM_NUMBER} ${Lflag2}
+	${LINK.f90} -o test_random_number.exe test_random_number.o \
+		-L${LIBDIR} -lSHARE  ${Lflag}
 
 test_random_number:
 	@echo test_random_number starting	>  test_random_number.diff
@@ -430,19 +305,11 @@ test_random_number:
 	@ls -l test_random_number.diff
 
 #######################################################################
-OBJ_RAY_TRACE = \
-	../src/ModMpiInterfaces.o \
-	../src/ModMpi.o \
-	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o \
-	../src/CON_ray_trace.o
-
 test_ray_trace_exe:
-	@(cd ../src; make CON_ray_trace.o)
+	@(cd ../src; make LIB)
 	@make test_ray_trace.o
-	${LINK.f90} -o test_ray_trace.exe \
-		test_ray_trace.o ${OBJ_RAY_TRACE} ${Lflag1}
+	${LINK.f90} -o test_ray_trace.exe test_ray_trace.o \
+		-L${LIBDIR} -lSHARE ${LflagMpi}
 
 test_ray_trace:
 	@echo test_ray_trace starting		>  test_ray_trace.diff
@@ -454,20 +321,11 @@ test_ray_trace:
 	@ls -l test_ray_trace.diff
 
 #######################################################################
-OBJ_LINE_EXTRACT = \
-	test_line_extract.o \
-	../src/ModMpiInterfaces.o \
-	../src/ModMpi.o \
-	../src/ModSort.o \
-	../src/CON_line_extract.o \
-	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o
-
 test_line_extract_exe: 
-	@(cd ../src; make CON_line_extract.o)
+	@(cd ../src; make LIB)
 	@make test_line_extract.o
-	${LINK.f90} -o test_line_extract.exe ${OBJ_LINE_EXTRACT} ${Lflag1}
+	${LINK.f90} -o test_line_extract.exe test_line_extract.o \
+		-L${LIBDIR} -lSHARE  ${LflagMpi}
 
 test_line_extract:
 	@echo test_line_extract starting	>  test_line_extract.diff
@@ -479,21 +337,11 @@ test_line_extract:
 	@ls -l test_line_extract.diff
 
 #######################################################################
-OBJ_GEOPACK = \
-	test_geopack.o \
-	../src/CON_geopack.o \
-	../src/ModCoordTransform.o \
-	../src/ModNumConst.o \
-	../src/ModIoUnit.o \
-	../src/ModMpiInterfaces.o \
-	../src/ModMpi.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o
-
 test_geopack_exe:
-	@(cd ../src; make ModCoordTransform.o CON_geopack.o)
+	@(cd ../src; make LIB)
 	@make test_geopack.o
-	${LINK.f90} -o test_geopack.exe ${OBJ_GEOPACK} ${Lflag2}
+	${LINK.f90} -o test_geopack.exe test_geopack.o \
+		-L${LIBDIR} -lSHARE ${Lflag}
 
 test_geopack:
 	@echo test_geopack starting			>  test_geopack.diff
@@ -505,28 +353,11 @@ test_geopack:
 	@ls -l test_geopack.diff
 
 #######################################################################
-OBJ_AXES = \
-	test_axes.o \
-	../src/CON_axes.o \
-	../src/CON_geopack.o \
-	../src/CON_planet.o \
-	../src/ModMpi.o \
-	../src/ModMpiInterfaces.o \
-	../src/ModCoordTransform.o \
-	../src/ModTimeConvert.o \
-	../src/ModReadParam.o \
-	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o \
-	../src/ModKind.o \
-	../src/ModConst.o \
-	../src/ModNumConst.o \
-	../src/ModPlanetConst.o 
-
 test_axes_exe:
-	@(cd ../src; make CON_axes.o)
+	@(cd ../src; make LIB)
 	@make test_axes.o
-	${LINK.f90} -o test_axes.exe ${OBJ_AXES} ${Lflag1}
+	${LINK.f90} -o test_axes.exe test_axes.o \
+		-L${LIBDIR} -lSHARE ${LflagMpi}
 
 test_axes: 
 	@echo test_axes starting			>  test_axes.diff
@@ -538,28 +369,11 @@ test_axes:
 	@ls -l test_axes.diff
 
 #######################################################################
-OBJ_PLANET_FIELD = \
-	test_planet_field.o \
-	../src/CON_planet_field.o \
-	../src/CON_planet.o \
-	../src/CON_axes.o \
-	../src/CON_geopack.o \
-	../src/ModMpi.o \
-	../src/ModMpiInterfaces.o \
-	../src/ModPlanetConst.o \
-	../src/ModCoordTransform.o \
-	../src/ModNumConst.o \
-	../src/ModConst.o \
-	../src/ModTimeConvert.o \
-	../src/ModReadParam.o \
-	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o
-
 test_planet_field_exe:
-	@(cd ../src; make CON_planet_field.o)
+	@(cd ../src; make LIB)
 	@make test_planet_field.o
-	${LINK.f90} -o test_planet_field.exe ${OBJ_PLANET_FIELD} ${Lflag1}
+	${LINK.f90} -o test_planet_field.exe test_planet_field.o \
+		-L${LIBDIR} -lSHARE ${LflagMpi}
 
 test_planet_field: 
 	@echo test_planet_field starting	>  test_planet_field.diff
@@ -572,21 +386,11 @@ test_planet_field:
 	@ls -l test_planet_field.diff
 
 #######################################################################
-
-OBJ_PLOT_FILE = \
-	test_plot_file.o \
-	../src/ModMpi.o \
-	../src/ModMpiInterfaces.o \
-	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o \
-	../src/ModHdf5Utils.o \
-	../src/ModPlotFile.o
-
 test_plot_file_exe:
-	@(cd ../src; make ModPlotFile.o)
+	@(cd ../src; make LIB)
 	@make test_plot_file.o
-	${LINK.f90} -o test_plot_file.exe ${OBJ_PLOT_FILE} ${Lflag1}
+	${LINK.f90} -o test_plot_file.exe test_plot_file.o \
+		-L${LIBDIR} -lSHARE ${LflagMpi}
 
 test_plot_file:
 	@echo test_plot_file starting	>  test_plot_file.diff
@@ -598,26 +402,11 @@ test_plot_file:
 	@ls -l test_plot_file.diff
 
 #######################################################################
-
-OBJ_LOOKUP_TABLE = \
-	test_lookup_table.o \
-	../src/ModNumConst.o \
-	../src/ModMpi.o \
-	../src/ModMpiInterfaces.o \
-	../src/ModTimeConvert.o \
-	../src/ModReadParam.o \
-	../src/ModInterpolate.o \
-	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o \
-	../src/ModHdf5Utils.o \
-	../src/ModPlotFile.o \
-	../src/ModLookupTable.o
-
 test_lookup_table_exe:
-	@(cd ../src; make ModLookupTable.o)
+	@(cd ../src; make LIB)
 	@make test_lookup_table.o
-	${LINK.f90} -o test_lookup_table.exe ${OBJ_LOOKUP_TABLE} ${Lflag1}
+	${LINK.f90} -o test_lookup_table.exe test_lookup_table.o \
+		 -L${LIBDIR} -lSHARE ${LflagMpi}
 
 test_lookup_table:
 	@echo test_lookup_table starting	>  test_lookup_table.diff
@@ -629,21 +418,11 @@ test_lookup_table:
 	@ls -l test_lookup_table.diff
 
 #######################################################################
-
-OBJ_UTILITIES = \
-	test_utilities.o \
-	../src/ModKind.o \
-	../src/ModMpi.o \
-	../src/ModMpiOrig.o \
-	../src/ModMpiInterfaces.o \
-	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o
-
 test_utilities_exe:
-	@(cd ../src; make ModUtility.o)
+	@(cd ../src; make LIB)
 	@make test_utilities.o
-	${LINK.f90} -o test_utilities.exe ${OBJ_UTILITIES} ${Lflag1}
+	${LINK.f90} -o test_utilities.exe test_utilities.o \
+		-L${LIBDIR} -lSHARE ${LflagMpi}
 
 test_utilities:
 	@echo test_utilities starting		>  test_utilities.diff
@@ -656,20 +435,11 @@ test_utilities:
 	@rmdir xxx
 
 #######################################################################
-
-OBJ_TRIANGULATE = \
-	test_triangulate.o \
-	../src/ModTriangulate.o \
-	../src/ModIoUnit.o \
-	../src/ModMpiInterfaces.o \
-	../src/ModMpi.o \
-	../src/ModUtility.o \
-        ../src/ModUtility_c.o
-
 test_triangulate_exe:
-	@(cd ../src; make ModTriangulate.o)
+	@(cd ../src; make LIB)
 	@make test_triangulate.o
-	${LINK.f90} -o test_triangulate.exe ${OBJ_TRIANGULATE} ${Lflag2}
+	${LINK.f90} -o test_triangulate.exe test_triangulate.o \
+		-L${LIBDIR} -lSHARE ${Lflag}
 
 test_triangulate:
 	@echo test_triangulate starting		>  test_triangulate.diff
@@ -681,20 +451,8 @@ test_triangulate:
 	@ls -l test_triangulate.diff
 
 #######################################################################
-
-OBJ_PROCESS_VAR_NAME = \
-	test_process_var_name.o \
-	ModSingleFluid.o\
-	ModExtraVariables.o\
-	ModEquation.o \
-	../src/ModMpi.o \
-	../src/ModMpiInterfaces.o \
-	../src/ModIoUnit.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o \
-	../src/ModProcessVarName.o
-
 test_process_var_name:
+	@(cd ../src; make LIB)
 	@if [ -d ${DIR}/GM/BATSRUS ]; then	\
 		make test_process_var_name1 BATSDIR=${DIR}/GM/BATSRUS;	\
 	else                                    \
@@ -724,8 +482,8 @@ test_process_var_name_exe:
 	@rm -f test_process_var_name.o ModEquation.o
 	@make ModEquation.o test_process_var_name.o \
 		>> test_process_var_name.log 2>&1
-	@${LINK.f90} -o test_process_var_name.exe ${OBJ_PROCESS_VAR_NAME} \
-		${Lflag1}  >> test_process_var_name.log 2>&1
+	@${LINK.f90} -o test_process_var_name.exe test_process_var_name.o ModEquation.o \
+		-L${LIBDIR} -lSHARE ${LflagMpi}  >> test_process_var_name.log 2>&1
 
 test_process_var_name_run:
 	-@(./test_process_var_name.exe >> test_process_var_name.tmp)
@@ -739,25 +497,11 @@ test_process_var_name_check:
 	@ls -l test_process_var_name.diff
 
 #######################################################################
-OBJ_POISSON = \
-	test_poisson_bracket.o \
-	../src/blas.o \
-	../src/lapack.o \
-	../src/ModBlasLapack.o \
-	../src/ModHdf5Utils.o \
-	../src/ModIoUnit.o \
-	../src/ModMpi.o \
-	../src/ModMpiInterfaces.o \
-	../src/ModPlotFile.o \
-	../src/ModLinearSolver.o \
-	../src/ModUtility.o \
-	../src/ModUtility_c.o \
-	../src/ModPoissonBracket.o
-
 test_poisson_exe:
-	@(cd ../src; make LIB; make ModPoissonBracket.o)
+	@(cd ../src; make LIB)
 	@make test_poisson_bracket.o
-	${LINK.f90} -o test_poisson.exe ${OBJ_POISSON} ${Lflag2}
+	${LINK.f90} -o test_poisson.exe test_poisson_bracket.o \
+		-L${LIBDIR} -lSHARE ${Lflag}
 
 test_poisson_bracket:
 	rm -f test_poisson.out test_*poisson.ref.out test_multipoisson_0*.out
