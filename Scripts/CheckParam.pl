@@ -37,7 +37,7 @@ my $ERROR = 'CheckParam_ERROR:';
 my $IsError;
 
 # Set default values (needed in the help message too)
-my $XmlFileDefault   = 'Param/PARAM.XML';
+my $XmlFileDefault   = 'PARAM.XML';
 my $InputFileDefault = 'run/PARAM.in';
 
 # Print help message and exit if -h switch was used

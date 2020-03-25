@@ -497,7 +497,7 @@ Examples:
 
             Generate F90 source code for a few commands and write to STDOUT:
 
-share/Scripts/XmlToF90.pl -c=MAGNETICAXIS,ROTATIONAXIS Param/PARAM.XML
+share/Scripts/XmlToF90.pl -c=MAGNETICAXIS,ROTATIONAXIS PARAM.XML
 
             Update all commands in an existing F90 source file
 

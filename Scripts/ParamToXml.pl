@@ -10,7 +10,7 @@ use strict;
 &print_help if $Help or not @ARGV;
 
 # Default versions
-my %ParamXml = ("CON" => "Param/PARAM.XML",
+my %ParamXml = ("CON" => "PARAM.XML",
 		"EE"  => "GM/BATSRUS/PARAM.XML",
 		"GM"  => "GM/BATSRUS/PARAM.XML",
 		"IH"  => "GM/BATSRUS/PARAM.XML",
@@ -18,23 +18,24 @@ my %ParamXml = ("CON" => "Param/PARAM.XML",
 		"SC"  => "GM/BATSRUS/PARAM.XML",
 		"IE"  => "IE/Ridley_serial/PARAM.XML",
 		"IM"  => "IM/RCM2/PARAM.XML",
+		"PC"  => "PC/IPIC3D2/PARAM.XML",
 		"PS"  => "PS/DGCPM/PARAM.XML",
 		"PW"  => "PW/PWOM/PARAM.XML",
 		"RB"  => "RB/RBE/PARAM.XML",
-		"SP"  => "SP/Kota/PARAM.XML",
+		"SP"  => "SP/MFLAMPA/PARAM.XML",
 		"UA"  => "UA/GITM2/PARAM.XML",
     );
 
 my $comp;
 my $IsSwmf;
-if(-f "Param/PARAM.XML"){
+if(-d "CON" and -f "PARAM.XML"){
     $comp = "CON";
     $IsSwmf = 1;
 }elsif(-f "PARAM.XML"){
     $comp = "MODEL";
     $IsSwmf = 0;
 }else{
-    die("Could not find Param/PARAM.XML or PARAM.XML file\n");
+    die("Could not find PARAM.XML file\n");
 }
 
 # Set the XML file names if -v=... argument is used
@@ -68,7 +69,7 @@ my $command;
 foreach $comp (sort keys %command){
     if($IsSwmf){
 	$ParamXml = $ParamXml{$comp} or 
-	    print "There is no PARAM.XML file for compomnent $comp\n" && next;
+	    print "There is no PARAM.XML file for component $comp\n" && next;
     }
     open(INFILE, $ParamXml) or die "Could not open $ParamXml\n";
     my $Xml = join("", <INFILE>);

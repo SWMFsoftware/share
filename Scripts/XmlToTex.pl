@@ -39,7 +39,7 @@ outfile  Output file. Default is writing to STDOUT.
 
 Example: 
 
-  share/Scripts/XmlToTex.pl Param/PARAM.XML > Param/PARAM.xmltex"
+  share/Scripts/XmlToTex.pl PARAM.XML > PARAM.xmltex"
 #EOC
     ,"\n\n";
     exit 0;
@@ -74,7 +74,7 @@ while(<>){
 	my @path = split('/',$ARGV);
 	my $comp = 'CON'; 
 	$comp="$path[$#path-2]/$path[$#path-1]"  # UA/GITM2
-	    if $path[$#path-1] ne 'Param';       # Param/PARAM.XML is for CON
+	    if $path[$#path-2] =~ /^[A-Z][A-Z]$/;
 
 	$comp =~ s/GM\/BATSRUS/EE,GM,SC,IH,OH\/BATSRUS/; # GM --> EE,GM,SC,IH,OH
 

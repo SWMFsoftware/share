@@ -721,7 +721,7 @@ sub command_list{
 	if($Section){
 	    $ParamXml = "$Section/$CompVersion{$Section}/PARAM.XML";
 	}else{
-	    $ParamXml = "Param/PARAM.XML";
+	    $ParamXml = "PARAM.XML";
 	}
     }
     my $IsFirstSession = ($iSession == 1);
