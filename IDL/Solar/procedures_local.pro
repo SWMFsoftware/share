@@ -1293,6 +1293,44 @@ end
 
 ;--------------------------------------------------------------------
 
+function curve_int_distance,x1,y1,x2,y2
+  
+; Evaluates the distance between two curves (data & model results)
+; independent of the coordinate system so that errors in x and y
+; coordinates are treated equally.
+; (x1,y1) & (x2,y2) represent the x,y coordinates curves 1 and 2
+; respectively
+; d1 is the average of the minimum distance between the two curves
+; integrated along curve 1 and d2 is integrated along curve 2
+; Function returns the error (distance) d, which is a symmetric
+; function of the two curves.
+
+  n1 = n_elements(x1)
+  n2 = n_elements(x2)
+  d1=0d0
+  d2=0d0
+
+  x1c= (x1(1:n1-1) + x1(0:n1-2))/2
+  x2c= (x2(1:n2-1) + x2(0:n2-2))/2
+  y1c= (y1(1:n1-1) + y1(0:n1-2))/2
+  y2c= (y2(1:n2-1) + y2(0:n2-2))/2
+
+  d1c = sqrt( (x1(1:n1-1) - x1(0:n1-2))^2 + (y1(1:n1-1) - y1(0:n1-2))^2 )
+  d2c = sqrt( (x2(1:n2-1) - x2(0:n2-2))^2 + (y2(1:n2-1) - y2(0:n2-2))^2 )
+
+  len1 = total(d1c)
+  len2 = total(d2c)
+
+  for i = 0, n1-2 do $
+     d1 += d1c(i)*min( sqrt( (x1c(i) - x2c)^2 + (y1c(i) - y2c)^2 ) )
+  for i = 0, n2-2 do $
+     d2 += d2c(i)*min( sqrt( (x2c(i) - x1c)^2 + (y2c(i) - y1c)^2 ) )
+  d = (d1/len1 + d2/len2)/2
+  return, d
+end
+
+;-------------------------------------------------------------------------------
+
 pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
                  time_simu1, u_simu1, n_simu1, ti_simu1, te_simu1, b_simu1,   $
                  start_time, end_time, fileplot=fileplot, type=type,          $
@@ -1334,6 +1372,43 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
 
   utc_obs = anytim2utc(cdf2utc(time_obs),/external)
 
+  print,'Calculating integrated curve distance between obs. & SWMF output at 1 AU'
+  
+  ;Normalization for OMNI data
+  t_norm=10                     ;10 days
+  u_norm = max(u_obs) - min(u_obs(index_u))
+  n_norm = max(n_obs) - min(n_obs(index_n))
+  tem_norm = max(T_obs) - min(T_obs(index_T))
+  mag_norm = max(B_obs) - min(B_obs(index_B))
+
+  print,'Normalizations:'
+  help,t_norm,u_norm,n_norm,tem_norm,mag_norm
+     
+  ;time in units of t_norm days
+  t_obsv = time_obs/(24.*60.*60.*1.e3)/t_norm
+  t_swmf = time_simu1
+
+  ; Converting swmf time (YYYY-MO-DDTHH:MM:SS) to epoch time in sec
+  TIMESTAMPTOVALUES,time_simu1+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
+  cdf_epoch,t_swmf,yy,mo,dy,hh,mm,ss,/compute_epoch     ; in milliseconds
+  t_swmf=t_swmf/(24.*60.*60.*1.e3)/t_norm
+
+  dist_int_u=curve_int_distance(t_obsv(index_u),u_obs(index_u),t_swmf,u_simu1)
+  dist_int_t=curve_int_distance(t_obsv(index_T),T_obs(index_T)/tem_norm,$
+                                t_swmf,ti_simu1/tem_norm)
+  dist_int_n=curve_int_distance(t_obsv(index_n),n_obs(index_n)/n_norm,$
+                                t_swmf,n_simu1/n_norm)
+  dist_int_b=curve_int_distance(t_obsv(index_B),B_obs(index_B)/mag_norm,$
+                                t_swmf,b_simu1*1.e5/mag_norm)
+  print,FORMAT='(a,f7.3,f7.4,f7.4,f7.4)',$
+        'Integrated  Curve distance (Ur, Np, T, B) is: '$
+        ,trim(dist_int_u),dist_int_N,dist_int_t,dist_int_b
+  
+  dist_int=['Dist_U ='+STRING(trim(dist_int_u),format='(f6.3)'),$
+            'Dist_N ='+STRING(trim(dist_int_n),format='(f6.3)'),$
+            'Dist_T ='+STRING(trim(dist_int_t),format='(f6.3)'),$
+            'Dist_B ='+STRING(trim(dist_int_b),format='(f6.3)')]
+  
   if (not keyword_set(legendNames)) then begin
      case nplot of
         1: begin
@@ -1408,7 +1483,6 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
 
   ymin = 200
   ymax = max([max(u_obs(index_u)), max(u_simu1)])*1.3
-
   pos=[x1[0],y1[3],x2[0],y2[3]]
 
   utplot,utc_obs(index_u),u_obs(index_u),background=7,color=color_I[0],$
@@ -1451,6 +1525,8 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
             psym=0,textcolor=0,thick=6,linestyle=0,$
             charsize=1,pspacing=1.8,charthick=5,bthick=5,position=[0.15,0.95],$
             /norm,box=0
+     legend,dist_int(0),thick=6,charsize=1,charthick=5,position=[0.75,0.94],$
+            /norm,box=0
   endelse
   
   ;;----------------------------------------------------------------------
@@ -1472,6 +1548,8 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   if (DoPlot3 eq 1) then outplot,time_simu3,n_simu3,color=color_I[3],thick=9
   if (DoPlot4 eq 1) then outplot,time_simu4,n_simu4,color=color_I[4],thick=9
   
+  legend,dist_int(1),thick=5,charsize=1,charthick=5,position=[0.75,0.72],$
+         /norm,box=0  
   ;;----------------------------------------------------------------------
   ;; plot temperature
 
@@ -1498,7 +1576,8 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
      if (DoPlot4 eq 1) then outplot,time_simu4,te_simu4,color=color_I[4], $
                                     thick=9,linestyle=2
   endif
-
+  legend,dist_int(2),thick=5,charsize=1,charthick=5,position=[0.75,0.49],$
+         /norm,box=0
   ;;----------------------------------------------------------------------
   ;; plot magnetic field
 
@@ -1517,6 +1596,8 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   if (DoPlot3 eq 1) then outplot,time_simu3,b_simu3*1e5,color=color_I[3],thick=9
   if (DoPlot4 eq 1) then outplot,time_simu4,b_simu4*1e5,color=color_I[4],thick=9
 
+  legend,dist_int(3),thick=5,charsize=1,charthick=5,position=[0.75,0.27],$
+         /norm,box=0
   device,/close_file
 end
 
@@ -1727,39 +1808,3 @@ return, rmse
 
 end
 ;--------------------------------------------------------------------
-
-function curve_int_distance,x1,y1,x2,y2
-  
-; Evaluates the distance between two curves (data & model results)
-; independent of the coordinate system so that errors in x and y
-; coordinates are treated equally.
-; (x1,y1) & (x2,y2) represent the x,y coordinates curves 1 and 2
-; respectively
-; d1 is the average of the minimum distance between the two curves
-; integrated along curve 1 and d2 is integrated along curve 2
-; Function returns the error (distance) d, which is a symmetric
-; function of the two curves.
-
-  n1 = n_elements(x1)
-  n2 = n_elements(x2)
-  d1=0d0
-  d2=0d0
-
-  x1c= (x1(1:n1-1) + x1(0:n1-2))/2
-  x2c= (x2(1:n2-1) + x2(0:n2-2))/2
-  y1c= (y1(1:n1-1) + y1(0:n1-2))/2
-  y2c= (y2(1:n2-1) + y2(0:n2-2))/2
-
-  d1c = sqrt( (x1(1:n1-1) - x1(0:n1-2))^2 + (y1(1:n1-1) - y1(0:n1-2))^2 )
-  d2c = sqrt( (x2(1:n2-1) - x2(0:n2-2))^2 + (y2(1:n2-1) - y2(0:n2-2))^2 )
-
-  len1 = total(d1c)
-  len2 = total(d2c)
-
-  for i = 0, n1-2 do $
-     d1 += d1c(i)*min( sqrt( (x1c(i) - x2c)^2 + (y1c(i) - y2c)^2 ) )
-  for i = 0, n2-2 do $
-     d2 += d2c(i)*min( sqrt( (x2c(i) - x1c)^2 + (y2c(i) - y1c)^2 ) )
-  d = (d1/len1 + d2/len2)/2
-  return, d
-end
