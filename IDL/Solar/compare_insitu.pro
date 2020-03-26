@@ -128,51 +128,14 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
            goto, out
         end
      endcase
-     
-     ;Set DoPlotTe=0 to exclude Te plot
-     ;DoPlotTe = 0   
-     
+
+     ; Set DoPlotTe = 0 to exclude Te Plot
+     ; DoPlotTe = 0
      plot_insitu, time_obs, u_obs,  n_obs,  tem_obs, mag_obs,             $
                   time_swmf, ur_swmf, n_swmf,  ti_swmf,  te_swmf, B_swmf, $
                   start_time, end_time, fileplot=fileplot, type=type,     $
-                  charsize=CharSizeLocal, DoPlotTe=DoPlotTe
-
+                  charsize=CharSizeLocal, DoPlotTe = DoPlotTe
      print, ' finished plotting for type: ', type
      out:
-
-     print,'Calculating integrated curve distance between obs. & SWMF output at 1 AU'
-     ;Normalization for OMNI data
-     t_norm=10                  ;10 days
-     u_norm = max(u_obs) - min(u_obs(where(u_obs gt 0)))
-     n_norm = max(n_obs) - min(n_obs(where(n_obs gt 0)))
-     tem_norm = max(tem_obs) - min(tem_obs(where( tem_obs gt 0)))
-     mag_norm = max(mag_obs) - min(mag_obs(where( mag_obs gt 0)))
-
-     print,'Normalizations:'
-     help,t_norm,u_norm,n_norm,tem_norm,mag_norm
-     
-     ;time in units of t_norm days
-     t_obs=time_obs/(24.*60.*60.*1.e3)/t_norm
-     ; Converting swmf time (YYYY-MO-DDTHH:MM:SS) to epoch time in sec
-     TIMESTAMPTOVALUES,time_swmf+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
-     cdf_epoch,t_swmf,yy,mo,dy,hh,mm,ss,/compute_epoch
-     t_swmf=t_swmf/(24.*60.*60.*1.e3)/t_norm
-
-     index_u = where(u_obs gt 0)
-     index_n = where(n_obs gt 0)
-     index_T = where(tem_obs gt 0)
-     index_B = where(mag_obs gt 0)
-
-     dist_int_u=curve_int_distance(t_obs(index_u),u_obs(index_u),t_swmf,ur_swmf)
-     dist_int_t=curve_int_distance(t_obs(index_T),tem_obs(index_T)/tem_norm,$
-                                   t_swmf,ti_swmf/tem_norm)
-     dist_int_n=curve_int_distance(t_obs(index_n),n_obs(index_n)/n_norm,$
-                                   t_swmf,n_swmf/n_norm)
-     dist_int_b=curve_int_distance(t_obs(index_B),mag_obs(index_B)/mag_norm,$
-                                   t_swmf,B_swmf/mag_norm)
-     print,'Int Curve distance (ur,n,ti,b) for file',file_lowcase,' is: '$
-           ,dist_int_u,dist_int_n,dist_int_t,dist_int_b
-
   endfor
-
 end
