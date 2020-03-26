@@ -1383,7 +1383,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
 
   print,'Normalizations:'
   help,t_norm,u_norm,n_norm,tem_norm,mag_norm
-     
+  
   ;time in units of t_norm days
   t_obsv = time_obs/(24.*60.*60.*1.e3)/t_norm
   t_swmf = time_simu1
@@ -1393,13 +1393,14 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   cdf_epoch,t_swmf,yy,mo,dy,hh,mm,ss,/compute_epoch     ; in milliseconds
   t_swmf=t_swmf/(24.*60.*60.*1.e3)/t_norm
 
-  dist_int_u=curve_int_distance(t_obsv(index_u),u_obs(index_u),t_swmf,u_simu1)
-  dist_int_t=curve_int_distance(t_obsv(index_T),T_obs(index_T)/tem_norm,$
-                                t_swmf,ti_simu1/tem_norm)
-  dist_int_n=curve_int_distance(t_obsv(index_n),n_obs(index_n)/n_norm,$
-                                t_swmf,n_simu1/n_norm)
-  dist_int_b=curve_int_distance(t_obsv(index_B),B_obs(index_B)/mag_norm,$
-                                t_swmf,b_simu1*1.e5/mag_norm)
+  dist_int_u=curve_int_distance(t_obsv(index_u), u_obs(index_u)/u_norm,$
+                                t_swmf, u_simu1/u_norm)
+  dist_int_t=curve_int_distance(t_obsv(index_T), T_obs(index_T)/tem_norm,$
+                                t_swmf, ti_simu1/tem_norm)
+  dist_int_n=curve_int_distance(t_obsv(index_n), n_obs(index_n)/n_norm,$
+                                t_swmf, n_simu1/n_norm)
+  dist_int_b=curve_int_distance(t_obsv(index_B), B_obs(index_B)/mag_norm,$
+                                t_swmf, b_simu1*1.e5/mag_norm)
   print,FORMAT='(a,f7.3,f7.4,f7.4,f7.4)',$
         'Integrated  Curve distance (Ur, Np, T, B) is: '$
         ,trim(dist_int_u),dist_int_N,dist_int_t,dist_int_b
@@ -1548,8 +1549,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   if (DoPlot3 eq 1) then outplot,time_simu3,n_simu3,color=color_I[3],thick=9
   if (DoPlot4 eq 1) then outplot,time_simu4,n_simu4,color=color_I[4],thick=9
   
-  legend,dist_int(1),thick=5,charsize=1,charthick=5,position=[0.75,0.72],$
-         /norm,box=0  
+  legend,dist_int(1),thick=5,charsize=1,charthick=5,position=[0.75,0.72],/norm,box=0  
   ;;----------------------------------------------------------------------
   ;; plot temperature
 
@@ -1576,8 +1576,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
      if (DoPlot4 eq 1) then outplot,time_simu4,te_simu4,color=color_I[4], $
                                     thick=9,linestyle=2
   endif
-  legend,dist_int(2),thick=5,charsize=1,charthick=5,position=[0.75,0.49],$
-         /norm,box=0
+  legend,dist_int(2),thick=5,charsize=1,charthick=5,position=[0.75,0.49],/norm,box=0
   ;;----------------------------------------------------------------------
   ;; plot magnetic field
 
@@ -1596,8 +1595,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   if (DoPlot3 eq 1) then outplot,time_simu3,b_simu3*1e5,color=color_I[3],thick=9
   if (DoPlot4 eq 1) then outplot,time_simu4,b_simu4*1e5,color=color_I[4],thick=9
 
-  legend,dist_int(3),thick=5,charsize=1,charthick=5,position=[0.75,0.27],$
-         /norm,box=0
+  legend,dist_int(3),thick=5,charsize=1,charthick=5,position=[0.75,0.27],/norm,box=0
   device,/close_file
 end
 
