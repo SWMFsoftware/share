@@ -157,7 +157,7 @@ set line = `/bin/ls -l $Home/$1 | tail -1 | colrm 6`
 if ( "$line" != "total") then
   cd $1
   foreach i (*)
-    if ((-d $Home/$1/$i) && !($i == "CVS")) then
+    if ((-d $Home/$1/$i) && !($i == ".git")) then
       if (  -d $Home/$2/$i) then
         cd $Home
         CompareDirs $1/$i $2/$i $3 $4
