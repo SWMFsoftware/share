@@ -635,9 +635,7 @@ sub output{
 #!DESCRIPTION:
 # This script together with the directives inserted into the source files
 # (this can be any ASCII file, not just source code) allows a flexible
-# and versatile configuration of a software package. The software package
-# is assumed to be under CVS control, and normally only those files are
-# configured which belong to the CVS repositry. Adding a special 
+# and versatile configuration of a software package. Adding a special 
 # config file with a directory can configure out the whole directory.
 # The configuration can be recursive, i.e. the configured software package
 # can be further configured.
