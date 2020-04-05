@@ -7,6 +7,7 @@
 #define IM 2147483647
 #define AM (1.0 / IM)
 #define IQ 127773
+#define invIQ (1.0 / IQ) 
 #define IR 2836
 #define MASK 123459876
 
@@ -38,7 +39,7 @@ public:
     double ans;
 
     idum ^= MASK;
-    k = (idum) / IQ;
+    k = (idum) * invIQ;
     idum = IA * (idum - k * IQ) - IR * k;
     if (idum < 0)
       idum += IM;
