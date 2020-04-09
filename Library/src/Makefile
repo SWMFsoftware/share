@@ -1,5 +1,5 @@
-#  Copyright (C) 2002 Regents of the University of Michigan, 
-#  portions used with permission 
+#  Copyright (C) 2002 Regents of the University of Michigan,
+#  portions used with permission
 #  For more information, see http://csem.engin.umich.edu/tools/swmf
 
 include ../../../Makefile.def
@@ -11,7 +11,7 @@ include ../../../Makefile.conf
 # A component does not have to use the whole library.
 # The minimum reqguirement is ModIoUnit.o
 
-# This rule is used to regenerate ModMpiInterface.f90 from a modified 
+# This rule is used to regenerate ModMpiInterface.f90 from a modified
 # SWMF_MPI_routines.dat
 #MPIINTERFACE:
 
@@ -43,7 +43,7 @@ OBJECTS = \
 	ModMpiInterfaces.o\
 	ModMpi.o\
 	ModMpiOrig.o\
-        ModNumConst.o\
+  ModNumConst.o\
 	ModPlanetConst.o\
 	ModPlotFile.o\
 	ModPoissonBracket.o\
@@ -68,6 +68,7 @@ DEPEND:
 	@perl ${SCRIPTDIR}/depend.pl ${OBJECTS} PostIDL.o
 
 MY_LIB = ${LIBDIR}/libSHARE.a
+MY_DYN_LIB = ${LIBDIR}/libSHARE.so
 
 LIB:	DEPEND
 	${MAKE} ${MY_LIB}
@@ -108,6 +109,16 @@ ${BINDIR}/Convert2Vtk.exe: FormatConverter.o ${MY_LIB}
 
 2VTK: DEPEND
 	make ${BINDIR}/Convert2Vtk.exe
+
+LIBSO: DEPEND
+	${MAKE} ${MY_DYN_LIB}
+	@echo
+	@echo ${MY_DYN_LIB} has been brought up to date.
+	@echo
+
+${MY_DYN_LIB}: ${OBJECTS} ModUtility_c.o
+	rm -f ${MY_DYN_LIB}
+	${LINK.f90} -shared -fPIC -o ${MY_DYN_LIB} ${OBJECTS} ModUtility_c.o -lstdc++
 
 clean: cleanfiles
 

@@ -24,15 +24,21 @@ public:
 private:
   int nx, ny, nz, nPatch, nInt;
   int* data;
+  bool isNewGrid;
 
 public:
-  GridInfo() { data = nullptr; }
+  GridInfo() {
+    data = nullptr;
+    isNewGrid = false;
+  }
 
   ~GridInfo() {
     if (data != nullptr) {
       delete[] data;
     }
   }
+
+  bool is_grid_new()const{return isNewGrid;}
 
   int get_patch_size(int iDim) {
     int size = 1;
@@ -62,6 +68,7 @@ public:
     for (int i = 0; i < nInt; i++) {
       data[i] = 0;
     }
+    isNewGrid = true; 
   }
 
   // void reset() { reset_grid_info(data, nx, ny, nz); }
@@ -72,8 +79,11 @@ public:
 
   void set_status(int* statusIn) {
     const int nInt = ceil(nx * ny * nz / 8.0 / sizeof(int));
+    isNewGrid = false; 
     for (int i = 0; i < nInt; i++) {
-      data[i] = statusIn[i];
+      const int tmp = statusIn[i];
+      if(data[i] != tmp) isNewGrid = true; 
+      data[i] = tmp; 
     }
   }
 

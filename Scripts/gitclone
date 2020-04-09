@@ -1,0 +1,48 @@
+#!/usr/bin/perl -s
+
+if($h or $help or not @ARGV){
+    print "
+Clone a project from the proper git repository.
+
+Usage:
+  gitclone REPO [flags] [DIRNAME]
+
+REPO          Name of repository
+flags         Any git flag, for example --depth 1
+DIRNAME       Name of local directory (default is same as REPO)
+
+Examples:
+
+Clone BATSRUS repository from swmf_software:
+
+   gitclone BATSRUS
+
+Clone LATEX repositiry from csem_software without history into Papers/BIBTEX:
+
+   gitclone LATEX --depth 1 Papers/BIBTEX
+";
+    exit 0;
+}
+
+use strict;
+
+my $swmf_software = 'git@gitlab.umich.edu:swmf_software';
+my $csem_software = 'git@gitlab.umich.edu:csem_software';
+
+my %url = (
+    "BATSRUS_GPU"        => $csem_software,
+    "BATSRUS_GPU_simple" => $csem_software,
+    "LATEX"              => $csem_software,
+    "VAC"                => $csem_software,
+    "WSA"                => $csem_software,
+    );
+
+my $project = $ARGV[0]; $project =~ s/\.git$//;
+
+my $url = ($url{$project} or $swmf_software);
+
+my $command = "git clone $url/".join(" ", @ARGV);
+print "$command\n";
+`$command`;
+
+exit 0;

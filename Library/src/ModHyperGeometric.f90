@@ -11,7 +11,7 @@ module ModHyperGeometric
   use ModUtilities, ONLY: CON_stop
 
   implicit none
-  real, parameter:: cTolerance_I(0:1) = (/1.0e-7, 1.0e-15/)
+  real, parameter:: cTolerance_I(0:1) = [1.0e-7, 1.0e-15]
   real, parameter:: cEiler    = 0.57721566490
   real, parameter:: cSqrtPi   = 1.7724538509055159
 contains

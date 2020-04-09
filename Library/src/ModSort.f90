@@ -1,4 +1,4 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 module ModSort
 
@@ -8,14 +8,8 @@ module ModSort
 
   public :: sort_quick ! the quick sort algoritm (Numerical Recipes)
   public :: sort_sum   ! add up numbers but first sort them by magnitude
+  public :: sort_quick_func ! quick sort with function handle
   public :: sort_test  ! unit test
-
-  public :: sort_quick_func
-
-  ! Local variables for the unit test
-
-  integer, parameter :: n=5
-  real    :: a_I(n)
 
 contains
   !===========================================================================
@@ -111,7 +105,7 @@ contains
 
   !============================================================================
 
-  subroutine sort_quick_func(n, is_larger, iSort_I)
+  subroutine sort_quick_func(n, is_larger, a_I, iSort_I)
 
     ! Quick sort algorithm: sorts iSort_I array according to is_larger function
     ! so that is_larger(iSort_I(i+1), iSort_I(i)) is true for i=1..n-1
@@ -120,10 +114,12 @@ contains
 
     integer, intent(in)  :: n
     interface
-       logical function is_larger(i,j)
+       logical function is_larger(a_I,i,j)
+         real, intent(in):: a_I(:)
          integer, intent(in):: i,j
        end function is_larger
     end interface
+    real, intent(in) :: a_I(n)
     integer, intent(out) :: iSort_I(n)
 
     integer, parameter   :: M=7, NSTACK=1000 ! should be > 2*log_2(n)
@@ -141,7 +137,7 @@ contains
        do j=l+1,ir
           indxt=iSort_I(j)
           do i=j-1,1,-1
-             if(.not.is_larger(iSort_I(i), indxt)) goto 2
+             if(.not.is_larger(a_I,iSort_I(i), indxt)) goto 2
              iSort_I(i+1)=iSort_I(i)
           end do
           i=0
@@ -156,17 +152,17 @@ contains
        itemp=iSort_I(k)
        iSort_I(k)=iSort_I(l+1)
        iSort_I(l+1)=itemp
-       if(is_larger(iSort_I(l+1), iSort_I(ir)))then
+       if(is_larger(a_I,iSort_I(l+1), iSort_I(ir)))then
           itemp=iSort_I(l+1)
           iSort_I(l+1)=iSort_I(ir)
           iSort_I(ir)=itemp
        endif
-       if(is_larger(iSort_I(l), iSort_I(ir)))then
+       if(is_larger(a_I,iSort_I(l), iSort_I(ir)))then
           itemp=iSort_I(l)
           iSort_I(l)=iSort_I(ir)
           iSort_I(ir)=itemp
        endif
-       if(is_larger(iSort_I(l+1), iSort_I(l)))then
+       if(is_larger(a_I,iSort_I(l+1), iSort_I(l)))then
           itemp=iSort_I(l+1)
           iSort_I(l+1)=iSort_I(l)
           iSort_I(l)=itemp
@@ -176,10 +172,10 @@ contains
        indxt=iSort_I(l)
 3      continue
        i=i+1
-       if(is_larger(indxt, iSort_I(i))) goto 3
+       if(is_larger(a_I,indxt, iSort_I(i))) goto 3
 4      continue
        j=j-1
-       if(is_larger(iSort_I(j), indxt)) goto 4
+       if(is_larger(a_I,iSort_I(j), indxt)) goto 4
        if(j < i)goto 5
        itemp=iSort_I(i)
        iSort_I(i)=iSort_I(j)
@@ -228,7 +224,8 @@ contains
   end function sort_sum
 
   !======================================================================
-  logical function is_larger_test(i, j)
+  logical function is_larger_test(a_I, i, j)
+    real, intent(in):: a_I(:)
     integer, intent(in):: i, j
 
     is_larger_test = a_I(i) > a_I(j)
@@ -237,11 +234,14 @@ contains
   !======================================================================
   subroutine sort_test
 
+    ! Local variables for the unit test
+    integer, parameter :: n=5
+    real    :: a_I(n)
     real    :: b_I(n), SortSum
     integer :: i_I(n), i, iTest
     logical :: IsError
     !------------------------------------------------------------------------
-    a_I = (/0.0, 2.0, 1.0, 4.0, 0.0/)
+    a_I = [0.0, 2.0, 1.0, 4.0, 0.0]
 
     do iTest = 1, 2
        if(iTest == 1)then
@@ -249,7 +249,7 @@ contains
           call sort_quick(n,a_I,i_I)
        else
           write(*,'(a)')'Testing sort_quick_func'
-          call sort_quick_func(n,is_larger_test,i_I)
+          call sort_quick_func(n,is_larger_test,a_I,i_I)
        end if
        b_I = a_I(i_I)
 
@@ -270,7 +270,7 @@ contains
     end do
 
     write(*,'(a)')'Testing sort_sum'
-    a_I = (/1.e-6, 1.e-7, 1.e10, -3.e9, -7.e9/)
+    a_I = [1.e-6, 1.e-7, 1.e10, -3.e9, -7.e9]
 
     SortSum = sort_sum(a_I)
     if(abs(SortSum - 1.1e-6) > 1.1e-12) &
