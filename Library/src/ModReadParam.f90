@@ -564,9 +564,9 @@ contains
 
     character (len=*), intent(in)    :: Name
     !-------------------------------------------------------------------------
-
-    if(index(StringLine,Name)<1) &
+    if(index(StringLine, Name) < 1) &
          StringLine=trim(StringLine)//char(9)//char(9)//Name
+
     write(iIoUnit,'(a)') trim(StringPrefix)//trim(StringLine)
 
   end subroutine read_echo
@@ -731,7 +731,7 @@ contains
     !-------------------------------------------------------------------------
     call read_line_param('real', Name, iError)
 
-    NameEcho = trim(Name)
+    NameEcho = Name
 
     if (index(StringParam,'/') > 0) then
        ! Fraction: Real1/Real2
@@ -801,7 +801,7 @@ contains
     end if
 
     RealVar=RealTmp
-    if(DoEcho)call read_echo(NameEcho)
+    if(DoEcho)call read_echo(trim(NameEcho))
 
   end subroutine read_var_r
 
