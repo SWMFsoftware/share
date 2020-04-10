@@ -35,6 +35,7 @@ my %url = (
     "LATEX"              => $csem_software,
     "VAC"                => $csem_software,
     "WSA"                => $csem_software,
+    "GITM"               => "https://github.com/aaronjridley",
     );
 
 my $project = $ARGV[0]; $project =~ s/\.git$//;
