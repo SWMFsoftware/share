@@ -14,7 +14,8 @@ Usage:
 -v -verbose   provide verbose information for the status command
 -q -quiet     execute the Git command without printing the gitall annotations
 -s -sleep     sleep 5 seconds after each Git command to avoid ssh access issues
--s=N -sleep=N sleep N seconds after each Git command (N should be more than 1)
+-s=N -sleep=N sleep N seconds after each Git push or pull command
+              The default is set by the \$GITLABSLEEP environment variable.
 -r -reference print Git references 
 -r=c          print Git references as a C header with a print statement
 -r=f          print Git references as a Fortran write statement
@@ -44,7 +45,7 @@ Switch to the UM GitLab remote server
 }
 
 my $Verbose   = ($v or $verbose);
-my $Sleep     = ($s or $sleep); $Sleep = 5 if $Sleep == 1;
+my $Sleep     = ($s or $sleep or $ENV{GITLABSLEEP});
 my $List      = ($l or $list);
 my $Quiet     = ($q or $quiet);
 my $Reference = ($r or $reference);
@@ -58,7 +59,7 @@ $Remote = 'git@gitlab.umich.edu:swmf_software' if $Remote eq "1";
 my $gitcmd;                # The variable to receive the git command
 
 $gitcmd = join(' ',@ARGV);
-$gitcmd .= "; sleep $Sleep" if $Sleep;
+$gitcmd .= "; sleep $Sleep" if $Sleep and $gitcmd =~ /\b(push|pull)\b/;
 
 my @RefList; 
 my $pwd = `pwd`; chop($pwd);
