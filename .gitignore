@@ -8,6 +8,7 @@
 *.ref
 *.log
 *.protex
+Python
 
 Library/src/Makefile.DEPEND
 Library/src/Makefile.RULES
