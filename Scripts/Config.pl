@@ -155,6 +155,7 @@ my $Optimize;
 my $ShowCompiler;
 my $GetGitInfo;
 my $gitall;
+our $gitclone;
 
 # Obtain current settings
 &get_settings_;
@@ -219,10 +220,11 @@ if(not $MakefileDefOrig and not $IsComponent){
     $IsComponent = 1;
 }
 
-# Find the gitall script
+# Find the gitall and gitclone scripts
 foreach my $dir ($DIR, "$DIR/../.."){
     if(-e "$dir/share/Scripts/gitall"){
 	$gitall = "$dir/share/Scripts/gitall";
+	$gitclone = "$dir/share/Scripts/gitclone";
 	last;
     }
 }
@@ -356,7 +358,7 @@ if($Compiler eq "nagfor" and $Debug eq "yes" and
 
 # (re)create gitinfo.txt file in the main directory
 if($GetGitInfo or ($Install and not $IsComponent)){
-    shell_command("share/Scripts/gitall -r > gitinfo.txt; ls -l \`pwd\`/gitinfo.txt")
+    shell_command("$gitall -r > gitinfo.txt; ls -l \`pwd\`/gitinfo.txt")
 }
 
 # Return into the component directory
@@ -582,8 +584,11 @@ MACHINE  = $Machine
     &link_swmf_data;
 
     # Install the code
-    &shell_command("cd share; make install") 
-	if -f "share/Makefile" and not $IsComponent;
+    if( -f "share/Makefile" and not $IsComponent){
+	&shell_command("cd share; make install");
+	&shell_command("$gitclone swmfpy Python") unless -d "Python";
+    }
+
     &shell_command("cd util; make install") 
 	if -d "util" and not $IsComponent;
     &shell_command("make install");
@@ -814,7 +819,7 @@ sub set_hypre_{
 
     # Check if library is present
     if($NewHypre eq "yes" and not -d "util/HYPRE"){
-	&shell_command("sleep 5; git clone git\@gitlab.umich.edu:swmf_software/HYPRE util/HYPRE");
+	&shell_command("$gitclone HYPRE util/HYPRE");
 	if(not -d "util/HYPRE"){
 	    print "Warning: could not git clone util/HYPRE";
 	    return;
@@ -868,7 +873,7 @@ sub set_amrex_{
 
     # Check if library is present
     if($NewAmrex eq "yes" and not -d "util/AMREX"){
-	&shell_command("sleep 5; git clone git\@gitlab.umich.edu:swmf_software/AMREX util/AMREX");
+	&shell_command("$gitclone AMREX util/AMREX");
 	if(not -d "util/AMREX"){
 	    print "Warning: could not git clone util/AMREX";
 	    return;
