@@ -224,7 +224,7 @@ if(not $MakefileDefOrig and not $IsComponent){
 foreach my $dir ($DIR, "$DIR/../.."){
     if(-e "$dir/share/Scripts/gitall"){
 	$gitall = "$dir/share/Scripts/gitall";
-	$gitclone = "$dir/share/Scripts/gitclone";
+	$gitclone = "$dir/share/Scripts/gitclone -s";
 	last;
     }
 }
