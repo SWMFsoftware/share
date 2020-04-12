@@ -586,7 +586,7 @@ MACHINE  = $Machine
     # Install the code
     if( -f "share/Makefile" and not $IsComponent){
 	&shell_command("cd share; make install");
-	&shell_command("$gitclone swmfpy Python") unless -d "Python";
+	&shell_command("$gitclone swmfpy share/Python") unless -d "Python";
     }
 
     &shell_command("cd util; make install") 
