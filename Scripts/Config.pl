@@ -887,7 +887,8 @@ sub set_amrex_{
 	$AmrexCompiler="nag" if $Compiler eq "nagfor";
 
 	&shell_command("cd util/AMREX;", 
-		       "./configure --prefix $installdir --debug $Debug --comp $AmrexCompiler --enable-fortran-api no;",
+		       "./configure --prefix $installdir --comp $AmrexCompiler --enable-fortran-api no;",
+		       "./configure --debug $Debug --enable-tiny-profile yes;",
 		       "rm -rf util/AMREX/InstallDir");
 	
 	$IsStrict = 0;
@@ -910,12 +911,21 @@ sub set_amrex_{
     if(not $DryRun){
 	@ARGV = ($MakefileConf);
 	while(<>){
-	    if($Amrex eq "no") { s/\$\{AMREXLIB}//g; };
-	    if($Amrex eq "yes"){ s/^(Lflag\s+.*)/$1 \$\{AMREXLIB}/; };
-	    
-	    # Add/remove AMREX related definitions after MPILIB
+	    # Remove the AMREX releated definitions.
+
+	    # Remove AMREX linking flag
+	    s/\$\{AMREXLIB}//g;
+
+	    # Remove $AmrexDefinition
+	    $_ = "" if /^AMREX/ or /#.*AMREX/;
+	    print; 
+	}
+	
+	@ARGV = ($MakefileConf);
+	while(<>){
+	    # Add AMREX releated definitions when necessary. 
+	    if($Amrex eq "yes"){ s/^(Lflag\s+.*)/$1 \$\{AMREXLIB}/; };	    
 	    $_ .= $AmrexDefinition if $Amrex eq "yes" and /-lNOMPI/;
-	    $_ = "" if $Amrex eq "no" and /AMREX/i;
 	    print;
 	}
     }
