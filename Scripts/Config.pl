@@ -887,8 +887,7 @@ sub set_amrex_{
 	$AmrexCompiler="nag" if $Compiler eq "nagfor";
 
 	&shell_command("cd util/AMREX;", 
-		       "./configure --prefix $installdir --comp $AmrexCompiler --enable-fortran-api no;",
-		       "./configure --debug $Debug --enable-tiny-profile yes;",
+		       "./configure --prefix $installdir --comp $AmrexCompiler --enable-fortran-api no --debug $Debug --enable-tiny-profile yes;",
 		       "rm -rf util/AMREX/InstallDir");
 	
 	$IsStrict = 0;
