@@ -33,18 +33,18 @@ if(not -e $File2){
     print "$ERROR: $File2 does not exist\n"; die "$ERROR\n";
 }
 
-if(not -T $File1){
-    print "$ERROR: $File1 is not an ASCII file\n"; die "$ERROR\n";
-}
-if(not -T $File2){
-    print "$ERROR: $File2 is not an ASCII file\n"; die "$ERROR\n";
+if($File1 =~ /.gz$/){
+    open(FILE1, "gunzip -c $File1 |") or die "$ERROR: cannot open $File1\n";
+}else{
+    die "$ERROR: $File1 is not an ASCII file\n" unless -T $File1;
+    open(FILE1, $File1) or die "$ERROR: could not open $File1\n";
 }
 
-if(not open(FILE1, $File1)){
-    print "$ERROR: could not open $File1\n"; die "$ERROR\n";
-}
-if(not open(FILE2, $File2)){
-    print "$ERROR: could not open $File2\n"; die "$ERROR\n";
+if($File2 =~ /.gz$/){
+    open(FILE2, "gunzip -c $File2 |") or die "$ERROR: cannot open $File2\n";
+}else{
+    die "$ERROR: $File2 is not an ASCII file\n" unless -T $File2;
+    open(FILE2, $File2) or die "$ERROR: could not open $File2\n";
 }
 
 # Files for text comparison. Use local directory.
