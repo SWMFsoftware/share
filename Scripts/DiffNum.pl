@@ -8,6 +8,7 @@ my $RelTol      = ($r or $rel or 1e-12);
 my $MaxLine     = ($l or $lines or 100);
 my $TextIgnore  = ($t or $text);
 my $BlankIgnore = ($b or $blank);
+my $Bless       = ($BLESS or $B); $Bless = 0 if $Bless =~ /^n/i;
 
 my $TextDiff = not $TextIgnore;
 
@@ -26,12 +27,7 @@ die "$ERROR: there should be two file arguments!\n" unless $#ARGV == 1;
 my $File1 = $ARGV[0];
 my $File2 = $ARGV[1];
 
-if(not -e $File1){
-    print "$ERROR: $File1 does not exist\n"; die "$ERROR\n";
-}
-if(not -e $File2){
-    print "$ERROR: $File2 does not exist\n"; die "$ERROR\n";
-}
+die "$ERROR: $File1 does not exist\n" unless -e $File1;
 
 if($File1 =~ /.gz$/){
     open(FILE1, "gunzip -c $File1 |") or die "$ERROR: cannot open $File1\n";
@@ -39,6 +35,18 @@ if($File1 =~ /.gz$/){
     die "$ERROR: $File1 is not an ASCII file\n" unless -T $File1;
     open(FILE1, $File1) or die "$ERROR: could not open $File1\n";
 }
+
+# Copy or gzip File1 into File2
+if($Bless){
+    if($File2 =~ /.gz$/){
+	`gzip -c $File1 > $File2`;
+    }else{
+	`cp $File1 $File2`;
+    }
+    exit 0;
+}
+
+die "$ERROR: $File2 does not exist\n" unless -e $File2;
 
 if($File2 =~ /.gz$/){
     open(FILE2, "gunzip -c $File2 |") or die "$ERROR: cannot open $File2\n";
@@ -178,7 +186,7 @@ Purpose:
     numbers are replaced with \#. Differences in number formats
     are ignored. 
 
-Usage: DiffNum.pl [-a=ABSTOL] [-r=RELTOL] [-l=LINES] [-b|-t] FILE1 FILE2
+Usage: DiffNum.pl [-a=ABSTOL] [-r=RELTOL] [-l=LINES] [-b|-t] [-B] FILE1 FILE2
 
    -a=ABSTOL     - ignore differences smaller than ABSTOL.
                    Default value is 1e-30
@@ -198,17 +206,29 @@ Usage: DiffNum.pl [-a=ABSTOL] [-r=RELTOL] [-l=LINES] [-b|-t] FILE1 FILE2
    -t -text      - Ignore the text between numbers.
                    Default is that the text is also compared.
 
+   -B -BLESS     - If -BLESS flag is used and its value is not 'NO', then 
+   -BLESS=VALUE    copy the results File1 into the reference solution File2. 
+                   If the reference solution is gzipped, then compress the 
+                   results with gzip.
+
+   File1 File2   - Files to be compared. If filename ends with .gz,
+                   the file is uncompressed with gunzip before comparison.
+
 Examples:
 
    Compare File1 and File2 and show numerical differences only with 
    a value exceeding 1e-10 and relative value exceeding 1e-6:
 
-DiffNum.pl -t -a=1e-10 -r=1e-6 File1 File2
+DiffNum.pl -t -a=1e-10 -r=1e-6 File1 File2.gz
 
    Compare File1 and File2 with the default tolerances, ignore blanks
    in the text differences, and show at most 20 lines of comparison:
 
 DiffNum.pl -b -l=20 File1 File2
+
+   Compress and copy File1 into File2.gz
+
+DiffNum.pl -BLESS File1 File2.gz
 
 ";
     exit 0;
