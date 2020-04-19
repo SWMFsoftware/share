@@ -1795,6 +1795,7 @@ end
 
 function rms_error, obs_data, simu_data
 
+; for a 1 D array
 diff_data = 0.
 obs_sum = 0.
 rmse= 0.
@@ -1806,3 +1807,62 @@ return, rmse
 
 end
 ;--------------------------------------------------------------------
+pro quantify_los, obs_data, sim_data, $
+               DoDiffMap=DoDiffMap, DoRatioMap=DoRatioMap, DoRmse=DoRmse,$
+               unitlog=unitlog
+
+; Calculate the no. of elements
+obs_size = size(obs_data.data);,/n_elements)
+sim_size = size(sim_data.data);,/n_elements)
+
+;print,'Size of OBS  is = ', obs_size
+;print,'Size of SWMF is = ', sim_size
+
+if (obs_size[4] ne sim_size[4]) then begin
+   print, 'Data and Model output are of different sizes'
+   exit
+endif
+mean_obs = total(obs_data.data)/obs_size[4]
+mean_sim = total(sim_data.data)/sim_size[4]
+
+ratio = mean_obs/mean_sim
+;print,'Mean value of Observations is = ',trim(mean_obs),$
+     ; ' and Simulation is = ',trim(mean_sim)
+;print,'Ratio: Mean_obs/Mean_sim = ',ratio
+
+printf,unitlog,'Mean_obs = ',trim(mean_obs)
+printf,unitlog,'Mean_sim = ',trim(mean_sim)
+printf,unitlog,'Ratio (Mean_obs/Mean_sim) = ',trim(ratio)
+
+; SAVE PLOTS HERE ?
+if keyword_set(DoDiffMap) then begin
+   d_map = diff_map(obs_data,sim_data)
+   plot_map,d_map
+endif
+if keyword_set(DoRatioMap) then begin
+   d_map_ratio = diff_map(obs_data,sim_data,ratio=ratio)
+   plot_map,d_map_ratio
+endif
+
+sq_error = 0.
+rmse = 0.
+nrmse = 0. ; normalised rmse
+scatter = 0.
+if keyword_set(DoRmse) then begin
+   for i=0,obs_size[1]-1 do begin
+      for j=0,obs_size[1]-1 do begin
+         sq_error = sq_error + (sim_data.data[i,j] - obs_data.data[i,j])^2
+      endfor
+   endfor
+   rmse = sqrt(sq_error/obs_size[4])
+   scatter = rmse/mean_obs
+   nrmse = rmse/(max(obs_data.data) - min(obs_data.data))
+ ;  print,'RMSE, SCATTER = ', rmse, scatter
+ ;  print,'Normalized RMSE (norm to max(obs) - min(obs)) = ', nrmse
+
+   printf,unitlog,'Root mean square error (RMSE) = ',trim(rmse)
+   printf,unitlog,'Scatter = RMSE/(mean_obs)= ',trim(scatter)
+   printf,unitlog,'Normalized RMSE (norm to max(obs) - min(obs)) = ',$
+          trim(nrmse)
+endif
+end
