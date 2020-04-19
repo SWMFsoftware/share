@@ -238,6 +238,59 @@ pro compare_AIA, TimeEvent=TimeEvent, varnames=varnames, nvars=nvars,        $
   !p.multi=0
   loadct,0
 
+  ;; Quantitative comparisons:
+
+  printf, unitlog,'aia94: max(obs), max(swmf) = ',$
+          max(aia94_map.data), max(aia94_image.data)
+  printf, unitlog,'aia94: min(obs), min(swmf) = ', $
+          min(aia94_map.data), min(aia94_image.data)
+  printf, unitlog,'aia171: max(obs), max(swmf) = ',$ 
+          max(aia171_map.data),max(aia171_image.data)
+  printf, unitlog,'aia171: min(obs), min(swmf) = ',$
+          min(aia171_map.data),min(aia171_image.data)
+  printf, unitlog,'aia193: max(obs), max(swmf) = ',$
+          max(aia193_map.data),max(aia193_image.data)
+  printf, unitlog,'aia193: min(obs), min(swmf) = ',$
+          min(aia193_map.data),min(aia193_image.data)
+  printf, unitlog,'aia131: max(obs), max(swmf) = ',$
+          max(aia131_map.data),max(aia131_image.data)
+  printf, unitlog,'aia131: min(obs), min(swmf) =',$
+          min(aia131_map.data),min(aia131_image.data)
+  printf, unitlog,'aia211: max(obs), max(swmf) = ',$
+          max(aia211_map.data),max(aia211_image.data)
+  printf, unitlog,'aia211: min(obs), min(swmf) = ',$
+          min(aia211_map.data),min(aia211_image.data)
+  printf, unitlog,'aia335: max(obs), max(swmf) = ',$
+          max(aia335_map.data),max(aia335_image.data)
+  printf, unitlog,'aia335: min(obs), min(swmf) = ',$
+          min(aia335_map.data),min(aia335_image.data)
+
+  printf,unitlog,''
+  printf,unitlog,'Quantify LOS:'
+  printf,unitlog,'AIA:94'
+  quantify_los,aia94_map,aia94_image,DoDiffMap=0,DoRatioMap=0,DoRmse=1,$
+            unitlog=unitlog
+  printf,unitlog,''
+  printf,unitlog,'AIA:171'
+  quantify_los,aia171_map,aia171_image,DoDiffMap=0,DoRatioMap=0,DoRmse=1,$
+            unitlog=unitlog
+  printf,unitlog,''
+  printf,unitlog,'AIA:193'
+  quantify_los,aia193_map,aia193_image,DoDiffMap=0,DoRatioMap=0,DoRmse=1,$
+            unitlog=unitlog
+  printf,unitlog,''
+  printf,unitlog,'AIA:131'
+  quantify_los,aia131_map,aia131_image,DoDiffMap=0,DoRatioMap=0,DoRmse=1,$
+            unitlog=unitlog
+  printf,unitlog,''
+  printf,unitlog,'AIA:211'
+  quantifY_los,aia211_map,aia211_image,DoDiffMap=0,DoRatioMap=0,DoRmse=1,$
+            unitlog=unitlog
+  printf,unitlog,''
+  printf,unitlog,'AIA:335'
+  quantify_los,aia335_map,aia335_image,DoDiffMap=0,DoRatioMap=0,DoRmse=1,$
+            unitlog=unitlog
+
   out: printf, unitlog, NameSub, ' is finished.'
   printf, unitlog, ''
 end
