@@ -156,7 +156,35 @@ pro compare_EUV, TimeEvent=TimeEvent, varnames=varnames, nvars=nvars,        $
 
   !p.multi=0
   loadct,0
+  
+  printf,unitlog,''
+  printf, unitlog,'euv171: max(obs), max(swmf) = ',$
+          max(euv171_map.data), max(euv171_image.data)
+  printf, unitlog,'euv171: min(obs), min(swmf) = ', $
+          min(euv171_map.data), min(euv171_image.data)
+  printf, unitlog,'euv195: max(obs), max(swmf) = ',$
+          max(euv195_map.data),max(euv195_image.data)
+  printf, unitlog,'euv195: min(obs), min(swmf) = ',$
+          min(euv195_map.data),min(euv195_image.data)
+  printf, unitlog,'euv284: max(obs), max(swmf) = ',$
+          max(euv284_map.data),max(euv284_image.data)
+  printf, unitlog,'euv284: min(obs), min(swmf) = ',$
+          min(euv284_map.data),min(euv284_image.data)
 
+  printf,unitlog,''
+  printf,unitlog,'Quantify LOS:'
+  printf,unitlog,'EUV:171'
+  quantify_los,euv171_map,euv171_image,DoDiffMap=0,DoRatioMap=0,DoRmse=1,$
+            unitlog=unitlog
+  printf,unitlog,''
+  printf,unitlog,'EUV:195'
+  quantify_los,euv195_map,euv195_image,DoDiffMap=0,DoRatioMap=0,DoRmse=1,$
+            unitlog=unitlog
+  printf,unitlog,''
+  printf,unitlog,'EUV:284'
+  quantify_los,euv284_map,euv284_image,DoDiffMap=0,DoRatioMap=0,DoRmse=1,$
+            unitlog=unitlog
+  printf,unitlog,''
   out: printf, unitlog, NameSub, ' is finished.'
   printf, unitlog, ''
 end
