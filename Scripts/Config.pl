@@ -589,6 +589,11 @@ MACHINE  = $Machine
 	&shell_command("$gitclone swmfpy share/Python") unless -d "share/Python";
     }
 
+    # Install swmfpy
+    if( -d "share/Python" and not $IsComponent){
+	&shell_command("cd share/Python; python setup.py install --user --force")
+    }
+
     &shell_command("cd util; make install") 
 	if -d "util" and not $IsComponent;
     &shell_command("make install");
