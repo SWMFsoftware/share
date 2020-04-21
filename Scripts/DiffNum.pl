@@ -35,9 +35,12 @@ die "$ERROR: $File1 does not exist\n" unless -e $File1;
 
 # Copy or gzip File1 into File2 if results are "blessed"
 if($Bless){
-    if($File2 =~ /.gz$/){
+    if($File1 !~ /.gz$/ and $File2 =~ /.gz$/){
 	warn "DiffNum.pl -BLESS: gzip -c $File1 > $File2\n";
 	`gzip -c $File1 > $File2`;
+    }elsif($File1 =~ /.gz$/ and $File2 !~ /.gz$/){
+	warn "DiffNum.pl -BLESS: gunzip -c $File1 > $File2\n";
+	`gunzip -c $File1 > $File2`;
     }else{
 	warn "DiffNum.pl -BLESS: cp $File1 $File2\n";
 	`cp $File1 $File2`;
