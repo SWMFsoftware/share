@@ -810,7 +810,7 @@ end
 ;--------------------------------------------------------------------
 
 pro plot_map_local, map, position=position, xrange=xrange, yrange=yrange,  $
-                    dmin=dmin, dmax=dmax, charsize=charsize,               $
+                    dmin=dtmin, dmax=dtmax, charsize=charsize,               $
                     title=title, ytitle=ytitle, xtitle=xtitle
   
   if (max(map.data) gt 0) then begin
