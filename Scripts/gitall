@@ -63,17 +63,20 @@ $gitcmd .= "; sleep $Sleep" if $Sleep and $gitcmd =~ /\b(push|pull)\b/;
 
 my @RefList; 
 my $pwd = `pwd`; chop($pwd);
+my $remote = `git remote get-url origin`; chomp($remote);
+my $mainrepo = $1 if $remote =~ s/\/(\w+)$//;
 
 if($gitcmd or $Reference or $List or $Remote){
     &execute_gitall($pwd);
 }
 
-@RefList = sort {$b =~ /^Git/ or ($a cmp $b)} @RefList;
+@RefList = sort {$b !~ /\// or ($a cmp $b)} @RefList;
 if($Reference =~ /c/i){
     print '#include <iostream>
 void print_git_info(){
   std::cout 
     << "Main dir=', $pwd,'\n"
+    << "Remote  =', $remote,'\n"
     << "', join('\n"'.'
     << "', @RefList),'\n";
 }
@@ -82,6 +85,7 @@ void print_git_info(){
     print "
   write(*,'(100(a/))') &
        'Main dir=",$pwd,"', &
+       'Remote  =",$remote,"', &
        '", join("', &
        '", @RefList),"'
 ";
@@ -115,30 +119,35 @@ sub execute_gitall(){
 	       `cd $dir; git remote set-url origin $Remote/$reponame`;
 	   }elsif ($Reference){
 	       my $reponame = "  $dir";
-	       $reponame =~ s/$pwd\/// 
-		   or $reponame="Git repo=".`git remote get-url origin`;
-	       chomp($reponame);
-
+	       $reponame =~ s/$pwd\/// or $reponame = $mainrepo;
 	       $reponame .= " " x (35-length $reponame);
+
+	       # for each repo get the status
+	       my $gitstatus = `cd $dir; git status`;
+
+	       # figure out the branch
+	       my $branch = "master";
+	       $branch = $1 if $gitstatus =~ /\bdetached at (\w+)/;
+
+	       my $status = "original";
+	       $status = "modified" if $gitstatus =~ /\bmodified:/;
 	       
-	       # for each repo, get the local reference
-	       # this hash references the heads on the user's system
+	       # get the git reference with date for the branch
 	       my $localref = 
-		   `cd $dir; git show master --no-patch --format="%cd %h" --date=short`;
+		   `cd $dir; git show $branch --no-patch --format="%cd %h" --date=short`;
 	       $localref =~ s/\n.*//s;
-	       
-	       # for each repo, get the original reference
-	       # this hash references the head in the repo that the user's
-	       # repo was cloned from
-	       my $originalref = 
-		   `cd $dir; git show origin --no-patch --format="%cd %h" --date=short`;
-	       $originalref =~ s/\n.*//s;
-	       
-	       # Use original ref if it is the same as local ref
-	       my $ref = $localref eq $originalref ? 
-		   "original $originalref" : "local    $localref";
-	       $ref .= " " x (30-length $ref);
-	       push @RefList, "$reponame $ref";
+
+	       # Add reference after the status
+	       $status .= "  $localref";
+
+	       # Add leading spaces 
+	       $status .= " " x (30-length $status);
+
+	       # Add "detached" if not master branch
+	       $status .= " detached" if $branch ne "master";
+
+	       # Store status into RefList array
+	       push @RefList, "$reponame $status";
 	   }else{
 	       my $result = `cd $dir; git $gitcmd 2>&1`;
 	       # remove verbose info
