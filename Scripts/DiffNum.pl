@@ -1,6 +1,17 @@
 #!/usr/bin/perl -s
-#  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+#  Copyright (C) 2002 Regents of the University of Michigan, 
+#  portions used with permission 
 #  For more information, see http://csem.engin.umich.edu/tools/swmf
+
+##############################################################################
+sub printdie{
+    # Print argument to STDOUT then use die to write it to STDERR. 
+    # This subroutine needs to be before any calls so no parentheses are needed
+    print @_;
+    die @_;
+}
+##############################################################################
+
 my $Help        = ($h or $help);
 my $Verbose     = ($v or $verbose);
 my $AbsTol      = ($a or $abs or 1e-30);
@@ -26,12 +37,12 @@ use strict;
 my $WARNING = "WARNING in DiffNum.pl";
 my $ERROR   = "ERROR in DiffNum.pl";
 
-die "$ERROR: there should be two file arguments!\n" unless $#ARGV == 1;
+printdie "$ERROR: there should be two file arguments!\n" unless $#ARGV == 1;
 
 my $File1 = $ARGV[0];
 my $File2 = $ARGV[1];
 
-die "$ERROR: $File1 does not exist\n" unless -e $File1;
+printdie "$ERROR: $File1 does not exist\n" unless -e $File1;
 
 # Copy or gzip File1 into File2 if results are "blessed"
 if($Bless){
@@ -50,22 +61,22 @@ if($Bless){
 
 if($File1 =~ /.gz$/){
     open(FILE1, "gunzip -c $File1 $Pipe |")
-	or die "$ERROR: cannot open $File1\n";
+	or printdie "$ERROR: cannot open $File1\n";
 }else{
-    die "$ERROR: $File1 is not an ASCII file\n" unless -T $File1;
+    printdie "$ERROR: $File1 is not an ASCII file\n" unless -T $File1;
     open(FILE1, "cat $File1 $Pipe |")
-	or die "$ERROR: cannot open $File1\n";
+	or printdie "$ERROR: cannot open $File1\n";
 }
 
-die "$ERROR: $File2 does not exist\n" unless -e $File2;
+printdie "$ERROR: $File2 does not exist\n" unless -e $File2;
 
 if($File2 =~ /.gz$/){
     open(FILE2, "gunzip -c $File2 $Pipe |")
-	or die "$ERROR: cannot open $File2\n";
+	or printdie "$ERROR: cannot open $File2\n";
 }else{
-    die "$ERROR: $File2 is not an ASCII file\n" unless -T $File2;
+    printdie "$ERROR: $File2 is not an ASCII file\n" unless -T $File2;
     open(FILE2, "cat $File2 $Pipe |")
-	or die "$ERROR: cannot open $File2\n";
+	or printdie "$ERROR: cannot open $File2\n";
 }
 
 # Files for text comparison. Use local directory.
@@ -74,9 +85,9 @@ my $Text2 = "_diffnum_file2_";
 
 if($TextDiff){
     open(TEXT1, ">$Text1") or 
-	die "$ERROR: could not open $Text1 for writing\n";
+	printdie "$ERROR: could not open $Text1 for writing\n";
     open(TEXT2, ">$Text2") or 
-	die "$ERROR: could not open $Text2 for writing\n";
+	printdie "$ERROR: could not open $Text2 for writing\n";
 }
 
 # Pattern for numbers
@@ -183,7 +194,7 @@ print "$WARNING: there are extra numbers in $File1\n"
 
 if($Message){
     print $Message;
-    die "$ERROR\n";
+    printdie "$ERROR\n";
 }
 
 exit 0;
