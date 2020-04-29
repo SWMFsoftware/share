@@ -45,8 +45,11 @@ pro compare_AIA, TimeEvent=TimeEvent, varnames=varnames, nvars=nvars,        $
                xy_map = xs_map, ys_map = ys_map
 
   process_aia, filename_I(2), aia_map  = aia171_map, $
-               xy_map = xs_map, ys_map = ys_map
+               xy_map = xs_map, ys_map = ys_map, index = index
 
+  XPixelToRadius = (index.naxis1/xs_map) / index.r_sun
+  YPixelToRadius = (index.naxis2/ys_map) / index.r_sun
+  
   process_aia, filename_I(3), aia_map  = aia193_map, $
                xy_map = xs_map, ys_map = ys_map
 
@@ -63,7 +66,7 @@ pro compare_AIA, TimeEvent=TimeEvent, varnames=varnames, nvars=nvars,        $
   ;; processing the swmf data
   rSizeImage=1.98
   dxy = rSizeImage*2000./nx
-
+  
   make_map_swmf_data,dataSim=dataSim, varnames=varnames, namevar='aia:94',  $
                      nx=nx, ny = ny, dxy=dxy, TimeEvent=TimeEvent,          $
                      map_out =aia94_image
@@ -85,8 +88,8 @@ pro compare_AIA, TimeEvent=TimeEvent, varnames=varnames, nvars=nvars,        $
   make_map_swmf_data,dataSim=dataSim, varnames=varnames, namevar='aia:335', $
                      nx=nx, ny = ny, dxy=dxy, TimeEvent=TimeEvent,          $
                      map_out =aia335_image
-
   ;;-------------------------------------------------------------------------
+
   ;; plotting
 
   case TypePlotFile of
@@ -154,23 +157,23 @@ pro compare_AIA, TimeEvent=TimeEvent, varnames=varnames, nvars=nvars,        $
   aia_lct,wavelnth=193,/load
   pos=[x1[2],y1[1+ny_offset],x2[2],y2[1+ny_offset]]
   plotmax=max([max(aia193_map.data),max(aia193_image.data)])
-  plot_map_local, aia193_image, position=pos, charsize=CharSizeLocal,   $
-                  dmin=plotmin, dmax=plotmax,                           $
-                  xrange=imagefov, yrange=imagefov,                     $
+  plot_map_local, aia193_image, position=pos, charsize=CharSizeLocal,  $
+                  dmin=plotmin, dmax=plotmax,                          $
+                  xrange=imagefov, yrange=imagefov,                    $
                   xtitle='',ytitle='',title='Model AIA 193'
 
   pos=[x1[2],y1[0+ny_offset],x2[2],y2[0+ny_offset]]
-  plot_map_local, aia193_map, position=pos, charsize=CharSizeLocal,     $
-                  dmin=plotmin, dmax=plotmax,                           $
-                  xrange=imagefov,yrange=imagefov,                      $
+  plot_map_local, aia193_map, position=pos, charsize=CharSizeLocal,    $
+                  dmin=plotmin, dmax=plotmax,                          $
+                  xrange=imagefov,yrange=imagefov,                     $
                   xtitle='',ytitle='',title='SDO AIA 193'
 
-  ;;--------------------------- save png part 1 ------------------------------
+  ;;--------------------------- save png part 1 --------------------------
   case TypePlotFile of
      'png': begin
         imager=tvrd(true=1)
         write_png,fileplot+'_part1'+extra_plt_info+'.png',imager,r,g,b
-        ; wdef,3,1200,900
+                                ; wdef,3,1200,900
         wdef,3,800,600
      end
      'eps':
@@ -211,12 +214,12 @@ pro compare_AIA, TimeEvent=TimeEvent, varnames=varnames, nvars=nvars,        $
   plot_map_local, aia335_image, position=pos, charsize=CharSizeLocal,  $
                   dmin=plotmin, dmax=plotmax,                          $
                   xrange=imagefov,yrange=imagefov,                     $
-                  xtitle='',ytitle='',title='Model AIA 335'
+                  xtitle='',ytitle='',title='Model AIA 335' ;,/iso,/log
   pos=[x1[2],y1[0],x2[2],y2[0]]
   plot_map_local, aia335_map, position=pos, charsize=CharSizeLocal,    $
                   dmin=plotmin, dmax=plotmax,                          $
                   xrange=imagefov,yrange=imagefov,                     $
-                  ytitle='',title='SDO AIA 335'
+                  ytitle='',title='SDO AIA 335' ;,/iso,/log
 
   ;;----------------------------- save ---------------------------------------
   case TypePlotFile of
@@ -269,27 +272,47 @@ pro compare_AIA, TimeEvent=TimeEvent, varnames=varnames, nvars=nvars,        $
   printf,unitlog,'Quantify LOS:'
   printf,unitlog,'AIA:94'
   quantify_los,aia94_map,aia94_image,DoDiffMap=0,DoRatioMap=0,DoRmse=1,$
-            unitlog=unitlog
+               unitlog=unitlog
   printf,unitlog,''
   printf,unitlog,'AIA:171'
   quantify_los,aia171_map,aia171_image,DoDiffMap=0,DoRatioMap=0,DoRmse=1,$
-            unitlog=unitlog
+               unitlog=unitlog
   printf,unitlog,''
   printf,unitlog,'AIA:193'
   quantify_los,aia193_map,aia193_image,DoDiffMap=0,DoRatioMap=0,DoRmse=1,$
-            unitlog=unitlog
+               unitlog=unitlog
+
   printf,unitlog,''
   printf,unitlog,'AIA:131'
   quantify_los,aia131_map,aia131_image,DoDiffMap=0,DoRatioMap=0,DoRmse=1,$
-            unitlog=unitlog
+               unitlog=unitlog
   printf,unitlog,''
   printf,unitlog,'AIA:211'
-  quantifY_los,aia211_map,aia211_image,DoDiffMap=0,DoRatioMap=0,DoRmse=1,$
-            unitlog=unitlog
+  quantify_los,aia211_map,aia211_image,DoDiffMap=0,DoRatioMap=0,DoRmse=1,$
+               unitlog=unitlog
   printf,unitlog,''
   printf,unitlog,'AIA:335'
   quantify_los,aia335_map,aia335_image,DoDiffMap=0,DoRatioMap=0,DoRmse=1,$
-            unitlog=unitlog
+               unitlog=unitlog
+
+  w=fltarr(nx,ny,6)
+  x=fltarr(nx,ny,2)
+  varname=['x','y','AIA:94','AIA:131','AIA:171','AIA:193','AIA:211','AIA:335']
+  for i=0,nx-1 do begin
+     x0 = (-nx/2 + i) * XPixelToRadius
+     for j=0,ny-1 do begin
+        y0 = (-ny/2 + j) * YPixelToRadius
+        x(i,j,0) = x0
+        x(i,j,1) = y0
+        w(i,j,0) = aia94_map.data(i,j)
+        w(i,j,1) = aia131_map.data(i,j)
+        w(i,j,2) = aia171_map.data(i,j)
+        w(i,j,3) = aia193_map.data(i,j)
+        w(i,j,4) = aia211_map.data(i,j)
+        w(i,j,5) = aia335_map.data(i,j)
+     endfor
+  endfor
+  save_pict,'aia_obs.out','AIA_Observations_data',varname,w,x
 
   out: printf, unitlog, NameSub, ' is finished.'
   printf, unitlog, ''
