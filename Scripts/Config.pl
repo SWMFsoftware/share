@@ -586,12 +586,12 @@ MACHINE  = $Machine
     # Install the code
     if( -f "share/Makefile" and not $IsComponent){
 	&shell_command("cd share; make install");
-	&shell_command("$gitclone swmfpy share/Python") unless -d "share/Python";
-    }
-
-    # Install swmfpy
-    if( -d "share/Python" and not $IsComponent){
+	&shell_command("$gitclone swmfpy share/Python") 
+	    unless -d "share/Python";
+	$IsStrict = 0;
 	&shell_command("cd share/Python; python setup.py install --user")
+	    if -d "share/Python" and `python -V 2>&1` =~ /Python 3/;
+	$IsStrict = 1;
     }
 
     &shell_command("cd util; make install") 
