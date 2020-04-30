@@ -213,11 +213,13 @@ foreach my $Dir (sort keys %PlotDir){
 	# Make sure that the directory is moved before trying to recreate it
 	sleep 1;
 
+
 	# Recreate an empty directory tree in $PlotDir
 	# Store current directory so the recursive mkdir can work
 	my $Pwd = `pwd`; chop $Pwd;
-	find sub {return unless -d;
-		  $_ = $File::Find::name; s/$NameOutput\/$Dir/$PlotDir/; 
+	find sub {return unless -d; 
+		  $_ = $File::Find::name; return if /_amrex\b/;
+		  s/$NameOutput\/$Dir/$PlotDir/; 
 		  mkdir "$Pwd/$_", 0777 or warn "failed mkdir $Pwd/$_\n"}, 
 	"$NameOutput/$Dir";
 
