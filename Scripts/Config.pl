@@ -588,6 +588,9 @@ MACHINE  = $Machine
 	&shell_command("cd share; make install");
 	&shell_command("$gitclone swmfpy share/Python") 
 	    unless -d "share/Python";
+	warn ">>> Consider setting the PYTHONPATH environment     <<<\n".
+	    ">>> variable to include the share/Python directory! <<<\n" 
+	    unless $ENV{PYTHONPATH} =~ /Python/;
     }
 
     &shell_command("cd util; make install") 
