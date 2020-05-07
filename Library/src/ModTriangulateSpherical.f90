@@ -17,6 +17,8 @@ Module ModTriangulateSpherical
                            ! interpolation weights
   public save_traingulation_map !Saves a file of sections displaying 
                                 !triangulation on a map (0:360,-90:90) degrees
+  public fix_state !Corrects the defected state vector in chosen node
+                   !by interpolating it from the neighboring cells
 contains
 
   subroutine addnod ( nst, k, x, y, z, list, lptr, lend, lnew, ier )
@@ -8005,11 +8007,13 @@ contains
     !triangulation on a map (0:360,-90:90) degrees
     !/ 
     !INPUTS:
-    integer, intent(in) :: iUnit  ! Unit number of file, open outside of the routine
-    integer, intent(in) :: nNode  ! Nubmer of nodes involved into triangulation
-    integer, intent(in) :: iList_I(   6*(nNode - 2)) !\
-    integer, intent(in) :: iPointer_I(6*(nNode - 2)) !All created by TRMESH routin
-    integer, intent(in) :: iEnd_I(nNode)             !/
+    ! Unit number of file, open outside of the routine
+    integer, intent(in) :: iUnit  
+    ! Nubmer of nodes involved into triangulation
+    integer, intent(in) :: nNode  
+    integer, intent(in) :: iList_I(   6*(nNode-2)) !\
+    integer, intent(in) :: iPointer_I(6*(nNode-2)) !Created by TRMESH routin
+    integer, intent(in) :: iEnd_I(nNode)           !/
     !\
     !    Input, integer iList_I, nodal indexes which, along with iPointer_I and
     !    iEnd_I define the triangulation as a set of nNode adjacency lists;
@@ -8021,7 +8025,8 @@ contains
     !
     !    Input, integer iPointer_I, = Set of pointers (LIST indexes) in
     !    one-to-one correspondence with the elements of iList_I.
-    !    iList_I(Pointer_I(iNode)) indexes the node which follows iList_I(iNode) in cyclical
+    !    iList_I(Pointer_I(iNode)) indexes the node which follows 
+    !    iList_I(iNode) in cyclical
     !    counterclockwise order (the first neighbor follows the last neighbor).
     !
     !    Input, integer iEnd_I(nNode), pointers to adjacency lists.  iEnd_I(K)
@@ -8035,11 +8040,12 @@ contains
     !    K.  The first three nodes must not be collinear (lie on a common great
     !    circle).
     !/
-    integer :: iNode, iNeighborIndexLast, iNeighbor, iNeighborIndex !Loop variables
-    real, dimension(3)   :: CoordNode_D, CoordNeighbor_D   !r, lon, lat coordinates
+    !Loop variables
+    integer :: iNode, iNeighborIndexLast, iNeighbor, iNeighborIndex
+    !r, lon, lat coordinates
+    real, dimension(3)   :: CoordNode_D, CoordNeighbor_D  
+    !Longitude-Latitude on a map
     real, dimension(2)   :: LeftMargin_D, RightMargin_D, CoordMax_D, CoordMin_D
-    real, parameter      :: North_D(3) = [0.0, 0.0, 1.0]
-    real, parameter      :: South_D(3) = [0.0, 0.0, -1.0]
     real :: InterpolationCoeff
 
     !-------------------------
@@ -8102,4 +8108,96 @@ contains
     
   end subroutine save_traingulation_map
   !====================================
+  subroutine fix_state(iNodeToFix, nNode, iList_I, iPointer_I, &
+       iEnd_I, Xyz_DI, nVar, State_VI)
+    !Corrects the defected or missing state vector at 
+    !the chosen node of triangulated grid 
+    !by interpolating it from the neighboring node
+    use ModNumConst, ONLY: cTiny
+    !INPUTS:
+    !\
+    ! Index of the node to fix:
+    integer, intent(in) :: iNodeToFix
+    ! Nubmer of nodes involved into triangulation
+    integer, intent(in) :: nNode  
+    integer, intent(in) :: iList_I(   6*(nNode-2)) !\
+    integer, intent(in) :: iPointer_I(6*(nNode-2)) !Created by TRMESH routin
+    integer, intent(in) :: iEnd_I(nNode)           !/
+    !\
+    !    Input, integer iList_I, nodal indexes which, along with iPointer_I and
+    !    iEnd_I define the triangulation as a set of nNode adjacency lists;
+    !    counterclockwise-ordered sequences of neighboring nodes such that the 
+    !    first and last neighbors of a boundary node are boundary nodes (the 
+    !    first neighbor of an interior node is arbitrary).  In order to 
+    !    distinguish between interior and boundary nodes, the last neighbor of 
+    !    each boundary node is represented by the negative of its index.
+    !
+    !    Input, integer iPointer_I, = Set of pointers (LIST indexes) in
+    !    one-to-one correspondence with the elements of iList_I.
+    !    iList_I(Pointer_I(iNode)) indexes the node which follows 
+    !    iList_I(iNode) in cyclical
+    !    counterclockwise order (the first neighbor follows the last neighbor).
+    !
+    !    Input, integer iEnd_I(nNode), pointers to adjacency lists.  iEnd_I(K)
+    !    points to the last neighbor of node K.  iList_I(iEnd_I(K)) < 0 if and 
+    !    only if K is a boundary node.
+    real,    intent(in) :: Xyz_DI(3, nNode)
+
+    !    Input, real Xyz_DI(x_:z_,K), the coordinates of distinct nodes. 
+    !    (Xyz_DI(:,K)) is referred to as node K, and K is referred to as a 
+    !    nodal index.  It is required that nodr2(Xyz_DI(:,K)) = 1 for all
+    !    K.  The first three nodes must not be collinear (lie on a common great
+    !    circle).
+    !/
+    !\
+    ! Number of state variables:
+    integer, intent(in) :: nVar
+    !\
+    ! State vectirs, for all nodes:
+    real, intent(inout) :: State_VI(nVar, nNode)
+    !/
+    !Loop variables
+    integer :: iNode, iNeighborIndexLast, iNeighbor, iNeighborIndex  
+    !X,y,z coordinates of the node to be fixed
+    real  :: Xyz_D(3) !=Xyz_DI(:,iNodeToFix
+    !Interpolation coefficients:
+    real :: Dist      !norm2(Xyz_DI(:,iNeighbor) - Xyz_D)
+    real :: DistInv   !inverse of Dist, used as the inter[polation weight
+    real :: SumDistInv!Sum of DistInv, used for normalization
+    real :: State_V(nVar)  ! Intermediate results of interpolation
+    !-----------------------
+    Xyz_D = Xyz_DI(:,iNodeTofix)
+    !Nullify the counters:
+    State_V = 0.0;  SumDistInv = 0.0
+    !Index (not a node number) of the last neighbor
+    iNeighborIndexLast = iEnd_I(iNodeToFix)
+    
+    iNeighborIndex = iNeighborIndexLast
+    !
+    !  Loop on neighbors (iNeighbor) of iNode.  
+    !
+    NEIGHBORS: do
+       
+       iNeighborIndex = iPointer_I(iNeighborIndex)
+       iNeighbor = abs ( iList_I(iNeighborIndex) )
+       !Distance from the neighbor to node-to-fix:
+       Dist = norm2(Xyz_DI(:,iNeighbor) - Xyz_D)
+       if(Dist<cTiny)then
+          !Account for the closest neighbor only: 
+          State_VI(:, iNodeToFix) = State_VI(:,iNeighbor)
+          RETURN
+       end if
+       DistInv = 1/Dist
+       !Calculate weighted contribution to the interpolated state
+       State_V = State_V + DistInv*State_VI(:,iNeighbor)
+       !Calculate a sum of weights, to be used for normalization
+       SumDistInv = SumDistInv + DistInv  
+       !Exit loop if the last neighbor is done
+       if (iNeighborIndex == iNeighborIndexLast)then
+          State_VI(:,iNodeToFix) = State_V/SumDistInv
+          RETURN
+       end if
+    end do NEIGHBORS
+  end subroutine 
+  !===========================
 end Module ModTriangulateSpherical
