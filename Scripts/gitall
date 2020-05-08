@@ -63,7 +63,7 @@ $gitcmd .= "; sleep $Sleep" if $Sleep and $gitcmd =~ /\b(push|pull)\b/;
 
 my @RefList; 
 my $pwd = `pwd`; chop($pwd);
-my $remote = `git remote get-url origin`; chomp($remote);
+my $remote = `git config remote.origin.url`; chomp($remote);
 my $mainrepo = $1 if $remote =~ s/\/(\w+)$//;
 
 if($gitcmd or $Reference or $List or $Remote){
@@ -113,7 +113,7 @@ sub execute_gitall(){
 	       print "$dir\n";
 	   }elsif ($Remote){
 	       # get current remote repo name
-	       my $reponame = `cd $dir; git remote get-url origin`;
+	       my $reponame = `cd $dir; git config remote.origin.url`;
 	       $reponame =~ s/.*\///;
 	       # set new remote
 	       `cd $dir; git remote set-url origin $Remote/$reponame`;
