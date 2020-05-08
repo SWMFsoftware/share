@@ -15,7 +15,7 @@ Module ModTriangulateSpherical
   public TRLPRT ! Print triangle list
   public find_triangle_sph ! Find triangle containing point and return 
                            ! interpolation weights
-  public save_traingulation_map !Saves a file of sections displaying 
+  public save_triangulation_map !Saves a file of sections displaying 
                                 !triangulation on a map (0:360,-90:90) degrees
   public fix_state !Corrects the defected state vector in chosen node
                    !by interpolating it from the neighboring cells
@@ -300,6 +300,7 @@ contains
     return
   end function arc_cosine
   function areas ( v1, v2, v3 )
+    use ModNumConst, ONLY: cPi
     !
     !*******************************************************************************
     !
@@ -389,9 +390,9 @@ contains
     !
     !  Normalize Uij to unit vectors.
     !
-    s12 = dot_product ( u12(1:3), u12(1:3) )
-    s23 = dot_product ( u23(1:3), u23(1:3) )
-    s31 = dot_product ( u31(1:3), u31(1:3) )
+    s12 = sum( u12(1:3)*u12(1:3) )
+    s23 = sum( u23(1:3)*u23(1:3) )
+    s31 = sum( u31(1:3)*u31(1:3) )
 
     !
     !  Test for a degenerate triangle associated with collinear vertices.
@@ -420,9 +421,9 @@ contains
     !  CA2 = cos(A2) = -<U23,U12>
     !  CA3 = cos(A3) = -<U31,U23>
     !
-    ca1 = - dot_product ( u12(1:3), u31(1:3) )
-    ca2 = - dot_product ( u23(1:3), u12(1:3) )
-    ca3 = - dot_product ( u31(1:3), u23(1:3) )
+    ca1 = - sum ( u12(1:3)*u31(1:3) )
+    ca2 = - sum ( u23(1:3)*u12(1:3) )
+    ca3 = - sum ( u31(1:3)*u23(1:3) )
 
     ca1 = max ( ca1, -1.0D+00 )
     ca1 = min ( ca1, +1.0D+00 )
@@ -437,7 +438,7 @@ contains
     !
     !  Compute AREAS = A1 + A2 + A3 - PI.
     !
-    areas = real ( a1 + a2 + a3 - acos ( -1.0D+00 ) )
+    areas = real ( a1 + a2 + a3  -cPi)
 
     if ( areas < 0.0E+00 ) then
        areas = 0.0E+00
@@ -7998,7 +7999,7 @@ contains
     endif
   end subroutine find_triangle_sph
   !===============================
-  subroutine save_traingulation_map(iUnit, nNode, iList_I, iPointer_I, &
+  subroutine save_triangulation_map(iUnit, nNode, iList_I, iPointer_I, &
        iEnd_I, Xyz_DI)
     use ModNumConst, ONLY: cRadToDeg, cPi
     use ModCoordTransform, ONLY: xyz_to_rlonlat
@@ -8042,18 +8043,33 @@ contains
     !/
     !Loop variables
     integer :: iNode, iNeighborIndexLast, iNeighbor, iNeighborIndex
+    integer :: iMin, iMax
     !r, lon, lat coordinates
-    real, dimension(3)   :: CoordNode_D, CoordNeighbor_D  
+    real, dimension(2)   :: CoordNode_D, CoordNeighbor_D  
     !Longitude-Latitude on a map
     real, dimension(2)   :: LeftMargin_D, RightMargin_D, CoordMax_D, CoordMin_D
+    real                 :: Coord_DI(2,nNode), r
     real :: InterpolationCoeff
-
     !-------------------------
-    !
+    !\
+    ! Calculate longitude and latitude
+    !/
+    do iNode = 2, nNode-1
+       call xyz_to_rlonlat(Xyz_DI(:, iNode), r, &
+            Coord_DI(1,iNode), Coord_DI(2,iNode))
+    end do
+    !\
+    ! Convert to degrees
+    !/
+    Coord_DI(:,2:nNode-1) = Coord_DI(:,2:nNode-1)*cRadToDeg
+    !Define longitude and latitude at the poles
+    Coord_DI(:,    1) = [180.0,-90.0]
+    Coord_DI(:,nNode) = [180.0, 90.0]
+
     !  Loop on nodes.
     !
     NODES: do iNode = 1, nNode
-       call xyz_to_rlonlat(Xyz_DI(:, iNode), CoordNode_D)
+       CoordNode_D= Coord_DI(:, iNode)
        iNeighborIndexLast = iEnd_I(iNode)
        
        iNeighborIndex = iNeighborIndexLast
@@ -8064,25 +8080,27 @@ contains
 
           iNeighborIndex = iPointer_I(iNeighborIndex)
           iNeighbor = abs ( iList_I(iNeighborIndex) )
-          call xyz_to_rlonlat(Xyz_DI(:, iNeighbor), CoordNeighbor_D)
+          CoordNeighbor_D = Coord_DI(:, iNeighbor)
           !
           !  If the neighboring node number is less than  iNode, bypass edge
           !  (since edge Neighbor->Node has already been drawn).
           !
           if ( iNeighbor > iNode )then
-             if (abs(CoordNeighbor_D(2) - CoordNode_D(2)) < cPi) then
+             if (abs(CoordNeighbor_D(1) - CoordNode_D(1)) < 180.0) then
                 !write edge Node->Neighbor
-                write( iUnit, '(4f12.6)' )       & 
-                     CoordNode_D(2:3)*cRadToDeg, &
-                     CoordNeighbor_D(2:3)*cRadToDeg
+                write( iUnit, '(4f12.6,2i6)' )       & 
+                     CoordNode_D, CoordNeighbor_D,   &
+                     iNode, iNeighbor
              else
                 !Edge crosses zeroth meridian, which is the map margin
-                if(CoordNeighbor_D(2) < CoordNode_D(2))then
-                   CoordMax_D = CoordNode_D(2:3)    *cRadToDeg
-                   CoordMin_D = CoordNeighbor_D(2:3)*cRadToDeg
+                if(CoordNeighbor_D(1) < CoordNode_D(1))then
+                   iMin = iNeighbor; iMax = iNode
+                   CoordMax_D = CoordNode_D
+                   CoordMin_D = CoordNeighbor_D
                 else
-                   CoordMin_D = CoordNode_D(2:3)    *cRadToDeg
-                   CoordMax_D = CoordNeighbor_D(2:3)*cRadToDeg
+                   iMax = iNeighbor; iMin = iNode
+                   CoordMin_D = CoordNode_D
+                   CoordMax_D = CoordNeighbor_D
                 end if
                 InterpolationCoeff = CoordMin_D(1)/&
                      (360 + CoordMin_D(1) - CoordMax_D(1))
@@ -8096,9 +8114,11 @@ contains
                 LeftMargin_D = RightMargin_D - [360.0, 0.0]
 
                 !write segment from CoordMax to the right margin of map
-                write( iUnit, '(4f12.6)' )CoordMax_D, RightMargin_D
+                write( iUnit, '(4f12.6,2i6)' )CoordMax_D, RightMargin_D,&
+                     iMax, -1
                 !write segment from the left margin of map to 
-                write( iUnit, '(4f12.6)' )LeftMargin_D,  CoordMin_D 
+                write( iUnit, '(4f12.6,2i6)' )LeftMargin_D,  CoordMin_D,&
+                     -1, iMin
              end if
           end if
           !Exit loop if the last neighbor is done
@@ -8106,7 +8126,7 @@ contains
        end do NEIGHBORS
     end do NODES
     
-  end subroutine save_traingulation_map
+  end subroutine save_triangulation_map
   !====================================
   subroutine fix_state(iNodeToFix, nNode, iList_I, iPointer_I, &
        iEnd_I, Xyz_DI, nVar, State_VI)
