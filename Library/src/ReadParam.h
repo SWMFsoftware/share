@@ -1,43 +1,66 @@
 #ifndef READPARAM_H
 #define READPARAM_H
 
+#include <climits>
+#include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <climits>
-#include <cstdlib>
 
 class ReadParam {
 public:
   std::stringstream ss;
   bool isVerbose;
 
+  std::string commandSuffix = std::string();
+
 public:
   ReadParam() { isVerbose = true; }
   ~ReadParam() {}
   ReadParam &operator=(const std::string &stringIn) {
-    //ss << stringIn;
+    // ss << stringIn;
     ss.str(stringIn);
     return (*this);
   }
   void set_verbose(bool in) { isVerbose = in; }
   //==========================================
 
+  void set_command_suffix(std::string &in) { commandSuffix = in; }
+
   inline bool get_next_command(std::string &id) {
     id.clear();
     ss.ignore(INT_MAX, '#');
-    if (ss.good()) {
+    while (ss.good()) {
       ss.unget();
-      ss >> id;
+
+      // Example of commandline:
+      // 1) #COMMAND
+      // 2) #COMMAND_GRID0_GRID1
+
+      std::string commandline;
+      ss >> commandline;
+      std::string::size_type pos1;
+      // Check if this command has suffixes
+      pos1 = commandline.find_first_of("_");
+      id = commandline.substr(0, pos1);
+
+      if (pos1 != std::string::npos) {
+        std::string tmp = "_" + commandSuffix;
+        if (commandline.find(tmp) == std::string::npos) {          
+          // Go to next command. 
+          ss.ignore(INT_MAX, '#');
+          continue;
+        }
+      }
       if (isVerbose)
         std::cout << "\n"
-                  << "PC: " << id << std::endl;
+                  << "PC: " << id << " " << commandSuffix << std::endl;
       ss.ignore(INT_MAX, '\n');
       return true;
-    } else {
-      return false;
     }
+
+    return false;
   }
   //==============================
 
@@ -151,14 +174,11 @@ inline void char_to_string(std::string &ss, char *chararray, int length,
   ss.assign(chararray, length);
 }
 
-inline std::string char_to_string(char *chars, int length,
-				  int linelength) {
+inline std::string char_to_string(char *chars, int length, int linelength) {
   for (int i = linelength; i < length; i += linelength)
     chars[i - 1] = '\n';
   return std::string(chars, length);
 }
-
-
 
 inline std::stringstream *char_to_stringstream(char *chararray, int length,
                                                int linelength, int iProc) {
