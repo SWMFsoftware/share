@@ -8201,7 +8201,7 @@ contains
        iNeighborIndex = iPointer_I(iNeighborIndex)
        iNeighbor = abs ( iList_I(iNeighborIndex) )
        !Distance from the neighbor to node-to-fix:
-       Dist = norm2(Xyz_DI(:,iNeighbor) - Xyz_D)
+       Dist = sqrt(sum((Xyz_DI(:,iNeighbor) - Xyz_D)**2))
        if(Dist<cTiny)then
           !Account for the closest neighbor only: 
           State_VI(:, iNodeToFix) = State_VI(:,iNeighbor)
