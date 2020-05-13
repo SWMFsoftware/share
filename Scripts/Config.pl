@@ -1134,7 +1134,7 @@ sub link_swmf_data{
 
     if($Code eq "BATSRUS" and not -d "dataCRASH"){
 	my $CrashData = "";
-	foreach ("$ENV{HOME}/CRASH_data", "/csem1/CRASH_data"){
+	foreach ("$DIR/CRASH_data", "$ENV{HOME}/CRASH_data"){
 	    next unless -d $_;
 	    $CrashData = $_;
 	    last;
@@ -1144,19 +1144,24 @@ sub link_swmf_data{
 
     return if -d "data";
     my $SwmfData = "";
-    foreach ("$DIR/SWMF_data", "$DIR/../../SWMF_data", 
-	     "$ENV{HOME}/SWMF_data", "/csem1/SWMF_data"){
+    my @SwmfData = ("$DIR/SWMF_data", "$ENV{HOME}/SWMF_data");
+    push(@SwmfData, "$DIR/../../SWMF_data") if $IsComponent;
+    foreach (@SwmfData){
 	next unless -d $_;
 	$SwmfData = $_;
 	last;
     }
-    my $DataDir;
-    if($Code eq "SWMF"){
-	$DataDir = "$SwmfData/data";
+    if($SwmfData){
+	my $DataDir;
+	if($Code eq "SWMF"){
+	    $DataDir = "$SwmfData/data";
+	}else{
+	    $DataDir = "$SwmfData/$Component/$Code/data";
+	}
+	&shell_command("ln -s $DataDir data") if -d $DataDir;
     }else{
-	$DataDir = "$SwmfData/$Component/$Code/data";
+	warn "$WARNING: no SWMF_data was found\n" unless $IsComponent;
     }
-    &shell_command("ln -s $DataDir data") if -d $DataDir;
 
 }
 
