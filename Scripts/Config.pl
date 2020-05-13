@@ -595,7 +595,12 @@ MACHINE  = $Machine
 
     &shell_command("cd util; make install") 
 	if -d "util" and not $IsComponent;
-    &shell_command("make install");
+
+    if($Verbose){
+	&shell_command("make install CONFIG_PL='./Config.pl -verbose'");
+    }else{
+	&shell_command("make install");
+    }
 
     # Now code is installed
     $Installed = 1 unless $DryRun;
