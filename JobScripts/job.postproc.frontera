@@ -50,7 +50,7 @@
 #SBATCH --mail-user=
 #SBATCH --mail-type=all    # Send email at begin and end of job
                            # Options: none, begin, end, fail, requeue, all
-#SBATCH -A FTA-Toth        # Allocation name (req'd if you have more than 1)
+###SBATCH -A AllocName     # Allocation name (req'd if you have more than 1)
 
 # Other commands must follow all #SBATCH directives...
 
