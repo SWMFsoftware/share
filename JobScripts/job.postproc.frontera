@@ -1,7 +1,6 @@
 #!/bin/bash
 #----------------------------------------------------
 # Example Slurm job script
-# for TACC Stampede2 SKX/KNL nodes
 #
 #   *** Hybrid Job on SKX/KNL Normal Queue ***
 # 
@@ -15,7 +14,7 @@
 # Notes:
 #
 #   -- Launch this script by executing
-#      "sbatch job.stampede2" on Stampede2 login node.
+#      "sbatch job.postproc.frontera"
 #
 #   -- Use ibrun to launch MPI codes on TACC systems.
 #      Do not use mpirun or mpiexec.
