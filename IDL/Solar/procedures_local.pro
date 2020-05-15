@@ -739,7 +739,7 @@ pro set_FilePlotName, TimeEvent, UseTimePlotName = UseTimePlotName,   $
                       InstPlt = InstPlt, dir_plot = dir_plot
 
   if (not keyword_set(InstPlt))  then InstPlt = ''
-  if (not keyword_set(dir_plot)) then dir_plot = './output/'
+  if (not keyword_set(dir_plot)) then dir_plot = '../output/'
 
   ;; set string to be used in the filename for plotting 
   TimeStrFile = utc2str(anytim2utc(TimeEvent))
@@ -775,16 +775,16 @@ end
 
 ;--------------------------------------------------------------------
 
-pro process_aia, filename, aia_map = aia_map, xy_map = xs_map, ys_map = ys_map
+pro process_aia, filename, aia_map = aia_map, xy_map = xs_map, ys_map = ys_map, index = index
 
   if (filename ne '') then begin
-     aia_prep, filename, -1 , index, data
+     aia_prep, filename, -1, index, data
      index2map, index, data, aia_map
      aia_map = rebin_map(aia_map, xs_map, ys_map)
   endif else begin
      aia_map = make_map(fltarr(xs_map, ys_map))
   endelse
-
+  index = index
 end
 
 ;--------------------------------------------------------------------
@@ -812,15 +812,15 @@ end
 pro plot_map_local, map, position=position, xrange=xrange, yrange=yrange,  $
                     dmin=dmin, dmax=dmax, charsize=charsize,               $
                     title=title, ytitle=ytitle, xtitle=xtitle
-  
+
   if (max(map.data) gt 0) then begin
      plot_map, map, position=position, xrange=xrange,yrange=yrange,      $
-               dmin=dtmin, dmax=dtmax, charsize=charsize,                $
+               dmin=dmin, dmax=dmax, charsize=charsize,              $
                title=title, ytitle=ytitle, xtitle=xtitle, /iso, /log
   endif else begin
      map.data = map.data + 1
      plot_map, map, position=position, xrange=xrange,yrange=yrange,      $
-               dmin=dtmin, dmax=dtmax, charsize=charsize,                $
+               dmin=dmin, dmax=dmax, charsize=charsize,                $
                title=title, ytitle=ytitle, xtitle=xtitle, /iso, /log, /no_data
      xyouts, 0, 0, 'missing observation', charsize = 0.8*charsize,       $
              /data, alignment=0.5
@@ -1073,6 +1073,7 @@ pro read_swmf_remote_tec, filename, TimeEvent=TimeEvent, ObsXyz=ObsXyz, $
 
   xx = data(*,*,0)
   yy = data(*,*,1)
+
   rr = sqrt(xx^2+yy^2)
   rMaxSim = max(rr)
 
@@ -1795,6 +1796,7 @@ end
 
 function rms_error, obs_data, simu_data
 
+; for a 1 D array
 diff_data = 0.
 obs_sum = 0.
 rmse= 0.
@@ -1806,3 +1808,173 @@ return, rmse
 
 end
 ;--------------------------------------------------------------------
+pro quantify_los, obs_data, sim_data, $
+               DoDiffMap=DoDiffMap, DoRatioMap=DoRatioMap, DoRmse=DoRmse,$
+               unitlog=unitlog
+
+index = where(obs_data.data lt 0)
+;print,obs_data.data[index],index
+obs_data.data[index] = 0.
+;print,max(obs_data.data),min(obs_data.data)
+;print,obs_data.data[200,200]
+
+; Calculate the no. of elements
+obs_size = size(obs_data.data);,/n_elements)
+sim_size = size(sim_data.data);,/n_elements)
+
+;print,'Size of OBS  is = ', obs_size[4]
+;print,'Size of SWMF is = ', sim_size[4]
+
+if (obs_size[4] ne sim_size[4]) then begin
+   print, 'Data and Model output are of different sizes'
+   exit
+endif
+
+;print,'total',total(obs_data.data),total(sim_data.data)
+mean_obs = total(obs_data.data)/obs_size[4]
+mean_sim = total(sim_data.data)/sim_size[4]
+
+ratio = mean_obs/mean_sim
+;print,'Mean value of Observations is = ',trim(mean_obs),$
+     ; ' and Simulation is = ',trim(mean_sim)
+;print,'Ratio: Mean_obs/Mean_sim = ',ratio
+
+printf,unitlog,'Mean_obs = ',trim(mean_obs)
+printf,unitlog,'Mean_sim = ',trim(mean_sim)
+printf,unitlog,'Ratio (Mean_obs/Mean_sim) = ',trim(ratio)
+
+; SAVE PLOTS HERE ?
+if keyword_set(DoDiffMap) then begin
+   d_map = diff_map(obs_data,sim_data)
+   plot_map,d_map
+endif
+if keyword_set(DoRatioMap) then begin
+   d_map_ratio = diff_map(obs_data,sim_data,ratio=ratio)
+   plot_map,d_map_ratio
+endif
+
+sq_error = 0.
+rmse = 0.
+nrmse = 0. ; normalised rmse
+scatter = 0.
+i=0.
+j=0.
+
+if keyword_set(DoRmse) then begin
+   for i=0,obs_size[1]-1 do begin
+      for j=0,obs_size[1]-1 do begin
+         sq_error = sq_error + (sim_data.data[i,j] - obs_data.data[i,j])^2
+;         print,i,j,sq_error,sim_data.data[i,j],obs_data.data[i,j]
+      endfor
+   endfor
+ ;  print,'max',max(sim_data.data)
+   rmse = sqrt(sq_error/obs_size[4])
+   scatter = rmse/mean_obs
+   nrmse = rmse/(max(obs_data.data) - min(obs_data.data))
+;   print,min(obs_data.data)
+
+   printf,unitlog,'Root mean square error (RMSE) = ',trim(rmse)
+   printf,unitlog,'Scatter = RMSE/(mean_obs)= ',trim(scatter)
+   printf,unitlog,'Normalized RMSE (norm to max(obs) - min(obs)) = ',$
+          trim(nrmse)
+endif
+
+end
+; -----
+pro save_pict, filename, headline, varname, w, x, $
+               it, time, eqpar, ndim=ndim, gencoord=gencoord, $
+               filetype=filetype, append=append
+
+;  common debug_param & on_error, onerror
+
+  if n_elements(filename) eq 0 or n_elements(headline) eq 0 or $
+     n_elements(varname) eq 0 or n_elements(w) eq 0 then begin
+     print,'ERROR in save_pict: ', $
+           'arguments unit headline, varname, w are required'
+     retall
+  endif
+
+  if n_elements(filetype) eq 0 then filetype = 'ascii'
+  if n_elements(it) eq 0 then it=0
+  if n_elements(time) eq 0 then time=0.0
+  neqpar = n_elements(eqpar)
+
+  sw = size(w)
+  if n_elements(x) gt 0 then begin
+     sx = size(x)
+     if n_elements(ndim) eq 0 then ndim = sx(0) - 1 > 1
+     nx = sx(1:ndim)
+  endif else begin
+     if n_elements(ndim) eq 0 then ndim = sw(0) - 1 > 1
+     nx = sw(1:ndim)
+     case ndim of
+        1: x = findgen(nx(0)) + 1
+        2: begin
+           x = fltarr(nx(0), nx(1), 2)
+           for j = 0L, nx(1)-1 do for i = 0L, nx(0)-1 do x(i,j,*) = [i+1, j+1]
+        end
+        3: begin
+           x = fltarr(nx(0), nx(1), nx(2)) + 1
+           for k = 0L, nx(2)-1 do for j = 0L, nx(1)-1 do $
+              for i = 0L, nx(0)-1 do x(i,j,*) = [i+1., j+1., k+1.]
+        end
+     endcase
+  endelse
+
+                                ; number of variables
+  if sw[0] eq ndim + 1 then nw = sw(ndim+1) else nw = 1
+
+  if keyword_set(gencoord) then ndim = -ndim
+
+  unit=1
+
+  if filetype eq 'ascii' then begin
+     openw, unit, filename, append=append
+
+     printf, unit, headline
+     printf, unit, it, time, ndim, neqpar, nw, format='(i8, 1e13.5, 3i3)'
+     printf, unit, nx, format='(3i8)'
+     if neqpar gt 0 then printf, unit, eqpar, format='(100(1e13.5))'
+     printf, unit, varname
+     case abs(ndim) of
+        1: for i=0L, nx(0)-1 do $
+           printf, unit, x(i), w(i,*), format='(100(1e18.10))'
+        2: for j =0L, nx(1)-1 do for i=0L, nx(0)-1 do $
+           printf, unit, x(i,j,*), w(i,j,*), format='(100(1e18.10))'
+        3: for k=0L, nx(2)-1 do for j=0L, nx(1)-1 do for i=0L, nx(0)-1 do $
+           printf, unit, x(i,j,k,*), w(i,j,k,*), format='(100(1e18.10))'
+     endcase
+  endif else begin
+                                ; extend strings to 500 characters
+     for i = 1, 500-strlen(headline) do headline = headline + ' '
+     for i = 1, 500-strlen(varname)  do varname  = varname  + ' '
+
+                                ; convert reals to 4 or 8 bytes
+     if filetype eq 'real4' then begin
+        time  = float(time)
+        if neqpar gt 0 then eqpar = float(eqpar)
+        x     = float(x)
+        w     = float(w)
+     endif else begin
+        time  = double(time)
+        if neqpar gt 0 then eqpar = double(eqpar)
+        x     = double(x)
+        w     = double(w)
+     endelse
+
+                                ; write unformatted Fortran file
+     openw, unit, filename, /f77_unformatted, append=append
+     writeu, unit, headline
+     writeu, unit, long(it), time, long(ndim), long(neqpar), long(nw)
+     writeu, unit, long(nx)
+     if neqpar gt 0 then writeu, unit, eqpar
+     writeu, unit, varname
+     writeu, unit, x
+     case abs(ndim) of
+        1: for iw=0, nw-1 do writeu, unit, w(*,iw)
+        2: for iw=0, nw-1 do writeu, unit, w(*,*,iw)
+        3: for iw=0, nw-1 do writeu, unit, w(*,*,*,iw)
+     endcase
+  endelse
+  close,unit
+end

@@ -1188,7 +1188,7 @@ contains
     integer, intent(in) :: iTable            ! table
     integer, intent(in) :: iVal              ! which value is known
     real,    intent(in) :: ValIn             ! known table value
-    real,    intent(in) :: Arg2In            ! second input argument
+    real,    optional,   intent(in) :: Arg2In! second input argument if any
     real,    intent(out):: Value_V(:)        ! output values
     
     real, optional, intent(out) :: Arg1Out        ! optional calculated Arg
@@ -1204,18 +1204,21 @@ contains
     !--------------------------------------------------------------------------
     
     Ptr => Table_I(iTable)
-
-    Arg2 = Arg2In
+    if(present(Arg2In))then
+       Arg2 = Arg2In
     
-    If(Ptr%IsLogIndex_I(2)) Arg2 = log10(Arg2)
+       If(Ptr%IsLogIndex_I(2)) Arg2 = log10(Arg2)
 
-    call find_cell(1, Ptr%nIndex_I(2), &
-         (Arg2- Ptr%IndexMin_I(2))/Ptr%dIndex_I(2)+ 1 , &
-         j1, Dy1, &
-         DoExtrapolate=DoExtrapolate, &
-         StringError = 'Called from '//NameSub)
+       call find_cell(1, Ptr%nIndex_I(2), &
+            (Arg2- Ptr%IndexMin_I(2))/Ptr%dIndex_I(2)+ 1 , &
+            j1, Dy1, &
+            DoExtrapolate=DoExtrapolate, &
+            StringError = 'Called from '//NameSub)
 
-    j2 = j1 + 1; Dy2 = 1.0 - Dy1
+       j2 = j1 + 1; Dy2 = 1.0 - Dy1
+    else
+       j1 = 1; j2 = 1; Dy1 = 1.0; Dy2 = 0.0
+    end if
 
     call find_cell(1, Ptr%nIndex_I(1), &
          ValIn, &
