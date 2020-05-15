@@ -1,5 +1,26 @@
 #!/bin/bash
 
+# Use default modules. To use IDL,
+# module load idl
+#
+# Compilation:
+# to avoid using too many threads on the login node, compile code with 
+# make -j 4
+#
+# Move run directory to the $SCRATCH disk:
+# make rundir
+# mv run $SCRATCH/run1
+# ln -s $SCRATCH/run1 .
+#
+# submit the jobscript:
+# sbatch job.frontera
+#
+# monitor jobs:
+# squeue -u USERNAME
+#
+# Continuous post-processing has to be done on the compute nodes with
+# sbatch job.postproc.frontera
+
 #SBATCH -J sub1               # Job name
 #SBATCH -o SWMF.o%j           # Name of stdout output file
 #SBATCH -e SWMF.e%j           # Name of stderr error file
@@ -16,3 +37,4 @@
 # Launch MPI code... 
 # Use ibrun instead of mpirun or mpiexec
 ibrun ./SWMF.exe  > runlog_`date +%y%m%d%H%M`
+
