@@ -43,7 +43,7 @@ OBJECTS = \
 	ModMpiInterfaces.o\
 	ModMpi.o\
 	ModMpiOrig.o\
-  ModNumConst.o\
+	ModNumConst.o\
 	ModPlanetConst.o\
 	ModPlotFile.o\
 	ModPoissonBracket.o\
