@@ -34,6 +34,20 @@
 
 # Any other commands must follow all #SBATCH directives...
 
+# By 05/2020, the default MPI_Reduce algorithm in IMPI may
+# produce wrong results. For example, reducing a large
+# array of ~30,000 integers on 2000 MPIs does not work correctly. This bug
+# can be avoided by using another MPI_Reduce algorithm. The environment
+# variable I_MPI_ADJUST_REDUCE is used to select the algorithm, and 
+# either I_MPI_ADJUST_REDUCE=1 or I_MPI_ADJUST_REDUCE=3 works. The
+# following line can also be copied to .bashrc to select algorithm for
+# an interactive session:
+export I_MPI_ADJUST_REDUCE=1 
+
+# IMPI always produces warning messages for the jobs with >128 MPIs.
+# The following line suppresses such warnings. 
+export UCX_LOG_LEVEL=ERROR 
+
 # Launch MPI code... 
 # Use ibrun instead of mpirun or mpiexec
 ibrun ./SWMF.exe  > runlog_`date +%y%m%d%H%M`
