@@ -15,6 +15,7 @@ Module ModTriangulateSpherical
   public TRLPRT ! Print triangle list
   public find_triangle_sph ! Find triangle containing point and return 
                            ! interpolation weights
+  public find_triangle_orig!->Original version of Renka's algorithm
   public save_triangulation_map !Saves a file of sections displaying 
                                 !triangulation on a map (0:360,-90:90) degrees
   public fix_state !Corrects the defected state vector in chosen node
@@ -7998,6 +7999,44 @@ contains
        iNode3=0
     endif
   end subroutine find_triangle_sph
+  !===============================
+  subroutine find_triangle_orig(XyzIn_D, nNodes, CoordXyzIn_DI, &
+       list, lptr, lend, Weight_I, IsTriangleFound, iStencil_I)
+
+    real, intent(in) :: XyzIn_D(3) ! coordinates (x,y,z) of point to be 
+    ! interpolated to
+    integer, intent(in) :: nNodes  ! number of nodes in triangulation
+    real, intent(in) :: CoordXyzIn_DI(3,nNodes) ! coordinates (x,y,z) of point to be 
+
+    ! Input the data structure defining the triangulation
+    integer, intent(in) :: lend(nNodes)
+    integer, intent(in) :: list(6*(nNodes-2))
+    integer, intent(in) :: lptr(6*(nNodes-2))
+ 
+    !\
+    ! unnormalized barycentric coords of central projection of the point XyzIn_D onto
+    ! a plane of the found triangle
+    !/
+    real,    intent(out):: Weight_I(3)     
+    logical, intent(out):: IsTriangleFound
+    !\
+    ! Counterclockwise-ordered vertex indices of the 
+    ! triangle containing XyzIn_D
+    integer, intent(out):: iStencil_I(3)
+
+    !local variables
+    integer,parameter :: nst = 0 ! starting node of search
+    !-----------------------------------------------------
+    call trfind ( nst, XyzIn_D, nNodes, CoordXyzIn_DI(1,:), CoordXyzIn_DI(2,:), &
+         CoordXyzIn_DI(3,:), list, lptr, lend, Weight_I(1), Weight_I(2), Weight_I(3),&
+         iStencil_I(1), iStencil_I(2), iStencil_I(3))
+    IsTriangleFound = all(iStencil_I>=1)
+    if(IsTriangleFound)then
+       Weight_I = Weight_I/sum(Weight_I)
+    else
+       Weight_I = 0.0
+    end if
+  end subroutine find_triangle_orig
   !===============================
   subroutine save_triangulation_map(iUnit, nNode, iList_I, iPointer_I, &
        iEnd_I, Xyz_DI)
