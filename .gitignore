@@ -8,7 +8,7 @@
 *.ref
 *.log
 *.protex
-Python
+Python/swmfpy
 
 Library/src/Makefile.DEPEND
 Library/src/Makefile.RULES

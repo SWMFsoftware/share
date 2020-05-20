@@ -586,11 +586,11 @@ MACHINE  = $Machine
     # Install the code
     if( -f "share/Makefile" and not $IsComponent){
 	&shell_command("cd share; make install");
-	&shell_command("$gitclone swmfpy share/Python") 
-	    unless -d "share/Python";
+	&shell_command("$gitclone swmfpy share/Python/swmfpy") 
+	    unless -d "share/Python/swmfpy";
 	warn ">>> Consider setting the PYTHONPATH environment     <<<\n".
-	    ">>> variable to include the share/Python directory! <<<\n" 
-	    unless $ENV{PYTHONPATH} =~ /Python/;
+	    ">>> variable to include the share/Python/swmfpy directory! <<<\n" 
+	    unless $ENV{PYTHONPATH} =~ /swmfpy/;
     }
 
     &shell_command("cd util; make install") 
