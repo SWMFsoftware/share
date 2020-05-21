@@ -36,16 +36,18 @@ my $csem_software = 'git@gitlab.umich.edu:csem_software';
 
 my %url = (
     "BATSRUS_GPU"        => $csem_software,
-    "BATSRUS_GPU_simple" => $csem_software,
+    "BATSRUS_GPU_SIMPLE" => $csem_software,
     "LATEX"              => $csem_software,
     "VAC"                => $csem_software,
     "WSA"                => $csem_software,
     "GITM"               => "https://github.com/aaronjridley",
+    "VISANAMATLAB"       => "https://github.com/henry2004y",
+    "VISANAJULIA"        => "https://github.com/henry2004y",
     );
 
 my $project = $ARGV[0]; $project =~ s/\.git$//;
 
-my $url = ($url{$project} or $swmf_software);
+my $url = ($url{uc($project)} or $swmf_software);
 
 my $command = "git clone $url/".join(" ", @ARGV);
 $command .= "; sleep $ENV{GITLABSLEEP}" if ($ENV{GITLABSLEEP} and $Sleep);
