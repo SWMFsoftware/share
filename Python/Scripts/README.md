@@ -56,6 +56,17 @@ Then the final steps copy the script and the run directory into a work directory
 ```bash
 SWMF$ cp run /some/work/dir/
 SWMF$ cd /some/work/dir/
-/some/work/dir$ ./prepare_geospace.py
+/some/work/dir$ ./prepare_geospace.py --start_time 2014 2 3 4 5 6 --end_time 2014 3 4 5 6 7
 # Then submit job
 ```
+
+### Options
+
+To find out the options of `prepare_geospace.py` then run:
+
+```bash
+/some/work/dir$ ./prepare_geospace.py --help
+# Help message output
+```
+
+Options can be useful to script this file with shell scripting, for example, when submitting jobs.
