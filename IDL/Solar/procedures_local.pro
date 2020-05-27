@@ -778,7 +778,7 @@ end
 pro process_aia, filename, aia_map = aia_map, xy_map = xs_map, ys_map = ys_map, index = index
 
   if (filename ne '') then begin
-     aia_prep, filename, -1, index, data
+     aia_prep, filename, -1, index, data, /normalize
      index2map, index, data, aia_map
      aia_map = rebin_map(aia_map, xs_map, ys_map)
   endif else begin
