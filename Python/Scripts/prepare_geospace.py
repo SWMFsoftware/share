@@ -18,6 +18,7 @@ __email__ = 'qusai@umich.edu'
 
 import argparse
 import datetime as dt
+from operator import itemgetter
 import numpy as np
 from swmfpy import write_imf_from_omni, paramin
 from swmfpy.web import get_omni_data
@@ -142,13 +143,38 @@ def write_times(times, paramin_file='PARAM.in'):
     paramin.replace_command(change, paramin_file)
 
 
+IMF_KEYS = ['times',
+            'bx', 'by_gse', 'bz_gse',
+            'vx_gse', 'vy_gse', 'vz_gse',
+            'density', 'temperature'
+            ]
+
+
+def omni_largest_gap(omni_data):
+    """Returns largest time gap in omni data"""
+    # Zip all important values together
+    raw = zip(*[omni_data[key] for key in IMF_KEYS])
+    filtered = filter(
+        lambda x: all([
+            not np.isnan(elem)
+            for elem in itemgetter(*list(range(1, len(IMF_KEYS))))(x)
+                ]),
+        raw
+        )
+    times = np.array(list(map(itemgetter(0), filtered)))
+    return str(max(np.diff(times)))
+
+
 def omni_integrity(omni_data):
     """Returns percent of omni that is complete"""
-    num_of_nans = sum(sum(np.isnan(np.array(omni_data[key], dtype=float))
-                          for key in omni_data if key != 'times'))
-    num_of_values = sum(np.array(omni_data[key], dtype=float).size
-                        for key in omni_data if key != 'times')
-    return (num_of_values - num_of_nans) / num_of_values
+    num_of_nans = sum(np.isnan(np.array(omni_data[key])).sum()
+                      for key in IMF_KEYS[1:])
+    num_of_values = sum(np.array(omni_data[key]).size
+                        for key in IMF_KEYS[1:])
+    integrity = str(
+        round((num_of_values - num_of_nans) / num_of_values * 100, 2)
+        )
+    return integrity + '%'
 
 
 def _main():
@@ -170,8 +196,8 @@ def _main():
     if not args.no_write_imf:
         vprint(args, 'Getting omni data..')
         omni_data = write_imf_from_omni(*times, verbose=args.verbose)
-        vprint(args, 'Omni data integrity (%):',
-               round(omni_integrity(omni_data)*100, 2))
+        vprint(args, 'Omni data integrity:', omni_integrity(omni_data))
+        vprint(args, 'Omni largest time gap:', omni_largest_gap(omni_data))
         vprint(args, 'IMF.dat written')
 
     iono_descriptions = [
