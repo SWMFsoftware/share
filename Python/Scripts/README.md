@@ -27,6 +27,7 @@ Make sure [swmfpy](https://gitlab.umich.edu/swmf_software/swmfpy) is installed:
 
 ```bash
 # In the SWMF base dir
+$ pip install -U --user wheel  # Might be necessary
 $ pip install -U --user git+https://gitlab.umich.edu/swmf_software/swmfpy.git@master
 ```
 *Note*: You may need to change `pip` with `pip3` or `python3 -m pip` depending on your supercomputer's set up.
