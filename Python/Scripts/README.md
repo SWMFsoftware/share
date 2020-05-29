@@ -27,10 +27,10 @@ Make sure [swmfpy](https://gitlab.umich.edu/swmf_software/swmfpy) is installed:
 
 ```bash
 # In the SWMF base dir
-$ pip install -U --user wheel  # Might be necessary
-$ pip install -U --user git+https://gitlab.umich.edu/swmf_software/swmfpy.git@master
+$ python3 -m pip install -U --user wheel  # Might be necessary
+$ python3 -m pip install -U --user git+https://gitlab.umich.edu/swmf_software/swmfpy.git@master
 ```
-*Note*: You may need to change `pip` with `pip3` or `python3 -m pip` depending on your supercomputer's set up.
+*Note*: You may need to change `python3 -m pip` to `python -m pip` depending on your supercomputer's set up.
 
 ### Set up
 
@@ -38,7 +38,7 @@ $ pip install -U --user git+https://gitlab.umich.edu/swmf_software/swmfpy.git@ma
 Soft link the script into your run directory:
 
 ```bash
-SWMF$ ln -s share/Python/Scripts/prepare_geospace.py run/
+SWMF$ ln -s "$(realpath share/Python/Scripts/prepare_geospace.py)" run/
 # The soft link is so that any updates automatically update this when you pull
 ```
 
@@ -49,8 +49,6 @@ SWMF$ cd run
 SWMF/run$ cp Param/SWPC/PARAM.in_SWPC_v2_init PARAM.in
 ```
 
-Edit the PARAM.in file to change the `#STARTTIME` and `#ENDTIME` to your liking.
-
 ### Running
 
 Then the final steps copy the script and the run directory into a work directory that your supercomputer allows before jobs:
@@ -58,7 +56,8 @@ Then the final steps copy the script and the run directory into a work directory
 ```bash
 SWMF$ cp run /some/work/dir/
 SWMF$ cd /some/work/dir/
-/some/work/dir$ ./prepare_geospace.py --start_time 2014 2 3 4 5 6 --end_time 2014 3 4 5 6 7
+/some/work/dir$ python3 prepare_geospace.py --start_time 2014 2 3 4 5 6 --end_time 2014 3 4 5 6 7
+# Your PARAM.in will be overwritten with those values
 # Then submit job
 ```
 
