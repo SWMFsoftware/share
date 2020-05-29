@@ -3,8 +3,8 @@
 
 You need swmfpy installed.
 Installation:
-    cd share/Python/swmfpy
-    pip install -U --user .
+    pip install -U --user \
+        git+https://gitlab.umich.edu/swmf_software/swmfpy@master
 
 Usage:
     python prepare_geospace.py
@@ -142,6 +142,15 @@ def write_times(times, paramin_file='PARAM.in'):
     paramin.replace_command(change, paramin_file)
 
 
+def omni_integrity(omni_data):
+    """Returns percent of omni that is complete"""
+    num_of_nans = sum(sum(np.isnan(np.array(omni_data[key], dtype=float))
+                          for key in omni_data if key != 'times'))
+    num_of_values = sum(np.array(omni_data[key], dtype=float).size
+                        for key in omni_data if key != 'times')
+    return (num_of_values - num_of_nans) / num_of_values
+
+
 def _main():
     """The hidden main block"""
     args = arguments()
@@ -159,7 +168,10 @@ def _main():
     vprint(args, 'Start time:', times[0], '| End Time:', times[1])
 
     if not args.no_write_imf:
-        write_imf_from_omni(*times)
+        vprint(args, 'Getting omni data..')
+        omni_data = write_imf_from_omni(*times, verbose=args.verbose)
+        vprint(args, 'Omni data integrity (%):',
+               round(omni_integrity(omni_data)*100, 2))
         vprint(args, 'IMF.dat written')
 
     iono_descriptions = [
