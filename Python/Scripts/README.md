@@ -34,10 +34,11 @@ $ pip install -U --user git+https://gitlab.umich.edu/swmf_software/swmfpy.git@ma
 ### Set up
 
 
-Copy the script into your run directory:
+Soft link the script into your run directory:
 
 ```bash
-SWMF$ cp share/Python/Scripts/prepare_geospace.py run/
+SWMF$ ln -s share/Python/Scripts/prepare_geospace.py run/
+# The soft link is so that any updates automatically update this when you pull
 ```
 
 Go to your run directory and copy a sensible `PARAM.in`:
