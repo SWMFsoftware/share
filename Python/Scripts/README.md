@@ -38,7 +38,7 @@ $ pip install -U --user git+https://gitlab.umich.edu/swmf_software/swmfpy.git@ma
 Soft link the script into your run directory:
 
 ```bash
-SWMF$ ln -s share/Python/Scripts/prepare_geospace.py run/
+SWMF$ ln -s "$(realpath share/Python/Scripts/prepare_geospace.py)" run/
 # The soft link is so that any updates automatically update this when you pull
 ```
 
