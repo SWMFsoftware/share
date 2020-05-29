@@ -137,7 +137,7 @@ def write_times(times, paramin_file='PARAM.in'):
 
     change['#STARTTIME'] = zip(time_as_list(times[0]),
                                time_desc)
-    change['#ENDTIME'] = zip(time_as_list(times[0]),
+    change['#ENDTIME'] = zip(time_as_list(times[1]),
                              time_desc)
     paramin.replace_command(change, paramin_file)
 
