@@ -51,6 +51,9 @@ $Machine =~ s/^login\d*\.//; # remove "login\d+." from beginning
 $Machine =~ s/\..*//;        # keep the first word
 $Machine =~ s/\d+$//;        # remove numbers from the machine name
 
+# This is obtained from the calling script and used here
+our $CloneOnly;
+
 # These are either obtained from the calling script or set here
 our $Component;             # The SWMF component the code is representing
 our $Code;                  # The name of the code
@@ -354,7 +357,7 @@ if($Compiler eq "nagfor" and $Debug eq "yes" and
 &show_settings_ if $Show;
 
 # Recreate Makefile.RULES with the current settings
-&create_makefile_rules;
+&create_makefile_rules unless $CloneOnly;
 
 # (re)create gitinfo.txt file in the main directory
 if($GetGitInfo or ($Install and not $IsComponent)){
