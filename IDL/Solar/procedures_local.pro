@@ -775,10 +775,11 @@ end
 
 ;--------------------------------------------------------------------
 
-pro process_aia, filename, aia_map = aia_map, xy_map = xs_map, ys_map = ys_map, index = index
+pro process_aia, filename, aia_map = aia_map, xy_map = xs_map, $
+                 ys_map = ys_map, index = index
 
   if (filename ne '') then begin
-     aia_prep, filename, -1, index, data, /normalize
+     aia_prep, filename, -1, index, data,/normalize
      index2map, index, data, aia_map
      aia_map = rebin_map(aia_map, xs_map, ys_map)
   endif else begin
@@ -790,7 +791,8 @@ end
 ;--------------------------------------------------------------------
 
 pro process_euv, filename, DetName = DetName, InstName = InstName, $
-                 euv_map = euv_map, xy_map = xs_map, ys_map = ys_map
+                 euv_map = euv_map, xy_map = xs_map, ys_map = ys_map, $
+                 index=index
 
   if (filename ne '') then begin
      if (DetName eq 'euvi') then begin
@@ -828,7 +830,85 @@ pro plot_map_local, map, position=position, xrange=xrange, yrange=yrange,  $
 end
 
 ;--------------------------------------------------------------------
+pro read_swmf_remote_idl, file, TimeEvent=TimeEvent, ObsXyz=ObsXyz, $
+                          varnames=varnames, nvars=nvars, data=data,    $
+                          TimeSimulationSI = TimeSimulationSI,$
+                          nx = nx0, ny = ny0, rMaxSim=rMaxSim,            $
+                          DoWl =DoWl, DoPb = DoPb, DoAIA=DoAIA,         $
+                          DoXRT=DoXRT, DoEUV=DoEUV
+  
+  common getpict_param, filename
+  common file_head
+  common plot_data, grid, x, w
+  filename= file
+  read_data
 
+  TimeEvent    = ''
+  NameLosTable = ''
+  ObsXyz   = 0
+  nvars    = 0
+  data     = 0
+  varnames = ''
+  
+  if (ndim ne 2) then print,'Data should be 2D'
+  if (neqpar ne 3) then print,'Obs position should have 3 values'
+  ObsXyz = eqpar
+  ; Size of the data array
+  nx0 = nx[0]
+  ny0 = nx[1]
+  
+  DoWl  = 0
+  DoPb  = 0
+  DoAIA = 0
+  DoEUV = 0
+  DoXRT = 0
+
+  lineTmp = headline
+  lineTmp=strsplit(lineTmp,' ',/EXTRACT)
+
+  ;; check if it starts with LOS Integrals:
+  if (lineTmp(0) EQ 'LOS') then begin
+     print,'Reading LOS IDL output header '
+  endif else print,'Incorrect output file'
+
+  for i=0, n_elements(lineTmp)-1 do begin
+     if (strpos(lineTmp(i), 'TIMEEVENT=') ge 0) then begin
+        ii = strpos(lineTmp(i),'=')
+        lineTmp0 = strmid(lineTmp(i),ii+1)
+        TimeEvent = lineTmp0
+     endif
+     if (strpos(lineTmp(i), 'TIMEEVENTSTART=') ge 0) then begin
+        ii = strpos(lineTmp(i),'=')
+        lineTmp0 = strmid(lineTmp(i),ii+1)
+        TimeEventStart = lineTmp0
+     endif
+     if (strpos(lineTmp(i), 'NAMELOSTABLE=') ge 0) then begin
+        ii = strpos(lineTmp(i),'=')
+        lineTmp0 = strmid(lineTmp(i),ii+1)
+        NameLosTable = strlowcase(lineTmp0)
+     endif
+  endfor
+     
+  ;; The table name should be entered correctly!!!                     
+  if (strpos(NameLosTable,'euvi') ge 0) then DoEUV = 1
+  if (strpos(NameLosTable,'aia')  ge 0) then DoAIA = 1
+  if (strpos(NameLosTable,'xrt')  ge 0) then DoXRT = 1
+  if (strpos(NameLosTable,'eit')  ge 0) then DoEUV = 1
+  
+  TimeSimulationSI = utc2tai(TimeEvent) - utc2tai(TimeEventStart)
+  
+  xx=x(*,*,0)
+  yy=x(*,*,1)
+  rr = sqrt(xx^2+yy^2)
+  rMaxSim = max(rr)
+
+  ;;Variable Names and Data
+  nvars = n_elements(wnames)
+  varnames = strarr(1000)
+  varnames = wnames
+  data = w
+end
+;--------------------------------------------------------------------
 pro read_swmf_remote_tec, filename, TimeEvent=TimeEvent, ObsXyz=ObsXyz, $
                           varnames=varnames, nvars=nvars, data=data,    $
                           TimeSimulationSI = TimeSimulationSI,          $
@@ -974,7 +1054,6 @@ pro read_swmf_remote_tec, filename, TimeEvent=TimeEvent, ObsXyz=ObsXyz, $
                  ii = strpos(linetmp, '=')
                  linetmp = strmid(linetmp, ii+1)
                  linetmp = strjoin(strsplit(linetmp,'"',/extract))
-                 
                  TimeEvent = linetmp
               endif
 
@@ -1012,7 +1091,7 @@ pro read_swmf_remote_tec, filename, TimeEvent=TimeEvent, ObsXyz=ObsXyz, $
                  endif
               endif
            endfor
-           
+
            ;; The table name should be entered correctly!!!
            if (strpos(NameLosTable,'euvi') ge 0) then DoEUV = 1
            if (strpos(NameLosTable,'aia')  ge 0) then DoAIA = 1
@@ -1196,7 +1275,7 @@ pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
      endelse
 
   endwhile
-
+  
   close,unit
 
   data = transpose(data(*,0:nt-1))
@@ -1330,7 +1409,7 @@ function curve_int_distance,x1,y1,x2,y2
   return, d
 end
 
-;-------------------------------------------------------------------------------
+;------------------------------------------------------------------------------
 
 pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
                  time_simu1, u_simu1, n_simu1, ti_simu1, te_simu1, b_simu1,   $
@@ -1527,7 +1606,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
             psym=0,textcolor=0,thick=6,linestyle=0,$
             charsize=1,pspacing=1.8,charthick=5,bthick=5,position=[0.15,0.95],$
             /norm,box=0
-     legend,dist_int(0),thick=6,charsize=1,charthick=5,position=[0.75,0.94],$
+     legend,dist_int(0),thick=6,charsize=1,charthick=5,position=[0.75,0.92],$
             /norm,box=0
   endelse
   
@@ -1864,117 +1943,51 @@ if keyword_set(DoRmse) then begin
    for i=0,obs_size[1]-1 do begin
       for j=0,obs_size[1]-1 do begin
          sq_error = sq_error + (sim_data.data[i,j] - obs_data.data[i,j])^2
-;         print,i,j,sq_error,sim_data.data[i,j],obs_data.data[i,j]
       endfor
    endfor
- ;  print,'max',max(sim_data.data)
    rmse = sqrt(sq_error/obs_size[4])
    scatter = rmse/mean_obs
    nrmse = rmse/(max(obs_data.data) - min(obs_data.data))
-;   print,min(obs_data.data)
 
    printf,unitlog,'Root mean square error (RMSE) = ',trim(rmse)
    printf,unitlog,'Scatter = RMSE/(mean_obs)= ',trim(scatter)
    printf,unitlog,'Normalized RMSE (norm to max(obs) - min(obs)) = ',$
           trim(nrmse)
 endif
-
 end
-; -----
-pro save_pict, filename, headline, varname, w, x, $
-               it, time, eqpar, ndim=ndim, gencoord=gencoord, $
-               filetype=filetype, append=append
-
-;  common debug_param & on_error, onerror
-
-  if n_elements(filename) eq 0 or n_elements(headline) eq 0 or $
-     n_elements(varname) eq 0 or n_elements(w) eq 0 then begin
-     print,'ERROR in save_pict: ', $
-           'arguments unit headline, varname, w are required'
-     retall
-  endif
-
-  if n_elements(filetype) eq 0 then filetype = 'ascii'
-  if n_elements(it) eq 0 then it=0
-  if n_elements(time) eq 0 then time=0.0
-  neqpar = n_elements(eqpar)
-
-  sw = size(w)
-  if n_elements(x) gt 0 then begin
-     sx = size(x)
-     if n_elements(ndim) eq 0 then ndim = sx(0) - 1 > 1
-     nx = sx(1:ndim)
-  endif else begin
-     if n_elements(ndim) eq 0 then ndim = sw(0) - 1 > 1
-     nx = sw(1:ndim)
-     case ndim of
-        1: x = findgen(nx(0)) + 1
-        2: begin
-           x = fltarr(nx(0), nx(1), 2)
-           for j = 0L, nx(1)-1 do for i = 0L, nx(0)-1 do x(i,j,*) = [i+1, j+1]
-        end
-        3: begin
-           x = fltarr(nx(0), nx(1), nx(2)) + 1
-           for k = 0L, nx(2)-1 do for j = 0L, nx(1)-1 do $
-              for i = 0L, nx(0)-1 do x(i,j,*) = [i+1., j+1., k+1.]
-        end
-     endcase
-  endelse
-
-                                ; number of variables
-  if sw[0] eq ndim + 1 then nw = sw(ndim+1) else nw = 1
-
-  if keyword_set(gencoord) then ndim = -ndim
-
-  unit=1
-
-  if filetype eq 'ascii' then begin
-     openw, unit, filename, append=append
-
-     printf, unit, headline
-     printf, unit, it, time, ndim, neqpar, nw, format='(i8, 1e13.5, 3i3)'
-     printf, unit, nx, format='(3i8)'
-     if neqpar gt 0 then printf, unit, eqpar, format='(100(1e13.5))'
-     printf, unit, varname
-     case abs(ndim) of
-        1: for i=0L, nx(0)-1 do $
-           printf, unit, x(i), w(i,*), format='(100(1e18.10))'
-        2: for j =0L, nx(1)-1 do for i=0L, nx(0)-1 do $
-           printf, unit, x(i,j,*), w(i,j,*), format='(100(1e18.10))'
-        3: for k=0L, nx(2)-1 do for j=0L, nx(1)-1 do for i=0L, nx(0)-1 do $
-           printf, unit, x(i,j,k,*), w(i,j,k,*), format='(100(1e18.10))'
-     endcase
-  endif else begin
-                                ; extend strings to 500 characters
-     for i = 1, 500-strlen(headline) do headline = headline + ' '
-     for i = 1, 500-strlen(varname)  do varname  = varname  + ' '
-
-                                ; convert reals to 4 or 8 bytes
-     if filetype eq 'real4' then begin
-        time  = float(time)
-        if neqpar gt 0 then eqpar = float(eqpar)
-        x     = float(x)
-        w     = float(w)
-     endif else begin
-        time  = double(time)
-        if neqpar gt 0 then eqpar = double(eqpar)
-        x     = double(x)
-        w     = double(w)
-     endelse
-
-                                ; write unformatted Fortran file
-     openw, unit, filename, /f77_unformatted, append=append
-     writeu, unit, headline
-     writeu, unit, long(it), time, long(ndim), long(neqpar), long(nw)
-     writeu, unit, long(nx)
-     if neqpar gt 0 then writeu, unit, eqpar
-     writeu, unit, varname
-     writeu, unit, x
-     case abs(ndim) of
-        1: for iw=0, nw-1 do writeu, unit, w(*,iw)
-        2: for iw=0, nw-1 do writeu, unit, w(*,*,iw)
-        3: for iw=0, nw-1 do writeu, unit, w(*,*,*,iw)
-     endcase
-  endelse
-  close,unit
+;--------------------------------------------------------------------
+pro compare_IDL_plot,file_obs,file_sim,file_plot
+  common getpict_param
+  common file_head
+  common plotfunc_param
+  common plot_param
+  common plot_data
+  common animate_param
+  print,'Plotting IDL comparisons'
+  filename+=' '+file_obs
+  read_data
+  !x.range=[-1.2,1.2]
+  !y.range=[-1.2,1.2]
+  multiplot=[3,4,0]
+  func='AIA:94 AIA:131 AIA:171 AIA:193 AIA:211 AIA:335'
+  autorange='n'
+  fmin=fltarr(nw-1)+0.01
+  fmax=dblarr(nw-1)
+  for i=0,5 do begin
+     if i eq 5 then begin
+;; not plotting 304 just to fit 6 plots. Can be changed !
+        fmax(i)=max([max(w0(*,*,i+1)),max(w1(*,*,i+1))])
+     endif else fmax(i)=max([max(w0(*,*,i)),max(w1(*,*,i))])
+  endfor
+  plotmode='contfilllognoaxis'
+  bottomline=0
+  !p.charsize=1.5
+  plottitles_file=['Model AIA:94; Model AIA:131; Model AIA:171; Model AIA:193; Model AIA:211; Model AIA:335','Obs AIA:94; Obs AIA:131; Obs AIA:171; Obs AIA:193; Obs AIA:211; Obs AIA:335']
+  plot_spacex=1
+  plot_spacey=1.5
+  set_device,file_plot+'_IDL.eps'
+  device,xsize=20,ysize=26
+  animate_data
+  close_device,/pdf
+  retall
 end
