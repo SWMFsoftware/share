@@ -756,8 +756,7 @@ pro plot_data
   if keyword_set(cut) then help,cut
   if keyword_set(velpos) then help,velpos
   velpos0=velpos
-
-                                ; Read plotting and transforming parameters
+  ;; Read plotting and transforming parameters
 
   print,'======= PLOTTING PARAMETERS ========================='
   print,'wnames                     =',wnames
@@ -3884,12 +3883,13 @@ pro plot_func
   for ifunc=0,nfunc-1 do begin
 
      plotmod=plotmodes(ifunc)
-
-                                ; stream2 --> stream
+     funci = funcs(ifunc)
+     
+     ;; stream2 --> stream
      i=strpos(plotmod,'stream2')
      if i ge 0 then plotmod=strmid(plotmod,0,i+6)+strmid(plotmod,i+7)
 
-                                ; contour --> cont
+     ;; contour --> cont
      i=strpos(plotmod,'contour')
      if i ge 0 then plotmod=strmid(plotmod,0,i+4)+strmid(plotmod,i+7)
 
@@ -3992,7 +3992,11 @@ pro plot_func
         usemean=1
      endif else usemean=0
 
-                                ; check if this plot requires a special color table #ctNNN
+     ;; check if this plot requires a special color table #ctNNN
+     if strpos(plotmod,'#ct') lt 0 then begin
+        f4 = strmid(funci,0,4)
+        if f4 eq 'AIA:' or f4 eq 'EUV:' then plotmod+='#ct'+strmid(funci,4)
+     endif
      i = strpos(plotmod, '#ct')
      if i ge 0 then begin
         color = strmid(plotmod,i+3)
@@ -4000,7 +4004,7 @@ pro plot_func
         loadct_extra, color
      endif
 
-                                ; check if this plot requires a special color #cNNN
+     ;; check if this plot requires a special color #cNNN
      i = strpos(plotmod, '#c')
      if i ge 0 then begin
         color = strmid(plotmod,i+2)
@@ -4176,8 +4180,8 @@ pro plot_func
      f_min = fmin(ifunc)
      f_max = fmax(ifunc)
 
-     if logarithm and f_min gt 0 and min(f) gt 0 then begin
-        f     = alog10(f)
+     if logarithm and f_min gt 0 then begin
+        f     = alog10(f>f_min)
         f_min = alog10(f_min)
         f_max = alog10(f_max)
         if plottitles(ifunc) eq 'default' and !p.title ne '' $
@@ -6441,7 +6445,7 @@ pro set_space, nb, spacex, spacey, sizes, nx = nx, ny = ny
            if (sizes.nbx le sizes.nby) then sizes.nbx = sizes.nbx + 1      $
            else sizes.nby = sizes.nby + 1                                  $
            else                                                        	$
-              if (sizes.nbx lt sizes.nby) and					$
+              if (sizes.nbx lt sizes.nby) and			$
            (n_elements(nx) eq 0) and					$
            (n_elements(ny) eq 0) then begin
            temp = sizes.nby
@@ -6462,9 +6466,9 @@ pro set_space, nb, spacex, spacey, sizes, nx = nx, ny = ny
 
         if (sizes.nbx*sizes.nby lt nb) then				$
            if (sizes.nby le sizes.nbx) then sizes.nby = sizes.nby + 1	$
-           else sizes.nbx = sizes.nbx + 1					$
+           else sizes.nbx = sizes.nbx + 1				$
            else								$
-              if (sizes.nby lt sizes.nbx) and					$
+              if (sizes.nby lt sizes.nbx) and				$
            (n_elements(nx) eq 0) and					$
            (n_elements(ny) eq 0) then begin
            temp = sizes.nby
