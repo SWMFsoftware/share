@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Prepares a geospace run by downloading inputs.
 
 You need swmfpy installed.
@@ -167,10 +167,8 @@ def omni_largest_gap(omni_data):
 
 def omni_integrity(omni_data):
     """Returns percent of omni that is complete"""
-    num_of_nans = sum(np.isnan(np.array(omni_data[key])).sum()
-                      for key in IMF_KEYS[1:])
-    num_of_values = sum(np.array(omni_data[key]).size
-                        for key in IMF_KEYS[1:])
+    num_of_nans = sum(np.isnan(omni_data[key]).sum() for key in IMF_KEYS[1:])
+    num_of_values = sum(omni_data[key].size for key in IMF_KEYS[1:])
     integrity = str(
         round((num_of_values - num_of_nans) / num_of_values * 100, 2)
         )
@@ -214,7 +212,7 @@ def _main():
         vprint(args, 'F10.7:', f10_7)
         iono_command = paramin.read_command('#IONOSPHERE', args.paramin)
         change = {}
-        iono_command[3] = str(f10_7)
+        iono_command[4] = str(f10_7)
         change[iono_command[0]] = map(
             list,
             zip(iono_command[1:], iono_descriptions)
