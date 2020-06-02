@@ -35,16 +35,15 @@ def arguments():
     """Make arguments"""
     parser = argparse.ArgumentParser(description=DESC)
 
-    metavar_time = ('y', 'm', 'd', 'h', 'm', 's')
-
     parser.add_argument(
         '-t0', '--start_time',
         help="""The start time of the solar wind.
 This well replace PARAM.in values.
 If times are not specified this reads the PARAM.in file.""",
-        nargs=6,
+        action='extend',
+        metavar='year month day',
+        nargs='+',
         type=int,
-        metavar=metavar_time,
         default=None
         )
 
@@ -53,9 +52,10 @@ If times are not specified this reads the PARAM.in file.""",
         help="""The end time of the solar wind.
 This well replace PARAM.in values.
 If times are not specified this reads the PARAM.in file.""",
-        nargs=6,
+        action='extend',
+        metavar='year month day',
+        nargs='+',
         type=int,
-        metavar=metavar_time,
         default=None
         )
 
