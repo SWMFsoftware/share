@@ -5,7 +5,7 @@ Collection of Python scripts to make using [SWMF](https://gitlab.umich.edu/swmf_
 
 Table of Contents:
 
-- [prepare_geospace.py](#prepare_geospace.py)
+- [prepare_geospace.py](#prepare_geospacepy)
 
 prepare_geospace.py
 -------------------
