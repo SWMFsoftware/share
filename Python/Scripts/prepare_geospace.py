@@ -42,8 +42,7 @@ This well replace PARAM.in values.
 If times are not specified this reads the PARAM.in file.""",
         metavar='year month day',
         nargs='+',
-        type=int,
-        default=None
+        type=int
         )
 
     parser.add_argument(
@@ -53,8 +52,7 @@ This well replace PARAM.in values.
 If times are not specified this reads the PARAM.in file.""",
         metavar='year month day',
         nargs='+',
-        type=int,
-        default=None
+        type=int
         )
 
     parser.add_argument(
