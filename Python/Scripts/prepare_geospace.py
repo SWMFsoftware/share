@@ -40,7 +40,6 @@ def arguments():
         help="""The start time of the solar wind.
 This well replace PARAM.in values.
 If times are not specified this reads the PARAM.in file.""",
-        action='extend',
         metavar='year month day',
         nargs='+',
         type=int,
@@ -52,7 +51,6 @@ If times are not specified this reads the PARAM.in file.""",
         help="""The end time of the solar wind.
 This well replace PARAM.in values.
 If times are not specified this reads the PARAM.in file.""",
-        action='extend',
         metavar='year month day',
         nargs='+',
         type=int,
