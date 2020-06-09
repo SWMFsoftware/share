@@ -232,21 +232,28 @@ contains
       
     end if
   end function hyper_semi_semi_int
-  !=====================Toroid functions=========
-  !\
+  !================================================
+  !=====================|Toroid functions|=========
+  !                     v                v
+  !
   ! Calculate functions
+  !
   ! sqrt(2\sinh u)P^{-1}_{n - 1/2}(\cosh u)/(k^3(k^\prime)^n)
+  ! and
   ! sqrt(2\sinh u)Q^{-1}_{n - 1/2}(\cosh u)/(k^3(k^\prime)^n)
+  !
   ! The multiplier, k^3, is present in a definition 
   ! of the toroid functions and while calculated detivatives
-  ! the multiplier is taken into account, however, it is not
-  ! calculated, to avoid dividing zero by zero at k=0
-  !/
-  ! Herewith cosh u = (2 - k^2)/(2k^\prime);
+  ! this multiplier is taken into account, however, it is not
+  ! calculated here, to avoid dividing zero by zero at k=0
+  !
+  ! Herewith, cosh u = (2 - k^2)/(2k^\prime);
   ! sinh u = k^2/(2k^\prime)
   ! k^\prime=sqrt(1 - k^2)=exp(-u)
+  ! 
   real function toroid_p(n, Kappa2In, KappaPrime2In)
-    integer, intent(in):: n  !.ge.0
+    !\tilde{P} function, integer n > 0 or n=0
+    integer, intent(in):: n  
     real, optional, intent(in) :: Kappa2In, KappaPrime2In
     real :: Kappa2, KappaPrime2
     character(LEN=*), parameter:: NameSub = 'toroid_p'
@@ -266,12 +273,13 @@ contains
   end function toroid_p
   !====================
   real function toroid_q(n, KappaPrime2In, Kappa2In)
+    !\tilde{Q}_n function, integer n > 0! The case n=0 is treated below
     integer, intent(in):: n  !.ge.1
     real, optional, intent(in) :: KappaPrime2In, Kappa2In
     character(LEN=*), parameter:: NameSub = 'toroid_q'
     !-----------
     if(n < 1)call CON_stop(&
-         NameSub//': argument n should be non-negative')
+         NameSub//': argument n should be positive')
     if(present(KappaPrime2In))then
        toroid_q = hyper_semi_semi_int(nA=1, nB=1+n, nC=n+1, &
             ZIn = KappaPrime2In)
@@ -284,8 +292,9 @@ contains
     end if
     toroid_q = -toroid_q*cSqrtPi*gamma_semi(n-1)/factorial(n)
   end function toroid_q
- !====================
+  !====================
   real function toroid_q0(KappaPrime2In, Kappa2In)
+    !\tilde{Q}_0 function! The case n>0 is treated above
     real, optional, intent(in) :: KappaPrime2In, Kappa2In
     character(LEN=*), parameter:: NameSub = 'toroid_q0'
     !-----------
@@ -300,7 +309,46 @@ contains
             NameSub//': Kappa2In or KappaPrime2InIn should be present')
     end if
   end function toroid_q0
+  !                         ^                  ^
+  !=========================|Toroidal functions|======================
+  !===================================================================
+  !=================|Derivatives of toroidal functions|===============
+  !                 v                                 v
+  real function toroid_dpdu(n, Kappa2In, KappaPrime2In)
+    !d\tilde{P}_n/du  function, related to k(k^\prime)^n
+    integer, intent(in):: n  
+    real, optional, intent(in) :: Kappa2In, KappaPrime2In
+    real :: Kappa2
+    character(LEN=*), parameter:: NameSub = 'toroid_dpdu'
+    !-----------
+    if(present(Kappa2In))then
+       toroid_dpdu = hyper_semi_semi_int(nA=0, nB=n, nC=1, &
+            ZIn = Kappa2In)
+       Kappa2 = Kappa2In
+    elseif(present(KappaPrime2In))then
+       toroid_dpdu = hyper_semi_semi_int(nA=0, nB=n, nC=1, &
+            OneMinusZIn = KappaPrime2In)
+       Kappa2 = 1 - KappaPrime2In
+    else
+       call CON_stop(&
+            NameSub//': Kappa2In or KappaPrime2InIn should be present')
+    end if
+    toroid_dpdu = toroid_dpdu - (1.0 - 0.50*Kappa2)*&
+         toroid_p(n, Kappa2In, KappaPrime2In)
+  end function toroid_dpdu
   !====================
+  real function toroid_dq0du(KappaPrime2In, Kappa2In)
+    !Derivative of \tilde{Q}_0 function over du
+    !Related to \kappa(\kappa^\prime)^2
+    real, optional, intent(in) :: KappaPrime2In, Kappa2In
+    character(LEN=*), parameter:: NameSub = 'toroid_dq0du'
+    !-----------
+    toroid_dq0du = 3*toroid_q(1, KappaPrime2In, Kappa2In)
+  end function toroid_dq0du 
+  !                 ^                                 ^
+  !=================|Derivatives of toroidal functions|===============
+  !===================================================================
+  !      
   real function scr_inductance(KappaPrime2)
     real, intent(in):: KappaPrime2
     !\
