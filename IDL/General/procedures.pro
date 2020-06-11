@@ -110,7 +110,7 @@ pro set_default_values
   funcs=''             ; array of function names
   funcs1=''            ; array of first  components of vectors functions
   funcs2=''            ; array of second components of vectors functions
-  plotmode='plot'      ; space separated list of plot modes
+  plotmode='default'   ; space separated list of plot modes
   plotmodes=''         ; array of plot modes
   nplot=0              ; number of subplots (overplot functions count as 1)
   plottitle='default'  ; semicolon separated list of titles
@@ -2652,7 +2652,6 @@ pro read_plot_param
      print,'1D plotmode: plot/plot_io/plot_oi/plot_oo'
      print,'1D +options: max,mean,log,noaxis,over,#c999,#ct999'
      askstr,'plotmode(s)                ',plotmode,doask
-     if strmid(plotmode,0,4) ne 'plot' then plotmode='plot'
   endif else begin
      if strmid(plotmode,0,4) eq 'plot' then plotmode='contbar'
      print,'2D plotmode: shade/surface/cont/tv/polar/lonlatn/lonlats/velovect/vector/stream'
@@ -2677,7 +2676,21 @@ pro read_plot_param
      func12=strsplit(funcs(ifunc),';',/extract)
      funcs1(ifunc)=func12(0)
      if n_elements(func12) eq 2 then funcs2(ifunc)=func12(1)
+
+     if plotmodes(ifunc) eq 'default' then begin
+        plotmodes(ifunc) = 'plot'
+        if plotdim eq 2 then begin
+           plotmodes(ifunc) = 'contbarbody'
+           if n_elements(func12) eq 2 then $
+              if ifunc gt 0 then $
+                 plotmodes(ifunc) = 'streamoverbody' $
+              else $
+                 plotmodes(ifunc) = 'streambody'
+        endif
+     endif
+
      if strpos(plotmodes(ifunc),'over') ge 0 then nplot=nplot-1
+     
   endfor
 
 end
@@ -3884,7 +3897,7 @@ pro plot_func
 
      plotmod=plotmodes(ifunc)
      funci = funcs(ifunc)
-     
+
      ;; stream2 --> stream
      i=strpos(plotmod,'stream2')
      if i ge 0 then plotmod=strmid(plotmod,0,i+6)+strmid(plotmod,i+7)
@@ -4020,11 +4033,11 @@ pro plot_func
         if strpos(plotmodes(ifunc+1),'over') gt 0 $
            and not keyword_set(timetitle) then begin
            nexttitle = plottitles(ifunc+1)
-           if nexttitle eq 'default' then nexttitle=funcs(ifunc+1)
+           if nexttitle eq 'default' then nexttitle = funcs(ifunc+1)
            if nexttitle ne ' ' then begin
               if strpos(plotmodes(ifunc+1),'log') gt 0 then $
-                 nexttitle = 'log '+nexttitle
-              !p.title += ' and '+nexttitle
+                 nexttitle = 'log ' + nexttitle
+              !p.title += ' and ' + nexttitle
            endif
         endif
      endif
@@ -4078,7 +4091,7 @@ pro plot_func
         set_position, sizes, plotix, multiy-1-plotiy, pos, /rect
 
         ;; shrink in X direction if there is a colorbar among the plotmodes
-        if strpos(plotmode,'bar') gt 0 then $
+        if strpos(plotmode,'bar') ge 0 or strpos(plotmode,'default') ge 0 then $
            pos(2) = pos(2) - (pos(2) - pos(0))*0.15
 
         ;; shrink in X direction for the Y axis of plot
