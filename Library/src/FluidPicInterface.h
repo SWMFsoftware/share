@@ -58,11 +58,18 @@ class TimeController{
 
  public:
   TimeController(){
+    SItime = 0;
     useFixedDt = false; 
-    cflLimit = 0.4; 
+    cflLimit = 0.4;
+    fixedDtSI = 0;
+    maxDtSI = 0;
+
+    Si2NoT = 1;
+    No2SiT = 1; 
 
     dtSICFL0 = -1; 
-    dtSICFL1 = -1; 
+    dtSICFL1 = -1;
+    dtSI = -1;       
   }
 
   double getDt()const{
