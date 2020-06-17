@@ -152,6 +152,10 @@ module ModCoordTransform
      module procedure cross_product11, cross_product13, cross_product31,&
           cross_product33
   end interface
+  
+  interface inverse_matrix
+     module procedure inverse_matrix33, inverse_matrix_nn
+  end interface inverse_matrix
 
   interface determinant
      module procedure determinant33, determinant_nn
@@ -852,7 +856,7 @@ contains
   end function cross_product33
 
   !============================================================================
-  function inverse_matrix(a_DD, SingularLimit, DoIgnoreSingular) result(b_DD)
+  function inverse_matrix33(a_DD, SingularLimit, DoIgnoreSingular) result(b_DD)
 
     ! Return the inverse of the 3x3 matrix a_DD
     ! The optional SingularLimit gives the smallest value for the determinant
@@ -905,7 +909,70 @@ contains
        call CON_stop('Singular matrix in '//NameSub)
     end if
 
-  end function inverse_matrix
+  end function inverse_matrix33
+  !============================================================================
+  function inverse_matrix_nn(n, a_II, SingularLimit, DoIgnoreSingular) &
+       result(b_II)
+
+    ! Return the inverse of the nxn matrix a_DD
+    ! The optional SingularLimit gives the smallest value for the determinant
+    ! The optional DoIgnoreSingular determines what to do if the 
+    ! determinant is less than SingularLimit.
+
+    integer, intent(in) :: n
+    real, intent(in) :: a_II(n,n)
+    real, intent(in), optional :: SingularLimit
+    logical, intent(in), optional :: DoIgnoreSingular
+
+    real             :: b_II(n,n)
+
+    real    :: DetA, Limit, SignJ, SignI
+    logical :: DoIgnore
+    integer :: iOrderN_I(n)
+    integer :: i , j, iOrder_I(n-1), jOrder_I(n -1), i0, j0, iOrder, jOrder
+    character (len=*), parameter :: NameSub = NameMod//':inverse_matrix'
+    !-------------------------------------------------------------------------
+    Limit = 1.e-16
+    if(present(SingularLimit)) Limit = SingularLimit
+    DoIgnore = .false.
+    if(present(DoIgnoreSingular)) DoIgnore = DoIgnoreSingular
+    do i = 1, n; iOrderN_I(i) = i; end do
+    SignJ = 1
+    do j = 1, n  !  Columns of the inverse matrix
+       SignJ = -SignJ; SignI = SignJ
+       do i = 1, n
+          SignI = -SignI
+ 
+          iOrder_I(1:j-1) = iOrderN_I(1:j-1)
+          iOrder_I(j:n-1) = iOrderN_I(j+1:n)
+
+          jOrder_I(1:i-1) = iOrderN_I(1:i-1)
+          jOrder_I(i:n-1) = iOrderN_I(i+1:n)
+          !
+          ! Calculate determinant of a minor and
+          ! apply the sign to get a cofactor
+          !
+          b_II(i,j) = SignI*determinant(a_II(iOrder_I,jOrder_I), n-1)
+       end do
+    end do
+    DetA= sum(a_II(1,1:n)*b_II(1:n,1))
+
+    if(DoIgnore)then
+       if(DetA == 0)then
+          b_II = -777.
+       else
+          b_II = b_II/DetA
+       end if
+    elseif(abs(detA) > Limit*maxval(abs(a_II)) )then
+       b_II = b_II/DetA
+    else
+       write(*,*)'Error in ',NameSub,' for matrix:'
+       call show_nbyn_matrix(n, a_II)
+       write(*,*)'Determinant=', DetA 
+       call CON_stop('Singular matrix in '//NameSub)
+    end if
+
+  end function inverse_matrix_nn
   !============================================================================
   
   function determinant33(a_DD) RESULT(Det)
@@ -936,6 +1003,8 @@ contains
 
     if (n == 1) then
        Det = a_II(1,1)
+    elseif(n == 3)then
+       Det = determinant33(a_II)
     else
        Det = 0.0
        iSign = 1
@@ -957,6 +1026,17 @@ contains
     write(*,'(3(3f14.10,/))') transpose(Matrix_DD)
 
   end subroutine show_rot_matrix
+  !===========================================================================
+  subroutine show_nbyn_matrix(n,Matrix_II)
+    
+    integer, intent(in) :: n
+    real, intent(in) :: Matrix_II(n,n)
+    character (len=15) :: NameFormat
+
+    write(NameFormat,'(a,i1,a,i1,a)')'(',n,'(',n,'f14.10,/))'
+    write(*,NameFormat)transpose(Matrix_II)
+
+  end subroutine show_nbyn_matrix
   !BOP =======================================================================
   !IROUTINE: atan2_check - calculate atan2 with a check for 0.,0. arguments
   !INTERFACE:
@@ -980,7 +1060,12 @@ contains
 
     real, parameter      :: cTiny = 0.000001
     real, dimension(3)   :: Xyz_D, Sph_D, rLonLat_D, Xyz2_D
-    real:: XyzSph_DD(3,3)
+    real:: XyzSph_DD(3,3), AInv_II(5,5)
+    real, parameter :: A_II(5,5)=reshape([ 3.0, 7.0, 5.0,21.0, 8.0,&
+                                          16.0, 8.0,17.0,53.0, 7.0,&
+                                          14.0, 6.0,35.0,18.0, 1.0,&
+                                          13.0,19.0, 4.0,22.0,11.0,&
+                                           9.0,21.0, 1.0,23.0,12.0],[5,5])
     !------------------------------------------------------------------------
     Xyz_D = (/0.1, 0.2, 0.3/)
     write(*,'(a,3es16.8)')'Xyz_D=',Xyz_D
@@ -1046,6 +1131,7 @@ contains
     write(*,'(a,3es16.8)')'Cartesian position=',Xyz_D
     XyzSph_DD = rot_xyz_sph(Xyz_D)
     write(*,'(a)')'XyzSph_DD'; call show_rot_matrix(XyzSph_DD)
+    
     Sph_D = (/1.0, 0.0, 0.0/)
     write(*,'(a,3es16.8)')'Spherical vector  =',Sph_D
     write(*,'(a,3es16.8)')'Cartesian vector  =',matmul(XyzSph_DD,Sph_D)
@@ -1055,7 +1141,19 @@ contains
     Sph_D = (/0.0, 0.0, 1.0/)
     write(*,'(a,3es16.8)')'Spherical vector  =',Sph_D
     write(*,'(a,3es16.8)')'Cartesian vector  =',matmul(XyzSph_DD,Sph_D)
-
+    write(*,*)
+    write(*,'(a)')'Check inversion: write the inverse of XyzSph_DD:'
+    call show_nbyn_matrix(3,inverse_matrix_nn(3,XyzSph_DD))
+    write(*,'(a)')'For comparison: write the transposed XyzSph_DD:'
+    call show_nbyn_matrix(3,transpose(XyzSph_DD))
+    write(*,*)
+    write(*,'(a)')'Check inversion: 5 x 5 matrix A:'
+    call show_nbyn_matrix(5,A_II)
+    AInv_II = inverse_matrix(5, A_II)
+    write(*,'(a)')'Check inversion: the inverse matrix AInv:'
+    call show_nbyn_matrix(5,AInv_II)
+    write(*,'(a)')'Check inversion: the matrix product, A.AInv = diag{1}:'
+    call show_nbyn_matrix(5,matmul(AInv_II,A_II))
   end subroutine test_coord_transform
 
 end module ModCoordTransform
