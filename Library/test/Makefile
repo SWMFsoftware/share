@@ -10,7 +10,7 @@ help:
 	@echo "You can test the following modules in ../src:"
 	@echo
 	@echo "   test_axes             - test CON_axes"
-	@echo "   test_coord_transform  - test ModTimeConvert"
+	@echo "   test_coord_transform  - test ModCoordTransform"
 	@echo "   test_freq             - test ModFreq"
 	@echo "   test_geopack          - test CON_geopack"
 	@echo "   test_interpolate      - test ModInterpolate"
