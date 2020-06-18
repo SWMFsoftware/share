@@ -194,6 +194,10 @@ foreach $source (@source){
 	# except for the !INPUT ARGUMENTS: type Protex documentation
 	s/(\s*\![\!\$]*)(\w)/$1 $2/ if not /^\s*\![A-Z\/ ]+:$/;
 
+	# Remove lines with arbitrary decorations !\ and !/
+	s/^\s*\!\\\s*$//;
+	s/^\s*\!\/\s*\n//;
+	
 	# Ignore interface .. end interface
 	$interface = 1 if /^\s*interface\b/i;
 	if($interface){
