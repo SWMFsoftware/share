@@ -351,7 +351,7 @@ sub create_tree_check{
 	if($Framework){
 	    # Check if header file exists and check the simulation time
 	    my $HeaderFile = $HeaderFile{$Comp};
-	    &get_time_step("$Dir/$HeaderFile") if $HeaderFile;
+	    &get_time_step("$Dir/$HeaderFile") if $HeaderFile and $Comp ne "IE";
 	}
 
 	print "# Restart.pl has checked $Dir\n" if $Verbose;
@@ -418,6 +418,7 @@ sub link_tree_check{
 	die "$ERROR could not find restart header file $File!\n" 
 	    unless (-f $File or $NoTreeCheck);
     }
+
 
     # Set the step and the simulation time
     &get_time_step($File) unless $NoTreeCheck;
