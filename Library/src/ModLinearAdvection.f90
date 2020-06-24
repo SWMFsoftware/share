@@ -14,14 +14,12 @@ contains
   !using a one-stage second order scheme                                     !
   !==========================================================================!
   subroutine advance_lin_advection_plus(&
-       CFLIn_I,         &
+       CFLIn_I,       &
        nX,            &
        nGCLeft,       &
        nGCRight,      &
        FInOut_I,      &
        BetaIn, UseConservativeBC, IsNegativeEnergy )      
-
-
     !--------------------------------------------------------------------------!
     !                                                                          !
     integer,intent(in):: nX           !Number of meshes                        !
@@ -40,70 +38,46 @@ contains
 
     !--------------------------------------------------------------------------!
     integer:: iX,iStep,nStep
-    real,dimension(1-max(nGCLeft,2):nX+max(nGCRight,2))::F_I
-    real,dimension(0:nX+1):: FSemiintUp_I,FSemiintDown_I
-    real,dimension(0:nX+1)::CFL_I
+    real,dimension(1:nX):: CFL_I, Source_I
     character(LEN=*),parameter :: NameSub = 'advance_lin_advection_plus'
     !--------------------------------------------------------------------------!
-    if(present(BetaIn))then
-       BetaLim = BetaIn
-    else
-       BetaLim = 2.0
-    end if
 
     if(present(IsNegativeEnergy))IsNegativeEnergy = .false.
 
     nStep=1+int(maxval(CFLIn_I)); CFL_I(1:nX) = CFLIn_I/real(nStep)
-    CFL_I(0) = CFL_I(1); CFL_I(nX+1) = CFL_I(nX)
-    F_I(1-nGCLeft : nX+nGCRight) = FInOut_I(1-nGCLeft : nX+nGCRight)
-
+   
     !Check for positivity
-    if(any(F_I(1:nX)<0.0))then
+    if(any(FInOut_I(1:nX)<0.0))then
        write(*,*)'Before advection F_I < 0 in '//NameSub
        if(present(IsNegativeEnergy))then
           IsNegativeEnergy = .true.
           return
        else
-          write(*,*)'F_I:', F_I
+          write(*,*)'F_I:', FInOut_I
           call CON_stop('Error in '//NameSub )
        end if
     end if
 
     !One stage second order upwind scheme
 
-    do iStep=1,nStep
-
-       !Boundary condition at the left boundary
-       if(nGCLeft<2)F_I(            -1:0-nGCLeft) = F_I( 1-nGCLeft )
-       !Boundary condition at the right boundary
-       if(nGCRight<2)F_I(nX+1+nGCRight:nX+2     ) = F_I(nX+nGCRight)
-
-       do iX=0,nX
-
-          ! f_(i+1/2):
-          FSemiintUp_I(iX) = F_I(iX)+&
-               0.50*(1.0 - CFL_I(iX))*df_lim(F_I(iX-1:iX+1))
-       end do
-       ! f_(i-1/2): 
-       FSemiintDown_I(1:nX) = FSemiintUp_I(0:nX-1)
-
-       !Ensure the conservation of sum(F_I(1:nX), if needed
-       if(present(UseConservativeBC))then
-          FSemiintDown_I(1) = 0.0
-          FSemiintUp_I( nX) = 0.0
-       end if
-
+    do iStep=1, nStep    
+       call lin_advection_source_plus(&
+       nX,            &
+       nGCLeft,       &
+       nGCRight,      &
+       FInOut_I,      &
+       Source_I,      &
+       CFL_I,         &
+       BetaIn, UseConservativeBC)  
        !\
        ! Update the solution from f^(n) to f^(n+1):
        !/
-       F_I(1:nX) = F_I(1:nX)+CFL_I(1:nX)*&
-            (FSemiintDown_I(1:nX)-FSemiintUp_I(1:nX))
+       FInOut_I(1:nX) = FInOut_I(1:nX) + CFL_I(1:nX)*Source_I(1:nX)
     end do
 
-    FInOut_I(1-nGCLeft:nX+nGCRight) = F_I(1-nGCLeft:nX+nGCRight)
     if(any(FInOut_I(1:nX)<0.0))then
        write(*,*)'After advection F_I <0 in '//NameSub
-       write(*,*)'F_I:',F_I
+       write(*,*)'F_I:',FInOut_I
        if(present(IsNegativeEnergy))then
           IsNegativeEnergy = .true.
           return
@@ -112,105 +86,76 @@ contains
        end if
     end if
   end subroutine advance_lin_advection_plus
-
   !===========advance_lin_advection==========================================!
   !DESCRIPTION: the procedure integrates the log-advection equation, in the  !
   !conservative or non-conservative formulation, at a logarithmic grid, using!
   !a one-state second order scheme                                           !
   !==========================================================================!
   subroutine advance_lin_advection_minus(&
-       CFLIn_I,         &
+       CFLIn_I,       &
        nX,            &
        nGCLeft,       &
        nGCRight,      &
        FInOut_I,      &
-       BetaIn, UseConservativeBC, IsNegativeEnergy)      
+       BetaIn, UseConservativeBC, IsNegativeEnergy )      
     !--------------------------------------------------------------------------!
-    !
+    !                                                                          !
     integer,intent(in):: nX           !Number of meshes                        !
-    real,intent(in),dimension(nX)::CFLIn_I      !Time step   
+    real,intent(in),dimension(nX)::CFLIn_I      !Time step                     !
     integer,intent(in):: nGCLeft      !The solution in the ghost cells is not  !
     integer,intent(in):: nGCRight     !advanced in time but used as the        ! 
-    !boundary condition, if any              !
-    real,dimension(1-nGCLeft:nX+nGCRight),intent(inout):: &
-         FInOut_I                     !In: sol. to be advanced; Out: advanced  !
-    real, optional :: BetaIn
+    !                                 boundary condition, if any               !
+    !                                                                          !
+    !In: sol. to be advanced; Out: advanced sol.                               !
+    real,dimension(1-nGCLeft : nX+nGCRight),intent(inout)::  FInOut_I          !
+    real, optional::BetaIn
 
     !If this parameter IS PRESENT, the flux via the boundaries is nullified
     logical, optional, intent(in):: UseConservativeBC
+    logical, optional, intent(out):: IsNegativeEnergy
 
-    logical, optional, intent(out):: IsNegativeEnergy 
-
-    !sol. index 0 is to set boundary         !
-    !condition at the injection energy.      !
     !--------------------------------------------------------------------------!
     integer:: iX,iStep,nStep
-    real,dimension(1-max(nGCLeft,2):nX+max(nGCRight,2))::F_I
-    real,dimension(0:nX+1):: FSemiintUp_I,FSemiintDown_I
+    real,dimension(1:nX):: CFL_I, Source_I
     character(LEN=*),parameter :: NameSub = 'advance_lin_advection_minus'
     !--------------------------------------------------------------------------!
 
-
-    real,dimension(0:nX+1)::CFL_I
-    !--------------------------------------------------------------------------!
-    if(present(BetaIn))then
-       BetaLim = BetaIn
-    else
-       BetaLim = 2.0
-    end if
     if(present(IsNegativeEnergy))IsNegativeEnergy = .false.
 
     nStep=1+int(maxval(CFLIn_I)); CFL_I(1:nX) = CFLIn_I/real(nStep)
-    CFL_I(0) = CFL_I(1); CFL_I(nX+1) = CFL_I(nX)
-
-
-    F_I(1-nGCLeft : nX+nGCRight) = FInOut_I(1-nGCLeft:nX+nGCRight)
-
+   
     !Check for positivity
-    if(any(F_I(1:nX)<0.0))then
-       write(*,*)'Before advection F_I <0 in '//NameSub
-
+    if(any(FInOut_I(1:nX)<0.0))then
+       write(*,*)'Before advection F_I < 0 in '//NameSub
        if(present(IsNegativeEnergy))then
           IsNegativeEnergy = .true.
           return
        else
-          write(*,*) 'F_I:', F_I
+          write(*,*)'F_I:', FInOut_I
           call CON_stop('Error in '//NameSub )
        end if
     end if
 
     !One stage second order upwind scheme
 
-    do iStep=1,nStep
-       !Boundary condition at the left boundary
-       if(nGCLeft  < 2) F_I(            -1:0-nGCLeft) = F_I( 1 - nGCLeft )
-       !Boundary condition at the right boundary
-       if(nGCRight < 2) F_I(nX +1 + nGCRight:nX+2   ) = F_I(nX + nGCRight)
-       do iX=1,nX+1
-          ! f_(i-1/2):
-          FSemiintDown_I(iX) = F_I(iX)&
-               -0.50 * (1.0 - CFL_I(iX)) *  df_lim(F_I(iX-1:iX+1))
-       end do
-       ! f_(i+1/2):
-       FSemiintUp_I(1:nX) = FSemiintDown_I(2:nX+1)
-
-       !Ensure the conservation of sum(F_I(1:nX), if needed
-       if(present(UseConservativeBC))then
-          FSemiintDown_I(1) = 0.0
-          FSemiintUp_I( nX) = 0.0
-       end if
+    do iStep=1, nStep    
+       call lin_advection_source_minus(&
+       nX,            &
+       nGCLeft,       &
+       nGCRight,      &
+       FInOut_I,      &
+       Source_I,      &
+       CFL_I,         &
+       BetaIn, UseConservativeBC)  
        !\
        ! Update the solution from f^(n) to f^(n+1):
        !/
-       F_I(1:nX) = F_I(1:nX) - CFL_I(1:nX) * (FSemiintDown_I(1:nX) - FSemiintUp_I(1:nX))
+       FInOut_I(1:nX) = FInOut_I(1:nX) + CFL_I(1:nX)*Source_I(1:nX)
     end do
-
-
-    FInOut_I(1:nX)=F_I(1:nX)
 
     if(any(FInOut_I(1:nX)<0.0))then
        write(*,*)'After advection F_I <0 in '//NameSub
-       write(*,*)'F_I:', F_I
+       write(*,*)'F_I:',FInOut_I
        if(present(IsNegativeEnergy))then
           IsNegativeEnergy = .true.
           return
@@ -218,8 +163,154 @@ contains
           call CON_stop('Error in '//NameSub )
        end if
     end if
-    !------------------------------------ DONE --------------------------------!
   end subroutine advance_lin_advection_minus
+  !============================================================================!
+  ! Calculate the source (the negative of flux divergence) for the linear
+  ! advection equation with the speed equal to +1. The result's accuracy
+  ! is of the second order in space and of the second order in time, if 
+  ! CflIn_I array  is provided as an input, first order otherwise. 
+  subroutine lin_advection_source_plus(&
+       nX,            &
+       nGCLeft,       &
+       nGCRight,      &
+       FIn_I,         &
+       Source_I,      &
+       CflIn_I,       &
+       BetaIn, UseConservativeBC)      
+    
+    !--------------------------------------------------------------------------!
+    !                                                                          !
+    integer,intent(in):: nX           !Number of meshes                        !
+    !
+    integer,intent(in):: nGCLeft      !The solution in the ghost cells is not  !
+    integer,intent(in):: nGCRight     !advanced in time but used as the        ! 
+    !                                 boundary condition, if any               !
+    !                                                                          !
+    !In: sol. to be advanced.                               !
+    real,  intent(in)  ::  FIn_I(1-nGCLeft : nX+nGCRight)
+    real,  intent(out) ::  Source_I(1:nX)
+    real, optional, intent(in) :: CflIn_I(1:nX)
+    real, optional::BetaIn
+    
+    !If this parameter IS PRESENT, the flux via the boundaries is nullified
+    logical, optional, intent(in):: UseConservativeBC
+    
+    
+    !--------------------------------------------------------------------------!
+    integer :: iX
+    real :: CFL_I(0:nX + 1)
+    real,dimension(1-max(nGCLeft,2):nX+max(nGCRight,2))::F_I
+    real,dimension(0:nX+1):: FSemiintUp_I,FSemiintDown_I
+    character(LEN=*),parameter :: NameSub = 'lin_advection_source_plus'
+    !--------------------------------------------------------------------------!
+    if(present(BetaIn))then
+       BetaLim = BetaIn
+    else
+       BetaLim = 2.0
+    end if
+    if(present(CflIn_I))then
+       CFL_I(1:nX) = CflIn_I
+       CFL_I(0) = CFL_I(1); CFL_I(nX+1) = CFL_I(nX)
+    else
+       CFL_I = 0.0
+    end if
+
+    F_I(1-nGCLeft : nX+nGCRight) = FIn_I(1-nGCLeft : nX+nGCRight)
+    !Boundary condition at the left boundary
+    if(nGCLeft<2)F_I(            -1:0-nGCLeft) = F_I( 1-nGCLeft )
+    !Boundary condition at the right boundary
+    if(nGCRight<2)F_I(nX+1+nGCRight:nX+2     ) = F_I(nX+nGCRight)
+
+    do iX=0,nX
+
+       ! f_(i+1/2):
+       FSemiintUp_I(iX) = F_I(iX)+&
+            0.50*(1.0 - CFL_I(iX))*df_lim(F_I(iX-1:iX+1))
+    end do
+    ! f_(i-1/2): 
+    FSemiintDown_I(1:nX) = FSemiintUp_I(0:nX-1)
+
+    !Ensure the conservation of sum(F_I(1:nX), if needed
+    if(present(UseConservativeBC))then
+       FSemiintDown_I(1) = 0.0
+       FSemiintUp_I( nX) = 0.0
+    end if
+    !
+    ! Calculate source
+    !
+    Source_I(1:nX) = FSemiintDown_I(1:nX) - FSemiintUp_I(1:nX)
+  end subroutine lin_advection_source_plus
+  !============================================================================!
+  ! Calculate the source (the negative of flux divergence) for the linear
+  ! advection equation with the speed equal to -1. The result's accuracy
+  ! is of the second order in space and of the second order in time, if 
+  ! CflIn_I array  is provided as an input, first order otherwise. 
+  subroutine lin_advection_source_minus(&
+       nX,            &
+       nGCLeft,       &
+       nGCRight,      &
+       FIn_I,         &
+       Source_I,      &
+       CflIn_I,       &
+       BetaIn, UseConservativeBC)      
+    !--------------------------------------------------------------------------!
+    !                                                                          !
+    integer,intent(in):: nX           !Number of meshes                        !
+    !
+    integer,intent(in):: nGCLeft      !The solution in the ghost cells is not  !
+    integer,intent(in):: nGCRight     !advanced in time but used as the        ! 
+    !                                 boundary condition, if any               !
+    !                                                                          !
+    !In: sol. to be advanced.                               !
+    real,  intent(in)  ::  FIn_I(1-nGCLeft : nX+nGCRight)
+    real,  intent(out) ::  Source_I(1:nX)
+    real, optional, intent(in) :: CflIn_I(1:nX)
+    real, optional::BetaIn
+    
+    !If this parameter IS PRESENT, the flux via the boundaries is nullified
+    logical, optional, intent(in):: UseConservativeBC
+    
+    
+    !--------------------------------------------------------------------------!
+    integer :: iX
+    real :: CFL_I(0:nX + 1)
+    real,dimension(1-max(nGCLeft,2):nX+max(nGCRight,2))::F_I
+    real,dimension(0:nX+1):: FSemiintUp_I,FSemiintDown_I
+    character(LEN=*),parameter :: NameSub = 'lin_advection_source_minus'
+    !--------------------------------------------------------------------------!
+    if(present(BetaIn))then
+       BetaLim = BetaIn
+    else
+       BetaLim = 2.0
+    end if
+    if(present(CflIn_I))then
+       CFL_I(1:nX) = CflIn_I
+       CFL_I(0) = CFL_I(1); CFL_I(nX+1) = CFL_I(nX)
+    else
+       CFL_I = 0.0
+    end if
+    
+    F_I(1-nGCLeft : nX+nGCRight) = FIn_I(1-nGCLeft:nX+nGCRight)
+    !Boundary condition at the left boundary
+    if(nGCLeft  < 2) F_I(            -1:0-nGCLeft) = F_I( 1 - nGCLeft )
+    !Boundary condition at the right boundary
+    if(nGCRight < 2) F_I(nX +1 + nGCRight:nX+2   ) = F_I(nX + nGCRight)
+    do iX=1,nX+1
+       ! f_(i-1/2):
+       FSemiintDown_I(iX) = F_I(iX)&
+            -0.50 * (1.0 - CFL_I(iX)) *  df_lim(F_I(iX-1:iX+1))
+    end do
+    ! f_(i+1/2):
+    FSemiintUp_I(1:nX) = FSemiintDown_I(2:nX+1)
+    
+    !Ensure the conservation of sum(F_I(1:nX), if needed
+    if(present(UseConservativeBC))then
+       FSemiintDown_I(1) = 0.0
+       FSemiintUp_I( nX) = 0.0
+    end if
+    Source_I(1:nX) = FSemiintUp_I(1:nX) - FSemiintDown_I(1:nX)
+    !------------------------------------ DONE --------------------------------!
+  end subroutine lin_advection_source_minus
   !============================================================================!
   subroutine test_linear_advection
     ! Added Nov. 2009 by R. Oran
