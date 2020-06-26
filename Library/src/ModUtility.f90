@@ -630,6 +630,7 @@ contains
     logical          :: UseArraySyntax
 
     character(len=len(String)+10) :: StringTmp
+    character(:), allocatable :: StringTmp2
 
     integer :: i, l, lSep, lKeep
 
@@ -666,7 +667,8 @@ contains
        end if
 
        String_I(nString) = StringTmp(1:i-1+lKeep) ! Put part into string array
-       StringTmp = StringTmp(i+lSep:l+lSep) ! Delete part+separator from string
+       StringTmp2= StringTmp(i+lSep:l+lSep) ! Delete part+separator from string
+       StringTmp = StringTmp2               ! Delete part+separator from string
 
        if(UseArraySyntax) call expand_array(String_I(nString))
 
