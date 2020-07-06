@@ -1050,10 +1050,18 @@ contains
 
     integer:: i, Di
 
+    logical:: IsUniform
+
     character(len=*), parameter:: NameSub="ModInterpolate::find_cell"
     !------------------------------------------------------------------------
 
-    if(.not.present(Coord_I))then
+    if(present(Coord_I)) then 
+       IsUniform = size(Coord_I) < 2
+    else
+       IsUniform = .true.
+    endif
+
+    if(IsUniform)then
        ! Uniform grid case with normalized coordinate
 
        iCoord = min(MaxCoord-1, max(MinCoord, floor(Coord)))
