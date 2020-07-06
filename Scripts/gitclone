@@ -31,9 +31,11 @@ my $Sleep = ($s or $Sleep);
 
 use strict;
 
-my $swmf_software = 'git@gitlab.umich.edu:swmf_software';
-my $csem_software = 'git@gitlab.umich.edu:csem_software';
+my $swmf_software     = 'git@gitlab.umich.edu:swmf_software';
+my $csem_software     = 'git@gitlab.umich.edu:csem_software';
+my $solstice_software = 'git@gitlab.umich.edu:solstice-software';
 
+# The project name should be all capitalized.
 my %url = (
     "BATSRUS_GPU"        => $csem_software,
     "BATSRUS_GPU_SIMPLE" => $csem_software,
@@ -43,6 +45,9 @@ my %url = (
     "GITM"               => "https://github.com/aaronjridley",
     "VISANAMATLAB"       => "https://github.com/henry2004y",
     "VISANAJULIA"        => "https://github.com/henry2004y",
+    "PARAMINS_GEOSPACE"  => $solstice_software,
+    "CME_LIST"           => $solstice_software,
+    "SWMF_PLOT_GEOSPACE" => $solstice_software,
     );
 
 my $project = $ARGV[0]; $project =~ s/\.git$//;
