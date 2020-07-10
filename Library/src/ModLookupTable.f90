@@ -58,7 +58,11 @@ module ModLookupTable
      integer:: nParam                      ! number of extra parameters
      real, allocatable :: Param_I(:)       ! parameter values
      logical, allocatable :: IsUniform_I(:)! false if index is non-uniform
-     real, allocatable :: Index_II(:,:)    ! non-uniform indices from file
+     real, allocatable :: Index1_I(:)      ! non-uniform index 1
+     real, allocatable :: Index2_I(:)      ! non-uniform index 2
+     real, allocatable :: Index3_I(:)      ! non-uniform index 3
+     real, allocatable :: Index4_I(:)      ! non-uniform index 4
+     real, allocatable :: Index5_I(:)      ! non-uniform index 5
   end type
 
   ! The array of tables
@@ -94,7 +98,11 @@ contains
     if(allocated(Ptr%IsLogIndex_I)) deallocate(Ptr%IsLogIndex_I)
     if(allocated(Ptr%IsUniform_I))  deallocate(Ptr%IsUniform_I)
     if(allocated(Ptr%dIndex_I))     deallocate(Ptr%dIndex_I)
-    if(allocated(Ptr%Index_II))     deallocate(Ptr%Index_II)
+    if(allocated(Ptr%Index1_I))     deallocate(Ptr%Index1_I)
+    if(allocated(Ptr%Index2_I))     deallocate(Ptr%Index2_I)
+    if(allocated(Ptr%Index3_I))     deallocate(Ptr%Index3_I)
+    if(allocated(Ptr%Index4_I))     deallocate(Ptr%Index4_I)
+    if(allocated(Ptr%Index5_I))     deallocate(Ptr%Index5_I)
 
   end subroutine deallocate_table_index
   !==========================================================================
@@ -479,9 +487,6 @@ contains
     real, allocatable:: TableParam_I(:)
     integer, allocatable:: nIndex_I(:)
 
-    ! Indexes in an array to check uniformity
-    real, allocatable:: Index_II(:,:)
-
     character(len=*), parameter:: NameSub = 'load_lookup_table'
     !------------------------------------------------------------------------
 
@@ -516,46 +521,75 @@ contains
     Ptr%IsLogIndex_I = index(NameVar_I(1:Ptr%nIndex), "log") == 1
 
     if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
-    allocate(Ptr%Value_VC(Ptr%nValue,nIndex_I(1),nIndex_I(2),nIndex_I(3),&
+    allocate( &
+         Ptr%Value_VC(Ptr%nValue,nIndex_I(1),nIndex_I(2),nIndex_I(3),&
          nIndex_I(4),nIndex_I(5)),     &
-         Index_II(maxval(nIndex_I),5)  )
-
-    allocate(Ptr%Index_II(maxval(Ptr%nIndex_I),Ptr%nIndex))
+         Ptr%Index1_I(nIndex_I(1)), &
+         Ptr%Index2_I(nIndex_I(2)), &
+         Ptr%Index3_I(nIndex_I(3)), &
+         Ptr%Index4_I(nIndex_I(4)), &
+         Ptr%Index5_I(nIndex_I(5)) )
     
-    call read_plot_file( Ptr%NameFile,        &
-         TypeFileIn    = Ptr%TypeFile,        &
-         CoordMinOut_D = Ptr%IndexMin_I,      &
-         CoordMaxOut_D = Ptr%IndexMax_I,      &
-         VarOut_VI5    = Ptr%Value_VC,        &
-         Coord1Out_I   = Index_II(:,1),   &
-         Coord2Out_I   = Index_II(:,2),   &
-         Coord3Out_I   = Index_II(:,3),   &
-         Coord4Out_I   = Index_II(:,4),   &
-         Coord5Out_I   = Index_II(:,5)    )
+    call read_plot_file( Ptr%NameFile,   &
+         TypeFileIn    = Ptr%TypeFile,   &
+         CoordMinOut_D = Ptr%IndexMin_I, &
+         CoordMaxOut_D = Ptr%IndexMax_I, &
+         VarOut_VI5    = Ptr%Value_VC,   &
+         Coord1Out_I   = Ptr%Index1_I,   &
+         Coord2Out_I   = Ptr%Index2_I,   &
+         Coord3Out_I   = Ptr%Index3_I,   &
+         Coord4Out_I   = Ptr%Index4_I,   &
+         Coord5Out_I   = Ptr%Index5_I    )
     
     ! Calculate increments assuming uniform grid
     Ptr%dIndex_I = (Ptr%IndexMax_I - Ptr%IndexMin_I)/(Ptr%nIndex_I - 1)
 
-    ! Check monotonicity and uniformity of index arrays
+    ! Check monotonicity and uniformity of 1..Ptr%nIndex index arrays
     do iIndex = 1, Ptr%nIndex
-       Ptr%Index_II(:,iIndex) = Index_II(:,iIndex)
-       n = nIndex_I(iIndex)
-       if(n < 3) CYCLE
-       if(any(Ptr%Index_II(2:n,iIndex) < Ptr%Index_II(1:n-1,iIndex))) &
-            call CON_stop(NameSub// &
-            ' ERROR: decreasing index in '//trim(Ptr%NameFile)//':', iIndex)
-
-       ! Figure out which indices are non-uniform.
-       if (maxval(Ptr%Index_II(2:n,iIndex) - Ptr%Index_II(1:n-1,iIndex)) &
-            > 1.3*Ptr%dIndex_I(iIndex))then
-          Ptr%IsUniform_I(iIndex) = .FALSE.
-       else
-          Ptr%IsUniform_I(iIndex) = .TRUE.
-       endif
-
+       select case(iIndex)
+       case(1)
+          call check_index(Ptr%Index1_I)
+       case(2)
+          call check_index(Ptr%Index2_I)
+       case(3)
+          call check_index(Ptr%Index3_I)
+       case(4)
+          call check_index(Ptr%Index4_I)
+       case(5)
+          call check_index(Ptr%Index5_I)
+       end select
     end do
 
     deallocate(TableParam_I, nIndex_I)
+
+  contains
+
+    !=========================================================================
+    subroutine check_index(Index_I)
+
+      ! Check monotonicity and uniformity of index arrays
+      ! Uniform indexes are reallocated to a one-element array
+
+      real, allocatable, intent(inout) :: Index_I(:)
+
+      integer:: n
+      !-----------------------------------------------------------------------
+      n = size(Index_I)
+      if(n < 3) RETURN
+
+      if(any(Index_I(2:n) < Index_I(1:n-1))) call CON_stop(NameSub// &
+           ' ERROR: decreasing index in '//trim(Ptr%NameFile)//':', iIndex)
+
+      ! Figure out which indices are non-uniform.
+      if (maxval(Index_I(2:n) - Index_I(1:n-1)) > 1.3*Ptr%dIndex_I(iIndex))then
+         Ptr%IsUniform_I(iIndex) = .false.
+      else
+         Ptr%IsUniform_I(iIndex) = .true.
+         deallocate(Index_I)
+         allocate(Index_I(1))
+      end if
+
+    end subroutine check_index
 
   end subroutine load_lookup_table
 
@@ -611,7 +645,8 @@ contains
        nProc = 1
     end if
 
-    if(iProc == 0)write(*,'(3a)')NameSub,' is creating table ',Ptr%NameTable
+    if(iProc == 0)write(*,'(3a)')NameSub,' is creating table ', &
+         trim(Ptr%NameTable)
 
     ! Allocate Value_VC array
     if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
@@ -727,7 +762,8 @@ contains
        nProc = 1
     end if
 
-    if(iProc == 0)write(*,'(3a)')NameSub,' is creating table ',Ptr%NameTable
+    if(iProc == 0)write(*,'(3a)')NameSub,' is creating table ', &
+         trim(Ptr%NameTable)
 
     ! Allocate Value_VC array
     if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
@@ -853,7 +889,8 @@ contains
        nProc = 1
     end if
 
-    if(iProc == 0)write(*,'(3a)')NameSub,' is creating table ',Ptr%NameTable
+    if(iProc == 0)write(*,'(3a)')NameSub,' is creating table ', &
+         trim(Ptr%NameTable)
 
     ! Allocate Value_VC array
     if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
@@ -1165,7 +1202,6 @@ contains
     type(TableType), pointer:: Ptr
 
     integer :: MinIndex_I(5) = 1
-    integer :: MaxIndex_I(5) = 1
 
     character(len=*), parameter:: NameSub='interpolate_lookup_table'
     !--------------------------------------------------------------------------
@@ -1181,22 +1217,16 @@ contains
     where(Ptr%IsUniform_I) &
          Arg_I(1:Ptr%nIndex) = &
          (Arg_I(1:Ptr%nIndex) - Ptr%IndexMin_I)/Ptr%dIndex_I  + 1
-
-    ! Set maximum bounds for nonuniform indices.
-    !  Note: all others are 1 for uniform
-    !        (see find_cell in ModInterpolate
-    where(.not.Ptr%IsUniform_I) &
-         MaxIndex_I = Ptr%nIndex_I
     
     ! Interpolate values
     Value_V = interpolate_vector(Ptr%Value_VC, &
-         Ptr%nValue, Ptr%nIndex, MinIndex_I, Ptr%nIndex_I, &
+         Ptr%nValue, Ptr%nIndex, MinIndex_I(1:Ptr%nIndex), Ptr%nIndex_I, &
          Arg_I(1:Ptr%nIndex),  &
-         Ptr%Index_II(:MaxIndex_I(1),1),&
-         Ptr%Index_II(:MaxIndex_I(2),2),&
-         Ptr%Index_II(:MaxIndex_I(3),3),&
-         Ptr%Index_II(:MaxIndex_I(4),4),&
-         Ptr%Index_II(:MaxIndex_I(5),5),&
+         Ptr%Index1_I, &
+         Ptr%Index2_I, &
+         Ptr%Index3_I, &
+         Ptr%Index4_I, &
+         Ptr%Index5_I, &
          DoExtrapolate = DoExtrapolate)    
     
   end subroutine interpolate_arg_array
@@ -1354,7 +1384,7 @@ contains
          NameTable   = "RhoE",                  &
          NameCommand = "save",                  &
          NameVar     = "logrho e pXe pBe pPl zXe zBe zPl",  &
-         NameFile    = "test_lookup_table1.out",& 
+         NameFile    = "test_lookup_table1.dat",& 
          TypeFile    = "ascii",                 &
          nIndex_I    = (/15, 10/),              &
          IndexMin_I  = (/0.001,   1.0/),        &
@@ -1565,7 +1595,7 @@ contains
     call init_lookup_table(                               &
          NameTable   = "NonU1D"                          ,&
          NameCommand = "load"                            ,&
-         NameFile    = "test_lookup_table_nonuniform.out",&
+         NameFile    = "test_lookup_table_nonuniform.dat",&
          TypeFile    = "ascii")
     iTable = i_lookup_table("NonU1D")
     if(iTable /= 7)then
