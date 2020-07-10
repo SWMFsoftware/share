@@ -1,12 +1,11 @@
-*.o
 *~
+*.o
 *.mod
 *.exe
+*.pyc
 *.diff
 *.tmp
 *.out
-*.ref
-*.log
 *.protex
 Python/swmfpy
 
