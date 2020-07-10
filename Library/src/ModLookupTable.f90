@@ -1201,7 +1201,7 @@ contains
     real :: Arg_I(5)
     type(TableType), pointer:: Ptr
 
-    integer :: MinIndex_I(5) = 1
+    integer, parameter :: MinIndex_I(5) = 1
 
     character(len=*), parameter:: NameSub='interpolate_lookup_table'
     !--------------------------------------------------------------------------
@@ -1384,7 +1384,7 @@ contains
          NameTable   = "RhoE",                  &
          NameCommand = "save",                  &
          NameVar     = "logrho e pXe pBe pPl zXe zBe zPl",  &
-         NameFile    = "test_lookup_table1.dat",& 
+         NameFile    = "test_lookup_table1.out",& 
          TypeFile    = "ascii",                 &
          nIndex_I    = (/15, 10/),              &
          IndexMin_I  = (/0.001,   1.0/),        &
