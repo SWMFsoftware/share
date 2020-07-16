@@ -48,6 +48,7 @@ my %url = (
     "PARAMINS_GEOSPACE"  => $solstice_software,
     "CME_LIST"           => $solstice_software,
     "SWMF_PLOT_GEOSPACE" => $solstice_software,
+    "SUPERMAGSTATIONS"   => $solstice_software,
     );
 
 my $project = $ARGV[0]; $project =~ s/\.git$//;
