@@ -17,6 +17,10 @@ FORTRAN_COMPILER_NAME=mpif90
 COMPILE.f77     = ${CUSTOMPATH_F}mpif90
 COMPILE.f90     = ${CUSTOMPATH_F}mpif90
 LINK.f90	= ${CUSTOMPATH_F}mpif90
+
+# To compile main C code with Fortran libraries
+NOMAINFLAG = -nofor-main
+
 AR = ar -rs
 
 SINGLEPREC =

@@ -123,7 +123,7 @@ contains
   end subroutine allocate_table_index
   !==========================================================================
   subroutine init_lookup_table(NameTable, NameCommand, NameVar, &
-    nIndex_I, IndexMin_I, IndexMax_I, &
+    nIndex_I, IndexMin_I, IndexMax_I, NonUniform_II, &
     NameFile, TypeFile, StringDescription, nParam, Param_I)
 
     ! Initialize a lookup table
@@ -148,12 +148,13 @@ contains
     character(len=*), optional, intent(in):: NameVar
     integer,          optional, intent(in):: nIndex_I(:)
     real,             optional, intent(in):: IndexMin_I(:), IndexMax_I(:)
+    real,             optional, intent(in):: NonUniform_II(:,:)
     character(len=*), optional, intent(in):: &
          NameFile, TypeFile, StringDescription
     integer,          optional, intent(in):: nParam
     real,             optional, intent(in):: Param_I(:)
 
-    integer :: iTable
+    integer :: iTable, iIndex
     type(TableType), pointer:: Ptr
 
     character(len=*), parameter:: NameSub = 'init_lookup_table'
@@ -238,8 +239,36 @@ contains
        Ptr%IndexMax_I = log10(Ptr%IndexMax_I)
     end where
 
-    ! For 'make' or 'save' use uniform indices.
+    ! Initialize uniform indices.
     Ptr%IsUniform_I = .TRUE.
+    
+    ! Set indices to non-uniform if provided.
+    if(present(NonUniform_II))then
+       do iIndex = 1, Ptr%nIndex
+          select case(iIndex)
+          case(1)
+             allocate(Ptr%Index1_I(Ptr%nIndex_I(iIndex)))
+             Ptr%Index1_I = NonUniform_II(:,iIndex)
+             call check_index(iTable, Ptr%Index1_I, iIndex)
+          case(2)
+             allocate(Ptr%Index2_I(Ptr%nIndex_I(iIndex)))
+             Ptr%Index2_I = NonUniform_II(:,iIndex)
+             call check_index(iTable, Ptr%Index2_I, iIndex)
+          case(3)
+             allocate(Ptr%Index3_I(Ptr%nIndex_I(iIndex)))
+             Ptr%Index3_I = NonUniform_II(:,iIndex)
+             call check_index(iTable, Ptr%Index3_I, iIndex)
+          case(4)
+             allocate(Ptr%Index4_I(Ptr%nIndex_I(iIndex)))
+             Ptr%Index4_I = NonUniform_II(:,iIndex)
+             call check_index(iTable, Ptr%Index4_I, iIndex)
+          case(5)
+             allocate(Ptr%Index5_I(Ptr%nIndex_I(iIndex)))
+             Ptr%Index5_I = NonUniform_II(:,iIndex)
+             call check_index(iTable, Ptr%Index5_I, iIndex)
+          end select
+       end do
+    end if
     
     ! Calculate increments
     Ptr%dIndex_I = (Ptr%IndexMax_I - Ptr%IndexMin_I)/(Ptr%nIndex_I - 1)
@@ -548,53 +577,55 @@ contains
     do iIndex = 1, Ptr%nIndex
        select case(iIndex)
        case(1)
-          call check_index(Ptr%Index1_I)
+          call check_index(iTable, Ptr%Index1_I, iIndex)
        case(2)
-          call check_index(Ptr%Index2_I)
+          call check_index(iTable, Ptr%Index2_I, iIndex)
        case(3)
-          call check_index(Ptr%Index3_I)
+          call check_index(iTable, Ptr%Index3_I, iIndex)
        case(4)
-          call check_index(Ptr%Index4_I)
+          call check_index(iTable, Ptr%Index4_I, iIndex)
        case(5)
-          call check_index(Ptr%Index5_I)
+          call check_index(iTable, Ptr%Index5_I, iIndex)
        end select
     end do
 
     deallocate(TableParam_I, nIndex_I)
 
-  contains
-
-    !=========================================================================
-    subroutine check_index(Index_I)
-
-      ! Check monotonicity and uniformity of index arrays
-      ! Uniform indexes are reallocated to a one-element array
-
-      real, allocatable, intent(inout) :: Index_I(:)
-
-      integer:: n
-      !-----------------------------------------------------------------------
-      n = size(Index_I)
-      if(n < 3) RETURN
-
-      if(any(Index_I(2:n) < Index_I(1:n-1))) call CON_stop(NameSub// &
-           ' ERROR: decreasing index in '//trim(Ptr%NameFile)//':', iIndex)
-
-      ! Figure out which indices are non-uniform.
-      if (maxval(Index_I(2:n) - Index_I(1:n-1)) > 1.3*Ptr%dIndex_I(iIndex))then
-         Ptr%IsUniform_I(iIndex) = .false.
-      else
-         Ptr%IsUniform_I(iIndex) = .true.
-         deallocate(Index_I)
-         allocate(Index_I(1))
-      end if
-
-    end subroutine check_index
-
   end subroutine load_lookup_table
 
+  !=========================================================================
+  subroutine check_index(iTable, Index_I, iIndex)
+    
+    ! Check monotonicity and uniformity of index arrays
+    ! Uniform indexes are reallocated to a one-element array
+    
+    integer, intent(in)              :: iTable, iIndex
+    real, allocatable, intent(inout) :: Index_I(:)
+    
+    integer :: n
+    type(TableType), pointer:: Ptr
+    character(len=*), parameter:: NameSub = 'check_index'
+    !-----------------------------------------------------------------------
+    Ptr => Table_I(iTable)
+    n = size(Index_I)
+    if(n < 3) RETURN
+    
+    if(any(Index_I(2:n) < Index_I(1:n-1))) call CON_stop(NameSub// &
+         ' ERROR: decreasing index in '//trim(Ptr%NameFile)//':', iIndex)
+    
+    ! Figure out which indices are non-uniform.
+    if (maxval(Index_I(2:n) - Index_I(1:n-1)) > 1.3*Ptr%dIndex_I(iIndex))then
+       Ptr%IsUniform_I(iIndex) = .false.
+    else
+       Ptr%IsUniform_I(iIndex) = .true.
+       deallocate(Index_I)
+       allocate(Index_I(1))
+    end if
+    
+  end subroutine check_index
+  
   !===========================================================================
-
+  
   subroutine make_lookup_table_1d(iTable, calc_table_var, iComm)
 
     ! Fill in table iTable using the subroutine calc_table_var
@@ -654,11 +685,18 @@ contains
     Value_VC = 0.0
 
     ! Fill up lookup table in parallel
-    do i1 = iProc+1, n1, nProc
-       Index1 = Index1Min + (i1 - 1)*dIndex1
-       if(IsLog1) Index1 = 10**Index1
-       call calc_table_var(iTable, Index1, Value_VC(:,i1))
-    end do
+    if(Ptr%NameTable=='IMF')then
+       do i1 = iProc+1, n1, nProc
+          Index1 = 1 + (i1 - 1)
+          call calc_table_var(iTable, Index1, Value_VC(:,i1))
+       end do
+    else
+       do i1 = iProc+1, n1, nProc
+          Index1 = Index1Min + (i1 - 1)*dIndex1
+          if(IsLog1) Index1 = 10**Index1
+          call calc_table_var(iTable, Index1, Value_VC(:,i1))
+       end do
+    endif
 
     ! Collect (or copy) result into table
     if(nProc > 1)then
