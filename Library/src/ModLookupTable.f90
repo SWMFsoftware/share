@@ -123,8 +123,10 @@ contains
   end subroutine allocate_table_index
   !==========================================================================
   subroutine init_lookup_table(NameTable, NameCommand, NameVar, &
-    nIndex_I, IndexMin_I, IndexMax_I, NonUniform_II, &
-    NameFile, TypeFile, StringDescription, nParam, Param_I)
+    nIndex_I, IndexMin_I, IndexMax_I, &
+    NameFile, TypeFile, StringDescription, nParam, Param_I, &
+    Index1_I, Index2_I, Index3_I, Index4_I, Index5_I, &
+    Value1d_VC, Value2d_VC, Value3d_VC)
 
     ! Initialize a lookup table
     !
@@ -148,12 +150,17 @@ contains
     character(len=*), optional, intent(in):: NameVar
     integer,          optional, intent(in):: nIndex_I(:)
     real,             optional, intent(in):: IndexMin_I(:), IndexMax_I(:)
-    real,             optional, intent(in):: NonUniform_II(:,:)
     character(len=*), optional, intent(in):: &
          NameFile, TypeFile, StringDescription
     integer,          optional, intent(in):: nParam
     real,             optional, intent(in):: Param_I(:)
-
+    real,             optional, intent(in):: Index1_I(:), Index2_I(:)
+    real,             optional, intent(in):: Index3_I(:), Index4_I(:)
+    real,             optional, intent(in):: Index5_I(:)
+    real,             optional, intent(in):: Value1d_VC(:,:)
+    real,             optional, intent(in):: Value2d_VC(:,:,:)
+    real,             optional, intent(in):: Value3d_VC(:,:,:,:)
+    
     integer :: iTable, iIndex
     type(TableType), pointer:: Ptr
 
@@ -239,36 +246,57 @@ contains
        Ptr%IndexMax_I = log10(Ptr%IndexMax_I)
     end where
 
+    ! Assign values if provided.
+    ! Replaces the need for simplistic make_lookup_table calls.
+    !  -> used for imf files in 1d
+     if(present(Value1d_VC))then
+       if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
+       allocate( &
+            Ptr%Value_VC(Ptr%nValue, Ptr%nIndex_I(1),1,1,1,1))
+       Ptr%Value_VC(:,:,1,1,1,1) = Value1d_VC
+    elseif(present(Value2d_VC))then
+       if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
+       allocate( &
+            Ptr%Value_VC(Ptr%nValue, Ptr%nIndex_I(1), &
+            Ptr%nIndex_I(2), 1, 1, 1))
+       Ptr%Value_VC(:,:,:,1,1,1) = Value2d_VC
+    elseif(present(Value3d_VC))then
+       if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
+       allocate( &
+            Ptr%Value_VC(Ptr%nValue, Ptr%nIndex_I(1), &
+            Ptr%nIndex_I(2), Ptr%nIndex_I(3), 1, 1))
+       Ptr%Value_VC(:,:,:,:,1,1) = Value3d_VC
+    endif
+    
     ! Initialize uniform indices.
     Ptr%IsUniform_I = .TRUE.
     
     ! Set indices to non-uniform if provided.
-    if(present(NonUniform_II))then
-       do iIndex = 1, Ptr%nIndex
-          select case(iIndex)
-          case(1)
-             allocate(Ptr%Index1_I(Ptr%nIndex_I(iIndex)))
-             Ptr%Index1_I = NonUniform_II(:,iIndex)
-             call check_index(iTable, Ptr%Index1_I, iIndex)
-          case(2)
-             allocate(Ptr%Index2_I(Ptr%nIndex_I(iIndex)))
-             Ptr%Index2_I = NonUniform_II(:,iIndex)
-             call check_index(iTable, Ptr%Index2_I, iIndex)
-          case(3)
-             allocate(Ptr%Index3_I(Ptr%nIndex_I(iIndex)))
-             Ptr%Index3_I = NonUniform_II(:,iIndex)
-             call check_index(iTable, Ptr%Index3_I, iIndex)
-          case(4)
-             allocate(Ptr%Index4_I(Ptr%nIndex_I(iIndex)))
-             Ptr%Index4_I = NonUniform_II(:,iIndex)
-             call check_index(iTable, Ptr%Index4_I, iIndex)
-          case(5)
-             allocate(Ptr%Index5_I(Ptr%nIndex_I(iIndex)))
-             Ptr%Index5_I = NonUniform_II(:,iIndex)
-             call check_index(iTable, Ptr%Index5_I, iIndex)
-          end select
-       end do
-    end if
+    if(present(Index1_I))then
+       allocate(Ptr%Index1_I(Ptr%nIndex_I(1)))
+       Ptr%Index1_I = Index1_I
+       call check_index(iTable, Ptr%Index1_I, 1)
+    endif
+    if(present(Index2_I))then
+       allocate(Ptr%Index2_I(Ptr%nIndex_I(2)))
+       Ptr%Index2_I = Index2_I
+       call check_index(iTable, Ptr%Index2_I, 2)
+    endif
+    if(present(Index3_I))then
+       allocate(Ptr%Index3_I(Ptr%nIndex_I(3)))
+       Ptr%Index3_I = Index3_I
+       call check_index(iTable, Ptr%Index3_I, 3)
+    endif
+    if(present(Index4_I))then
+       allocate(Ptr%Index4_I(Ptr%nIndex_I(4)))
+       Ptr%Index4_I = Index4_I
+       call check_index(iTable, Ptr%Index4_I, 4)
+    endif
+    if(present(Index5_I))then
+       allocate(Ptr%Index5_I(Ptr%nIndex_I(5)))
+       Ptr%Index5_I = Index5_I
+       call check_index(iTable, Ptr%Index5_I, 5)
+    endif
     
     ! Calculate increments
     Ptr%dIndex_I = (Ptr%IndexMax_I - Ptr%IndexMin_I)/(Ptr%nIndex_I - 1)
@@ -626,7 +654,7 @@ contains
   
   !===========================================================================
   
-  subroutine make_lookup_table_1d(iTable, calc_table_var, iComm)
+  subroutine make_lookup_table_1d(iTable, calc_table_var, iComm, UseRealIndex)
 
     ! Fill in table iTable using the subroutine calc_table_var
     ! The optional communicator allows for parallel execution
@@ -641,16 +669,20 @@ contains
     end interface
 
     integer, optional, intent(in):: iComm
+    logical, optional, intent(in):: UseRealIndex
 
     integer:: iProc, nProc, iError
     integer:: i1, n1, nValue
-    logical:: IsLog1
+    logical:: IsLog1, IsUniform1, UseRealIndex1
     real   :: Index1Min, dIndex1, Index1
     real, allocatable:: Value_VC(:,:)
     type(TableType), pointer:: Ptr
 
     character(len=*), parameter:: NameSub='make_lookup_table_1d'
     !------------------------------------------------------------------------
+    UseRealIndex1 = .true.
+    if(present(UseRealIndex)) UseRealIndex1 = UseRealIndex
+    
     Ptr => Table_I(iTable)
 
     if(Ptr%NameCommand /= "make" .and. Ptr%NameCommand /= "save") &
@@ -662,6 +694,7 @@ contains
     ! Use simple scalars for sake of legibility
     n1        = Ptr%nIndex_I(1)
     IsLog1    = Ptr%IsLogIndex_I(1)
+    IsUniform1= Ptr%IsUniform_I(1)
     Index1Min = Ptr%IndexMin_I(1)
     dIndex1   = Ptr%dIndex_I(1)
 
@@ -685,18 +718,20 @@ contains
     Value_VC = 0.0
 
     ! Fill up lookup table in parallel
-    if(Ptr%NameTable=='IMF')then
-       do i1 = iProc+1, n1, nProc
-          Index1 = 1 + (i1 - 1)
-          call calc_table_var(iTable, Index1, Value_VC(:,i1))
-       end do
-    else
-       do i1 = iProc+1, n1, nProc
+    do i1 = iProc+1, n1, nProc
+       if(IsUniform1) then
           Index1 = Index1Min + (i1 - 1)*dIndex1
           if(IsLog1) Index1 = 10**Index1
-          call calc_table_var(iTable, Index1, Value_VC(:,i1))
-       end do
-    endif
+       else
+          if(UseRealIndex) then
+             Index1 = Ptr%Index1_I(i1)
+          else
+             Index1 = i1
+          endif
+       endif
+       call calc_table_var(iTable, Index1, Value_VC(:,i1))
+    end do
+
 
     ! Collect (or copy) result into table
     if(nProc > 1)then
