@@ -5,29 +5,35 @@ if($h or $help or not @ARGV){
 Clone a project from the proper git repository. 
 
 Usage:
-  gitclone [-s] REPO [flags] [DIRNAME]
+  gitclone [-h] [-s] [-history] REPO [flags] [DIRNAME]
+
+-h -help      Print help message.
 
 -s -sleep     Sleep \$GITLABSLEEP seconds after the cloning if the 
               \$GITLABSLEEP environment variable is set to avoid 
               firewall protection against repeated access to the git server.
+
+-history      Clone with history. If not present the --depth 1 is used
+
 REPO          Name of repository
-flags         Any git flag, for example --depth 1
+flags         Any git flag.
 DIRNAME       Name of local directory (default is same as REPO)
 
 Examples:
 
-Clone BATSRUS repository from swmf_software:
+Clone BATSRUS repository from swmf_software with history:
 
-   gitclone BATSRUS
+   gitclone -history BATSRUS
 
 Clone LATEX repositiry from csem_software without history into Papers/BIBTEX:
 
-   gitclone LATEX --depth 1 Papers/BIBTEX
+   gitclone LATEX Papers/BIBTEX
 ";
     exit 0;
 }
 
 my $Sleep = ($s or $Sleep);
+my $History = $history;
 
 use strict;
 
@@ -54,6 +60,8 @@ my %url = (
 my $project = $ARGV[0]; $project =~ s/\.git$//;
 
 my $url = ($url{uc($project)} or $swmf_software);
+
+$ARGV[0] .= " --depth 1" unless $History;
 
 my $command = "git clone $url/".join(" ", @ARGV);
 $command .= "; sleep $ENV{GITLABSLEEP}" if ($ENV{GITLABSLEEP} and $Sleep);
