@@ -26,7 +26,7 @@
 ; transforming initial data:
 ;    read_transform_param, do_transform, do_my_transform, 
 ;    make_regular_grid, make_polar_grid, make_unpolar_grid,
-;    make_sphere_grid, 
+;    make_sphere_grid
 ;    getaxes
 ;    interpol_logfiles, interpol_log
 ; calculating functions of the data
@@ -168,7 +168,7 @@ pro set_default_values
      symmtri
   usereg=0         ; use wreg and xreg instead of w and x
   dotransform='n'  ; do transform with plot_data?
-  transform='n'    ; transformation 'none', 'regular', 'my', 'polar', 'unpolar'
+  transform='n'    ; values: none,regular,my,polar,unpolar,sphere
   nxreg=[0,0]      ; size of transformed grid
   xreglimits=0     ; transformed grid limits [xmin, ymin, xmax, ymax]
   wregpad=0        ; array of values used in "padding" the regular arrays
@@ -1040,7 +1040,7 @@ pro animate_data
   if doanimate then begin
     if xregistered("XInterAnimate") then xinteranimate, /close
     xinteranimate,set=[!d.x_size,!d.y_size,(npict-1)/npict1+1]
-  end
+  endif
 
   ipict=0
   ipict1=0
@@ -1354,7 +1354,10 @@ pro slice_data
      if !d.window lt 0 then window
      wshow
   endif
-  if doanimate then xinteranimate,set=[!d.x_size,!d.y_size,nslice]
+  if doanimate then begin
+     if xregistered("XInterAnimate") then xinteranimate, /close
+     xinteranimate,set=[!d.x_size,!d.y_size,nslice]
+  endif
 
   islice1=0                     ; slice index in a multiplot frame
   iplot=0                       ; plot index for animation
@@ -2679,7 +2682,7 @@ pro read_plot_param
 
      if plotmodes(ifunc) eq 'default' then begin
         plotmodes(ifunc) = 'plot'
-        if plotdim eq 2 then begin
+        if plotdim gt 1 then begin
            plotmodes(ifunc) = 'contbarbody'
            if n_elements(func12) eq 2 then $
               if ifunc gt 0 then $
@@ -2705,6 +2708,8 @@ pro read_transform_param
   common vector_param
   common plot_data
 
+  ;; help,ndim,transform,gencoord
+  
   if (gencoord or transform eq 'unpolar') and ndim eq 2 then begin
       if transform eq '' then begin
         transform='none'
@@ -2866,18 +2871,9 @@ pro do_transform,ifile
      do_my_transform,ifile,variables,x,w,xreg,wreg,usereg $
   else if usereg then case transform of
      'regular': make_regular_grid
-     'polar'  :begin
-        make_polar_grid
-        variables(0:1)=['r','phi']
-     end
-     'sphere' :begin
-        make_sphere_grid
-        variables(0:2)=['r','theta','phi']
-     end
-     'unpolar':begin
-        make_unpolar_grid
-        variables(0:1)=['x','y']
-     end
+     'polar'  : make_polar_grid
+     'sphere' : make_sphere_grid
+     'unpolar': make_unpolar_grid
      else     :print,'Unknown value for transform:',transform
   endcase
 
@@ -3282,16 +3278,17 @@ pro make_polar_grid
 
   common debug_param & on_error, onerror
 
-  common file_head  ; ndim
+  common file_head  ; ndim, variables
 
   case ndim of
-      2: make_polar_grid2
-      3: make_polar_grid3
+      2: begin & make_polar_grid2 & variables(0:1)=['r','phi']     & end
+      3: begin & make_polar_grid3 & variables(0:2)=['r','phi','z'] & end
       else: begin
           print,'polargid works for 2D and 3D arrays only'
           retall
       end
   endcase
+
 end
 ;===========================================================================
 pro make_polar_grid2
@@ -3305,28 +3302,28 @@ pro make_polar_grid2
   common vector_param
 
   xreg=x
-  xreg(*,*,0)=sqrt(x(*,*,0)^2+x(*,*,1)^2)
-  xreg(*,*,1)=atan(x(*,*,1),x(*,*,0))
-  phi=xreg(*,*,1)
-  wreg=w
+  xreg(*,*,0) = sqrt(x(*,*,0)^2 + x(*,*,1)^2)
+  xreg(*,*,1) = atan(x(*,*,1), x(*,*,0))
+  phi = xreg(*,*,1)
+  wreg = w
   for i=1,nvector do begin
-     ivx=vectors(i-1)
-     ivy=ivx+1
-     wreg(*,*,ivx)=  w(*,*,ivx)*cos(phi)+w(*,*,ivy)*sin(phi)
-     wreg(*,*,ivy)= -w(*,*,ivx)*sin(phi)+w(*,*,ivy)*cos(phi)
+     ivx = vectors(i-1)
+     ivy = ivx+1
+     wreg(*,*,ivx) =  w(*,*,ivx)*cos(phi) + w(*,*,ivy)*sin(phi)
+     wreg(*,*,ivy) = -w(*,*,ivx)*sin(phi) + w(*,*,ivy)*cos(phi)
   endfor
 
-  ; Remove 2*pi jumps from phi (only works on a regular grid so check ndim)
-  sz=size(phi)
+  ;; Remove 2*pi jumps from phi (only works on a regular grid so check ndim)
+  sz = size(phi)
   ndim = sz(0)
   if ndim gt 1 then begin
      nx2=sz(2)
-     pi2=8*atan(1)
      for ix2=1,nx2-1 do while phi(1,ix2-1) gt phi(1,ix2) do $
-        phi(*,ix2)=phi(*,ix2)+pi2
+        phi(*,ix2)=phi(*,ix2) + 2*!pi
   endif
 
-  xreg(*,*,1)=phi
+  xreg(*,*,1) = phi
+
 end
 
 ;===========================================================================
@@ -3338,77 +3335,100 @@ pro make_polar_grid3
 
   common plot_data
   common vector_param
+  common file_head ; variables
+  
+  if variables(0) eq 'x' and variables(1) eq 'y' then begin
+     xreg = x
+     xreg(*,*,*,0) = sqrt(x(*,*,*,0)^2 + x(*,*,*,1)^2) ; radius
+     phi = atan(x(*,*,*,1), x(*,*,*,0))
+     ;; Remove 2*pi jumps from phi
+     sz=size(phi) & nx2=sz(2)
+     for ix2=1,nx2-1 do while phi(1,ix2-1) gt phi(1,ix2) do $
+        phi(*,ix2) = phi(*,ix2) + 2*!pi
 
-  xreg=x
-  xreg(*,*,*,0)=sqrt(x(*,*,*,0)^2+x(*,*,*,1)^2)
-  xreg(*,*,*,1)=atan(x(*,*,*,1),x(*,*,*,0))
-  phi=xreg(*,*,*,1)
-  wreg=w
+     xreg(*,*,*,1)=phi
+
+  endif else if variables(0) eq 'r' and variables(1) eq 'lon' $
+     and variables(2) eq 'lat' then begin
+
+     rr  = x(*,*,*,0)
+     phi = x(*,*,*,1)
+     if max(phi) - min(phi) gt 6.3 then phi=phi*!dtor ; convert to radians
+     lat = x(*,*,*,2)
+     if max(lat) - min(lat) gt 3.2 then lat=lat*!dtor ; convert to radians
+
+     xreg(*,*,*,0) = rr*cos(lat)   ; cylindrical radius
+     xreg(*,*,*,1) = x(*,*,*,1)    ; cylindrical longitude (original units)
+     xreg(*,*,*,2) = rr*sin(lat)   ; cylindrical Z
+
+  endif else begin
+     print,'Error in make_polar_grid. Unknown coordiantes:',variables(0:2)
+     retall
+  endelse
+
+  wreg = w
   for i=1,nvector do begin
      ivx=vectors(i-1)
      ivy=ivx+1
-     wreg(*,*,*,ivx)=  w(*,*,*,ivx)*cos(phi)+w(*,*,*,ivy)*sin(phi)
-     wreg(*,*,*,ivy)= -w(*,*,*,ivx)*sin(phi)+w(*,*,*,ivy)*cos(phi)
+     wreg(*,*,*,ivx)=  w(*,*,*,ivx)*cos(phi) + w(*,*,*,ivy)*sin(phi)
+     wreg(*,*,*,ivy)= -w(*,*,*,ivx)*sin(phi) + w(*,*,*,ivy)*cos(phi)
   endfor
 
-  ;Remove 2*pi jumps from phi
-  pi2=8*atan(1) & sz=size(phi) & nx2=sz(2)
-  for ix2=1,nx2-1 do while phi(1,ix2-1) gt phi(1,ix2) do $
-     phi(*,ix2)=phi(*,ix2)+pi2
-
-  xreg(*,*,*,1)=phi
 end
 
 ;===========================================================================
 pro make_sphere_grid
 ;
-;    Transform vector variables from x,y,z to radial,phi,z components
+;    Transform vector variables from x,y,z to r,theta,phi components
 
   common debug_param & on_error, onerror
 
   common plot_data
   common vector_param
+  common file_head ; variables
 
   xreg=x
-  xreg(*,*,*,0)=sqrt(x(*,*,*,0)^2+x(*,*,*,1)^2+x(*,*,*,2)^2)
-  xreg(*,*,*,2)=-atan(x(*,*,*,2),x(*,*,*,0))
-  xreg(*,*,*,1)=atan(x(*,*,*,1),sqrt(x(*,*,*,0)^2+x(*,*,*,2)^2))
-  phi=xreg(*,*,*,2)
-  theta=xreg(*,*,*,1)
-  wreg=w
-  sinphi=sin(phi)
-  cosphi=cos(phi)
-  sintheta=sin(theta)
-  costheta=cos(theta)
+  xreg(*,*,*,0) = sqrt(x(*,*,*,0)^2 + x(*,*,*,1)^2 + x(*,*,*,2)^2) ; r
+  theta =  atan(x(*,*,*,1), sqrt(x(*,*,*,0)^2+x(*,*,*,2)^2))
+  phi   = -atan(x(*,*,*,2), x(*,*,*,0))
+
+  wreg = w
+  sinphi   = sin(phi)
+  cosphi   = cos(phi)
+  sintheta = sin(theta)
+  costheta = cos(theta)
   for i=1,nvector do begin
      ivx=vectors(i-1)
      ivy=ivx+1
      ivz=ivy+1
-     wreg(*,*,*,ivx)=(w(*,*,*,ivx)*cosphi-w(*,*,*,ivz)*sinphi)*costheta $
-                     +w(*,*,*,ivy)*sintheta
-     wreg(*,*,*,ivz)=-w(*,*,*,ivx)*sinphi-w(*,*,*,ivz)*cosphi
-     wreg(*,*,*,ivy)=(-w(*,*,*,ivx)*cosphi+w(*,*,*,ivz)*sinphi)*sintheta $
-                     +w(*,*,*,ivy)*costheta
+     wreg(*,*,*,ivx) = (w(*,*,*,ivx)*cosphi - w(*,*,*,ivz)*sinphi)*costheta $
+                     + w(*,*,*,ivy)*sintheta
+     wreg(*,*,*,ivz) = -w(*,*,*,ivx)*sinphi - w(*,*,*,ivz)*cosphi
+     wreg(*,*,*,ivy) = (-w(*,*,*,ivx)*cosphi + w(*,*,*,ivz)*sinphi)*sintheta $
+                     + w(*,*,*,ivy)*costheta
   endfor
 
   ;; Remove 2*pi jumps from phi
-  pi=4*atan(1) & pi2=2*pi & sz=size(phi) & nx2=sz(2) & nx3=sz(3)
-  for ix3=1,nx3-1 do while phi(1,1,ix3-1) gt phi(1,1,ix3) do $
-     phi(*,*,ix3)=phi(*,*,ix3)+pi2
+  sz=size(phi) & nx2=sz(2) & nx3=sz(3)
+  for ix3 = 1,nx3-1 do while phi(1,1,ix3-1) gt phi(1,1,ix3) do $
+     phi(*,*,ix3) = phi(*,*,ix3) + 2*!pi
 
-  ;Remove turn over from theta
-  for ix2=1,nx2-1 do $
+  ;; Remove turn over from theta
+  for ix2 = 1,nx2-1 do $
   if theta(1,ix2-1,1) ge theta(1,ix2,1) then begin
      if theta(1,ix2,1) lt 0 then $
-          theta(*,ix2-1,*)=-pi-theta(*,ix2-1,*) $
+          theta(*,ix2-1,*) = -!pi - theta(*,ix2-1,*) $
      else $
-          theta(*,ix2,*)=pi-theta(*,ix2,*)
+          theta(*,ix2,*) = !pi - theta(*,ix2,*)
   endif
 
-  xreg(*,*,*,2)=phi
-  xreg(*,*,*,1)=theta
-end
+  xreg(*,*,*,1) = theta
+  xreg(*,*,*,2) = phi
 
+  variables(0:2)=['r','theta','phi']
+
+end
+  
 ;===========================================================================
 pro make_unpolar_grid
 ;
@@ -3416,7 +3436,7 @@ pro make_unpolar_grid
 
   common debug_param & on_error, onerror
 
-  common file_head ; ndim
+  common file_head ; ndim, variables
 
   case ndim of
       2: make_unpolar_grid2
@@ -3426,6 +3446,8 @@ pro make_unpolar_grid
           retall
       end
   endcase
+
+  variables(0:1)=['x','y']
 
 end
 ;===========================================================================
@@ -3458,6 +3480,7 @@ pro make_unpolar_grid2
      wreg(*,*,ivx)=  w(*,*,ivx)*cos(phi)-w(*,*,ivy)*sin(phi)
      wreg(*,*,ivy)=  w(*,*,ivx)*sin(phi)+w(*,*,ivy)*cos(phi)
   endfor
+
 end
 
 ;===========================================================================
