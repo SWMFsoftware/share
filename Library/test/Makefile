@@ -74,8 +74,7 @@ test:
 clean: cleanfiles
 
 distclean: clean
-	rm -rf *.tmp *.diff test*.out test_initial_state.ref \
-		test_process_var_name.log
+	rm -rf *.tmp *.diff test*.out
 
 #######################################################################
 test_time_convert_exe:
@@ -282,9 +281,8 @@ test_initial_state:
 	@make test_initial_state_exe		 >> test_initial_state.diff
 	@echo ${MPIRUN} ./test_initial_state_exe >> test_initial_state.diff
 	-@(${MPIRUN} ./test_initial_state.exe > test_initial_state.tmp)
-	-@gunzip -c test_initial_state.ref.gz > test_initial_state.ref
 	-@(${SCRIPTDIR}/DiffNum.pl -b \
-	    test_initial_state.out test_initial_state.ref \
+	    test_initial_state.out test_initial_state.ref.gz \
 						 >  test_initial_state.diff)
 	@ls -l test_initial_state.diff
 
@@ -460,17 +458,17 @@ test_process_var_name:
 	fi; 
 
 test_process_var_name1:
-	@rm -f test_process_var_name.tmp test_process_var_name.log
+	@rm -f test_process_var_name.tmp test_process_var_name_compile.tmp
 	@echo test_process_var_name starting > test_process_var_name.tmp
-	@(cd ../src; make LIB                > test_process_var_name.log 2>&1)
+	@(cd ../src; make LIB                > test_process_var_name_compile.tmp 2>&1)
 	@cp ${BATSDIR}/src/ModExtraVariables.f90 .
 	@cp ${BATSDIR}/src/ModSingleFluid.f90 .
 	@make ModSingleFluid.o ModExtraVariables.o \
-		>> test_process_var_name.log 2>&1
+		>> test_process_var_name_compile.tmp 2>&1
 	@for i in ${BATSDIR}/srcEquation/*.f90 ; do\
 		cp -f $${i} ModEquation.f90;\
 		echo working on $${i} >> test_process_var_name.tmp;\
-		echo working on $${i} >> test_process_var_name.log;\
+		echo working on $${i} >> test_process_var_name_compile.tmp;\
 		sleep 1;\
 		make test_process_var_name_exe;\
 		make test_process_var_name_run;\
@@ -481,9 +479,9 @@ test_process_var_name1:
 test_process_var_name_exe:
 	@rm -f test_process_var_name.o ModEquation.o
 	@make ModEquation.o test_process_var_name.o \
-		>> test_process_var_name.log 2>&1
+		>> test_process_var_name_compile.tmp 2>&1
 	@${LINK.f90} -o test_process_var_name.exe test_process_var_name.o ModEquation.o \
-		-L${LIBDIR} -lSHARE ${LflagMpi}  >> test_process_var_name.log 2>&1
+		-L${LIBDIR} -lSHARE ${LflagMpi}  >> test_process_var_name_compile.tmp 2>&1
 
 test_process_var_name_run:
 	-@(./test_process_var_name.exe >> test_process_var_name.tmp)
@@ -492,7 +490,7 @@ test_process_var_name_run:
 test_process_var_name_check:
 	@rm -f test_process_var_name.diff
 	@(perl -ne 'print if /error/i' \
-		test_process_var_name.log test_process_var_name.tmp \
+		test_process_var_name_compile.tmp test_process_var_name.tmp \
 		> test_process_var_name.diff)
 	@ls -l test_process_var_name.diff
 
@@ -509,12 +507,11 @@ test_poisson_bracket:
 	@make test_poisson_exe			>> test_poisson.diff
 	@echo './test_poisson.exe'		>> test_poisson.diff
 	-@(./test_poisson.exe >  test_poisson.diff)
-	-@(tar -xzf test_poisson.ref.tgz)
 	-@(${SCRIPTDIR}/DiffNum.pl -b -a=1e-7 \
-		test_poisson.out test_poisson.ref.out \
+		test_poisson.out test_poisson.ref.out.gz \
 						> test_poisson.diff)
 	-@(${SCRIPTDIR}/DiffNum.pl -b -a=1e-7 \
-		test_multipoisson_002.out test_multipoisson.ref.out \
+		test_multipoisson_002.out test_multipoisson.ref.out.gz \
                                                 >> test_poisson.diff)
 	@ls -l test_poisson.diff
 
