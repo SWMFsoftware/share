@@ -1380,7 +1380,8 @@ contains
   subroutine get_lookup_table(iTable, &
        iParamIn, Param, nParam, Param_I, nValue, nIndex, nIndex_I, &
        IndexMin_I, IndexMax_I, IsLogIndex_I, &
-       NameVar, StringDescription)
+       NameVar, StringDescription, &
+       Index1_I, Index2_I, Index3_I, Index4_I, Index5_I)
 
     integer,                    intent(in) :: iTable     ! table index
     integer,          optional, intent(in) :: iParamIn   ! index of a parameter
@@ -1395,6 +1396,11 @@ contains
     logical,          optional, intent(out):: IsLogIndex_I(:) ! is logarithmic
     character(len=*), optional, intent(out):: NameVar         ! variable names
     character(len=*), optional, intent(out):: StringDescription ! description
+    real,             optional, intent(out):: Index1_I(:) ! nonuniform indices
+    real,             optional, intent(out):: Index2_I(:)
+    real,             optional, intent(out):: Index3_I(:)
+    real,             optional, intent(out):: Index4_I(:)
+    real,             optional, intent(out):: Index5_I(:)
 
     ! Get various parameters of table iTable.
 
@@ -1411,6 +1417,12 @@ contains
     if(present(IndexMax_I))        IndexMax_I        = Ptr%IndexMax_I
     if(present(IsLogIndex_I))      IsLogIndex_I      = Ptr%IsLogIndex_I
     if(present(nParam))            nParam            = Ptr%nParam
+    if(present(Index1_I))          Index1_I          = Ptr%Index1_I
+    if(present(Index2_I))          Index2_I          = Ptr%Index2_I
+    if(present(Index3_I))          Index3_I          = Ptr%Index3_I
+    if(present(Index4_I))          Index4_I          = Ptr%Index4_I
+    if(present(Index5_I))          Index5_I          = Ptr%Index5_I
+    
     if(present(Param_I))then
        ! return an array of parameters
        if(Ptr%nParam == 0)then
