@@ -48,6 +48,7 @@ my %url = (
     "LATEX"              => $csem_software,
     "VAC"                => $csem_software,
     "WSA"                => $csem_software,
+    "MSWIM2D"            => $csem_software,
     "GITM"               => "https://github.com/aaronjridley",
     "VISANAMATLAB"       => "https://github.com/henry2004y",
     "VISANAJULIA"        => "https://github.com/henry2004y",
