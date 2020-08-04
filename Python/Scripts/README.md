@@ -23,14 +23,7 @@ SWMF$ ./Config.pl -install
 # Compile then make the run directory if worked
 SWMF$ make -j test_swpc_compile && make rundir
 ```
-Make sure [swmfpy](https://gitlab.umich.edu/swmf_software/swmfpy) is installed:
-
-```bash
-# In the SWMF base dir
-$ python3 -m pip install -U --user wheel  # Might be necessary
-$ python3 -m pip install -U --user git+https://gitlab.umich.edu/swmf_software/swmfpy.git@master
-```
-*Note*: You may need to change `python3 -m pip` to `python -m pip` depending on your supercomputer's set up.
+Make sure [swmfpy](https://gitlab.umich.edu/swmf_software/swmfpy) is installed.
 
 ### Set up
 
