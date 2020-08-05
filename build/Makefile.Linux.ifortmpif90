@@ -33,7 +33,7 @@ MPILIB = -lmpi++
 # INCL_EXTRA can be defined to add more search directories.
 SEARCH = -module ${INCLDIR} ${INCL_EXTRA}
 
-DEBUGFLAG = -check noarg_temp_created -check bounds -g -traceback -init=snan,huge,arrays
+DEBUGFLAG = -check noarg_temp_created -check bounds -g -traceback -init=snan,minus_huge,arrays -fp-speculation=safe
 DEBUG     = 
 
 OPT0 = -O0
