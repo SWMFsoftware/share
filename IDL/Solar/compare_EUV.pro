@@ -11,8 +11,17 @@ pro compare_EUV, TimeEvent=TimeEvent, varnames=varnames, nvars=nvars,        $
   if (not keyword_set(UseTimePlotName)) then UseTimePlotName = 0
   if (not keyword_set(TypePlotFile))    then TypePlotFile    = 'png'
 
-  if (not keyword_set(dir_obs))  then dir_obs  ='./obsdata/'
-  if (not keyword_set(dir_plot)) then dir_plot ='./output/'
+  if (not keyword_set(dir_obs))  then begin
+     if (file_test('./obsdata', /directory) eq 0) then file_mkdir, './obsdata'
+     dir_obs = './obsdata'
+     printf, unitlog, ' saves into the default dir_obs = ./obsdata'
+  endif
+
+  if (not keyword_set(dir_plot)) then begin
+     if (file_test('./output', /directory) eq 0) then file_mkdir, './output'
+     dir_plot = './output'
+     printf, unitlog, ' saves into the default dir_plot = ./output'
+  endif
 
   if (not keyword_set(xs_map)) then xs_map = 512
   if (not keyword_set(ys_map)) then ys_map = 512

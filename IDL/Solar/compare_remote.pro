@@ -4,10 +4,35 @@ pro compare_remote, dir_sim=dir_sim, dir_plot=dir_plot,     $
                     CharSizeLocal=CharSizeLocal,            $
                     TypePlotFile=TypePlotFile,              $
                     xs_map=xs_map, ys_map=ys_map,           $
-                    DoIDLCompare=DoIDLCompare
+                    DoIDLCompare=DoIDLCompare,              $
+                    dir_obs=dir_obs
 
-  if (not keyword_set(dir_sim))  then dir_sim  = './simdata/'
-  if (not keyword_set(dir_plot)) then dir_plot = './output/'
+  get_lun, unitlog
+  openw, unitlog, 'log_compare_remote.log'
+
+  if (not keyword_set(dir_sim)) then begin
+     if (file_test('./simdata', /directory)) then begin
+        dir_sim  = './simdata/'
+        printf, unitlog, ' uses the default dir_sim = ./simdata'
+     endif else begin
+        printf, unitlog, $
+                ' please specify the directory containing simulation results'
+        return
+     endelse
+  endif
+
+  if (not keyword_set(dir_obs))  then begin
+     if (file_test('./obsdata', /directory) eq 0) then file_mkdir, './obsdata'
+     dir_obs = './obsdata'
+     printf, unitlog, ' saves into the default dir_obs = ./obsdata'
+  endif
+
+  if (not keyword_set(dir_plot)) then begin
+     if (file_test('./output', /directory) eq 0) then file_mkdir, './output'
+     dir_plot = './output'
+     printf, unitlog, ' saves into the default dir_plot = ./output'
+  endif
+
   if (not keyword_set(extra_plt_info)) then begin
      extra_plt_info = ''
   endif else begin
@@ -23,9 +48,6 @@ pro compare_remote, dir_sim=dir_sim, dir_plot=dir_plot,     $
   if (not keyword_set(xs_map)) then xs_map = 512
   if (not keyword_set(ys_map)) then ys_map = 512
   
-  get_lun, unitlog
-  openw, unitlog, 'log_compare_remote.log'
-
   files_sim = file_search(dir_sim+'/los*', count = nSimFile)
   if (nSimFile eq 0) then begin
      printf, unitlog, ' no simulation data'
@@ -86,7 +108,7 @@ pro compare_remote, dir_sim=dir_sim, dir_plot=dir_plot,     $
                          DoWl =DoWl, DoAIA=DoAIA, DoXRT=DoXRT, DoEUV=DoEUV,   $
                          TypePlotFile=TypePlotFile, xs_map=xs_map,            $
                          ys_map=ys_map,DoIDLCompare=DoIDLCompare,             $
-                         file_sim=file_sim
+                         file_sim=file_sim, dir_obs = dir_obs
   endfor
   printf, unitlog, '------------------------------------------------------'
   close, unitlog

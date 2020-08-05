@@ -4,8 +4,22 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
                     UseTimePlotName=UseTimePlotName,        $
                     CharSizeLocal=CharSizeLocal
 
-  if (not keyword_set(dir_sim))   then dir_sim  = './simdata/'
-  if (not keyword_set(dir_plot))  then dir_plot = './output/'
+  if (not keyword_set(dir_sim)) then begin
+     if (file_test('./simdata', /directory)) then begin
+        dir_sim  = './simdata/'
+        print, ' uses the default dir_sim = ./simdata'
+     endif else begin
+        print, ' please specify the directory containing simulation results'
+        return
+     endelse
+  endif
+
+  if (not keyword_set(dir_plot)) then begin
+     if (file_test('./output', /directory) eq 0) then file_mkdir, './output'
+     dir_plot = './output'
+     print, ' saves into the default dir_plot = ./output'
+  endif
+
   if (not keyword_set(extra_plt_info)) then begin
      extra_plt_info = ''
   endif else begin
