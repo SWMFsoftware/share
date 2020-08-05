@@ -22,16 +22,17 @@ pro compare_remote, dir_sim=dir_sim, dir_plot=dir_plot,     $
   endif
 
   if (not keyword_set(dir_obs))  then begin
-     if (file_test('./obsdata', /directory) eq 0) then file_mkdir, './obsdata'
      dir_obs = './obsdata'
      printf, unitlog, ' saves into the default dir_obs = ./obsdata'
   endif
 
   if (not keyword_set(dir_plot)) then begin
-     if (file_test('./output', /directory) eq 0) then file_mkdir, './output'
      dir_plot = './output'
      printf, unitlog, ' saves into the default dir_plot = ./output'
   endif
+
+  if (file_test(dir_obs,  /directory) eq 0) then file_mkdir, dir_obs
+  if (file_test(dir_plot, /directory) eq 0) then file_mkdir, dir_plot
 
   if (not keyword_set(extra_plt_info)) then begin
      extra_plt_info = ''
