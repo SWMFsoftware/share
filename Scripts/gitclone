@@ -58,6 +58,9 @@ my %url = (
     "SUPERMAGSTATIONS"   => $solstice_software,
     );
 
+# Make sure pull is replaced with rebase
+`git config --global pull.rebase true`;
+
 my $project = $ARGV[0]; $project =~ s/\.git$//;
 
 my $url = ($url{uc($project)} or $swmf_software);

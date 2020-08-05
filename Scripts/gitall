@@ -53,6 +53,9 @@ my $Remote    = ($remote);
 
 use strict;
 
+# Make sure pull is replaced with rebase
+`git config --global pull.rebase true`;
+
 # Default remote
 $Remote = 'git@gitlab.umich.edu:swmf_software' if $Remote eq "1";
 
