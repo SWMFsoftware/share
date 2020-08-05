@@ -1774,7 +1774,7 @@ pro download_images,  TimeEvent = TimeEvent, CaseInst = CaseInst,    $
 
   GoodList_I = ListLocal_I(index_I)
 
-  files_filename_save = dir_obs + 'filenames_' + TimeStrFile + $
+  files_filename_save = dir_obs + '/filenames_' + TimeStrFile + $
                         '_' + InstPlt +'.sav'
 
   if (file_test(files_filename_save)) then begin
