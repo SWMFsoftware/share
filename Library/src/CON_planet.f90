@@ -446,7 +446,7 @@ contains
           call read_var('MaxHarmonicDegree', MaxHarmonicDegree)
           call read_var('NamePlanetHarmonicsFile', NamePlanetHarmonicsFile)
 
-          if(.not.allocated(g_Planet)) then
+          if(.not.allocated(g_Planet) .and. .not.allocated(h_Planet)) then
              allocate(g_Planet(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
              allocate(h_Planet(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
           end if

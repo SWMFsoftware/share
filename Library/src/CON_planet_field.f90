@@ -378,7 +378,7 @@ contains
 
     ! This routine is optimized for performance. For straightforward alogrithm
     ! please refer to ModUserJupiter<latest>.f90 or the reference
-    ! <insert reference here>
+    ! https://doi.org/10.1007/978-94-009-9907-7 (Appendix G,H)
 
     ! The Legendre polynomials calculated here are GAUSS NORMALIZED. Instead of
     ! normalizing them to Schmidt-semi-normalized we normalize the Schmidt
@@ -412,10 +412,16 @@ contains
       diffP_II(n,n) = sintheta * diffP_II(n-1,n-1) + costheta * P_II(n-1,n-1)
 
       do m=0, n-1
-        if(n>1) K_II(n,m) = ((n-1.)**2 - m**2) / ((2.*n - 1.) * (2.*n - 3.))
-        P_II(n,m) = costheta*P_II(n-1,m) - K_II(n,m)*P_II(n-2,m)
-        diffP_II(n,m) = costheta*diffP_II(n-1,m) - sintheta*P_II(n-1,m) &
-                     - K_II(n,m)*diffP_II(n-2,m)
+         if (n == 1) then
+            ! Note: For n=1, ==> m=0 and K_II(n,m) = 0
+            P_II(n,m) = costheta*P_II(n-1,m)
+            diffP_II(n,m) = costheta*diffP_II(n-1,m) - sintheta*P_II(n-1,m)
+         else
+            K_II(n,m) = ((n-1.)**2 - m**2) / ((2.*n - 1.) * (2.*n - 3.))
+            P_II(n,m) = costheta*P_II(n-1,m) - K_II(n,m)*P_II(n-2,m)
+            diffP_II(n,m) = costheta*diffP_II(n-1,m) - sintheta*P_II(n-1,m) &
+                - K_II(n,m)*diffP_II(n-2,m)
+         end if
       end do
     end do
 
