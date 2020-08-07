@@ -93,30 +93,38 @@ pro compare_AIA, TimeEvent=TimeEvent, varnames=varnames, nvars=nvars,        $
      EventTime = strmid(TimeEvent,0,19)
      EventTime=repstr(EventTime,'/','_')
      EventTime=repstr(EventTime,':','_')
-     
-     w=fltarr(nx,ny,7)
-     x=fltarr(nx,ny,2)
-     varname=['x','y','AIA:94','AIA:131','AIA:171','AIA:193','AIA:211','AIA:304','AIA:335']
-     it = 0.
-     time = 0.0
-     for i=0,nx-1 do begin
-        x0 = (-nx/2 + i) * XPixelToRadius
-        for j=0,ny-1 do begin
-           y0 = (-ny/2 + j) * YPixelToRadius
-           x(i,j,0) = x0
-           x(i,j,1) = y0
-           w(i,j,0) = aia94_map.data(i,j)
-           w(i,j,1) = aia131_map.data(i,j)
-           w(i,j,2) = aia171_map.data(i,j)
-           w(i,j,3) = aia193_map.data(i,j)
-           w(i,j,4) = aia211_map.data(i,j)
-           w(i,j,5) = aia304_map.data(i,j)
-           w(i,j,6) = aia335_map.data(i,j)
-        endfor
-     endfor
+
      ObsFileName=dir_obs+'/AIA_Observations_'+EventTime+'.out'
-     ;;Save Observations in BATSRUS format
-     save_pict,ObsFileName,'AIA_Observations_data',varname,w,x
+     
+     ;; only save the Observations in BATSRUS format if the file does
+     ;; not exist
+     if (file_test(ObsFileName) ne 1) then begin
+        w=fltarr(nx,ny,7)
+        x=fltarr(nx,ny,2)
+        varname=['x','y','AIA:94','AIA:131','AIA:171','AIA:193','AIA:211','AIA:304','AIA:335']
+        it = 0.
+        time = 0.0
+        for i=0,nx-1 do begin
+           x0 = (-nx/2 + i) * XPixelToRadius
+           for j=0,ny-1 do begin
+              y0 = (-ny/2 + j) * YPixelToRadius
+              x(i,j,0) = x0
+              x(i,j,1) = y0
+              w(i,j,0) = aia94_map.data(i,j)
+              w(i,j,1) = aia131_map.data(i,j)
+              w(i,j,2) = aia171_map.data(i,j)
+              w(i,j,3) = aia193_map.data(i,j)
+              w(i,j,4) = aia211_map.data(i,j)
+              w(i,j,5) = aia304_map.data(i,j)
+              w(i,j,6) = aia335_map.data(i,j)
+           endfor
+        endfor
+
+        ;;Save Observations in BATSRUS format
+        save_pict,ObsFileName,'AIA_Observations_data',varname,w,x
+     endif
+
+     ;; true no matter what???
      count = 1
 
      if ((DoIDLCompare eq 1) and (count eq 1)) then begin
