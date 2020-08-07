@@ -1,37 +1,6 @@
 #!/usr/bin/perl -s
 
-if($h or $help or not @ARGV){
-    print "
-Clone a project from the proper git repository. 
-
-Usage:
-  gitclone [-h] [-s] [-history] REPO [flags] [DIRNAME]
-
--h -help      Print help message.
-
--s -sleep     Sleep \$GITLABSLEEP seconds after the cloning if the 
-              \$GITLABSLEEP environment variable is set to avoid 
-              firewall protection against repeated access to the git server.
-
--history      Clone with history. If not present the --depth 1 is used
-
-REPO          Name of repository
-flags         Any git flag.
-DIRNAME       Name of local directory (default is same as REPO)
-
-Examples:
-
-Clone BATSRUS repository from swmf_software with history:
-
-   gitclone -history BATSRUS
-
-Clone LATEX repositiry from csem_software without history into Papers/BIBTEX:
-
-   gitclone LATEX Papers/BIBTEX
-";
-    exit 0;
-}
-
+my $Help = ($h or $help);
 my $Sleep = ($s or $Sleep);
 my $History = $history;
 
@@ -57,6 +26,45 @@ my %url = (
     "SWMF_PLOT_GEOSPACE" => $solstice_software,
     "SUPERMAGSTATIONS"   => $solstice_software,
     );
+
+my @repo = ("SWMF, AMPS, BATSRUS, CIMI2, FSAM, FLEKS, GITM2, MFLAMPA, PWOM ...", 
+            sort keys %url);
+
+if($Help or not @ARGV){
+    print "
+Clone a project from the proper git repository. 
+
+Usage:
+  gitclone [-h] [-s] [-history] REPO [flags] [DIRNAME]
+
+-h -help      Print help message.
+
+-s -sleep     Sleep \$GITLABSLEEP seconds after the cloning if the 
+              \$GITLABSLEEP environment variable is set to avoid 
+              firewall protection against repeated access to the git server.
+
+-history      Clone with history. If not present the --depth 1 is used
+
+flags         Any git flag.
+DIRNAME       Name of local directory (default is same as REPO)
+REPO          Name of repository, including the following:\n\t\t", join("\n\t\t", @repo), "
+
+Examples:
+
+Clone BATSRUS repository from swmf_software with history:
+
+   gitclone -history BATSRUS
+
+Clone LATEX repositiry from csem_software without history into Papers/BIBTEX:
+
+   gitclone LATEX Papers/BIBTEX
+
+";
+    exit 0;
+}
+
+
+
 
 # Make sure pull is replaced with rebase
 `git config --global pull.rebase true`;
