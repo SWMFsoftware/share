@@ -37,12 +37,16 @@ pro compare_AIA, TimeEvent=TimeEvent, varnames=varnames, nvars=nvars,        $
   set_FilePlotName, TimeEvent, UseTimePlotName = UseTimePlotName,    $
                     TimeStrFile = TimeStrFile, fileplot = fileplot,  $
                     dir_plot = dir_plot, InstPlt = InstPlt
-
+  
   ;;-------------------------------------------------------------------------
-
+  ; checking to see if images need to be downloaded or already exist
+  download_images, TimeEvent = TimeEvent, CaseInst = 'aia',       $
+                   InstPlt = InstPlt, filename_I = filename_I,    $
+                   dir_obs = dir_obs, TimeStrFile = TimeStrFile,  $
+                   unitlog = unitlog
+     ;;------------------------------------------------------------------------
   ;;if DoIDLCompare!=0 then check if the observation output file
   ;;already exists
-  
   if DoIDLCompare eq 1 then begin
      TimeEventTmp = strmid(TimeEvent,0,19)
      TimeEventTmp=repstr(TimeEventTmp,'/','_')
@@ -50,19 +54,13 @@ pro compare_AIA, TimeEvent=TimeEvent, varnames=varnames, nvars=nvars,        $
      file_obs=file_search(dir_obs+'/AIA_observations_'+TimeEventTmp+'.out',count=count)
      if count ne 0 then begin
         print,'AIA Observations file exists at: ',file_obs
-        compare_IDL_plot,file_obs,file_sim,fileplot
+        compare_IDL_plot,file_obs,file_sim,fileplot,unitlog=unitlog
      endif
   endif
-
-  ;;if Observations are not saved yet, or los*.dat is to be compared
-  ;;download data & save the data for future comparisons
+  
   if (count eq 0) or (DoIDLCompare eq 0) then begin
-
-     download_images, TimeEvent = TimeEvent, CaseInst = 'aia',       $
-                      InstPlt = InstPlt, filename_I = filename_I,    $
-                      dir_obs = dir_obs, TimeStrFile = TimeStrFile,  $
-                      unitlog = unitlog
-     ;;------------------------------------------------------------------------
+     ;;if Observations are not saved yet, or los*.dat is to be compared
+     ;;download data & save the data for future comparisons
      ;; prepare the image for plotting
      
      process_aia, filename_I(0), aia_map  = aia94_map,  $
@@ -99,38 +97,25 @@ pro compare_AIA, TimeEvent=TimeEvent, varnames=varnames, nvars=nvars,        $
      ;; only save the Observations in BATSRUS format if the file does
      ;; not exist
      if (file_test(ObsFileName) ne 1) then begin
-        w=fltarr(nx,ny,7)
-        x=fltarr(nx,ny,2)
-        varname=['x','y','AIA:94','AIA:131','AIA:171','AIA:193','AIA:211','AIA:304','AIA:335']
+        print,'Saving Observations in BATSRUS format'
+        nw = 7
+        w  = fltarr(nx,ny,nw)
+        x  = fltarr(nx,ny,2)
+        w(*) =[[aia94_map.data],[aia131_map.data], [aia171_map.data],$
+               [aia193_map.data],[aia211_map.data], [aia304_map.data],$
+               [aia335_map.data]]
+        varname  = ['x','y','AIA:94','AIA:131','AIA:171','AIA:193','AIA:211','AIA:304','AIA:335']
+        x(*,*,0) = ((findgen(nx) - nx/2)*XPixelToRadius) # (fltarr(ny) + 1)
+        x(*,*,1) = (fltarr(nx) + 1) # ((findgen(ny) - ny/2)*YPixelToRadius)
         it = 0.
         time = 0.0
-        for i=0,nx-1 do begin
-           x0 = (-nx/2 + i) * XPixelToRadius
-           for j=0,ny-1 do begin
-              y0 = (-ny/2 + j) * YPixelToRadius
-              x(i,j,0) = x0
-              x(i,j,1) = y0
-              w(i,j,0) = aia94_map.data(i,j)
-              w(i,j,1) = aia131_map.data(i,j)
-              w(i,j,2) = aia171_map.data(i,j)
-              w(i,j,3) = aia193_map.data(i,j)
-              w(i,j,4) = aia211_map.data(i,j)
-              w(i,j,5) = aia304_map.data(i,j)
-              w(i,j,6) = aia335_map.data(i,j)
-           endfor
-        endfor
-
         ;;Save Observations in BATSRUS format
         save_pict,ObsFileName,'AIA_Observations_data',varname,w,x
      endif
 
-     ;; true no matter what???
-     count = 1
-
-     if ((DoIDLCompare eq 1) and (count eq 1)) then begin
-        compare_IDL_plot,ObsFileName,file_sim,fileplot
+     if (DoIDLCompare eq 1) then begin
+        compare_IDL_plot,ObsFileName,file_sim,fileplot,unitlog=unitlog
      endif else begin
-
         ;;---------------------------------------------------------------------
         ;; processing the swmf data
         rSizeImage=1.98
@@ -371,10 +356,9 @@ pro compare_AIA, TimeEvent=TimeEvent, varnames=varnames, nvars=nvars,        $
         printf,unitlog,'AIA:335'
         quantify_los,aia335_map,aia335_image,DoDiffMap=0,DoRatioMap=0,DoRmse=1,$
                      unitlog=unitlog
-
-        out: printf, unitlog, NameSub, ' is finished.'
-        printf, unitlog, ''
      endelse
   endif
+   out: printf, unitlog, NameSub, ' is finished.'
+   printf, unitlog, ''
 end
 

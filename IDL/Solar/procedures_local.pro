@@ -1956,7 +1956,7 @@ if keyword_set(DoRmse) then begin
 endif
 end
 ;--------------------------------------------------------------------
-pro compare_IDL_plot,file_obs,file_sim,file_plot
+pro compare_IDL_plot,file_obs,file_sim,file_plot,unitlog=unitlog
   common getpict_param
   common file_head
   common plotfunc_param
@@ -1985,9 +1985,37 @@ pro compare_IDL_plot,file_obs,file_sim,file_plot
   plottitles_file=['Model AIA:94; Model AIA:131; Model AIA:171; Model AIA:193; Model AIA:211; Model AIA:335','Obs AIA:94; Obs AIA:131; Obs AIA:171; Obs AIA:193; Obs AIA:211; Obs AIA:335']
   plot_spacex=1
   plot_spacey=1.5
+  printf, unitlog,'aia94: max(obs), max(swmf) = ',$
+          max(w1(*,*,0)), max(w0(*,*,0))
+  printf, unitlog,'aia94: min(obs), min(swmf) = ', $
+          min(w1(*,*,0)), min(w0(*,*,0))
+  printf, unitlog,'aia171: max(obs), max(swmf) = ',$
+          max(w1(*,*,2)), max(w0(*,*,2))
+  printf, unitlog,'aia171: min(obs), min(swmf) = ',$
+          min(w1(*,*,2)), min(w0(*,*,2))
+  printf, unitlog,'aia193: max(obs), max(swmf) = ',$
+          max(w1(*,*,3)), max(w0(*,*,3))
+  printf, unitlog,'aia193: min(obs), min(swmf) = ',$
+          min(w1(*,*,3)), min(w0(*,*,3))
+  printf, unitlog,'aia131: max(obs), max(swmf) = ',$
+          max(w1(*,*,1)), max(w0(*,*,1))
+  printf, unitlog,'aia131: min(obs), min(swmf) =',$
+          min(w1(*,*,1)), min(w0(*,*,1))
+  printf, unitlog,'aia211: max(obs), max(swmf) = ',$
+          max(w1(*,*,4)), max(w0(*,*,4))
+  printf, unitlog,'aia211: min(obs), min(swmf) = ',$
+          min(w1(*,*,4)), min(w0(*,*,4))
+  printf, unitlog,'aia304: max(obs), max(swmf) = ',$
+          max(w1(*,*,5)), max(w0(*,*,5))
+  printf, unitlog,'aia304: min(obs), min(swmf) = ',$
+          min(w1(*,*,5)), min(w0(*,*,5))
+  printf, unitlog,'aia335: max(obs), max(swmf) = ',$
+          max(w1(*,*,6)), max(w0(*,*,6))
+  printf, unitlog,'aia335: min(obs), min(swmf) = ',$
+          min(w1(*,*,6)), min(w0(*,*,6))
+
   set_device,file_plot+'_IDL.eps'
   device,xsize=20,ysize=26
   animate_data
   close_device,/pdf
-  retall
 end
