@@ -24,8 +24,12 @@ my $Precision   = $p; undef $p;
 my $GridSize    = $g; undef $g;
 my $nProc       = $n; undef $n;
 my $StandAlone  = $S; undef $S;
+my $Format      = $F; undef $F;
 
 use strict;
+
+# Formatted output
+my @FormattedFile;
 
 # Pattern to match component ID-s
 my $ValidComp = 'EE|GM|IE|IH|IM|OH|PC|PS|PT|PW|RB|SC|SP|UA';
@@ -56,9 +60,7 @@ $XmlFile  = $XmlFileDefault unless $XmlFile;
 &check_arguments;
 
 # Initialize for checking input parameter file
-my $InputFile;
-$InputFile       = $ARGV[0] or 
-    $InputFile   = $InputFileDefault;
+my $InputFile    = ($ARGV[0] or  $InputFileDefault);
 my $nLine        = 0; # Line number in the current file
 my $IncludeLevel = 0; # Each include file increases the include level by 1
 my @nLine;            # Array storing line numbers for all include levels
@@ -121,7 +123,7 @@ if($Interactive){
     }
 
     no strict;
-    open($FileHandle,$InputFile) or
+    open($FileHandle, $InputFile) or
 	die "$ERROR Could not open parameter input file $InputFile!\n";
 }
 
@@ -313,12 +315,17 @@ sub find_commands{
 sub read_line{
 
     # Read and return next line from the parameter file(s)
+    # If $Format is true and the argument $paramName is passed,
+    # append the fixed line to the $FormattedFile[$IncludeLevel]
 
     # Loop until we run out of EOF (end of file), #END and #INCLUDE commands
 
     # Pre 5.6 versions of Perl do not allow <$FileHandle> with strict
     no strict;
+
     while((not $_=<$FileHandle>) or /^\#(END|INCLUDE)\b/){
+
+	$FormattedFile[$IncludeLevel] .= $_; # if $Format;
 
 	if($_){
 	    # We found an #END or an #INCLUDE command
@@ -336,6 +343,9 @@ sub read_line{
 	    no strict;
 	    if($paramValue = <$FileHandle>){
 		use strict;
+
+		$FormattedFile[$IncludeLevel] .= $paramValue if $Format;
+
 		$nLine++; 
 		chop $paramValue;
 		$paramValue =~ s/^ +//;        # Remove leading spaces
@@ -363,7 +373,7 @@ sub read_line{
 	    my $FileHandleOld = $FileHandle;
 	    $FileHandle       = "F".($IncludeLevel+1);
 	    no strict;
-	    if(-f $file and open($FileHandle, $file)){
+	    if(-f $file and open($FileHandle, "$file")){
 		use strict;
 
 		print "Opened include file '$file'\n" if $Debug;
@@ -390,6 +400,8 @@ sub read_line{
 	}
     }
     use strict;
+
+    my $FormattedLine = $_ if $Format;
 
     if($UserInput and /^\#(BEGIN_COMP|END_COMP|RUN|USERINPUTBEGIN)\b/){
 	&print_error( " for command $_".
@@ -463,6 +475,33 @@ sub read_line{
     
     $nLine++;
 
+    if($Format){
+	$FormattedLine =~ s/[\s\n]+$//;                # remove trailing spaces
+	$FormattedLine =~ s/^( *)//; my $indent = $1;  # remove initial spaces
+	if($FormattedLine =~ /^(\#(RUN|END))\b/){
+	    $FormattedLine = "$1 "."#" x 74;
+	}elsif($FormattedLine =~ /^(#(END|BEGIN)_COMP \w\w)/){
+	    $FormattedLine = "$1 " . "-" x (77 - length($1));
+	}elsif($FormattedLine =~ /^(#USERINPUT(BEGIN|END))/){
+	    $FormattedLine = "$1 " . "-" x (50 - length($1));
+	}else{
+	    # Get comment after 3 spaces or TAB
+	    $FormattedLine =~ s/(   |\t)\s*(.*)//; 
+	    my $comment = $2;
+	    # Overwrite first word of comment with parameter name if passed
+	    my $paramName = $_[0]; # optional argument of read_line
+	    $comment =~ s/^\S*/$paramName/ if $paramName;
+	    $FormattedLine = $indent.$FormattedLine; # Put back the indent
+	    # Append comment with 2 or 3 tabs
+	    if($comment){
+		my $sep = "\t" x (2 + (length($FormattedLine) < 8));
+		$FormattedLine .= "$sep$comment";
+	    }
+	}
+	# Append line to the end of the formatted file
+	$FormattedFile[$IncludeLevel] .= "$FormattedLine\n";
+    }
+
     # Return the line only for the selected component outside user input
     if($InsideComp eq $NameComp and not $UserInput){
 	return $_;
@@ -470,15 +509,28 @@ sub read_line{
 	return "\n";
     }
 }
+
 ##############################################################################
 sub previous_file{
-    # Select previous file if it exists
+    # Select previous file if it exists and close current file
+    # Save formatted version if $Format is true
 
-    if($IncludeLevel > 0){
+    if($IncludeLevel > 0 or not $Interactive){
+
 	no strict;
 	close $FileHandle;
 	use strict;
 
+	if($Format){
+	    # Save original file into _orig_ and replace with formatted version
+	    rename $InputFile, $InputFile."_orig_";
+	    open OUTFILE, ">$InputFile";
+	    print OUTFILE $FormattedFile[$IncludeLevel];
+	    close OUTFILE;
+	}
+    }
+
+    if($IncludeLevel > 0){
 	# Restore previous include level
 	$IncludeLevel--;
 	$InputFile = $InputFile[$IncludeLevel];
@@ -613,12 +665,11 @@ sub read_parameter{
 
     # read the value of the parameter
     print "$paramName=" if $Debug;
-    $paramValue = &read_line or return 0;
+    $paramValue = &read_line($paramName) or return 0;
     chop $paramValue;
-
     $paramValue =~ s/^\s+//;     # Remove leading spaces
     $paramValue =~ s/\t.*// or   # Remove everything after a TAB
-	$paramValue =~ s/   .*//;# or remove everything after 3 spaces
+    	$paramValue =~ s/   .*//;# or remove everything after 3 spaces
     $paramValue =~ s/\s+$//;     # Remove trailing spaces
 
     $paramValue = uc($paramValue) if $case eq "upper";
@@ -1087,6 +1138,9 @@ Usage:
 
   -D            print debug information
 
+  -F            format the PARAMFILE by adding parameter names after proper
+                TAB separators and properly formatted separator lines.
+
   -v            verbosity adds command description to every error message.
 
   -x=XMLFILE    Use XMLFILE for the XML description. 
@@ -1118,9 +1172,10 @@ Usage:
 
 Examples:
 
-    Check CON parameters in run/PARAM.in for correctness with verbose info:
+    Check CON parameters in run/PARAM.in for correctness with verbose info
+    and fix the formatting:
 
-CheckParam.pl -C='GM,IH,IE' -v
+CheckParam.pl -F -C='GM,IH,IE' -v
 
     Check GM parameters in run/PARAM_new.in for correctness:
 
