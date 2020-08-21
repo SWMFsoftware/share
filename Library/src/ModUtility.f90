@@ -248,9 +248,9 @@ contains
        k = index(NameDir(i:l), '/')
        if(k > 1) j = i + k - 1
 
-       ! Create (sub)directory. This line should NOT be broken so that
-       ! target LIB_NO_C works!
-       iError = system('mkdir -p -m'//sPermission//' '//NameDir(1:j))
+       ! Create (sub)directory.
+       call execute_command_line( &
+            'mkdir -p -m'//sPermission//' '//NameDir(1:j), EXITSTAT=iError)
 
        ! Check for errors
        if(iError /= 0)then
