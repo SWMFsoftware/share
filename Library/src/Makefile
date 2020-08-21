@@ -80,18 +80,6 @@ ${MY_LIB}: ${OBJECTS}
 	rm -f ${MY_LIB}
 	${AR} ${MY_LIB} ${OBJECTS}
 
-LIB_NO_C:DEPEND
-	perl -pi -e 's/(iError = make_dir_c)/\!$$1/' ModUtility.f90
-	-${MAKE} LIB_NO_C_
-	perl -pi -e 's/\!+(iError = make_dir_c)/$$1/' ModUtility.f90
-	@echo
-	@echo ${MY_LIB} has been brought up to date.
-	@echo
-
-LIB_NO_C_: ${OBJECTS}
-	rm -f ${MY_LIB}
-	${AR} ${MY_LIB} ${OBJECTS}
-
 ${BINDIR}/PostIDL.exe: PostIDL.o ${MY_LIB}
 	${LINK.f90} -o ${BINDIR}/PostIDL.exe PostIDL.o -L${LIBDIR} -lSHARE ${Lflag}
 
