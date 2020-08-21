@@ -76,9 +76,9 @@ LIB:	DEPEND
 	@echo ${MY_LIB} has been brought up to date.
 	@echo
 
-${MY_LIB}: ${OBJECTS} ModUtility_c.o
+${MY_LIB}: ${OBJECTS}
 	rm -f ${MY_LIB}
-	${AR} ${MY_LIB} ${OBJECTS} ModUtility_c.o
+	${AR} ${MY_LIB} ${OBJECTS}
 
 LIB_NO_C:DEPEND
 	perl -pi -e 's/(iError = make_dir_c)/\!$$1/' ModUtility.f90
@@ -116,9 +116,9 @@ LIBSO: DEPEND
 	@echo ${MY_DYN_LIB} has been brought up to date.
 	@echo
 
-${MY_DYN_LIB}: ${OBJECTS} ModUtility_c.o
+${MY_DYN_LIB}: ${OBJECTS}
 	rm -f ${MY_DYN_LIB}
-	${LINK.f90} -shared -fPIC -o ${MY_DYN_LIB} ${OBJECTS} ModUtility_c.o -lstdc++
+	${LINK.f90} -shared -fPIC -o ${MY_DYN_LIB} ${OBJECTS} -lstdc++
 
 clean: cleanfiles
 

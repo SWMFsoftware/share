@@ -204,14 +204,12 @@ contains
   !BOP ========================================================================
   !ROUTINE: make_dir - Create a directory
   !INTERFACE:
-  subroutine make_dir(NameDir, iPermissionIn, iErrorOut, iErrorNumberOut)
+  subroutine make_dir(NameDir, iErrorOut, iErrorNumberOut)
 
     use iso_c_binding
 
     !INPUT ARGUMENTS:
     character(len=*), intent(in):: NameDir ! Directory name
-
-    integer, intent(in), optional:: iPermissionIn ! Access permission
 
     !OUTPUT ARGUMENTS:
     integer, intent(out), optional:: iErrorOut    ! 0 on success, -1 otherwise
@@ -222,46 +220,21 @@ contains
     ! Nested directories are also allowed.
     ! If the directory already exists, this function does nothing.
     !
-    ! The optional iPermissionIn parameter sets the permissions for the new
-    ! directory. This should be specified in octal notation, which in
-    ! Fortran is written with a capital O followed by the digits in quotes. 
-    ! For instance, the permissions 0755 would be written as O'0775',
-    ! which is the default value (drwxr-xr-x).
-    ! The actual directory will have permissions modified by 
-    ! the default mask (set by the Unix command umask). 
-    !
     ! The optional iErrorOut is set to 0 if no error occured and -1 otherwise. 
     ! If iError is not present, the code stops with an error message.
     !
-    ! The iErrorNumber contains the return value from the C mkdir() function.
-    ! Values of iErrorNumber are found in errno.h and are not standardized,
-    ! so exact values of these should not be relied upon.
     !EOP
 
-    integer(c_int):: iPermission ! Octal permissions (value passed to C)
-    integer:: iErrorNumber       ! Error number as returned from C
-    integer:: iError             ! Return value as retrieved from C
-
-    interface
-       ! Interface for mkdir_wrapper implemented in ModUtility_c.c
-       integer(kind=c_int) function make_dir_c(path, perm, errno) bind(C)
-         use iso_c_binding
-         character(kind=c_char), intent(in):: path
-         integer(kind=c_int), intent(in), value:: perm
-         integer(kind=c_int), intent(out):: errno
-       end function make_dir_c
-
-    end interface
+    character(len=3) :: sPermission
+    integer:: iErrorNumber       ! Error number
+    integer:: iError             ! Return value as retrieved from shell
 
     integer:: i, j, k, l
 
     character(len=*), parameter:: NameSub = 'make_dir'
     !------------------------------------------------------------------------
-    if(.not. present(iPermissionIn)) then
-       iPermission = O'0755'
-    else
-       iPermission = iPermissionIn
-    endif
+
+    sPermission = '755'
 
     ! Create the directory. 
     ! If NameDir contains one or more /, then create the top directory first
@@ -277,16 +250,15 @@ contains
 
        ! Create (sub)directory. This line should NOT be broken so that
        ! target LIB_NO_C works!
-       iError = make_dir_c(NameDir(1:j)//C_NULL_CHAR,iPermission,iErrorNumber)
+       iError = system('mkdir -p -m'//sPermission//' '//NameDir(1:j))
 
        ! Check for errors
        if(iError /= 0)then
           if(present(iErrorOut))then
              iErrorOut = iError
-             if(present(iErrorNumberOut)) iErrorNumberOut = iErrorNumber
              RETURN
           else
-             write(*,*) NameSub,' iError, iErrorNumber=', iError, iErrorNumber 
+             write(*,*) NameSub,' iError =', iError
              call CON_stop(NameSub// &
                   ' failed to open directory '//trim(NameDir))
           end if
@@ -298,7 +270,6 @@ contains
     end do
 
     if(present(iErrorOut))       iErrorOut = iError
-    if(present(iErrorNumberOut)) iErrorNumberOut = iErrorNumber
 
   end subroutine make_dir
 
