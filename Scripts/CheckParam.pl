@@ -523,10 +523,12 @@ sub previous_file{
 
 	if($Format){
 	    # Save original file into _orig_ and replace with formatted version
+	    print "CheckParam.pl: mv $InputFile ${InputFile}_orig_\n";
 	    rename $InputFile, $InputFile."_orig_";
 	    open OUTFILE, ">$InputFile";
 	    print OUTFILE $FormattedFile[$IncludeLevel];
 	    close OUTFILE;
+	    $FormattedFile[$IncludeLevel] = "";
 	}
     }
 
@@ -698,13 +700,17 @@ sub check_value_format{
     }
     elsif($paramType =~ /real/)
     {
-
-	# 3 -3 -3. .21 -3.21 -3.21e2 -3.21D+21, 3/6, 3.6/4.2, 5.0D0/3.0D0
+	# 3 -3 -3. .21 -3.21 -3.21e2 -3.21D+21, 3/6, 3.6*4.2, 5.0D0/3.0D0
+	# 1e3 s   3 min   3.5 hour  5*7 days  5 weeks   1/3 year
+	# 2020-02-14:12-05-44:012 UT
 	$bad = &bad_value
-	    unless $paramValue =~ 
-		/^[\+\-]?(\d+(\.\d*)?|\.\d+)([ed][\+\-]?\d+)?
-		(\s*\/\s*
-		  [\+\-]?(\d+(\.\d*)?|\.\d+)([ed][\+\-]?\d+)?)?$/xi;
+	    unless
+	    $paramValue =~ /^\s*\d\d\d\d.\d\d.\d\d.\d\d.\d\d.\d\d.\d\d\d UT/ or
+	    $paramValue =~ /^[\+\-]?(\d+(\.\d*)?|\.\d+)([ed][\+\-]?\d+)?
+	    (\s*[\/\*]\s*
+	     [\+\-]?(\d+(\.\d*)?|\.\d+)([ed][\+\-]?\d+)?)?
+	    (\ (s|m|h|d|w|y)\w*)?$/xi;
+	    
     }
     elsif($paramType =~ /string/)
     {
