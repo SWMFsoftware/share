@@ -25,6 +25,7 @@ my $GridSize    = $g; undef $g;
 my $nProc       = $n; undef $n;
 my $StandAlone  = $S; undef $S;
 my $Format      = $F; undef $F;
+my $Files   = ",$f,"; undef $f; # comma separated list of files
 
 use strict;
 
@@ -104,6 +105,7 @@ my $paramType;          # type of the current parameter
 my $paramValue;         # value of the current parameter
 my $UserInput;          # set to true between #USERINPUTBEGIN and #USERINPUTEND
 my $InsideComp;         # the component for which parameters are read
+my $Dir;                # directory of the PARAMFILE
 
 $InsideComp = $NameComp if $StandAlone; # For stand alone mode start reading
                                         # the component commands immediately.
@@ -116,11 +118,10 @@ if($Interactive){
     $FileHandle="F$IncludeLevel";
     # Change into local directory if necessary
     $InputFile =~ s/(.*)\///;
-    if($1){
-	chdir $1 or
-	    die "$ERROR Could not change directory to $1\n";
-	print "chdir $1\n" if $Debug;
-    }
+    $Dir = ($1 or '.');
+    chdir $Dir or
+	die "$ERROR Could not change directory to $Dir\n";
+    print "chdir $Dir\n" if $Debug;
 
     no strict;
     open($FileHandle, $InputFile) or
@@ -522,12 +523,17 @@ sub previous_file{
 	use strict;
 
 	if($Format){
-	    # Save original file into _orig_ and replace with formatted version
-	    print "CheckParam.pl: mv $InputFile ${InputFile}_orig_\n";
-	    rename $InputFile, $InputFile."_orig_";
+	    # Save original file into _orig_ unless it has already been saved.
+	    if($Files !~ /,$Dir\/$InputFile,/){
+		print "CheckParam.pl: mv $Dir/$InputFile $Dir/${InputFile}_orig_\n";
+		rename $InputFile, $InputFile."_orig_";
+		$Files .= "$Dir/$InputFile,"; # in case the same file is included twice
+	    }
+	    # replace input file with the formatted version
 	    open OUTFILE, ">$InputFile";
 	    print OUTFILE $FormattedFile[$IncludeLevel];
 	    close OUTFILE;
+	    # Remove formatted version
 	    $FormattedFile[$IncludeLevel] = "";
 	}
     }
@@ -1133,7 +1139,7 @@ sub print_help{
 
 Usage:
 
-  CheckParam.pl [-h] [-H] [-X] [-v] [-D] [-x=XMLFILE]
+  CheckParam.pl [-h] [-H] [-X] [-v] [-D] [-F [-f=FILELIST]] [-x=XMLFILE]
                 [-S] [-c=ID] [-C=IDLIST] [-p=PRECISION] [-i] [PARAMFILE]
 
   -h            print help message and stop
@@ -1144,8 +1150,13 @@ Usage:
 
   -D            print debug information
 
-  -F            format the PARAMFILE by adding parameter names after proper
-                TAB separators and properly formatted separator lines.
+  -F            Format the PARAMFILE and the included files by adding parameter 
+                names after proper TAB separators and format separator lines.
+                The original files are copied into FILENAME_orig_.
+
+  -f=FILELIST   Comma separated list of files that have been formatted alredy.
+                This feature is needed by SWMF/Scripts/TestParam.pl as it checks
+                the sames files multiple times for CON and the components.
 
   -v            verbosity adds command description to every error message.
 
@@ -1179,9 +1190,10 @@ Usage:
 Examples:
 
     Check CON parameters in run/PARAM.in for correctness with verbose info
-    and fix the formatting:
+    and fix the formatting of the input files (PARAM.in and RESTART.in was
+    already formatted):
 
-CheckParam.pl -F -C='GM,IH,IE' -v
+CheckParam.pl -F -f=PARAM.in,RESTART.in -C='GM,IH,IE' -v
 
     Check GM parameters in run/PARAM_new.in for correctness:
 
