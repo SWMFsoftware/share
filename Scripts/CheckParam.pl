@@ -519,6 +519,10 @@ sub previous_file{
     if($IncludeLevel > 0 or not $Interactive){
 
 	no strict;
+	if($Format){
+	    #Read rest of file (after #END) into FormattedFile
+	    $FormattedFile[$IncludeLevel] .= $_ while <$FileHandle>;
+	}
 	close $FileHandle;
 	use strict;
 
