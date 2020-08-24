@@ -105,7 +105,9 @@ sub execute_gitall(){
    my @gits= grep { /^.git$/ } readdir($DIR);
    closedir($DIR);
    opendir(my $DIR,"$dir") or die "gitall can't open directory $dir\n";
-   my @subdirs = grep { /^[^.]/  && -d "$dir/$_"} readdir($DIR);
+   # Exclude directories starting with . and symbolic links
+   my @subdirs = 
+       grep { /^[^.]/ and -d "$dir/$_" and not -l "$dir/$_"} readdir($DIR);
    closedir($DIR);
    push @subdirs,@gits;
 
