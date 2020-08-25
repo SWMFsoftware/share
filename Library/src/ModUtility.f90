@@ -204,7 +204,7 @@ contains
   !BOP ========================================================================
   !ROUTINE: make_dir - Create a directory
   !INTERFACE:
-  subroutine make_dir(NameDir, iErrorOut, iErrorNumberOut)
+  subroutine make_dir(NameDir, iErrorOut)
 
     use iso_c_binding
 
@@ -213,63 +213,34 @@ contains
 
     !OUTPUT ARGUMENTS:
     integer, intent(out), optional:: iErrorOut    ! 0 on success, -1 otherwise
-    integer, intent(out), optional:: iErrorNumberOut ! C error number
 
     !DESCRIPTION:
-    ! Create the directory specified by NameDir. Trailing spaces are ignored.
-    ! Nested directories are also allowed.
+    ! Create the directory using "mkdir -p -m755 NameDir"
     ! If the directory already exists, this function does nothing.
+    ! The default 755 permission can be overwritten by including it into 
+    ! NameDir, for example NameDir = '-m777 Public'.
     !
-    ! The optional iErrorOut is set to 0 if no error occured and -1 otherwise. 
-    ! If iError is not present, the code stops with an error message.
+    ! If the optional iErrorOut is present, it is set to the error code, 
+    ! which is 0 if no error occurred. Otherwise the code stops with an 
+    ! error message if an error occurs.
     !
     !EOP
 
-    character(len=3) :: sPermission
-    integer:: iErrorNumber       ! Error number
     integer:: iError             ! Return value as retrieved from shell
-
-    integer:: i, j, k, l
 
     character(len=*), parameter:: NameSub = 'make_dir'
     !------------------------------------------------------------------------
 
-    sPermission = '755'
+    ! Create directory
+    call execute_command_line('mkdir -p -m755 '//NameDir, EXITSTAT=iError)
 
-    ! Create the directory. 
-    ! If NameDir contains one or more /, then create the top directory first
-    ! and then the subdirectories.
-
-    l = len_trim(NameDir)
-    i = 1
-    do
-       ! Find the next '/' in NameDir
-       j = l
-       k = index(NameDir(i:l), '/')
-       if(k > 1) j = i + k - 1
-
-       ! Create (sub)directory.
-       call execute_command_line( &
-            'mkdir -p -m'//sPermission//' '//NameDir(1:j), EXITSTAT=iError)
-
-       ! Check for errors
-       if(iError /= 0)then
-          if(present(iErrorOut))then
-             iErrorOut = iError
-             RETURN
-          else
-             write(*,*) NameSub,' iError =', iError
-             call CON_stop(NameSub// &
-                  ' failed to open directory '//trim(NameDir))
-          end if
-       end if
-
-       i = j + 1
-       if(i > l) EXIT
-
-    end do
-
-    if(present(iErrorOut))       iErrorOut = iError
+    if(present(iErrorOut)) then
+       iErrorOut = iError
+       RETURN
+    elseif(iError /= 0)then
+       write(*,*) NameSub,' iError =', iError
+       call CON_stop(NameSub//' failed to make directory '//trim(NameDir))
+    end if
 
   end subroutine make_dir
 
