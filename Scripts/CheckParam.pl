@@ -33,7 +33,7 @@ use strict;
 my @FormattedFile;
 
 # Pattern to match component ID-s
-my $ValidComp = 'EE|GM|IE|IH|IM|OH|PC|PS|PT|PW|RB|SC|SP|UA';
+my $ValidComp = 'CZ|EE|GM|IE|IH|IM|OH|PC|PS|PT|PW|RB|SC|SP|UA';
 
 # Error string
 my $ERROR = 'CheckParam_ERROR:';
