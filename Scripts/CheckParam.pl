@@ -527,13 +527,14 @@ sub previous_file{
 	use strict;
 
 	if($Format){
-	    # Save original file into _orig_ unless it has already been saved.
+	    # Save original file into _orig_ unless it has already been saved or if it is a link
 	    if($Files !~ /,$Dir\/$InputFile,/){
 		print "CheckParam.pl: mv $Dir/$InputFile $Dir/${InputFile}_orig_\n";
-		rename $InputFile, $InputFile."_orig_";
+		# rename does not work for a link, so copy
+		`cp $InputFile ${InputFile}_orig_`;
 		$Files .= "$Dir/$InputFile,"; # in case the same file is included twice
 	    }
-	    # replace input file with the formatted version
+	    # replace input file with the formatted version (works for links too)
 	    open OUTFILE, ">$InputFile";
 	    print OUTFILE $FormattedFile[$IncludeLevel];
 	    close OUTFILE;
