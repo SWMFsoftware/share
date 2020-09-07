@@ -527,10 +527,10 @@ sub previous_file{
 	use strict;
 
 	if($Format){
-	    # Save original file into _orig_ unless it has already been saved or if it is a link
+	    # Save original file into _orig_ unless it has already been saved
 	    if($Files !~ /,$Dir\/$InputFile,/){
-		print "CheckParam.pl: mv $Dir/$InputFile $Dir/${InputFile}_orig_\n";
 		# rename does not work for a link, so copy
+		print "CheckParam.pl: cp $Dir/$InputFile $Dir/${InputFile}_orig_\n";
 		`cp $InputFile ${InputFile}_orig_`;
 		$Files .= "$Dir/$InputFile,"; # in case the same file is included twice
 	    }
