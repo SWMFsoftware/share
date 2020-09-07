@@ -895,9 +895,17 @@ sub set_amrex_{
     if($NewAmrex eq "yes" and not -e "util/AMREX/InstallDir/lib/libamrex.a"){
 	my $installdir = "InstallDir";
 	my $AmrexCompiler="intel";
-	$AmrexCompiler="gnu" if $Compiler eq "gfortran";
+	if($Compiler eq "gfortran"){
+	    if(index(`mpicxx -show`, "clang") != -1){
+		# mpicxx is installed with clang
+		$AmrexCompiler = "llvm";
+	    }else{
+		$AmrexCompiler="gnu";
+	    }; 	   	    
+	}
+	
 	$AmrexCompiler="nag" if $Compiler eq "nagfor";
-
+	
 	&shell_command("cd util/AMREX;", 
 		       "./configure --prefix $installdir --comp $AmrexCompiler --enable-fortran-api no --debug $Debug --enable-tiny-profile yes;",
 		       "rm -rf util/AMREX/InstallDir");
