@@ -29,6 +29,10 @@ $Compiler eq "f95" or $Compiler eq "nagfor"
 	${COMPILE.f90} ${Cflag0} -dusty ModMpiInterfaces.f90
 	${COMPILE.f90} ${Cflag0} -dusty ModMpi.f90
 
+$Compiler eq "gfortran"
+	${COMPILE.f90} ${Cflag0} -fallow-argument-mismatch ModMpiInterfaces.f90
+	${COMPILE.f90} ${Cflag0} -fallow-argument-mismatch ModMpi.f90
+
 # Use LINK.f90 (usually mpif90) so the mpif.h header file can be included
 1
 	${LINK.f90} ${Cflag0} ModMpiOrig.f90
