@@ -2,7 +2,8 @@
 pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
                     extra_plt_info=extra_plt_info,          $
                     UseTimePlotName=UseTimePlotName,        $
-                    CharSizeLocal=CharSizeLocal
+                    CharSizeLocal=CharSizeLocal,            $
+                    DoPlotTe=DoPlotTe
 
   if (not keyword_set(dir_sim)) then begin
      if (file_test('./simdata', /directory)) then begin
@@ -28,7 +29,8 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
   endelse
   if (not keyword_set(UseTimePlotName)) then UseTimePlotName = 0
   if (not keyword_set(CharSizeLocal))   then CharSizeLocal = 2.5
-
+  if (not keyword_set(DoPlotTe))        then DoPlotTe = 0
+  
   files_sim = file_search(dir_sim+'/*sat', count = nSimFile)
 
   if (nSimFile eq 0) then begin
@@ -143,8 +145,6 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
         end
      endcase
 
-     ; Set DoPlotTe = 0 to exclude Te Plot
-     ; DoPlotTe = 0
      plot_insitu, time_obs, u_obs,  n_obs,  tem_obs, mag_obs,             $
                   time_swmf, ur_swmf, n_swmf,  ti_swmf,  te_swmf, B_swmf, $
                   start_time, end_time, fileplot=fileplot, type=type,     $
