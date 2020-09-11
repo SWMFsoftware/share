@@ -1601,12 +1601,14 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
             linestyle=linestyletmp,                   $
             charsize=1,pspacing=1.8,charthick=5,bthick=5,position=[0.15,0.95],$
             /norm,box=0
+     legend,dist_int(0),thick=6,charsize=1,charthick=5,position=[0.75,0.94],$
+            /norm,box=0
   endif else begin
      legend,legendNames, colors=color_I[indgen(nplot+1)], $
             psym=0,textcolor=0,thick=6,linestyle=0,$
             charsize=1,pspacing=1.8,charthick=5,bthick=5,position=[0.15,0.95],$
             /norm,box=0
-     legend,dist_int(0),thick=6,charsize=1,charthick=5,position=[0.75,0.92],$
+     legend,dist_int(0),thick=6,charsize=1,charthick=5,position=[0.75,0.94],$
             /norm,box=0
   endelse
   
