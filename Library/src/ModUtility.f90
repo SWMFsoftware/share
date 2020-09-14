@@ -215,9 +215,9 @@ contains
     integer, intent(out), optional:: iErrorOut    ! 0 on success, -1 otherwise
 
     !DESCRIPTION:
-    ! Create the directory using "mkdir -p -m755 NameDir"
+    ! Create the directory using "mkdir -p NameDir"
     ! If the directory already exists, this function does nothing.
-    ! The default 755 permission can be overwritten by including it into 
+    ! The permission can be set by including it into 
     ! NameDir, for example NameDir = '-m777 Public'.
     !
     ! If the optional iErrorOut is present, it is set to the error code, 
@@ -232,7 +232,7 @@ contains
     !------------------------------------------------------------------------
 
     ! Create directory
-    call execute_command_line('mkdir -p -m755 '//NameDir, EXITSTAT=iError)
+    call execute_command_line('mkdir -p '//trim(NameDir), EXITSTAT=iError)
 
     if(present(iErrorOut)) then
        iErrorOut = iError
