@@ -553,16 +553,22 @@ sub previous_file{
 
 	if($Format){
 	    # Save original file into _orig_ unless it has already been saved
+	    my $OrigFile = "${InputFile}_orig_";
 	    if($Files !~ /,$Dir\/$InputFile,/){
 		# rename does not work for a link, so copy
-		print "CheckParam.pl: cp $Dir/$InputFile $Dir/${InputFile}_orig_\n";
-		`cp $InputFile ${InputFile}_orig_`;
+		`cp $InputFile $OrigFile`;
 		$Files .= "$Dir/$InputFile,"; # in case the same file is included twice
 	    }
 	    # replace input file with the formatted version (works for links too)
 	    open OUTFILE, ">$InputFile";
 	    print OUTFILE $FormattedFile[$IncludeLevel];
 	    close OUTFILE;
+	    if(`diff $InputFile $OrigFile`){
+		print "CheckParam.pl: cp $Dir/$InputFile $Dir/$OrigFile\n";
+	    }else{
+		unlink $OrigFile;
+	    }
+	    
 	    # Remove formatted version
 	    $FormattedFile[$IncludeLevel] = "";
 	}
