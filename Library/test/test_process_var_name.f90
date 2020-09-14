@@ -15,7 +15,7 @@ program process_var_name_test
   implicit none
 
   integer  :: nDensity, nSpeed, nP, nPpar, nVar, iVar
-  integer  :: nWaveName, nMaterialName
+  integer  :: nWaveName, nMaterialName, nChargeStateName
   character(len=15),allocatable :: NameVarFixed_V(:)
   ! ----------------------------------------------------------
   nVar = size(NameVar_V,1)
@@ -32,7 +32,7 @@ program process_var_name_test
   end do
 
   call process_var_name(nVar, NameVarFixed_V, &
-       nDensity, nSpeed, nP, nPpar, nWaveName, nMaterialName)
+       nDensity, nSpeed, nP, nPpar, nWaveName, nMaterialName, nChargeStateName)
 
   write(*,*) 'Original  Standardized  nDensity=',nDensity,'nSpeed=',nSpeed
   write(*,*) '--------  ------------'
@@ -50,12 +50,12 @@ contains
     character(len=3):: NameWave
     integer :: iMaterial
     character(len=2):: NameMaterial
-    !-------------------------------------------------------------------------           
+    !-------------------------------------------------------------------------
     iWave = 1
     iMaterial = 1
     do iVar = 1, nVar
   
-       ! Fix the NameVar_V string for waves                                              
+       ! Fix the NameVar_V string for waves
        if(index(NameVar_V(iVar),'I?') >= 1) then
           write(NameWave,'(a,i2.2)') 'i',iWave
           NameVar_V(iVar) = NameWave
