@@ -16,7 +16,6 @@ module ModProcessVarName
      module procedure process_var_list, process_var_string
   end interface
 
-
   integer, parameter:: nVarMax = 100   ! maximum number of state variables
   integer, parameter:: nSubstance = 34 ! number of distinct fluids/species
 
@@ -29,6 +28,9 @@ module ModProcessVarName
   ! State variables not associated with a specific fluid/ specie
   integer, parameter:: nVarExtra = 16
 
+   ! Number of elements for charge state calculation
+  integer, parameter:: nElementAll = 30
+  
   ! Named indices for all substances (species or fluids)
   integer, parameter:: &
        H_    = 1,  &
@@ -142,6 +144,39 @@ module ModProcessVarName
        'sign ', &
        'lperp' /)
 
+  ! Named indices for all elements in charge state calculation
+  character(len=2) :: NameElementAll_I(nElementAll) = (/&
+       'h ', &
+       'he', &
+       'li', &
+       'be', &
+       'b ', &
+       'c ', &
+       'n ', &
+       'o ', &
+       'f ', &
+       'ne', &
+       'na', &
+       'mg', &
+       'al', &
+       'si', &
+       'p ', &
+       's ', &
+       'cl', &
+       'ar', &
+       'k ', &
+       'ca', &
+       'sc', &
+       'ti', &
+       'v ', &
+       'cr', &
+       'mn', &
+       'fe', &
+       'co', &
+       'ni', &
+       'cu', &
+       'zn' /)
+  
   character(len=5) :: NameVarExtraStandardized_I(nVarExtra) = (/ &
        'Bx   ', &
        'By   ', &
@@ -169,37 +204,37 @@ module ModProcessVarName
 contains
 
   subroutine process_var_string(NameVar,  &
-       nDensity, nSpeed, nP, nPpar, nWave, nMaterial)
+       nDensity, nSpeed, nP, nPpar, nWave, nMaterial, nChargeStateAll)
 
     use ModUtilities,  ONLY: split_string, join_string
 
     character(len=*), intent(inout) :: NameVar
     integer,intent(out)             :: nDensity, nSpeed, nP, nPpar
-    integer,intent(out)             :: nWave, nMaterial
-
-    integer :: nVarName
-    integer, parameter:: MaxNameVar = 100
-    character(len=20):: NameVar_V(MaxNameVar)
+    integer,intent(out)             :: nWave, nMaterial, nChargeStateAll
+    
+    integer            :: nVarName
+    integer, parameter :: MaxNameVar = 100
+    character(len=20)  :: NameVar_V(MaxNameVar)
     !-----------------------------------------------------------------------
 
     call split_string(NameVar, MaxNameVar, NameVar_V, nVarName)
 
     call process_var_list(nVarName, NameVar_V,  &
-         nDensity, nSpeed, nP, nPpar, nWave, nMaterial)
+         nDensity, nSpeed, nP, nPpar, nWave, nMaterial, nChargeStateAll)
 
     call join_string(nVarName, NameVar_V(1:nVarName), NameVar)
 
   end subroutine process_var_string
   !==========================================================================
   subroutine process_var_list(nVarName, NameVar_V,  &
-       nDensity, nSpeed, nP, nPpar, nWave, nMaterial)
+       nDensity, nSpeed, nP, nPpar, nWave, nMaterial, nChargeStateAll)
 
     use ModUtilities,  ONLY: lower_case
 
     integer,intent(in)                :: nVarName
     character(len=*), intent(inout)   :: NameVar_V(nVarName)
     integer,intent(out)               :: nDensity, nSpeed, nP, nPpar
-    integer,intent(out)               :: nWave, nMaterial
+    integer,intent(out)               :: nWave, nMaterial, nChargeStateAll
 
     ! DESCRIPTION:
     ! ------------
@@ -235,11 +270,17 @@ contains
     integer                           :: iName, iVar, iSubstanceFound = 0
     logical                           :: IsFoundVar 
 
+    ! For charge state loop
+    integer                           :: iElementAll
+    character(len=4)                  :: NameChargeStateFirst, &
+         NameChargeStateLast
+
     character(len=*), parameter:: NameSub = 'process_var_name'
     ! ------------------------------------------------------------------------
     nDistinctSubstanceVar_I(:) = 0
     nWave = 0
     nMaterial = 0
+    nChargeStateAll = 0
 
     ! create standard names and dictionary arrays
     allocate(SubstanceStandardName_II(nSubstance, nVarPerSubstance))
@@ -288,6 +329,28 @@ contains
           CYCLE NAMELOOP
        end if
 
+       ! Charge state variable names by the elements
+       do iElementAll = 1, nElementAll
+          if(iElementAll < 9) then
+             write(NameChargeStateLast,'(a,i1.1)')&
+                  trim(NameElementAll_I(iElementAll)),iElementAll+1
+             write(NameChargeStateFirst,'(a,i1.1)')&
+                  trim(NameElementAll_I(iElementAll)),1
+          else
+             write(NameChargeStateLast,'(a,i2.2)')&
+                  trim(NameElementAll_I(iElementAll)),iElementAll+1
+             write(NameChargeStateFirst,'(a,i2.2)')&
+                  trim(NameElementAll_I(iElementAll)),1
+          end if
+
+          if (lge(NameVarIn,NameChargeStateFirst) .and. &
+               lle(NameVarIn,NameChargeStateLast)) then
+             nChargeStateAll = nChargeStateAll + 1
+             IsFoundVar = .true.
+             CYCLE NAMELOOP
+          end if
+       end do
+       
        if(.not. IsFoundVar) then 
           write(*,*) 'ERROR: Var name not in dictionary: ',NameVarIn
           write(*,*) 'Please use standard variable names in ModEquation '// &
