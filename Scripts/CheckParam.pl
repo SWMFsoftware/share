@@ -105,6 +105,8 @@ my $paramType;          # type of the current parameter
 my $paramValue;         # value of the current parameter
 my $UserInput;          # set to true between #USERINPUTBEGIN and #USERINPUTEND
 my $InsideComp;         # the component for which parameters are read
+my $UseComp=1;          # becomes false if the component gets switched off
+my $CompSection;        # line number of BEGIN_COMP $NameComp in this session
 my $Dir;                # directory of the PARAMFILE
 
 $InsideComp = $NameComp if $StandAlone; # For stand alone mode start reading
@@ -152,7 +154,7 @@ while($_=&read_line){
 }
 # Check if the final session has the required commands defined and
 # if the parameters are correct
-&check_session;
+&check_session if $UseComp;
 
 exit $IsError;
 
@@ -285,7 +287,7 @@ sub find_commands{
 	    $realName{$realName}=$realName;
 	    $command{$realName} =$node;
 
-	    print "found command $realName\n" if $Debug;
+	    #print "found command $realName\n" if $Debug;
 	    
 	    if($Verbose){
 		# Store the text of the command
@@ -422,6 +424,9 @@ sub read_line{
 		&print_error(" for command $_".
 			     "\tincorrectly formatted BEGIN_COMP command");
 
+	    # Store the line number of BEGIN_COMP for later checking
+	    $CompSection = $nLine if $NameComp and ($NameComp eq $InsideComp);
+
 	    # Check if the component is registered and ON
 	    if($Components){
 		if(not $COMP::_Registered{$InsideComp}){
@@ -454,16 +459,36 @@ sub read_line{
 	    # Return an empty line
 	    $_="\n";
 	}
+    }elsif(/^\#COMPONENT\b/ and 
+	   not $StandAlone and $NameComp and not $InsideComp){
+	# Read the #COMPONENT command and see if the component is switched off
+        $_ = <$FileHandle>;
+	$nLine++;
+	print "$NameComp reading command\n#COMPONENT\n$_" if $Debug;
+	if(/^\s*$NameComp/){
+	    $_ = <$FileHandle>;
+	    $nLine++;
+	    print if $Debug;
+	    $UseComp = /^\s*T/;
+	    &print_error(": component $NameComp is switched off after\n".
+			 "\tBEGIN_COMP $NameComp occured at line $CompSection\n")
+		if $CompSection and not $UseComp;
+	}
+	# Return an empty line
+	$_="\n";
     }elsif(/^\#RUN\b/){ # Check if a new session has started
 	# Check if the required commands are defined and
 	# if the parameters are correct for the session
 
 	print "Session $nSession is complete\n" if $Debug;
 
-	&check_session;
+	if($UseComp){
+	    &check_session;
+	    $COMP::_IsFirstSession=0;
+	}
+	$CompSection = 0;
 	undef %definedSessionLast;
 	$nSession++;
-	$COMP::_IsFirstSession=0;
     }elsif(/^\#USERINPUTBEGIN\b/){
 	$UserInput = $nLine+1;
     }elsif(/^\#USERINPUTEND\b/){
