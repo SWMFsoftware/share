@@ -228,11 +228,17 @@ contains
 
     integer:: iError             ! Return value as retrieved from shell
 
+    character(len=100):: StringCommand
     character(len=*), parameter:: NameSub = 'make_dir'
     !------------------------------------------------------------------------
 
+    ! Check if directory exists
+    call check_dir(NameDir, iError)
+    if(iError == 0) RETURN
+
     ! Create directory
-    call execute_command_line('mkdir -p '//trim(NameDir), EXITSTAT=iError)
+    StringCommand = 'mkdir -p '//trim(NameDir)
+    call execute_command_line(trim(StringCommand), EXITSTAT=iError)
 
     if(present(iErrorOut)) then
        iErrorOut = iError
