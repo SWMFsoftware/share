@@ -328,7 +328,7 @@ sub read_line{
 
     while((not $_=<$FileHandle>) or /^\#(END|INCLUDE)\b/){
 
-	$FormattedFile[$IncludeLevel] .= $_; # if $Format;
+	$FormattedFile[$IncludeLevel] .= $_ if $Format;
 
 	if($_){
 	    # We found an #END or an #INCLUDE command
@@ -461,21 +461,23 @@ sub read_line{
 	}
     }elsif(/^\#COMPONENT\b/ and 
 	   not $StandAlone and $NameComp and not $InsideComp){
-	# Read the #COMPONENT command and see if the component is switched off
-        $_ = <$FileHandle>;
-	$nLine++;
-	print "$NameComp reading command\n#COMPONENT\n$_" if $Debug;
+	# Read the #COMPONENT command parameters and see if the component is switched off
+	$FormattedFile[$IncludeLevel] .= "#COMPONENT\n" if $Format; # save formatted line
+        $_ = <$FileHandle>; s/(\w\w).*/$1\t\t\tNameComp/;           # read and format line
+	$nLine++;                                                   # update line counter
+	print "$NameComp reading #COMPONENT\n$_" if $Debug;
 	if(/^\s*$NameComp/){
-	    $_ = <$FileHandle>;
-	    $nLine++;
+	    $FormattedFile[$IncludeLevel] .= $_ if $Format;         # save formatted line
+	    $_ = <$FileHandle>; s/(T|F).*/$1\t\t\tUseComp/;         # read and format line
+	    $nLine++;                                               # update line counter
 	    print if $Debug;
-	    $UseComp = /^\s*T/;
+	    $UseComp = /^\s*T/;                                     # set UseComp from T|F
 	    &print_error(": component $NameComp is switched off after\n".
 			 "\tBEGIN_COMP $NameComp occured at line $CompSection\n")
 		if $CompSection and not $UseComp;
 	}
-	# Return an empty line
-	$_="\n";
+	# Put last read line into FormattedLine
+	$FormattedLine = $_ if $Format;
     }elsif(/^\#RUN\b/){ # Check if a new session has started
 	# Check if the required commands are defined and
 	# if the parameters are correct for the session
