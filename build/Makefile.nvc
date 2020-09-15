@@ -1,4 +1,4 @@
-# C language related part of Makefile.conf: Makefile.pgcc
+# C language related part of Makefile.conf: Makefile.nvc
 C_COMPILER_NAME=nvc
 # This file is for Bluewaters (and similar) system with Nvidia C compiler
 
