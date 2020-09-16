@@ -504,26 +504,28 @@ sub read_line{
     $nLine++;
 
     if($Format){
-	$FormattedLine =~ s/[\s\n]+$//;                # remove trailing spaces
-	$FormattedLine =~ s/^( *)//; my $indent = $1;  # remove initial spaces
-	if($FormattedLine =~ /^(\#(RUN|END))\b/){
-	    $FormattedLine = "$1 "."#" x 74;
-	}elsif($FormattedLine =~ /^(#(END|BEGIN)_COMP \w\w)/){
-	    $FormattedLine = "$1 " . "-" x (77 - length($1));
-	}elsif($FormattedLine =~ /^(#USERINPUT(BEGIN|END))/){
-	    $FormattedLine = "$1 " . "-" x (50 - length($1));
-	}else{
-	    # Get comment after 3 spaces or TAB
-	    $FormattedLine =~ s/(   |\t)\s*(.*)//; 
-	    my $comment = $2;
-	    # Overwrite first word of comment with parameter name if passed
-	    my $paramName = $_[0]; # optional argument of read_line
-	    $comment =~ s/^\S*/$paramName/ if $paramName;
-	    $FormattedLine = $indent.$FormattedLine; # Put back the indent
-	    # Append comment with 2 or 3 tabs
-	    if($comment){
-		my $sep = "\t" x (2 + (length($FormattedLine) < 8));
-		$FormattedLine .= "$sep$comment";
+	$FormattedLine =~ s/[\s\n]+$//; # remove trailing spaces
+	if(not $UserInput){
+	    $FormattedLine =~ s/^( *)//; my $indent = $1; # remove initial spaces
+	    if($FormattedLine =~ /^(\#(RUN|END))\b/){
+		$FormattedLine = "$1 "."#" x 74;
+	    }elsif($FormattedLine =~ /^(#(END|BEGIN)_COMP \w\w)/){
+		$FormattedLine = "$1 " . "-" x (77 - length($1));
+	    }elsif($FormattedLine =~ /^(#USERINPUT(BEGIN|END))/){
+		$FormattedLine = "$1 " . "-" x (50 - length($1));
+	    }else{
+		# Get comment after 3 spaces or TAB
+		$FormattedLine =~ s/(   |\t)\s*(.*)//; 
+		my $comment = $2;
+		# Overwrite first word of comment with parameter name if passed
+		my $paramName = $_[0]; # optional argument of read_line
+		$comment =~ s/^\S*/$paramName/ if $paramName;
+		$FormattedLine = $indent.$FormattedLine; # Put back the indent
+		# Append comment with 2 or 3 tabs
+		if($comment){
+		    my $sep = "\t" x (2 + (length($FormattedLine) < 8));
+		    $FormattedLine .= "$sep$comment";
+		}
 	    }
 	}
 	# Append line to the end of the formatted file
