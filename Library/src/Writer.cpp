@@ -4,6 +4,8 @@
 #include <cmath>
 #include "Writer.h"
 
+using namespace std; 
+
 bool Writer::doSaveBinary = true;
 
 void Writer::init() {
@@ -176,7 +178,7 @@ void Writer::init() {
 //====================================================================
 
 std::string Writer::add_plasma_variables(std::string varString, int is) const {
-  std::string::size_type pos1, pos2;
+  std::string::size_type pos1;
   std::stringstream ss;
   ss << is;
   std::string iString = ss.str();
@@ -465,14 +467,14 @@ void Writer::write_header(double const timeNow, int const iCycle) {
   outFile << "#SCALARPARAM\n";
   outFile << scalarName_I.size() << "\t nParam\n";
 
-  for (int i = 0; i < scalarName_I.size(); ++i) {
+  for (vector<string>::size_type i = 0; i < scalarName_I.size(); ++i) {
     outFile << scalarValue_I[i] << "\t" << scalarName_I[i] << "\n";
   }
   outFile << "\n";
 
   outFile << "#PLOTVARIABLE\n";
   outFile << var_I.size() - nDimMax << "\t nPlotVar\n";
-  for (int i = nDimMax; i < var_I.size(); ++i)
+  for (vector<string>::size_type i = nDimMax; i < var_I.size(); ++i)
     outFile << var_I[i] << " ";
   for (std::string& sTmp : scalarName_I)
     outFile << sTmp << " ";
@@ -526,7 +528,7 @@ void Writer::set_output_unit() {
   }
 
   No2Out_I.reserve(var_I.size());
-  for (int iVar = 0; iVar < var_I.size(); ++iVar) {
+  for (vector<string>::size_type iVar = 0; iVar < var_I.size(); ++iVar) {
     No2Out_I[iVar] = No2OutTable(var_I[iVar]);
   }
 }

@@ -11,14 +11,15 @@ class Writer; // Forward declaration
 
 typedef std::array<double, 7> ArrayPointLoc; // (i,j,k,x,y,z,iBlock)
 typedef std::vector<ArrayPointLoc> VectorPointList;
-typedef void (*FuncFindPointList)(const Writer&, long int&, VectorPointList&,
-                                  std::array<double, 3>&,
-                                  std::array<double, 3>&);
-typedef void (*FuncGetField)(const VectorPointList&,
-                             const std::vector<std::string>&, MDArray<double>&);
+typedef void (*FuncFindPointList)(const Writer &, long int &, VectorPointList &,
+                                  std::array<double, 3> &,
+                                  std::array<double, 3> &);
+typedef void (*FuncGetField)(const VectorPointList &,
+                             const std::vector<std::string> &, MDArray<double> &);
 
 //------------------------------------------------------------------
-class Writer {
+class Writer
+{
 
 private:
   static const int nVarMax = 100;
@@ -100,27 +101,31 @@ public:
   Writer(const int idIn = 0, const std::string plotStringIN = "",
          const int dnIn = 1, const double dtIn = 1, const double dxIn = 1,
          const std::string plotVarIn = "",
-         const std::array<double, nDimMax> plotMinIn_D = { { 1, 1, 1 } },
-         const std::array<double, nDimMax> plotMaxIn_D = { { -1, -1, -1 } },
+         const std::array<double, nDimMax> plotMinIn_D = {{1, 1, 1}},
+         const std::array<double, nDimMax> plotMaxIn_D = {{-1, -1, -1}},
          const int nSpeciesIn = 2)
-      : ID(idIn),
+      : nProcs(0),
+        nDim(0),
+        rank(0),
+        ID(idIn),
+        iRegion(0),
         plotString(plotStringIN),
+        plotVar(plotVarIn),
         dnOutput(dnIn),
         dtOutput(dtIn),
         plotDx(dxIn > 0 ? dxIn : 1),
-        plotVar(plotVarIn),
         plotMin_D(plotMinIn_D),
         plotMax_D(plotMaxIn_D),
+        domainMin_D({{1, 1, 1}}),
+        domainMax_D({{-1, -1, -1}}),
+        axisOrigin_D({{0, 0, 0}}),
+        dx_D({{0, 0, 0}}),
         nSpecies(nSpeciesIn),
-        domainMin_D({ { 1, 1, 1 } }),
-        domainMax_D({ { -1, -1, -1 } }),
-        axisOrigin_D({ { 0, 0, 0 } }),
-        dx_D({ { 0, 0, 0 } }),
-        rank(0),
-        nProcs(0),
-        nDim(0),
+        nextWriteCycle(0),
+        nextWriteTime(0),
+        lastWriteCycle(-1),
+        lastWriteTime(-1),
         nCellAllProc(0),
-        iRegion(0),
         No2OutL(1),
         No2OutV(1),
         No2OutB(1),
@@ -133,14 +138,12 @@ public:
         No2SiRho(1),
         No2SiP(1),
         No2SiJ(1),
-        rPlanet(1),
-        nextWriteTime(0),
-        nextWriteCycle(0),
-        lastWriteTime(-1),
-        lastWriteCycle(-1) {}
+        rPlanet(1)
+  {
+  }
 
   // Disabled the assignment operator to avoid potential mistake.
-  Writer& operator=(const Writer&) = delete;
+  Writer &operator=(const Writer &) = delete;
 
   // Use default copy constructor. Do not introduce pointer to this class!!
   // Writer(Writer & in);
@@ -163,20 +166,24 @@ public:
   void set_iRegion(const int in) { iRegion = in; }
   void set_plotMin_D(const std::array<double, nDimMax> in) { plotMin_D = in; }
   void set_plotMax_D(const std::array<double, nDimMax> in) { plotMax_D = in; }
-  void set_domainMin_D(const std::array<double, nDimMax> in) {
+  void set_domainMin_D(const std::array<double, nDimMax> in)
+  {
     domainMin_D = in;
   }
-  void set_domainMax_D(const std::array<double, nDimMax> in) {
+  void set_domainMax_D(const std::array<double, nDimMax> in)
+  {
     domainMax_D = in;
   }
-  void set_axisOrigin_D(const std::array<double, nDimMax> in) {
+  void set_axisOrigin_D(const std::array<double, nDimMax> in)
+  {
     axisOrigin_D = in;
   }
   void set_dx_D(const std::array<double, nDimMax> in) { dx_D = in; }
   void set_units(const double No2SiLIn, const double No2SiVIn,
                  const double No2SiBIn, const double No2SiRhoIn,
                  const double No2SiPIn, const double No2SiJIn,
-                 const double rPlanetIn = 1) {
+                 const double rPlanetIn = 1)
+  {
     // Set the conversion to SI unit.
     No2SiL = No2SiLIn;
     No2SiV = No2SiVIn;
@@ -188,7 +195,8 @@ public:
   }
 
   void set_scalarValue_I(std::vector<double> const in) { scalarValue_I = in; }
-  void set_scalarName_I(std::vector<std::string> const in) {
+  void set_scalarName_I(std::vector<std::string> const in)
+  {
     scalarName_I = in;
   }
 
@@ -216,11 +224,11 @@ public:
   /*Based on the point list, this function calls function get_var to collect
    output values first, then writes the data. */
   void write_field(double const timeNow, int const iCycle,
-                   VectorPointList const& pointList_II, FuncGetField get_var);
+                   VectorPointList const &pointList_II, FuncGetField get_var);
 
   /* Calculate the unit conversion coef for var_I. */
   void set_output_unit();
-  double No2OutTable(std::string const& var);
+  double No2OutTable(std::string const &var);
 
   /* Decide if the input point should be saved or not based on plotMin_D,
      plotMax_D and plotDx. ix, iy and iz are global indices.*/
@@ -235,10 +243,10 @@ public:
     the output will be a int of 010108*/
   static int second_to_clock_time(int second);
 
-  friend std::ostream& operator<<(std::ostream& cout, Writer const& output);
+  friend std::ostream &operator<<(std::ostream &cout, Writer const &output);
 };
 
 // Overload << operator for Writer class.
-std::ostream& operator<<(std::ostream& cout, Writer const& output);
+std::ostream &operator<<(std::ostream &cout, Writer const &output);
 
 #endif

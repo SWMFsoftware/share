@@ -1,5 +1,7 @@
 #include "PlotFileIO.h"
 
+using namespace std; 
+
 std::string FileAgent::outFormat;
 
 void FileAgent::print() {
@@ -127,7 +129,7 @@ void FileAgent::write_tec() {
 
   outFile << "VARIABLES = ";
 
-  for (int i = 0; i < varName_I.size(); ++i) {
+  for (vector<string>::size_type i = 0; i < varName_I.size(); ++i) {
     outFile << '"' << varName_I[i] << '"';
     if (i != varName_I.size() - 1) {
       outFile << ',' << " ";
