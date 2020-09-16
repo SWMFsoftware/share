@@ -234,7 +234,10 @@ contains
 
     ! Check if directory exists
     call check_dir(NameDir, iError)
-    if(iError == 0) RETURN
+    if(iError == 0)then
+       if(present(iErrorOut)) iErrorOut = 0
+       RETURN
+    end if
 
     ! Create directory
     StringCommand = 'mkdir -p '//trim(NameDir)
