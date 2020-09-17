@@ -206,8 +206,6 @@ contains
   !INTERFACE:
   subroutine make_dir(NameDir, iErrorOut)
 
-    use iso_c_binding
-
     !INPUT ARGUMENTS:
     character(len=*), intent(in):: NameDir ! Directory name
 
@@ -285,7 +283,7 @@ contains
     character(len=*), parameter :: NameSub='check_dir'
     !--------------------------------------------------------------------------
     ! Try to open a file in this directory
-    open(UNITTMP_, file=trim(NameDir)//'.test', status='unknown', &
+    open(UNITTMP_, file=trim(NameDir)//'/.test', status='unknown', &
          iostat = iError)
 
     if (iError /= 0) then
