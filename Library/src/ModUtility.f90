@@ -36,6 +36,7 @@ module ModUtilities
   public:: lower_case
   public:: string_to_char_array
   public:: char_array_to_string
+  public:: write_string_tabs_name
   public:: sleep
   public:: check_allocate
   public:: greatest_common_divisor
@@ -52,6 +53,8 @@ module ModUtilities
   integer, public            :: iProcTest = 0
   integer, public            :: lVerbose = 1
 
+  character, public:: cTab = char(9)
+  
   interface split_string
      module procedure split_string, split_string_simple
   end interface
@@ -61,6 +64,23 @@ module ModUtilities
   end interface
 
 contains
+  !============================================================================
+  subroutine write_string_tabs_name(String, Name)
+
+    use ModIoUnit, ONLY: UnitTmp_
+
+    character(len=*), intent(in):: String, Name
+
+    ! Write String and Name with 2 or 3 tabs in between (PARAM.in format)
+    !-------------------------------------------------------------------------
+
+    if(len_trim(String) < 8)then
+       write(UnitTmp_,'(a)') trim(String)//cTab//cTab//cTab//trim(Name)
+    else
+       write(UnitTmp_,'(a)') trim(String)//cTab//cTab//trim(Name)
+    end if
+
+  end subroutine write_string_tabs_name
   !============================================================================
   subroutine CON_set_do_test(String, DoTest, DoTestMe)
 
@@ -257,7 +277,7 @@ contains
   subroutine check_dir(NameDir, iErrorOut)
 
     !USES:
-    use ModIoUnit, ONLY: UNITTMP_
+    use ModIoUnit, ONLY: UnitTmp_
 
     !INPUT ARGUMENTS:
     character(len=*), intent(in) :: NameDir
@@ -283,7 +303,7 @@ contains
     character(len=*), parameter :: NameSub='check_dir'
     !--------------------------------------------------------------------------
     ! Try to open a file in this directory
-    open(UNITTMP_, file=trim(NameDir)//'/.test', status='unknown', &
+    open(UnitTmp_, file=trim(NameDir)//'/.test', status='unknown', &
          iostat = iError)
 
     if (iError /= 0) then
@@ -295,7 +315,7 @@ contains
                //trim(NameDir))
        end if
     else
-       close(UNITTMP_, status = 'DELETE')
+       close(UnitTmp_, status = 'DELETE')
     endif
 
   end subroutine check_dir
@@ -333,7 +353,7 @@ contains
   subroutine open_file(iUnitIn, File, Form, Status, Position, Access, Recl, &
        iComm, NameCaller)
 
-    use ModIoUnit, ONLY: UNITTMP_
+    use ModIoUnit, ONLY: UnitTmp_
 
     ! Interface for the Fortran open statement with error checking.
     ! If an error occurs, the code stops and writes out the unit number,
@@ -426,7 +446,7 @@ contains
   !========================================================================
   subroutine close_file(iUnitIn, Status, NameCaller)
 
-    use ModIoUnit, ONLY: UNITTMP_
+    use ModIoUnit, ONLY: UnitTmp_
 
     ! Interface for the Fortran close statement with error checking
     ! If an error occurs, the code stops and writes out the unit number,
