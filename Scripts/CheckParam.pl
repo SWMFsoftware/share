@@ -679,10 +679,12 @@ sub process_elements{
 	    my $from =&extract($element->{attrib}->{from},"integer");
 	    my $to   =&extract($element->{attrib}->{to},  "integer");
 	    print "FOR index $index= $from to $to\n" if $Debug;
-	    foreach my $value ($from..$to){
-		# Set the index name in package
-                &store($index,$value) if $index;
-		&process_elements($element);
+	    if($from <= $to){
+		foreach my $value ($from..$to){
+		    # Set the index name in package
+		    &store($index,$value) if $index;
+		    &process_elements($element);
+		}
 	    }
 	}
 	elsif($name eq 'foreach')
