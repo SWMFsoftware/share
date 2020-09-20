@@ -872,7 +872,7 @@ contains
     real    :: DetA, Limit
     logical :: DoIgnore
 
-    character (len=*), parameter :: NameSub = NameMod//':inverse_matrix'
+    character (len=*), parameter :: NameSub = NameMod//':inverse_matrix33'
     !-------------------------------------------------------------------------
     Limit = 1.e-16
     if(present(SingularLimit)) Limit = SingularLimit
@@ -913,7 +913,6 @@ contains
   !============================================================================
   function inverse_matrix_nn(n, a_II, SingularLimit, DoIgnoreSingular) &
        result(b_II)
-
     ! Return the inverse of the nxn matrix a_DD
     ! The optional SingularLimit gives the smallest value for the determinant
     ! The optional DoIgnoreSingular determines what to do if the 
@@ -932,6 +931,15 @@ contains
     integer :: i , j, iOrder_I(n-1), jOrder_I(n -1), i0, j0, iOrder, jOrder
     character (len=*), parameter :: NameSub = NameMod//':inverse_matrix'
     !-------------------------------------------------------------------------
+    if(n==3)then
+       b_II = inverse_matrix33(a_II, SingularLimit, DoIgnoreSingular) 
+       RETURN
+    elseif(n==2)then
+       b_II(1,1) =  a_II(2,2); b_II(1,2) = -a_II(1,2) 
+       b_II(2,1) = -a_II(2,1); b_II(2,2) =  a_II(1,1)
+       b_II = b_II/(a_II(1,1)*a_II(2,2) - a_II(1,2)*a_II(2,1))
+       RETURN
+    end if
     Limit = 1.e-16
     if(present(SingularLimit)) Limit = SingularLimit
     DoIgnore = .false.
@@ -971,7 +979,6 @@ contains
        write(*,*)'Determinant=', DetA 
        call CON_stop('Singular matrix in '//NameSub)
     end if
-
   end function inverse_matrix_nn
   !============================================================================
   
@@ -1003,6 +1010,8 @@ contains
 
     if (n == 1) then
        Det = a_II(1,1)
+    elseif(n==2)then
+       Det = a_II(1,1)*a_II(2,2) - a_II(1,2)*a_II(2,1)
     elseif(n == 3)then
        Det = determinant33(a_II)
     else

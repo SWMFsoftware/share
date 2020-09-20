@@ -34,6 +34,10 @@ module ModPoissonBracket
   end interface explicit
   !PUBLIC MEMBER FUNCTION:
   public :: explicit
+  !\
+  ! If DtIn results in CFL>CflMax, the time step is reduced
+  !/ 
+  real, parameter :: CflMax = 0.990 
   character(LEN=*), parameter:: NameMod = 'ModPoissonBracket'
 contains
   !=========================================================
@@ -59,7 +63,7 @@ contains
   subroutine explicit2(nI, nJ, VDF_G, Volume_G, Source_C,    &
        Hamiltonian12_N, dHamiltonian01_FX, dHamiltonian02_FY,&
        DVolumeDt_G,                                          &
-       DtIn, CFLIn, DtOut, CFLOut)
+       DtIn, CFLIn, DtOut, CFLOut, DtRecommend)
     !\
     ! solve the contribution to the
     ! numerical flux from a single Poisson bracket,
@@ -107,6 +111,7 @@ contains
 
     real, optional, intent(in) :: DtIn, CFLIn   !Options to set time step
     real, optional, intent(out):: DtOut, CFLOut !Options to report time step
+    real, optional, intent(out):: DtRecommend   !Calculated for given CflIn
     character(LEN=*), parameter:: NameSub = NameMod//':explicit2'
     !---------
     call explicit3(nI, nJ, 1, VDF_G, Volume_G, Source_C,     &
@@ -117,14 +122,15 @@ contains
        DtIn=DtIn,                                            &
        CFLIn=CFLIn,                                          &
        DtOut=DtOut,                                          &
-       CFLOut=CFLOut)
+       CFLOut=CFLOut,                                        &
+       DtRecommend=DtRecommend)
   end subroutine explicit2
   !=======================================================================
   subroutine explicit3(nI, nJ, nK, VDF_G, Volume_G, Source_C,            &
        Hamiltonian12_N, Hamiltonian13_N, Hamiltonian23_N,                &
        dHamiltonian01_FX, dHamiltonian02_FY, dHamiltonian03_FZ,          &
        DVolumeDt_G,                                                      &
-       DtIn, CFLIn, DtOut, CFLOut)
+       DtIn, CFLIn, DtOut, CFLOut, DtRecommend)
     !\
     ! solve the contribution to the numerical flux from multiple Poisson 
     ! brackets, 1,2,3 enumerate phase coordinates,  0 relating to time.
@@ -187,6 +193,7 @@ contains
     !/                            
     real, optional, intent(in) :: DtIn, CFLIn   !Options to set time step
     real, optional, intent(out):: DtOut, CFLOut !Options to report time step
+    real, optional, intent(out):: DtRecommend   !Calculated for given CflIn
     !\
     ! Local variables
     !/
@@ -213,7 +220,7 @@ contains
     real :: CFLCoef_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
     
     !Time step
-    real :: Dt
+    real :: Dt, CFL
     character(LEN=*), parameter:: NameSub =NameMod//':explicit3'
     !---------
     if(present(DtIn))then
@@ -343,25 +350,68 @@ contains
     ! Set CFL and time step
     !/
     if(UseTimeDependentVolume)then
-       !Solve time step from equation
-       ! CFLIn = \Delta t*(-\sum\delta^-H)/(\Delta t*dV/dt + V)
-       if(.not.present(DtIn)) Dt = CFLIn/maxval(vInv_G(1:nI,1:nJ,1:nK)*&
-            (CFLCoef_G(1:nI,1:nJ,1:nK) - CFLIn*DVolumeDt_G(1:nI,1:nJ,1:nK)))
-       !Calculate the volume at upper time level
-       !V(+\Delta t):
-       vInv_G = 1.0/(Volume_G + Dt*DVolumeDt_G)
-       CFLCoef_G = Dt*vInv_G*CFLCoef_G
+       if(present(DtRecommend))then
+          if(present(CFLIn))then
+             CFL = CFLIn
+          else
+             CFL = CFLMax
+          end if
+          !Solve time step from equation
+          ! CFLIn = \Delta t*(-\sum\delta^-H)/(\Delta t*dV/dt + V)
+          DtRecommend = CFL/maxval(vInv_G(1:nI,1:nJ,1:nK)*& 
+               (CFLCoef_G(1:nI,1:nJ,1:nK) - CFL*DVolumeDt_G(1:nI,1:nJ,1:nK)))
+       end if
+       if(present(DtIn))then
+          !\
+          ! Calculate the CFL factor with given Dt:
+          !/
+          vInv_G = 1.0/(Volume_G + Dt*DVolumeDt_G)
+          CFLCoef_G = Dt*vInv_G*CFLCoef_G
+          CFL = maxval(CFLCoef_G(1:nI,1:nJ,1:nK))
+          !\
+          ! Check if the CFL satisfies the stability criterion
+          !/
+          if(CFL>CFLMax)then
+             !\
+             ! Restore CFLCoef_G and vInv
+             !/ 
+             CFLCoef_G = CFLCoef_G/(Dt*vInv_G)
+             vInv_G = 1/Volume_G
+             !\
+             ! Reduce the time step using equation
+             ! CFLMax = \Delta t*(-\sum\delta^-H)/(\Delta t*dV/dt + V)
+             !/             
+             CFL = CFLMax
+             Dt = CFL/maxval(vInv_G(1:nI,1:nJ,1:nK)*& 
+                  (CFLCoef_G(1:nI,1:nJ,1:nK) - CFL*DVolumeDt_G(1:nI,1:nJ,1:nK)))
+             !\
+             ! Calculate the CFL factor with given Dt:
+             !/
+             vInv_G = 1.0/(Volume_G + Dt*DVolumeDt_G)
+             CFLCoef_G = Dt*vInv_G*CFLCoef_G
+          end if
+       else
+          !Solve time step from equation
+          ! CFLIn = \Delta t*(-\sum\delta^-H)/(\Delta t*dV/dt + V)
+          Dt = CFLIn/maxval(vInv_G(1:nI,1:nJ,1:nK)*& 
+               (CFLCoef_G(1:nI,1:nJ,1:nK) - CFLIn*DVolumeDt_G(1:nI,1:nJ,1:nK)))
+          !Calculate the volume at upper time level
+          !V(+\Delta t):
+          vInv_G = 1.0/(Volume_G + Dt*DVolumeDt_G)
+          CFLCoef_G = Dt*vInv_G*CFLCoef_G
+       end if
     else
        if(.not.present(DtIn))&
             Dt = CFLIn/maxval(CFLCoef_G(1:nI,1:nJ,1:nK))
        CFLCoef_G = Dt*CFLCoef_G
     end if
     if(present(CFLOut))then
-       if(present(DtIn))then
-          CFLOut = maxval(CFLCoef_G(1:nI,1:nJ,1:nK))
-       else
-          CFLOut = CFLIn
-       end if
+       !\
+       ! The debugging version: normally, the CFL is known by now and there is no need 
+       ! to calculate it again
+       !/
+       CFLOut = maxval(CFLCoef_G(1:nI,1:nJ,1:nK))
+       if(CFLOut > CFLMax*0.99 + 0.01)call CON_stop('CFL is too large')
     end if
     if(present(DtOut ))DtOut  = Dt
     !\            
