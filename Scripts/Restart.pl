@@ -11,6 +11,7 @@ my $OutputOnly  = ($o or $output);
 my $InputOnly   = ($i or $input);
 my $CheckOnly   = ($c or $check);
 my $Verbose     = ($v or $verbose);
+my $WarnOnly    = ($W or $Warn or $warn);
 my $TimeUnit    = ($t or $u or $timeunit or $unit);
 my $Repeat      = ($r or $repeat);
 my $Keep        = ($k or $keep);   # Number of restart trees to keep
@@ -281,8 +282,14 @@ sub get_time_step{
 sub create_tree_check{
 
     # Check the SWMF restart file
-    die "$ERROR could not find restart file $RestartOutFile!\n" 
-	unless -f $RestartOutFile;
+    if(not -f $RestartOutFile){
+	if($WarnOnly){
+	    print "$WARNING could not find restart file $RestartOutFile!\n";
+	    exit 0;
+	}else{
+	    die "$ERROR could not find restart file $RestartOutFile!\n";
+	}
+    }
 
     # Obtain time/step from the restart file
     &get_time_step($RestartOutFile);
@@ -531,7 +538,7 @@ Usage:
 
     Restart.pl -h
 
-    Restart.pl [-o] [-t=UNIT] [-m=a|f|s] [-c] [-v] [DIR]
+    Restart.pl [-o] [-t=UNIT] [-m=a|f|s] [-c] [-v] [-W] [DIR]
 
     Restart.pl -i [-m=a|f|s] [-c] [-v] DIR
 
@@ -584,6 +591,9 @@ Usage:
 
     -v -verbose Print verbose information.
 
+    -W -warn    Print warning message instead of error if the restart tree
+                to be created is missing.
+
     DIR         Name of the restart directory tree. This argument
                 must be specified if the -i switch is used. Otherwise
                 the default name is RESTART_n012345 for steady state runs
@@ -603,10 +613,10 @@ Restart.pl
 
     Check every 15 seconds for new restart output, and move it to 
     a new restart tree with the date and time in the name,
-    only keep the last two restart trees,
+    only keep the last two restart trees, warn only if there is not tree,
     and save output and error messages (if any) into Restart.log:
 
-Restart.pl -o -r=15 -k=2 -t=date >& Restart.log &
+Restart.pl -o -r=15 -k=2 -t=date -W >& Restart.log &
 
     Check linking to the existing RESTART_t002.00h tree:
 
