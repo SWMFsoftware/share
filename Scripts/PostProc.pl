@@ -249,7 +249,7 @@ if(-f "runlog"){
     warn "$WARNING: no $RunLog file was found\n";
 }
 
-&shell_info("./Restart.pl -o $NameOutput/RESTART");
+&shell_info("./Restart.pl -o -W $NameOutput/RESTART");
 
 if($Rsync){
     &shell_info("rsync -avzt $NameOutput/ $Rsync");
