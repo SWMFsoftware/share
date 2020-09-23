@@ -197,6 +197,9 @@ foreach $source (@source){
 	# except for the !INPUT ARGUMENTS: type Protex documentation
 	s/(\s*\![\!\$]*)(\w)/$1 $2/ if not /^\s*\![A-Z\/ ]+:$/;
 
+	# Fix omp/acc directives: !$ omp -> !$omp
+	s/(^\s*\!\$) (omp|acc)/$1$2/;
+	
 	# Remove lines with arbitrary decorations !\ and !/
 	s/^\s*\!\\\s*$//;
 	s/^\s*\!\/\s*\n//;
