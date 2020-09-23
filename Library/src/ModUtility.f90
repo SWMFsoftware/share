@@ -244,7 +244,7 @@ contains
     !
     !EOP
 
-    integer:: iError             ! Return value as retrieved from shell
+    integer:: iError = -1             ! Return value as retrieved from shell
 
     character(len=100):: StringCommand
     character(len=*), parameter:: NameSub = 'make_dir'
