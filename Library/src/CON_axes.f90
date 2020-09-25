@@ -222,7 +222,7 @@ module CON_axes
 
   ! Remaining coordinate transformation matrices to convert to/from GSE
   real, dimension(3,3) :: &
-       SmgGse_DD, GeoGse_DD, MagGse_DD, GseGeo_DD
+       SmgGse_DD, GeoGse_DD, MagGse_DD, GseGeo_DD, GseSmg_DD, GeoSmg_DD
 
 contains
 
@@ -724,6 +724,7 @@ contains
     ! SMG-GSE transformation matrix
 
     SmgGse_DD = matmul(SmgGsm_DD, GsmGse_DD)
+    GseSmg_DD = transpose(SmgGse_DD)
 
     ! Calculate GSM coordinates and tilt of the magnetic axis.
     ! and calculate the rotation axis in GSM coordinates.
@@ -738,6 +739,7 @@ contains
     GseGeo_DD = matmul(GseGei_DD, GeiGeo_DD)
     GeoGse_DD = transpose(GseGeo_DD)
     MagGse_DD = matmul(MagGeo_DD,GeoGse_DD)
+    GeoSmg_DD = matmul(GeoGse_DD, GseSmg_DD)
 
     if(DoTestMe)then
        write(*,*)NameSub,' new MagAxis_D     =',MagAxis_D
