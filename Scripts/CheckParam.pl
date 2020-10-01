@@ -261,6 +261,113 @@ sub parse_xml{
 	    "and content='$commandList->{content}'\n";
     }
 
+    foreach my $node (@{$commandList->{content}}){
+	next unless $node->{type} eq 'e';
+	my $nodecontent = $node->{content}->[0]->{content};
+	my $nodename    = $node->{name};
+	my $nodeattrib  = $node->{attrib};
+	if($nodename eq 'rule'){
+	    warn "$ERROR in $XmlFile: missing 'expr' attribute for rule $nodecontent\n" 
+		unless $nodeattrib->{expr};
+	    foreach my $attrib (keys %{$nodeattrib}){
+		warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for rule $nodecontent\n"
+		    unless $attrib eq "expr";
+	    }
+	}elsif($nodename eq 'set'){
+	    warn "$ERROR in $XmlFile: missing 'name' attribute for <set...>\n"
+		unless $nodeattrib->{name};
+	    warn "$ERROR in $XmlFile: missing 'value' attribute for <set name=\"$nodeattrib->{name}...>\n"
+		unless $nodeattrib->{value};
+	    foreach my $attrib (keys %{$nodeattrib}){
+		warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for <set name=\"$nodeattrib->{name}\"...>\n"
+		    unless $attrib =~ /^name|value|type$/;
+	    }
+	}elsif($nodename eq 'commandgroup'){
+	    my $commandgroupname = $node->{attrib}->{name};
+	    my $commandgroupcontent = $node->{content}->[0]->{content};
+	    warn "$ERROR in $XmlFile: missing 'name' attribute for <commandgroup...>\n$commandgroupcontent\n"
+		unless $commandgroupname;
+	    foreach my $attrib (keys %{$nodeattrib}){
+		warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for <commandgroup name=\"$commandgroupname\"...>\n"
+		    unless $attrib eq "name";
+	    }
+	    foreach my $command (@{$node->{content}}){
+		next unless $command->{type} eq 'e';
+		warn "$ERROR in $XmlFile: invalid tag <$node->{name}...> in command group $commandgroupname\n"
+		    unless $node->{name} ne "command";
+		my $commandattrib = $command->{attrib};
+		my $commandname = $commandattrib->{name};
+		my $commandcontent = $command->{content};
+		warn "$ERROR in $XmlFile: missing 'name' attribute for <command...> in command group $commandgroupname:\n$commandcontent\n"
+		    unless $commandname;
+		foreach my $attrib (keys %{$commandattrib}){
+		    warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for <command name=\"$commandname\"...>\n"
+			unless $attrib =~ /^name|alias|if|required|multiple$/;
+		}
+		foreach my $commandpart (@{$command->{content}}){
+		    next unless $commandpart->{type} eq 'e';
+		    my $commandpartname = $commandpart->{name};
+		    my $commandpartattrib = $commandpart->{attrib};
+		    if($commandpartname eq 'if'){
+			warn "$ERROR in $XmlFile: missing \"expr=...\" in <if ...> in command \#$commandname\n"
+			    unless $commandpartattrib->{expr};
+			foreach my $attrib (keys %{$commandpartattrib}){
+			    warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for <if ...> in command \#$commandname\n"
+				unless $attrib eq 'expr';
+			}
+		    }elsif($commandpartname eq 'for'){
+			warn "$ERROR in $XmlFile: missing \"from=...\" in <for ...> in command \#$commandname\n"
+			    unless $commandpartattrib->{from};
+			warn "$ERROR in $XmlFile: missing \"to=...\" in <for ...> in command \#$commandname\n"
+			    unless $commandpartattrib->{to};
+			foreach my $attrib (keys %{$commandpartattrib}){
+			    warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for <for ...> in command \#$commandname\n"
+				unless $attrib =~ /^from|to|name$/;
+			}
+		    }elsif($commandpartname eq 'foreach'){
+			warn "$ERROR in $XmlFile: missing \"values=...\" in <foreach ...> in command \#$commandname\n"
+			    unless $commandpartattrib->{values};
+			foreach my $attrib (keys %{$commandpartattrib}){
+			    warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for <foreach ...> in command \#$commandname\n"
+				unless $attrib =~ /^values|name$/;
+			}
+		    }elsif($commandpartname eq 'set'){
+			warn "$ERROR in $XmlFile: missing 'name' attribute for <set...> in command \#$commandname\n"
+			    unless $commandpartattrib->{name};
+			warn "$ERROR in $XmlFile: missing 'value' attribute for <set...> in command \#$commandname\n"
+			    unless $commandpartattrib->{value};
+			foreach my $attrib (keys %{$commandpartattrib}){
+			    warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for <set...> in command \#$commandname\n"
+				unless $attrib =~ /^name|value|type$/;
+			}
+		    }elsif($commandpartname eq 'rule'){
+			warn "$ERROR in $XmlFile: missing 'expr' attribute for <rule...> in command \#$commandname \n" 
+			    unless $commandpartattrib->{expr};
+			foreach my $attrib (keys %{$commandpartattrib}){
+			    warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for <rule...> in command \#$commandname\n"
+				unless $attrib eq "expr";
+			}
+		    }elsif($commandpartname eq 'parameter'){
+			# This should be in a subroutine called from a bunch of places
+			my $paramname = $commandpartattrib->{name};
+			warn "$ERROR in $XmlFile: missing 'name' attribute for <parameter...> in command \#$commandname \n"
+			    unless $paramname;
+			warn "$ERROR in $XmlFile: missing 'type' attribute for parameter $paramname of command \#$commandname \n"
+			    unless $commandpartattrib->{type};
+			foreach my $attrib (keys %{$commandpartattrib}){
+			    warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for parameter $paramname of command \#$commandname\n"
+				unless $attrib =~ /^name|type|min|max|default|input|length|case|ordered|duplicate|if$/;
+			}
+		    }else{
+			warn "$ERROR in $XmlFile: unknown tag <$commandpartname...> in command $commandname\n";
+		    }
+ 
+		}
+	    }
+	}else{
+	    warn "$ERROR in $XmlFile: unknown top level tag $nodename\n";
+	}
+    }
     return $commandList;
 }
 
@@ -690,8 +797,8 @@ sub process_elements{
 	
 	    print "FOREACH index=$index values=$values\n" if $Debug;
 	    foreach my $value (split(',',$values)){
-		# Set the index name in package
-		&store($index,$value);
+		# Set the index name in package if present
+		&store($index,$value) if $index;
 		&process_elements($element);
 	    }
 	}
@@ -1343,11 +1450,11 @@ Description for command group.
 		<parameter name=... type="real" [min=...] [max=...] 
 							default=... />
 	</if>
-	<foreach name=... values=...>
+	<foreach [name=...] values=...>
 		<parameter name=... type="logical" default=.../>
 		...
 	</foreach>
-	<for [index=] from=... to=...>
+	<for [name=...] from=... to=...>
 		<parameter name=... type="integer" [min=...] [max=...]
 							default=.../>
 		...
