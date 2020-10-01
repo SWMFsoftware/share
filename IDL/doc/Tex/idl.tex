@@ -868,10 +868,10 @@ set_default_values
 
 \subsection{Animation and plotting with animate\_data \label{s-animate}}
 
-   This general procedure can plot, save into image file(s), or animate 
+   This general procedure can plot, save into image and video file(s), or animate 
    (using IDL's Xinteranimate) different functions of data 
    read from one or more files. If a single snapshot is read, the
-   plot is drawn without animation. In essence {\bf animate\_data} combines
+   plot is drawn without animation. In essence, {\bf animate\_data} combines
    {\bf read\_data} and {\bf plot\_data} for any number of files and any number 
    of snapshots.
 \begin{verbatim}
@@ -891,13 +891,28 @@ animate_data
 
    The function(s) to be animated and the plotting mode(s) for the functions 
    are determined by the same {\bf func, plotmode}, and {\bf plottitle} 
-   strings as for {\bf plot\_data}. The {\bf plottitle\_files} string array
-   can be used to set different plot titles for the different files.
-   If any part of the 
-   {\bf autorange} string is set to {\bf 'y'},
+   strings as for {\bf plot\_data}. To plot different functions, plot modes,
+   and/or plot titles per file, set the {\bf func\_file, plotmode\_file} and/or
+   {\bf plottitle\_file} string arrays with as many elements as the number of files.
+   If any part of the {\bf autorange} string is set to {\bf 'y'},
    the data file(s) will be read twice: first for setting the common range(s) 
    for all the snapshots and the second time for plotting.
    If {\bf autorange='n'} the file(s) will only be read once.
+   Here is an example showing two cuts of a 3D simulation together:
+\begin{verbatim}
+   filename='y=0.outs z=0.outs'
+   plottitle_file=['Density and velocity in y=0 plane', 'Density and U in z=0 plane']
+   func_file=['rho ux;uz', 'rho ux;uy']
+   plotmode_file=['contfill streamover', 'contbar streamover']
+   showxtitle=1
+   showytitle=1
+   animate_data
+\end{verbatim}
+   The {\bf showxtitle} and {\bf showytitle} logicals control if the axis labels are shown
+   for each subplot or not. The default is to show the X axis for the bottom row only
+   and the Y axis for the left column only. When the axes vary from file to file, it is best
+   to show the axis labels for each subplot.
+
    The number of snapshots to be animated is limited by the end of 
    file(s) and/or by the {\bf npictmax} parameter. With a formula
 \begin{verbatim}
@@ -929,9 +944,14 @@ animate_data
 \end{verbatim}
    will overplot density and velocity read from the two files. 
    The lines belonging to the two data files are distinguished by
-   the different line styles. Overplotting two data sets is
-   especially useful when the two results are supposed to be identical.
-
+   the different line styles. For a 2D comparison, one could use
+\begin{verbatim}
+filename='example[12].out'
+func='rho ux'
+plotmode_file=['contfill', 'contour']
+multiplot=2
+animate_data
+\end{verbatim}
    Timeseries can also be produced easily with {\bf multiplot}. 
 \begin{verbatim}
 filename='example2.out'
