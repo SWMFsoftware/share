@@ -25,7 +25,6 @@ my $GridSize    = $g; undef $g;
 my $nProc       = $n; undef $n;
 my $StandAlone  = $S; undef $S;
 my $Format      = $F; undef $F;
-my $Files   = ",$f,"; undef $f; # comma separated list of files
 
 use strict;
 
@@ -558,17 +557,14 @@ sub previous_file{
 	if($Format){
 	    # Save original file into _orig_ unless it has already been saved
 	    my $OrigFile = "${InputFile}_orig_";
-	    if($Files !~ /,$Dir\/$InputFile,/){
-		# rename does not work for a link, so copy
-		`cp $InputFile $OrigFile`;
-		$Files .= "$Dir/$InputFile,"; # in case the same file is included twice
-	    }
+	    `cp $InputFile $OrigFile` unless -f $OrigFile;
+
 	    # replace input file with the formatted version (works for links too)
 	    open OUTFILE, ">$InputFile";
 	    print OUTFILE $FormattedFile[$IncludeLevel];
 	    close OUTFILE;
 	    if(`diff $InputFile $OrigFile`){
-		print "CheckParam.pl: cp $Dir/$InputFile $Dir/$OrigFile\n";
+		print "CheckParam.pl: diff $Dir/$InputFile $Dir/$OrigFile\n";
 	    }else{
 		unlink $OrigFile;
 	    }
@@ -1181,7 +1177,7 @@ sub print_help{
 
 Usage:
 
-  CheckParam.pl [-h] [-H] [-X] [-v] [-D] [-F [-f=FILELIST]] [-x=XMLFILE]
+  CheckParam.pl [-h] [-H] [-X] [-v] [-D] [-F] [-x=XMLFILE]
                 [-S] [-c=ID] [-C=IDLIST] [-p=PRECISION] [-i] [PARAMFILE]
 
   -h            print help message and stop
@@ -1195,10 +1191,6 @@ Usage:
   -F            Format the PARAMFILE and the included files by adding parameter 
                 names after proper TAB separators and format separator lines.
                 The original files are copied into FILENAME_orig_.
-
-  -f=FILELIST   Comma separated list of files that have been formatted alredy.
-                This feature is needed by SWMF/Scripts/TestParam.pl as it checks
-                the sames files multiple times for CON and the components.
 
   -v            verbosity adds command description to every error message.
 
@@ -1232,10 +1224,9 @@ Usage:
 Examples:
 
     Check CON parameters in run/PARAM.in for correctness with verbose info
-    and fix the formatting of the input files (PARAM.in and RESTART.in was
-    already formatted):
+    and fix the formatting of the input files:
 
-CheckParam.pl -F -f=PARAM.in,RESTART.in -C='GM,IH,IE' -v
+CheckParam.pl -F -C='GM,IH,IE' -v
 
     Check GM parameters in run/PARAM_new.in for correctness:
 
