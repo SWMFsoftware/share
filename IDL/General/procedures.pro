@@ -100,8 +100,9 @@ pro set_default_values
 
 ; Parameters for plot_data
   common plotfunc_param, $
-     func, nfunc, funcs, funcs1, funcs2, plotmode, plotmodes, nplot, $
-     plottitle, plottitles, plottitles_file, $
+     func, func_file, nfunc, funcs, funcs1, funcs2, $
+     plotmode, plotmode_file, plotmodes, nplot, $
+     plottitle, plottitle_file, plottitles, $
      timetitle, timetitleunit, timetitlestart, $
      autorange, autoranges, noautorange, fmin, fmax, $
      axistype, bottomline, headerline
@@ -922,6 +923,10 @@ pro animate_data
   endfor
 
   print,'======= PLOTTING PARAMETERS ========================='
+  if keyword_set(func_file) then func = func_file[0]
+  if keyword_set(plotmode_file) then plotmode = plotmode_file[0]
+  if keyword_set(plottitle_file) then plottitle = plottitle_file[0]
+
   read_plot_param
 
   read_transform_param
@@ -975,6 +980,11 @@ pro animate_data
 
            if not error then begin
               do_transform,ifile
+
+              if keyword_set(func_file) then begin
+                 func = func_file(ifile)
+                 string_to_array,func,funcs,nfunc
+              end
 
               first= npict eq 0 and ifile eq 0
               get_limits, first
@@ -1117,9 +1127,19 @@ pro animate_data
               plottitles(*) = string(format=timetitle,t)
            endif
 
-           if(keyword_set(plottitles_file))then begin
-              plottitle = plottitles_file(ifile)
+           if keyword_set(plottitle_file) then begin
+              plottitle = plottitle_file(ifile)
               string_to_array,plottitle,plottitles,nfunc,';'
+           end
+
+           if keyword_set(func_file) then begin
+              func = func_file(ifile)
+              string_to_array,func,funcs,nfunc
+           end
+
+           if keyword_set(plotmode_file) then begin
+              plotmode = plotmode_file(ifile)
+              string_to_array,plotmode,plotmodes,nfunc
            end
 
            nfilestore = nfile
