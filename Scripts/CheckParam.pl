@@ -242,6 +242,7 @@ sub init_comp{
 }
 ##############################################################################
 sub parse_xml{
+
     # Parse the XML file and return a pointer to the parsed tree
     my $XmlFile=$_[0];
 
@@ -251,6 +252,8 @@ sub parse_xml{
     open(XMLFILE, $XmlFile) or die "$ERROR could not open $XmlFile\n";
     my $tree = &XmlRead( join('',<XMLFILE>) );
     close XMLFILE;
+
+    my $XMLERROR = "$ERROR in $XmlFile:";
 
     my $commandList=$tree->[0];
     $commandList=$tree->[1] if $commandList->{type} ne 'e';
@@ -267,28 +270,28 @@ sub parse_xml{
 	my $nodename    = $node->{name};
 	my $nodeattrib  = $node->{attrib};
 	if($nodename eq 'rule'){
-	    warn "$ERROR in $XmlFile: missing 'expr' attribute for rule $nodecontent\n" 
+	    warn "$ERROR in $XmlFile: missing 'expr=' in <rule...> $nodecontent\n" 
 		unless $nodeattrib->{expr};
 	    foreach my $attrib (keys %{$nodeattrib}){
-		warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for rule $nodecontent\n"
+		warn "$ERROR in $XmlFile: unknown attribute '$attrib=' in <rule...> $nodecontent\n"
 		    unless $attrib eq "expr";
 	    }
 	}elsif($nodename eq 'set'){
-	    warn "$ERROR in $XmlFile: missing 'name' attribute for <set...>\n"
+	    warn "$ERROR in $XmlFile: missing 'name=' in <set...>\n"
 		unless $nodeattrib->{name};
-	    warn "$ERROR in $XmlFile: missing 'value' attribute for <set name=\"$nodeattrib->{name}...>\n"
-		unless $nodeattrib->{value};
+	    warn "$ERROR in $XmlFile: missing 'value=' in <set name=\"$nodeattrib->{name}...>\n"
+		unless exists $nodeattrib->{value};
 	    foreach my $attrib (keys %{$nodeattrib}){
-		warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for <set name=\"$nodeattrib->{name}\"...>\n"
+		warn "$ERROR in $XmlFile: unknown attribute '$attrib=' in <set name=\"$nodeattrib->{name}\"...>\n"
 		    unless $attrib =~ /^name|value|type$/;
 	    }
 	}elsif($nodename eq 'commandgroup'){
 	    my $commandgroupname = $node->{attrib}->{name};
 	    my $commandgroupcontent = $node->{content}->[0]->{content};
-	    warn "$ERROR in $XmlFile: missing 'name' attribute for <commandgroup...>\n$commandgroupcontent\n"
+	    warn "$ERROR in $XmlFile: missing 'name=' in <commandgroup...>\n$commandgroupcontent\n"
 		unless $commandgroupname;
 	    foreach my $attrib (keys %{$nodeattrib}){
-		warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for <commandgroup name=\"$commandgroupname\"...>\n"
+		warn "$ERROR in $XmlFile: unknown attribute '$attrib=' in <commandgroup name=\"$commandgroupname\"...>\n"
 		    unless $attrib eq "name";
 	    }
 	    foreach my $command (@{$node->{content}}){
@@ -298,10 +301,10 @@ sub parse_xml{
 		my $commandattrib = $command->{attrib};
 		my $commandname = $commandattrib->{name};
 		my $commandcontent = $command->{content};
-		warn "$ERROR in $XmlFile: missing 'name' attribute for <command...> in command group $commandgroupname:\n$commandcontent\n"
+		warn "$ERROR in $XmlFile: missing 'name=' in <command...> in command group $commandgroupname:\n$commandcontent\n"
 		    unless $commandname;
 		foreach my $attrib (keys %{$commandattrib}){
-		    warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for <command name=\"$commandname\"...>\n"
+		    warn "$ERROR in $XmlFile: unknown attribute '$attrib=' in <command name=\"$commandname\"...>\n"
 			unless $attrib =~ /^name|alias|if|required|multiple$/;
 		}
 		foreach my $commandpart (@{$command->{content}}){
@@ -309,54 +312,54 @@ sub parse_xml{
 		    my $commandpartname = $commandpart->{name};
 		    my $commandpartattrib = $commandpart->{attrib};
 		    if($commandpartname eq 'if'){
-			warn "$ERROR in $XmlFile: missing \"expr=...\" in <if ...> in command \#$commandname\n"
+			warn "$ERROR in $XmlFile: missing 'expr=' in <if...> in command \#$commandname\n"
 			    unless $commandpartattrib->{expr};
 			foreach my $attrib (keys %{$commandpartattrib}){
-			    warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for <if ...> in command \#$commandname\n"
+			    warn "$ERROR in $XmlFile: unknown attribute '$attrib=' in <if...> in command \#$commandname\n"
 				unless $attrib eq 'expr';
 			}
 		    }elsif($commandpartname eq 'for'){
-			warn "$ERROR in $XmlFile: missing \"from=...\" in <for ...> in command \#$commandname\n"
-			    unless $commandpartattrib->{from};
-			warn "$ERROR in $XmlFile: missing \"to=...\" in <for ...> in command \#$commandname\n"
-			    unless $commandpartattrib->{to};
+			warn "$ERROR in $XmlFile: missing 'from=' in <for...> in command \#$commandname\n"
+			    unless exists $commandpartattrib->{from};
+			warn "$ERROR in $XmlFile: missing 'to=' in <for...> in command \#$commandname\n"
+			    unless exists $commandpartattrib->{to};
 			foreach my $attrib (keys %{$commandpartattrib}){
-			    warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for <for ...> in command \#$commandname\n"
+			    warn "$ERROR in $XmlFile: unknown attribute '$attrib=' in <for...> in command \#$commandname\n"
 				unless $attrib =~ /^from|to|name$/;
 			}
 		    }elsif($commandpartname eq 'foreach'){
-			warn "$ERROR in $XmlFile: missing \"values=...\" in <foreach ...> in command \#$commandname\n"
-			    unless $commandpartattrib->{values};
+			warn "$ERROR in $XmlFile: missing 'values=' in <foreach...> in command \#$commandname\n"
+			    unless exists $commandpartattrib->{values};
 			foreach my $attrib (keys %{$commandpartattrib}){
-			    warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for <foreach ...> in command \#$commandname\n"
+			    warn "$ERROR in $XmlFile: unknown attribute '$attrib=' for <foreach...> in command \#$commandname\n"
 				unless $attrib =~ /^values|name$/;
 			}
 		    }elsif($commandpartname eq 'set'){
-			warn "$ERROR in $XmlFile: missing 'name' attribute for <set...> in command \#$commandname\n"
+			warn "$ERROR in $XmlFile: missing 'name=' in <set...> in command \#$commandname\n"
 			    unless $commandpartattrib->{name};
-			warn "$ERROR in $XmlFile: missing 'value' attribute for <set...> in command \#$commandname\n"
-			    unless $commandpartattrib->{value};
+			warn "$ERROR in $XmlFile: missing 'value=' in <set...> in command \#$commandname\n"
+			    unless exists $commandpartattrib->{value};
 			foreach my $attrib (keys %{$commandpartattrib}){
-			    warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for <set...> in command \#$commandname\n"
+			    warn "$ERROR in $XmlFile: unknown attribute '$attrib=' in <set...> in command \#$commandname\n"
 				unless $attrib =~ /^name|value|type$/;
 			}
 		    }elsif($commandpartname eq 'rule'){
-			warn "$ERROR in $XmlFile: missing 'expr' attribute for <rule...> in command \#$commandname \n" 
+			warn "$ERROR in $XmlFile: missing 'expr=' in <rule...> in command \#$commandname \n" 
 			    unless $commandpartattrib->{expr};
 			foreach my $attrib (keys %{$commandpartattrib}){
-			    warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for <rule...> in command \#$commandname\n"
+			    warn "$ERROR in $XmlFile: unknown attribute '$attrib=' in <rule...> in command \#$commandname\n"
 				unless $attrib eq "expr";
 			}
 		    }elsif($commandpartname eq 'parameter'){
 			# This should be in a subroutine called from a bunch of places
 			my $paramname = $commandpartattrib->{name};
-			warn "$ERROR in $XmlFile: missing 'name' attribute for <parameter...> in command \#$commandname \n"
+			warn "$ERROR in $XmlFile: missing 'name=' in <parameter...> in command \#$commandname \n"
 			    unless $paramname;
-			warn "$ERROR in $XmlFile: missing 'type' attribute for parameter $paramname of command \#$commandname \n"
+			warn "$ERROR in $XmlFile: missing 'type=' in parameter $paramname of command \#$commandname \n"
 			    unless $commandpartattrib->{type};
 			foreach my $attrib (keys %{$commandpartattrib}){
-			    warn "$ERROR in $XmlFile: unknown attribute \"$attrib\" for parameter $paramname of command \#$commandname\n"
-				unless $attrib =~ /^name|type|min|max|default|input|length|case|ordered|duplicate|if$/;
+			    warn "$ERROR in $XmlFile: unknown attribute '$attrib=' for parameter $paramname of command \#$commandname\n"
+				unless $attrib =~ /^name|type|min|max|default|input|length|case|ordered|duplicate|if|required$/;
 			}
 		    }else{
 			warn "$ERROR in $XmlFile: unknown tag <$commandpartname...> in command $commandname\n";
