@@ -104,6 +104,7 @@ foreach $source (@source){
 
     print "processing file $source F77=$F77\n" if $Debug;
 
+    my $program;
     my $module;
     my $subroutine;
     my $function;
@@ -111,6 +112,9 @@ foreach $source (@source){
     while(<SRC>){
 
 	### print "processing line $_\n" if $Debug;
+
+        # end program
+	$program=0 if $module and /^\s*end\s+program/i; 
 
         # end module (modules cannot be nested, name is not required at end)
 	$module=0 if $module and /^\s*end\s+module/i; 
@@ -121,8 +125,12 @@ foreach $source (@source){
 	# end function XXX (functions may be nested, name is required)
 	$function='' if /^\s*end\s+function\s+$function\b/i;    
 
-	next if ($module or $subroutine or $function) and not ($All or $F77);
+	next if ($program or $module or $subroutine or $function) 
+	    and not ($All or $F77);
 
+	# program XXX
+	$program = 1 if /^\s*program\s+(\w+)/i;
+	
         # module XXX
 	if(/^\s*module\s+(\w+)/i){
 	    $module = $+;
