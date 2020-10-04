@@ -214,7 +214,7 @@ sub process_xml{
 	    $SrcDecl =~ s/  ! \"\#\w+\"\n$//;
 
 	    my $Attrib = $element->{attrib};
-	    my $NameCommand = $Attrib->{name};
+	    my $NameCommand = $Attrib->{name}; $NameCommand =~ s/^\#//;
             my $Name   = "\"\#$NameCommand\"";
 	    my $SrcCase1 = $SrcCase;
 	    my $SrcDecl1 = $SrcDecl;

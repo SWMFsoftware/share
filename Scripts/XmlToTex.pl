@@ -69,7 +69,7 @@ while(<>){
 
     # command --> subsubsection with an index term
     if(/^\s*<command/){
-	/name=[\'\"]([^\'\"]+)/;
+	/name=[\'\"]\#?([^\'\"]+)/;
 	my $command   = "\#$1";
 	my @path = split('/',$ARGV);
 	my $comp = 'CON'; 
