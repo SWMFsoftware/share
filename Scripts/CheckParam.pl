@@ -34,8 +34,10 @@ my @FormattedFile;
 # Pattern to match component ID-s
 my $ValidComp = 'CZ|EE|GM|IE|IH|IM|OH|PC|PS|PT|PW|RB|SC|SP|UA';
 
-# Error string
+# Error strings
 my $ERROR = 'CheckParam_ERROR:';
+my $XMLERROR;
+my $COMMANDERROR;
 
 # Error status
 my $IsError;
@@ -253,7 +255,7 @@ sub parse_xml{
     my $tree = &XmlRead( join('',<XMLFILE>) );
     close XMLFILE;
 
-    my $XMLERROR = "$ERROR in $XmlFile:";
+    $XMLERROR = "XML ERROR in $XmlFile";
 
     my $commandList=$tree->[0];
     $commandList=$tree->[1] if $commandList->{type} ne 'e';
@@ -270,110 +272,191 @@ sub parse_xml{
 	my $nodename    = $node->{name};
 	my $nodeattrib  = $node->{attrib};
 	if($nodename eq 'rule'){
-	    warn "$ERROR in $XmlFile: missing 'expr=' in <rule...> $nodecontent\n" 
+	    warn "$XMLERROR: missing 'expr=' in <rule...> $nodecontent\n" 
 		unless $nodeattrib->{expr};
 	    foreach my $attrib (keys %{$nodeattrib}){
-		warn "$ERROR in $XmlFile: unknown attribute '$attrib=' in <rule...> $nodecontent\n"
+		warn "$XMLERROR: unknown attribute '$attrib=' in <rule...> $nodecontent\n"
 		    unless $attrib eq "expr";
 	    }
 	}elsif($nodename eq 'set'){
-	    warn "$ERROR in $XmlFile: missing 'name=' in <set...>\n"
+	    warn "$XMLERROR: missing 'name=' in <set...>\n"
 		unless $nodeattrib->{name};
-	    warn "$ERROR in $XmlFile: missing 'value=' in <set name=\"$nodeattrib->{name}...>\n"
+	    warn "$XMLERROR: missing 'value=' in <set name=\"$nodeattrib->{name}...>\n"
 		unless exists $nodeattrib->{value};
 	    foreach my $attrib (keys %{$nodeattrib}){
-		warn "$ERROR in $XmlFile: unknown attribute '$attrib=' in <set name=\"$nodeattrib->{name}\"...>\n"
+		warn "$XMLERROR: unknown attribute '$attrib=' in <set name=\"$nodeattrib->{name}\"...>\n"
 		    unless $attrib =~ /^name|value|type$/;
 	    }
 	}elsif($nodename eq 'commandgroup'){
 	    my $commandgroupname = $node->{attrib}->{name};
 	    my $commandgroupcontent = $node->{content}->[0]->{content};
-	    warn "$ERROR in $XmlFile: missing 'name=' in <commandgroup...>\n$commandgroupcontent\n"
+	    warn "$XMLERROR: missing 'name=' in <commandgroup...>\n$commandgroupcontent\n"
 		unless $commandgroupname;
 	    foreach my $attrib (keys %{$nodeattrib}){
-		warn "$ERROR in $XmlFile: unknown attribute '$attrib=' in <commandgroup name=\"$commandgroupname\"...>\n"
+		warn "$XMLERROR: unknown attribute '$attrib=' in <commandgroup name=\"$commandgroupname\"...>\n"
 		    unless $attrib eq "name";
 	    }
 	    foreach my $command (@{$node->{content}}){
 		next unless $command->{type} eq 'e';
-		warn "$ERROR in $XmlFile: invalid tag <$node->{name}...> in command group $commandgroupname\n"
+		warn "$XMLERROR: invalid tag <$node->{name}...> in command group $commandgroupname\n"
 		    unless $node->{name} ne "command";
 		my $commandattrib = $command->{attrib};
-		my $commandname = $commandattrib->{name};
+		# Remove the starting hash tag from the name.
+		$commandattrib->{name} =~ s/^\#//;
+		$commandName = $commandattrib->{name};
 		my $commandcontent = $command->{content};
-		warn "$ERROR in $XmlFile: missing 'name=' in <command...> in command group $commandgroupname:\n$commandcontent\n"
-		    unless $commandname;
+		warn "$XMLERROR: missing 'name=' in <command...> in command group $commandgroupname:\n$commandcontent\n"
+		    unless $commandName;
 		foreach my $attrib (keys %{$commandattrib}){
-		    warn "$ERROR in $XmlFile: unknown attribute '$attrib=' in <command name=\"$commandname\"...>\n"
+		    warn "$XMLERROR: unknown attribute '$attrib=' in <command name=\"$commandName\"...>\n"
 			unless $attrib =~ /^name|alias|if|required|multiple$/;
 		}
-		foreach my $commandpart (@{$command->{content}}){
-		    next unless $commandpart->{type} eq 'e';
-		    my $commandpartname = $commandpart->{name};
-		    my $commandpartattrib = $commandpart->{attrib};
-		    if($commandpartname eq 'if'){
-			warn "$ERROR in $XmlFile: missing 'expr=' in <if...> in command \#$commandname\n"
-			    unless $commandpartattrib->{expr};
-			foreach my $attrib (keys %{$commandpartattrib}){
-			    warn "$ERROR in $XmlFile: unknown attribute '$attrib=' in <if...> in command \#$commandname\n"
-				unless $attrib eq 'expr';
-			}
-		    }elsif($commandpartname eq 'for'){
-			warn "$ERROR in $XmlFile: missing 'from=' in <for...> in command \#$commandname\n"
-			    unless exists $commandpartattrib->{from};
-			warn "$ERROR in $XmlFile: missing 'to=' in <for...> in command \#$commandname\n"
-			    unless exists $commandpartattrib->{to};
-			foreach my $attrib (keys %{$commandpartattrib}){
-			    warn "$ERROR in $XmlFile: unknown attribute '$attrib=' in <for...> in command \#$commandname\n"
-				unless $attrib =~ /^from|to|name$/;
-			}
-		    }elsif($commandpartname eq 'foreach'){
-			warn "$ERROR in $XmlFile: missing 'values=' in <foreach...> in command \#$commandname\n"
-			    unless exists $commandpartattrib->{values};
-			foreach my $attrib (keys %{$commandpartattrib}){
-			    warn "$ERROR in $XmlFile: unknown attribute '$attrib=' for <foreach...> in command \#$commandname\n"
-				unless $attrib =~ /^values|name$/;
-			}
-		    }elsif($commandpartname eq 'set'){
-			warn "$ERROR in $XmlFile: missing 'name=' in <set...> in command \#$commandname\n"
-			    unless $commandpartattrib->{name};
-			warn "$ERROR in $XmlFile: missing 'value=' in <set...> in command \#$commandname\n"
-			    unless exists $commandpartattrib->{value};
-			foreach my $attrib (keys %{$commandpartattrib}){
-			    warn "$ERROR in $XmlFile: unknown attribute '$attrib=' in <set...> in command \#$commandname\n"
-				unless $attrib =~ /^name|value|type$/;
-			}
-		    }elsif($commandpartname eq 'rule'){
-			warn "$ERROR in $XmlFile: missing 'expr=' in <rule...> in command \#$commandname \n" 
-			    unless $commandpartattrib->{expr};
-			foreach my $attrib (keys %{$commandpartattrib}){
-			    warn "$ERROR in $XmlFile: unknown attribute '$attrib=' in <rule...> in command \#$commandname\n"
-				unless $attrib eq "expr";
-			}
-		    }elsif($commandpartname eq 'parameter'){
-			# This should be in a subroutine called from a bunch of places
-			my $paramname = $commandpartattrib->{name};
-			warn "$ERROR in $XmlFile: missing 'name=' in <parameter...> in command \#$commandname \n"
-			    unless $paramname;
-			warn "$ERROR in $XmlFile: missing 'type=' in parameter $paramname of command \#$commandname \n"
-			    unless $commandpartattrib->{type};
-			foreach my $attrib (keys %{$commandpartattrib}){
-			    warn "$ERROR in $XmlFile: unknown attribute '$attrib=' for parameter $paramname of command \#$commandname\n"
-				unless $attrib =~ /^name|type|min|max|default|input|length|case|ordered|duplicate|if|required$/;
-			}
-		    }else{
-			warn "$ERROR in $XmlFile: unknown tag <$commandpartname...> in command $commandname\n";
-		    }
- 
-		}
+		&check_xml_command($command);
 	    }
 	}else{
-	    warn "$ERROR in $XmlFile: unknown top level tag $nodename\n";
+	    warn "$XMLERROR: unknown top level tag $nodename\n";
 	}
     }
     return $commandList;
 }
 
+##############################################################################
+sub check_xml_command{
+
+    # check the XML description of a command
+
+    my $command = $_[0];
+
+    $COMMANDERROR = "$XMLERROR in command \#$commandName";
+
+    foreach my $commandpart (@{$command->{content}}){
+	next unless $commandpart->{type} eq 'e';
+	my $commandpartname = $commandpart->{name};
+	my $commandpartattrib = $commandpart->{attrib};
+	if($commandpartname eq 'if'){
+	    warn "$COMMANDERROR: missing 'expr=' in <if...>\n"
+		unless $commandpartattrib->{expr};
+	    foreach my $attrib (keys %{$commandpartattrib}){
+		warn "$COMMANDERROR: unknown attribute '$attrib=' in <if...>\n"
+		    unless $attrib eq 'expr';
+	    }
+	    # Check inside <if ...> ... </if>
+	    &check_xml_command($commandpart);
+	}elsif($commandpartname eq 'for'){
+	    warn "COMMANDERROR: missing 'from=' in <for...>\n"
+		unless exists $commandpartattrib->{from};
+	    warn "$COMMANDERROR: missing 'to=' in <for...>\n"
+		unless exists $commandpartattrib->{to};
+	    foreach my $attrib (keys %{$commandpartattrib}){
+		warn "$COMMANDERROR: unknown attribute '$attrib=' in <for...>\n"
+		    unless $attrib =~ /^from|to|name$/;
+	    }
+	    # Check inside <for ...> ... </for>
+	    &check_xml_command($commandpart);
+	}elsif($commandpartname eq 'foreach'){
+	    warn "$COMMANDERROR: missing 'values=' in <foreach...>\n"
+		unless exists $commandpartattrib->{values};
+	    foreach my $attrib (keys %{$commandpartattrib}){
+		warn "$COMMANDERROR: unknown attribute '$attrib=' in <foreach...>\n"
+		    unless $attrib =~ /^values|name$/;
+	    }
+	    # Check inside <foreach ...> ... </foreach>
+	    &check_xml_command($commandpart);
+	}elsif($commandpartname eq 'set'){
+	    warn "$COMMANDERROR: missing 'name=' in <set...>\n"
+		unless $commandpartattrib->{name};
+	    warn "$COMMANDERROR: missing 'value=' in <set...>\n"
+		unless exists $commandpartattrib->{value};
+	    foreach my $attrib (keys %{$commandpartattrib}){
+		warn "$COMMANDERROR: unknown attribute '$attrib=' in <set...>\n"
+		    unless $attrib =~ /^name|value|type$/;
+	    }
+	}elsif($commandpartname eq 'rule'){
+	    warn "$COMMANDERROR: missing 'expr=' in <rule...>\n" 
+		unless $commandpartattrib->{expr};
+	    foreach my $attrib (keys %{$commandpartattrib}){
+		warn "$COMMANDERROR: unknown attribute '$attrib=' in <rule...>\n"
+		    unless $attrib eq "expr";
+	    }
+	}elsif($commandpartname eq 'parameter'){
+	    # This should be in a subroutine called from a bunch of places
+	    my $paramname = $commandpartattrib->{name};
+	    warn "$COMMANDERROR: missing 'name=' in <parameter...>\n"
+		unless $paramname;
+	    my $paramtype = $commandpartattrib->{type};
+	    warn "$COMMANDERROR: missing/incorrect 'type=$paramtype' in parameter $paramname\n"
+		unless $paramtype =~ /^integer|real|logical|string|strings$/;
+	    foreach my $attrib (keys %{$commandpartattrib}){
+		warn "$COMMANDERROR: unknown attribute '$attrib=' for parameter $paramname\n"
+		    unless $attrib =~ 
+		    /^name|type|min|max|default|input|length|case|ordered|duplicate|if|required$/;
+	    }
+	    if($commandpartattrib->{input} eq 'select'){
+		&check_xml_option($commandpart, "parameter $paramname");
+	    }elsif($paramtype eq 'strings'){
+		warn "$COMMANDERROR: missing <part..>\n" unless $commandpart->{content};
+		foreach my $part (@{$commandpart->{content}}){
+		    warn "$COMMANDERROR: unknown tag <$part->{name}...>\n" 
+			unless $part->{name} eq 'part';
+		    my $partattrib = $part->{attrib};
+		    my $partname   = $partattrib->{name};
+		    warn "$COMMANDERROR: missing 'name=' in <part...>\n" unless $partname;
+		    my $parttype = $partattrib->{type};
+		    warn "$COMMANDERROR: missing/incorrect 'type=$parttype' in part $partname\n"
+			unless $parttype =~ /^integer|real|logical|string|strings$/;
+		    foreach my $attrib (keys %{$partattrib}){
+			warn "$COMMANDERROR: unknown attribute '$attrib=' in part $partname\n"
+			    unless $attrib =~ 
+			    /^name|type|input|length|min|max|default|required|multiple|if$/;
+		    }
+		    &check_xml_option($part, "part $partname") 
+			if $partattrib->{input} eq 'select';
+		}
+	    }else{
+		foreach my $node (@{$commandpart->{content}}){
+		    next unless $node->{type} eq 'e';
+		    warn "$COMMANDERROR: invalid tag <$node->{name}...> in parameter $paramname:\n";
+		}
+	    }
+	}else{
+	    warn "$COMMANDERROR: unknown tag <$commandpartname...>\n";
+	}
+    }
+}
+##############################################################################
+sub check_xml_option{
+    my $node = $_[0];
+    my $name = $_[1];
+
+    my $noption = 0;
+    foreach my $option (@{$node->{content}}){
+	next unless $option->{type} eq 'e';
+	$noption++;
+	my $optionattrib = $option->{attrib};
+	if($option->{name} eq 'option'){
+	    warn "$COMMANDERROR: missing <option name|value=...>\n" 
+		unless exists $optionattrib->{name} or exists $optionattrib->{value};
+	    my $optionname = ($optionattrib->{name} or $optionattrib->{value});
+	    foreach my $attrib (keys %{$optionattrib}){
+		warn "$COMMANDERROR: unknown attribute '$attrib=' in option $optionname\n"
+		    unless $attrib =~ /^name|value|default|if|exclusive/;
+	    }
+	}elsif($option->{name} eq 'optioninput'){
+	    warn "$COMMANDERROR: missing <optioninput name=...>\n" 
+		unless $optionattrib->{name};
+	    my $optionname = $optionattrib->{name};
+	    foreach my $attrib (keys %{$optionattrib}){
+		warn "$COMMANDERROR: unknown attribute '$attrib=' in optioninput $optionname\n"
+		    unless $attrib =~ /^name|type|min|max|length|default|if/;
+	    }
+	}else{
+	    warn "$COMMANDERROR: incorrect tag <$option->{name}> instead of ".
+		"<option> or <optioninput>\n"
+	}
+    }
+    warn "$COMMANDERROR in $name: missing <option...>\n" unless $noption;
+
+}
 ##############################################################################
 sub set_value{
     # set values defined by <set name=".." type=".." value="..."> XML tag
@@ -397,7 +480,7 @@ sub find_commands{
 	    $command{$realName} =$node;
 
 	    #print "found command $realName\n" if $Debug;
-	    
+
 	    if($Verbose){
 		# Store the text of the command
 		foreach my $element (@{$node->{content}}){
@@ -460,9 +543,9 @@ sub read_line{
 
 		$nLine++; 
 		chop $paramValue;
-		$paramValue =~ s/^ +//;        # Remove leading spaces
+		$paramValue =~ s/^ +//;	# Remove leading spaces
 		$paramValue =~ s/(   |\t).*//; # Remove after TAB or 3 spaces
-		$paramValue =~ s/\s+$//;       # Remove trailing spaces
+		$paramValue =~ s/\s+$//; # Remove trailing spaces
 
 		print "read script parameter = $paramValue\n" if $Debug;
 	    }else{
@@ -493,7 +576,7 @@ sub read_line{
 		# Save current file name and line number
 		$InputFile[$IncludeLevel] = $InputFile;
 		$nLine[$IncludeLevel]     = $nLine;
-		
+
 		# Move to next include level
 		$IncludeLevel++;
 		$InputFile                = $file;
@@ -572,22 +655,22 @@ sub read_line{
 	   not $StandAlone and $NameComp and not $InsideComp){
 	# Read the #COMPONENT command parameters and see if the component is switched off
 	$FormattedFile[$IncludeLevel] .= "#COMPONENT\n" if $Format; # save formatted line
-        $_ = <$FileHandle>; s/(\w\w).*/$1\t\t\tNameComp/;           # read and format line
-	$nLine++;                                                   # update line counter
+	$_ = <$FileHandle>; s/(\w\w).*/$1\t\t\tNameComp/; # read and format line
+	$nLine++;		# update line counter
 	print "$NameComp reading #COMPONENT\n$_" if $Debug;
 	if(/^\s*$NameComp/){
-	    $FormattedFile[$IncludeLevel] .= $_ if $Format;         # save formatted line
-	    $_ = <$FileHandle>; s/(T|F).*/$1\t\t\tUseComp/;         # read and format line
-	    $nLine++;                                               # update line counter
+	    $FormattedFile[$IncludeLevel] .= $_ if $Format; # save formatted line
+	    $_ = <$FileHandle>; s/(T|F).*/$1\t\t\tUseComp/; # read and format line
+	    $nLine++;		# update line counter
 	    print if $Debug;
-	    $UseComp = /^\s*T/;                                     # set UseComp from T|F
+	    $UseComp = /^\s*T/; # set UseComp from T|F
 	    &print_error(": component $NameComp is switched off after\n".
 			 "\tBEGIN_COMP $NameComp occured at line $CompSection\n")
 		if $CompSection and not $UseComp;
 	}
 	# Put last read line into FormattedLine
 	$FormattedLine = $_ if $Format;
-    }elsif(/^\#RUN\b/){ # Check if a new session has started
+    }elsif(/^\#RUN\b/){		# Check if a new session has started
 	# Check if the required commands are defined and
 	# if the parameters are correct for the session
 
@@ -609,7 +692,7 @@ sub read_line{
 	}
 	$UserInput = 0;
     }
-    
+
     $nLine++;
 
     if($Format){
@@ -678,7 +761,7 @@ sub previous_file{
 	    }else{
 		unlink $OrigFile;
 	    }
-	    
+
 	    # Remove formatted version
 	    $FormattedFile[$IncludeLevel] = "";
 	}
@@ -751,7 +834,7 @@ sub process_elements{
 	    if(&read_parameter($node,$element)){
 		&check_value_format and
 		    &check_param_value($element,$paramValue) and
-			&store($paramName,$paramValue);
+		    &store($paramName,$paramValue);
 	    }else{
 		&param_error("could not be read from file");
 	    }
@@ -797,7 +880,7 @@ sub process_elements{
 	{
 	    my $index =&extract($element->{attrib}->{name},"string");
 	    my $values=&extract($element->{attrib}->{values},"string");
-	
+
 	    print "FOREACH index=$index values=$values\n" if $Debug;
 	    foreach my $value (split(',',$values)){
 		# Set the index name in package if present
@@ -823,9 +906,9 @@ sub read_parameter{
     print "$paramName=" if $Debug;
     $paramValue = &read_line($paramName) or return 0;
     chop $paramValue;
-    $paramValue =~ s/^\s+//;     # Remove leading spaces
-    $paramValue =~ s/\t.*// or   # Remove everything after a TAB
-    	$paramValue =~ s/   .*//;# or remove everything after 3 spaces
+    $paramValue =~ s/^\s+//;	   # Remove leading spaces
+    $paramValue =~ s/\t.*// or	   # Remove everything after a TAB
+	$paramValue =~ s/   .*//;# or remove everything after 3 spaces
     $paramValue =~ s/\s+$//;     # Remove trailing spaces
 
     $paramValue = uc($paramValue) if $case eq "upper";
@@ -864,7 +947,7 @@ sub check_value_format{
 	    (\s*[\/\*]\s*
 	     [\+\-]?(\d+(\.\d*)?|\.\d+)([ed][\+\-]?\d+)?)?
 	    (\ (s|m|h|d|w|y)\w*)?$/xi;
-	    
+
     }
     elsif($paramType =~ /string/)
     {
@@ -980,52 +1063,52 @@ sub check_param_value{
 	my $shown=0;
 
       OPTION: foreach my $element (@$content){
-	    next OPTION unless $element->{type} eq 'e';
-	    next unless &check_if($element);
-	    if($element->{name} eq 'option')
-	    {
-		if(length($element->{attrib}->{value})>0)
-		{
-		    $optionvalue = 
-			&extract($element->{attrib}->{value},$type);
-		}
-		else
-		{
-		    $optionvalue = 
-			&extract($element->{attrib}->{name},$type);
-		}
-		# Collect the possible option values
-		$optionvalues .= "$optionvalue,";
+	  next OPTION unless $element->{type} eq 'e';
+	  next unless &check_if($element);
+	  if($element->{name} eq 'option')
+	  {
+	      if(length($element->{attrib}->{value})>0)
+	      {
+		  $optionvalue = 
+		      &extract($element->{attrib}->{value},$type);
+	      }
+	      else
+	      {
+		  $optionvalue = 
+		      &extract($element->{attrib}->{name},$type);
+	      }
+	      # Collect the possible option values
+	      $optionvalues .= "$optionvalue,";
 
-		if( length($value)>0 and 
-		    (($type eq 'string' and $optionvalue =~/\b$value\b/) or
-		     ($type eq 'integer' and $optionvalue == $value) or
-		     ($type eq 'real'    and abs($optionvalue-$value)<1e-7)
-		     ))
-		{
-		    $good=1;
-		    last OPTION;
-		}
-	    }
-	    elsif($element->{name} eq 'optioninput')
-	    {
-		$good=&check_range($element,$value,$type);
-		if(not $good){
-		    chop $optionvalues;
-		    print "\tand is not found among options $optionvalues\n";
-		    $shown = 1;
-		}
-	    }
-	}
+	      if( length($value)>0 and 
+		  (($type eq 'string' and $optionvalue =~/\b$value\b/) or
+		   ($type eq 'integer' and $optionvalue == $value) or
+		   ($type eq 'real'    and abs($optionvalue-$value)<1e-7)
+		  ))
+	      {
+		  $good=1;
+		  last OPTION;
+	      }
+	  }
+	  elsif($element->{name} eq 'optioninput')
+	  {
+	      $good=&check_range($element,$value,$type);
+	      if(not $good){
+		  chop $optionvalues;
+		  print "\tand is not found among options $optionvalues\n";
+		  $shown = 1;
+	      }
+	  }
+      }
 	if(not $good and not $shown){
 	    chop $optionvalues;
 	    if(not length($value)){
-		 &param_error("is missing! Possible options are ",
-			      $optionvalues);
-	     }else{
-		 &param_error("has value $value not listed among options ",
-			      $optionvalues);
-	     }
+		&param_error("is missing! Possible options are ",
+			     $optionvalues);
+	    }else{
+		&param_error("has value $value not listed among options ",
+			     $optionvalues);
+	    }
 	}
     }
     else
@@ -1060,7 +1143,7 @@ sub check_range{
     if(length($length)>0){
 	if(length($value) > $length){
 	    &param_error("has length ",length($value),
-		" which is longer than maximum length $length");
+			 " which is longer than maximum length $length");
 	    return 0;
 	}
     }
@@ -1109,7 +1192,7 @@ sub check_command{
     $defined{$realName}="\#$commandName at line $nLine in file $InputFile";
     $definedSessionLast{$realName}=$defined{$realName};
     &store("_command",$commandName);
-    
+
     print "Command \#$commandName defined at line $nLine in file $InputFile\n"
 	if $Debug;
 
@@ -1123,7 +1206,7 @@ sub check_session{
 
     if($InsideComp and not $StandAlone){
 	&print_error(" for session $nSession:\n".
-                "\tBEGIN_COMP $InsideComp does not have matching END_COMP\n");
+		     "\tBEGIN_COMP $InsideComp does not have matching END_COMP\n");
 	$IsError = 1;
     }
 
@@ -1133,7 +1216,7 @@ sub check_session{
     foreach $realName (@required){
 	if(not $defined{$realName}){
 	    &print_error(" for session $nSession:\n".
-		"\trequired command \#$realName was not defined\n");
+			 "\trequired command \#$realName was not defined\n");
 	    $IsError = 1;
 	}
     }
@@ -1206,7 +1289,7 @@ sub extract{
 	&eval_comp("\$_value_=$value;");
 	$value_ = $COMP::_value_;
 
-        &print_error(" for command \#$commandName\n".
+	&print_error(" for command \#$commandName\n".
 		     "\tcould not evaluate\n".
 		     "\tsetting \$value_=$value:\n\t$@")
 	    if $@;
@@ -1279,7 +1362,7 @@ sub print_help{
 
     print 
 #BOC
-"Purpose:
+	"Purpose:
 
      Read a parameter file and verify its correctness based on an 
      XML description. In most applications this scipt is called by 
@@ -1350,7 +1433,7 @@ Just a test.
 ...
 Ctrl-D"
 #EOC
-    ,"\n\n";
+,"\n\n";
     exit 0;
 }
 ############################################################################
@@ -1359,7 +1442,7 @@ sub print_help_xml{
     print
 #!QUOTE: \clearpage
 #BOC
-'XML - eXtended Markup Language
+	'XML - eXtended Markup Language
 
 XML is a very simple notation used for marking up arbitrary text. 
 It is a well defined standard, which is suitable for machine processing,
@@ -1405,7 +1488,7 @@ Tags can be nested and they can contain a text body:
   text1
 </TAGNAME1>'
 #EOC
-    ,"\n\n";
+,"\n\n";
     exit;
 }
 ############################################################################
