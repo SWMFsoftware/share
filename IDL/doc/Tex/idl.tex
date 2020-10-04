@@ -2,21 +2,38 @@
 %  portions used with permission 
 %  For more information, see http://csem.engin.umich.edu/tools/swmf
 \documentclass{article}
+
+\title{IDL visualization macros}
+
+\author{G\'abor T\'oth\\{\it University of Michigan}}
+
 \newcommand{\BATSRUS}{BATS-R-US}
 \begin{document}
 
-\section{IDL Visualization \label{section:idl_visualization}}
+\maketitle
 
-This section describes the use of the IDL macros for plotting results.
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\section{Introduction}
+
+This document describes the use of the IDL macros 
+in the {\bf share/IDL/General/} directory.
 These macros were originally developed for the Versatile Advection Code,
 and modified and improved for \BATSRUS. Since the macros are written
-in a rather general manner, they can be used to visualize all kinds
+in a rather general manner, they can be used to visualize and analyze all kinds
 of model or observational data as long as it can be read. For example
-the plot files from the Polar Wind Outflow Model, IPIC3D2, and ALTOR
-of the SWMF can also be visualized with these macros.
-These IDL macros are in the {\bf share/IDL/General/} directory.
+the plot files from the PWOM, IPIC3D2, FLEKS and ALTOR
+of the SWMF can also be visualized and analyzed with these macros.
+In addition, simple ASCII files (satellite data, trajectory files, etc.)
+as well as various lookup tables (for radiative cooling, equation of state etc.)
+can be read and visualized. The plot data modified or created in IDL 
+can be written into files in the same formats.
 
-\subsection{IDL path and startup file \label{s-idl-path}}
+\section{IDL path and startup file \label{s-idl-path}}
 
    It is necessary to let IDL know about the existence of the macros.  
    You can define the search path for IDL, for example
@@ -38,7 +55,7 @@ export IDL_STARTUP=idlrc
 \end{verbatim}
    in the \~{}/.profile or similar file.
 
-\subsection{Running IDL \label{s-run-idl}}
+\section{Running IDL \label{s-run-idl}}
 
    If the IDL\_PATH and the IDL\_STARTUP variables are set, simply 
    start IDL from the directory where the {\bf *.out} IDL plot files
@@ -60,7 +77,19 @@ idl
    of IDL by editing {\bf idlrc}, e.g. you can
    compile your own IDL procedures. 
 
-   If you get trapped by an error inside some IDL routine,
+   If an error occurs, the code usually returns to the main level, so one
+   can fix the settings and try again. The corresponds to the default 
+   setting
+\begin{verbatim}
+onerror=2
+\end{verbatim}
+   For debugging purposes, it may be useful to set 
+\begin{verbatim}
+onerror=0
+\end{verbatim}
+   so that variables can be written out inside the macro where the error
+   occurred. In this case, or in general if you get trapped by an error 
+   inside some IDL routine, typing
 \begin{verbatim}
 retall
 \end{verbatim}
@@ -70,7 +99,7 @@ exit
 \end{verbatim}
    The alternative 'quit' command is also defined for convenience.
 
-\subsection{Reading a snapshot with read\_data \label{s-readdata}}
+\section{Reading a snapshot with read\_data \label{s-readdata}}
 
    To read a snapshot from a file, type at the "IDL$>$" prompt of IDL
 \begin{verbatim}
@@ -101,7 +130,7 @@ ndim       =        1
 neqpar     =        5
 nw         =        8
 nx         =      256
-parameters =       1000.0000      3.0000000      1.6666700      0.0000000      0.0000000
+parameters =       1000. 3. 1.66667  0. 0.
 coord names= x
 var   names= Rho Ux Uy Uz Bx By Bz P
 param names= xSI r g cuty cutz
@@ -114,13 +143,13 @@ GRID (PLOT_DATA)
    Note that IDL, unlike FORTRAN, starts indexing from 0 instead of 1. 
    The {\bf GRID} index array is useful for defining
    cuts of the computational domain for plotting, see details 
-   in subsection~\ref{s-plot-part}. 
+   in section~\ref{s-plot-part}. 
 
    After reading the data you can do whatever you want with {\bf x}, {\bf w}, 
    and all the other variables 
    {\bf headline, it, time, gencoord, ndim, neqpar, nw, nx, eqpar, variables}
    defined by the header. 
-   You can use the {\bf plot\_data} procedure (see subsection~\ref{s-plot_data}
+   You can use the {\bf plot\_data} procedure (see section~\ref{s-plot_data}
    to get some sophisticated plots or you can use any of the IDL procedures 
    directly to examine and/or plot the data, e.g. for 1D data
 \begin{verbatim}
@@ -146,13 +175,13 @@ plotgrid,x
 plotgrid,x,/lines
 \end{verbatim}
 
-\subsection{Transformation of non-regular grid \label{s-transform}}
+\section{Transformation of non-regular grid \label{s-transform}}
 
    The file may contain data on a generalized or unstructured 2D grid.
    This is signaled by a negative {\bf ndim} in the plotfile 
    and by the variable {\bf gencoord=1} in IDL.
    A {\bf generalized grid} has the same topology as a regular grid
-   but the coordinates are not Cartesian. It is a {it continuouus}
+   but the coordinates are not Cartesian. It is a {\it continuouus}
    distortion of the original grid. On the other hand, 
    {\bf an unstructured grid} has the grid points in an arbitrary
    order, therefore the second and third elements of the 
@@ -225,13 +254,13 @@ dotransform='y'
    After that you can return to dotransform='n' to save the time of
    transformation.
 
-\subsection{Other grid transformations \label{s-gridtransform}}
+\section{Other grid transformations \label{s-gridtransform}}
 
    The {\bf transform} parameter can be used to perform various
    grid transformations by setting it to one of the following values
 \begin{verbatim}
 n, none    - no tranformation
-r, regular - interpolate onto a regular Cartesian grid (previous subsection)
+r, regular - interpolate onto a regular Cartesian grid (previous section)
 p, polar   - convert from Cartesian X-Y(-Z) to polar R-Phi(-Z) coordinates
 u, unpolar - convert from polar R-Phi(-Z) to Cartesian X-Y(-Z) coordinates
 s, sphere  - convert from Cartesian X-Y-Z to spherical R-Theta-Phi coordinates
@@ -265,7 +294,7 @@ degrees to start with.
 As the number of arguments indicate, this feature can be used for much more 
 complicated transformations too.
 
-\subsection{Comparison of data \label{s-compare}}
+\section{Comparison of data \label{s-compare}}
 
    You can read snapshots from up to 10 files for purposes of
    comparison. Simply give the filenames separated by spaces:
@@ -359,7 +388,7 @@ with the use of the {\bf triplet} and {\bf quadruplet} functions
 (see section \ref{s-plot-part}).
 
 One can also visualize the difference between two data files 
-with the {\bf plot\_data} procedure (see next subsection) by setting
+with the {\bf plot\_data} procedure (see next section) by setting
 \begin{verbatim}
 w=w1-w0
 \end{verbatim}
@@ -370,7 +399,7 @@ wreg=wreg1-wreg0
 if the files use different unstructured grids but they are 
 interpolated onto the same regular grid.
 
-\subsection{Plotting data with plot\_data \label{s-plot_data}}
+\section{Plotting data with plot\_data \label{s-plot_data}}
 
    Once the data is read by {\bf read\_data} or {\bf animate\_data} you can plot 
    functions of {\bf w} with
@@ -446,7 +475,7 @@ fmax=[1.1, 1.]
    of functions are changed. You can always set fmin=0, fmax=0, and let
    IDL prompt you for the values.
 
-\subsection{Function names in string func \label{s-functions}}
+\section{Function names in string func \label{s-functions}}
 
    The function names listed in the {\bf func} string can be any of 
    the variable names listed in the string array {\bf wnames}, which is 
@@ -488,7 +517,7 @@ func='b/sqrt({OpRho}*mu0A)'
    For example '-Ti' plots ($-$1)*temperature of ions. This is just a shorthand for
    the general syntax '-{Ti}'.
 
-\subsection{Plotting modes in string plotmode \label{s-plotmode}}
+\section{Plotting modes in string plotmode \label{s-plotmode}}
 
 There are many plotting modes available. 
 These can be listed in the {\bf plotmode} string for each function separated 
@@ -653,7 +682,7 @@ system variable     description
 \end{verbatim}
   The Y and Z axes are affected by the analogous !y. and !z. variables.
 
-\subsection{Plotting part of the domain \label{s-plot-part}}
+\section{Plotting part of the domain \label{s-plot-part}}
 
    It is possible to plot a part of the simulation domain.
    One way that works for both structured and unstructured grids is
@@ -767,7 +796,7 @@ the origin. While the {\bf body} modifier in the plotting mode simply covers
 the circle, the {\bf rcut} removes all the data inside that radius,
 so it has no effect on the range of values.
 
-\subsection{Multiplot \label{s-multiplot}}
+\section{Multiplot \label{s-multiplot}}
 
 The number and arrangement of subplots is automatically set based 
 on the number of files and and the number of functions. 
@@ -825,7 +854,7 @@ The number of functions and the number of subplots can be any combination.
 In 1D plots, the line style is varied for the different 
 functions, so the curves can be distinguished.
 
-\subsection{Plotting another snapshot \label{s-plot-another}}
+\section{Plotting another snapshot \label{s-plot-another}}
 
    If you type
 \begin{verbatim}
@@ -866,7 +895,7 @@ set_default_values
 \end{verbatim}
    procedure.
 
-\subsection{Animation and plotting with animate\_data \label{s-animate}}
+\section{Animation and plotting with animate\_data \label{s-animate}}
 
    This general procedure can plot, save into image and video file(s), or animate 
    (using IDL's Xinteranimate) different functions of data 
@@ -1054,7 +1083,7 @@ help, plotstore, timestore
    maximum or mean will be calculated for the last nplotstore snapshots,
    but the plotstore array will still contain the original function values.
 
-\subsection{Slicing structured 3D data \label{s-slice}}
+\section{Slicing structured 3D data \label{s-slice}}
 
    For visualizing 3D data, plot\_data or animate\_data can be used after a
    1 or 2D {\bf cut} array has been defined. Alternatively slices of a single
@@ -1089,7 +1118,7 @@ slice_data_restore
 \end{verbatim}
    to restore the arrays.
 
-\subsection{Function definitions in funcdef \label{s-funcdef}}
+\section{Function definitions in funcdef \label{s-funcdef}}
 
    The plot functions are set by the {\bf funcdef.pro} procedure.
    This may be customized by the user. If it is modified, 
@@ -1182,7 +1211,7 @@ ldebye          Debye length
 ldSI            Debye length in SI        
 \end{verbatim}
 
-\subsection{Reading logfiles with read\_log\_data \label{s-getlog}}
+\section{Reading logfiles with read\_log\_data \label{s-getlog}}
 
 One or more (at most ten) logfiles can be read by
 \begin{verbatim}
@@ -1238,7 +1267,7 @@ checks the global mass conservation.
 The {\bf plot\_log\_data} procedure described next can be used to get 
 much more sophisticated plots. 
 
-\subsection{Plotting logfile data with plot\_log\_data \label{s-plotlog}}
+\section{Plotting logfile data with plot\_log\_data \label{s-plotlog}}
 
 Once the data in the logfile(s) have been read with {\bf read\_log\_data},
 it can be easily visualized with the {\bf plot\_log\_data} procedure.
@@ -1336,7 +1365,7 @@ vertical axis will be the power spectrum of the log functions
 defined in {\bf logfunc}. The {\bf xrange} array 
 can be used to select the relevant frequency range.
 
-\subsection{Reading and plotting logfile data with read\_data and plot\_data}
+\section{Reading and plotting logfile data with read\_data and plot\_data}
 
 While the {\bf read\_log\_data} and {\bf plot\_log\_data} procedures 
 provide easy and flexible ways to plot data in logfiles, 
@@ -1369,7 +1398,7 @@ the {\bf x} array contains the {\bf logtime} in hours
 while the {\bf w} array will contain the various log functions. 
 Now the logfile data can be plot as standard 1D data with {\bf plot\_data}.
 
-\subsection{Saving plots into postscript and graphics files 
+\section{Saving plots into postscript and graphics files 
                 \label{s-postscript}}
 
 In IDL printing a plot is possible through Postscript files
@@ -1430,9 +1459,21 @@ savemovie='png'
 \end{verbatim}
 The frames can be put together into a movie by some program like
 {\bf mpeg\_encode} or ImageMagick's {\bf convert}, or 
-Apple's {\bf QuicktimePro7}. 
+Apple's {\bf QuicktimePro7}, but there is a simpler approach.
+To save the animation into a video file directly, 
+use the 'mov', 'avi' or 'mp4' format. The name of the video file
+can be set with 'videofile' (default name is 'movie') 
+and the number of frames per second with 'videorate' (default is 10), 
+for example
+\begin{verbatim}
+savemovie='mp4'
+videofile='waterwaves'
+videorate=24
+animate_data
+\end{verbatim}
+will create 'waterwaves.mp4' file with 20 frames per second.
 
-\subsection{IDL scripts and procedures \label{s-idl-script}}
+\section{IDL scripts and procedures \label{s-idl-script}}
 
 All the IDL commands can be collected into a script file, for example 
 \begin{verbatim}
