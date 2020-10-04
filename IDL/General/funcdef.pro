@@ -135,6 +135,7 @@ function funcdef,xx,w,func
      ['dqtot'    , '{qtot}-div({ex},{ey},x,y)*eps0'          ], $ ; error in net charge
      ['ni'       , 'n1'                                      ], $ ; ion number density
      ['ne'       , 'n0'                                      ], $ ; electron number density
+     ['npcgs'    , 'Rho/1.6726e-24'                           ], $ ; ion number density in cgs
      ['dqtot1d'  , '{qtot}-diff1({ex},x)*eps0'               ], $ ; error in net charge in 1D
      ['jpx'      , 'qi*{n1}*{uxs1}+qe*{n0}*{uxs0}'           ], $ ; jx from particles
      ['jpy'      , 'qi*{n1}*{uys1}+qe*{n0}*{uys0}'           ], $ ; jy from particles
