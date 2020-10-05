@@ -314,7 +314,7 @@ sub parse_xml{
 		&check_xml_command($command);
 	    }
 	}else{
-	    warn "$XMLERROR: unknown top level tag $nodename\n";
+	    warn "$XMLERROR: unknown top level tag <$nodename>\n";
 	}
     }
     return $commandList;
