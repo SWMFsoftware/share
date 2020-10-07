@@ -964,7 +964,7 @@ pro read_swmf_remote_tec, filename, TimeEvent=TimeEvent, ObsXyz=ObsXyz, $
 
         ;; check if the line contains any character that is not a number 
         for i = 0, strlen(line)-1 do begin
-           if strmatch(strmid(line,i,1), '[!    0123456789dDeE \.+-]') $
+           if strmatch(strmid(line,i,1), '[!    0123456789dDeENa \.+-]') $
            then begin
               IsHeader = 1
               break
@@ -1168,7 +1168,10 @@ end
 ;--------------------------------------------------------------------
 
 pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
-                   ut, ur, bt, nvars, data, varnames
+                   ut, ur, bt, nvars, data, varnames,                     $
+                   DoContainData=DoContainData
+
+  DoContainData = 1
 
   itype = size(filename,/type)
 
@@ -1224,6 +1227,12 @@ pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
            endelse
            nHeadline = nHeadline + 1
         endif else begin
+           ;; if the line contines NaN, do not convert it into numbers.
+           if strmatch(strmid(line,i,1), '[!    0123456789dDeE \.+-]') then begin
+              print, " warning NaN found in the data"
+              continue
+           endif
+
            ;; split line into numbers
            string_to_array,line, numbers, nvars
 
@@ -1277,6 +1286,11 @@ pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
   endwhile
   
   close,unit
+
+  if nt lt 1 then begin
+     DoContainData = 0
+     return
+  endif
 
   data = transpose(data(*,0:nt-1))
 

@@ -8,9 +8,9 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
   if (not keyword_set(dir_sim)) then begin
      if (file_test('./simdata', /directory)) then begin
         dir_sim  = './simdata/'
-        print, ' uses the default dir_sim = ./simdata'
+        print, ' Uses the default dir_sim = ./simdata'
      endif else begin
-        print, ' please specify the directory containing simulation results'
+        print, ' Please specify the directory containing simulation results'
         return
      endelse
   endif
@@ -18,7 +18,7 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
   if (not keyword_set(dir_plot)) then begin
      if (file_test('./output', /directory) eq 0) then file_mkdir, './output'
      dir_plot = './output'
-     print, ' saves into the default dir_plot = ./output'
+     print, ' Saves into the default dir_plot = ./output'
   endif
 
   if (not keyword_set(extra_plt_info)) then begin
@@ -46,7 +46,7 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
 
      adapt_realization = ''
 
-     print, 'file_lowcase=', file_lowcase
+     print, ' file_lowcase=', file_lowcase
 
      if (strpos(file_lowcase, 'adapt')   ge 0) then begin
         index_adapt=strpos(file_lowcase, 'adapt')
@@ -70,10 +70,15 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
         TypePlot  = '_stb'
      endif
 
-     read_swmf_sat, file_sim, time_swmf, n_swmf, ux_swmf, uy_swmf,       $
+     read_swmf_sat, file_sim, time_swmf, n_swmf, ux_swmf, uy_swmf,        $
                     uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf, $
-                    ut_swmf, ur_swmf, B_swmf
+                    ut_swmf, ur_swmf, B_swmf, DoContainData=DoContainData
      
+     if DoContainData ne 1 then begin
+        print, " Error: filename=", file_sim, " does not contain any data"
+        return
+     endif
+
      start_time = time_swmf(0)
      end_time   = time_swmf(n_elements(time_swmf)-1)
 
