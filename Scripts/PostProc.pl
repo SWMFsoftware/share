@@ -26,12 +26,14 @@ my $rsync = 'rsync -avzt';
 my $exclude = " --exclude '*.idl' --exclude '*.tec' --exclude '*.dat'".
     " --exclude '*.[hHTS]'";
 
-my $INFO    = "PostProc.pl";                     # Info message string
-my $WARNING = "WARNING in PostProc.pl";          # Warning message string
-my $ERROR   = "ERROR in PostProc.pl";            # Error message string
+my $INFO    = "PostProc.pl";            # Info message string
+my $WARNING = "WARNING in PostProc.pl"; # Warning message string
+my $ERROR   = "ERROR in PostProc.pl";   # Error message string
+my $StopFile = "PostProc.STOP";         # Don't repeat if this file is present
 
 my $ParamIn = "PARAM.in";
 my $RunLog  = "runlog runlog_[0-9]*";
+
 
 my $NameOutput;
 if(@ARGV){
@@ -52,6 +54,9 @@ die "$ERROR: option -rsync requires a target directory: rsync=TARGETDIR\n"
 &print_help if $Help;
 
 my $Pwd = `pwd`; chop $Pwd;
+
+# Remove StopFile at the beginning.
+unlink $StopFile;
 
 # Set the movie option for pIDL
 my $MovieFlag;
@@ -84,9 +89,13 @@ my %PlotDir = (
     "STDOUT" => "STDOUT",
 	    );
 
+# Flush output immediately
+$| = 1;
+
 if($Repeat){
     print "$INFO running on ", `hostname`;
     print "$INFO will stop in $Stop days after ", `date`;
+    print "            or when 'touch $StopFile' is done in this directory.\n";
 }
 
 my $time_start = time();
@@ -181,7 +190,14 @@ REPEAT:{
     }
 
     if($Repeat){
-	exit 0 if (time - $time_start) > $Stop*3600*24;
+	if(-f $StopFile){
+	    print "$INFO stopping because $StopFile file is present.\n";
+	    exit 0;
+	}
+	if((time - $time_start) > $Stop*3600*24){
+	    print "$INFO stopping because already ran for $Stop days.\n";
+	    exit 0;
+	}
 	sleep $Repeat;
 	redo REPEAT;
     }
@@ -411,7 +427,9 @@ Usage:
    -n=NTHREAD  Run pIDL in parallel using NTHREAD threads. The default is 4.
 
    -r=REPEAT   Repeat post processing every REPEAT seconds.
-               Cannot be used with the DIR argument.
+               Cannot be used with the DIR argument. The script will stop
+               after a certain number of days or when the 
+               '.$StopFile.' file is present (touched).
 
    -s=STOP     Exit from the script after STOP days. Useful when the script
                is run in the background with repeat flag. Default is 2 days.
@@ -469,6 +487,13 @@ PostProc.pl -vtk
    pipe standard output and error into a log file and stop after 3 days:
 
 PostProc.pl -r=360 -s=3 -p=IO2/x= >& PostProc.log &
+
+   Repeat post-processing every minute and stop after the SWMF.exe run is 
+   finished:
+
+PostProc.pl -r=60 -n=16 >& PostProc.log &
+mpiexec SWMF.exe
+touch '.$StopFile.'
 
    Collect processed output into a directory tree named OUTPUT/New
    and rsync it together with the PARAM.* and LAYOUT.* files 
