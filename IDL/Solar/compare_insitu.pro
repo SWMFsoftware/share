@@ -67,7 +67,7 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
      
      if DoContainData ne 1 then begin
         print, " Error: filename=", file_sim, " does not contain any data"
-        return
+        continue
      endif
 
      start_time = time_swmf(0)
@@ -78,7 +78,7 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
 
      if DoContainData ne 1 then begin
         print, " Error: no observational data are found."
-        return
+        continue
      endif
 
      if (UseTimePlotName) then begin
