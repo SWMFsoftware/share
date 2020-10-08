@@ -1458,13 +1458,15 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
         legendNames = 'AWSoM'
      endelse
   endif else begin
-     nlegend        = n_elements(legendNames)
-     legendNamesOld = legendNames
-     legendNames    = STRARR(nlegend*2)
-     for ilegend = 1, nlegend do begin
-        legendNames((ilegend-1)*2)   = legendNamesOld(ilegend-1)
-        legendNames((ilegend-1)*2+1) = legendNamesOld(ilegend-1) + ' Te'
-     endfor
+     if DoPlotTe then begin
+        nlegend        = n_elements(legendNames)
+        legendNamesOld = legendNames
+        legendNames    = STRARR(nlegend*2)
+        for ilegend = 1, nlegend do begin
+           legendNames((ilegend-1)*2)   = legendNamesOld(ilegend-1)
+           legendNames((ilegend-1)*2+1) = legendNamesOld(ilegend-1) + ' Te'
+        endfor
+     endif
   endelse
 
   if (n_elements(legendNames) ne nPlot*(DoPlotTe+1)) then begin
