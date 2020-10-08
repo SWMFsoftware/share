@@ -7,8 +7,17 @@
 #   cd run
 #   qsub job.pfe
 #
-# An alternative is to use the qsub.pfe.pl and watch.pfe.pl scripts 
-# for the normal/long queues. Use -h for help on usage.
+# An alternative is to submit several jobs for different CPU types and
+# keep the first one that started:
+#
+#   qsub.pfe.pl job.pfe
+#
+# This can be used for the normal/long queues. Use qsub.pfe.pl -h for help on usage.
+#
+# For the devel queue only one job can be submitted. To see the number of free nodes
+# per machine type and queue use
+#
+# node_stats.sh
 # 
 # Note that the run directory should be moved to the /nobackup filesystem,
 # otherwise the quota on the home directory will fill up before the run ends.
@@ -17,11 +26,12 @@
 #
 # lfs quota -u USERNAME /nobackupp1
 #
-# To avoid having too many output files run
+# To avoid having too many output files post-processes every minut using
 #
 #    ./PostProc.pl -m -v -g -r=60 &> PostProc.log &
 #
-# on the head node (post-processes every minute). 
+# either on the head node or in this job script by 
+# commenting out the two PostProc related lines below.
 #
 # Also use (in the BATSRUS section of the PARAM.in file) the command
 #
@@ -38,11 +48,6 @@
 #
 # acct_query -b 10/31/15 -p s1359 -u all
 #
-# To see the number of free nodes per machine type and queue use
-#
-# node_stats.sh
-#
-# This is very useful before submitting a job to the devel queue.
 
 #PBS -S /bin/csh
 #PBS -N SWMF
@@ -105,8 +110,11 @@ cd $PBS_O_WORKDIR
 # Seems to be needed for HDF5 plots
 setenv MPI_TYPE_DEPTH 20
 
+# Start PostProc.pl in the background
+#./PostProc.pl -n=16 -g -r=60 &> PostProc.log &
+
 # Running with OpenMP may require the following settings
-# (For the SWMF the LAYOUT.in may be able to achieve something similar)
+# (For the SWMF use the #COMPONENTMAP command to define threads)
 #setenv MPI_DSM_DISTRIBUTE 0
 #setenv KMP_AFFINITY disabled
 #setenv OMP_NUM_THREADS 8
@@ -115,6 +123,9 @@ setenv MPI_TYPE_DEPTH 20
 # run SWMF (the number of processors is already specified above)
 # the date/time stamp for runlog is only necessary for automated resubmission
 mpiexec ./SWMF.exe > runlog_`date +%y%m%d%H%M`
+
+# Request PostProc.pl to stop but give it some time to finish
+#touch PostProc.STOP; sleep 120;
 
 exit
 
