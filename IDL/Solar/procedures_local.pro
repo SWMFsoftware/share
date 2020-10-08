@@ -1266,7 +1266,7 @@ pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
 
            if n_elements(varnames) ne nvars then begin
               varnames = strarr(nvars)
-              for i = 0, nwlog - 1 do $
+              for i = 0, nvars - 1 do $
                  varnames[i] = 'var'+string(i, format='(i2.2)')
            endif
 
@@ -1437,27 +1437,57 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
                  te_simu4=te_simu4, b_simu4=b_simu4, time_simu4=time_simu4,   $
                  DoPlotTe=DoPlotTe, legendNames = legendNames
 
-
-  DoPlot2 = 0 & DoPlot3 = 0 & DoPlot4 = 0
-  nplot = 1
-
-  ymin = 0
-  ymax = 0
+  nPlot = 1
 
   if (keyword_set(time_simu2)) then begin
-     DoPlot2 = 1
-     nplot   = 2
+     nPlot   = 2
   endif
   if (keyword_set(time_simu3)) then begin
-     DoPlot3 = 1
-     nplot   = 3
+     nPlot   = 3
   endif
   if (keyword_set(time_simu4)) then begin
-     DoPlot4 = 1
-     nplot   = 4
+     nPlot   = 4
   endif
 
   if (not isa(DoPlotTe)) then DoPlotTe = 1
+
+  if (not keyword_set(legendNames)) then begin
+     if DoPlotTe then begin
+        legendNames = ['AWSoM', 'AWSoM Te']
+     endif else begin
+        legendNames = 'AWSoM'
+     endelse
+  endif else begin
+     nlegend        = n_elements(legendNames)
+     legendNamesOld = legendNames
+     legendNames    = STRARR(nlegend*2)
+     for ilegend = 1, nlegend do begin
+        legendNames((ilegend-1)*2)   = legendNamesOld(ilegend-1)
+        legendNames((ilegend-1)*2+1) = legendNamesOld(ilegend-1) + ' Te'
+     endfor
+  endelse
+
+  if (n_elements(legendNames) ne nPlot*(DoPlotTe+1)) then begin
+     ;; difficult to have more than 4 legends...
+     if nPlot le 4 then begin
+        if DoPlotTe then begin
+           legendNames = STRARR(nPlot*2) + 'Model '
+           for iPlot = 1, nPlot do begin
+              legendNames((iPlot-1)*2) = $
+                 legendNames((iPlot-1)*2) + strtrim(string(iPlot),2)
+              legendNames((iPlot-1)*2+1) = $
+                 legendNames((iPlot-1)*2+1) + strtrim(string(iPlot),2) + ' Te'
+           endfor
+        endif else begin
+           legendNames = STRARR(nPlot) + 'Model '
+           for iPlot = 1, nPlot do begin
+              legendNames(iPlot-1) = legendNames(iPlot-1) + strtrim(string(iPlot),2)
+           endfor
+        endelse
+     endif
+  endif
+
+  legendNames = [type, legendNames]
 
   index_u = where(u_obs gt 0)
   index_n = where(n_obs gt 0)
@@ -1504,62 +1534,6 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
             'Dist_T ='+STRING(trim(dist_int_t),format='(f6.3)'),$
             'Dist_B ='+STRING(trim(dist_int_b),format='(f6.3)')]
   
-  if (not keyword_set(legendNames)) then begin
-     case nplot of
-        1: begin
-           if (DoPlotTe) then begin
-              legendNames= [type, 'AWSoM', 'AWSoM Te']
-           endif else begin
-              legendNames= [type, 'AWSoM']
-           endelse
-        end
-        2: begin
-           if (DoPlotTe) then begin
-              legendNames = [type, 'Model 1', 'Model 1 Te', $
-                             'Model 2', 'Model 2 Te']
-           endif else begin
-              legendNames = [type, 'Model 1', 'Model 2']
-           endelse
-        end
-        3: begin
-           if (DoPlotTe) then begin
-              legendNames = [type, 'Model 1', 'Model 1 Te', $
-                             'Model 2', 'Model 2 Te',       $
-                             'Model 3', 'Model 3 Te']
-           endif else begin
-              legendNames = [type, 'Model 1', 'Model 2', 'Model 3']
-           endelse
-        end
-        4: begin
-           if (DoPlotTe) then begin
-              legendNames = [type, 'Model 1', 'Model 1 Te', $
-                             'Model 2', 'Model 2 Te',       $
-                             'Model 3', 'Model 3 Te',       $
-                             'Model 4', 'Model 4 Te']
-           endif else begin
-              legendNames = [type, 'Model 1', 'Model 2', 'Model 3', 'Model 4']
-           endelse
-        end
-     endcase
-  endif else begin
-     if (not DoPlotTe) then begin
-        legendNames = [type, legendNames]
-     endif else begin
-        case nplot of
-           1: legendNames = [type, legendNames, legendNames+' Te']
-           2: legendNames = [type, legendNames(0), legendNames(0)+' Te', $
-                             legendNames(1), legendNames(1)+' Te']
-           3: legendNames = [type, legendNames(0), legendNames(0)+' Te', $
-                             legendNames(1), legendNames(1)+' Te',       $
-                             legendNames(2), legendNames(2)+' Te']
-           4: legendNames = [type, legendNames(0), legendNames(0)+' Te', $
-                             legendNames(1), legendNames(1)+' Te',       $
-                             legendNames(2), legendNames(2)+' Te',       $
-                             legendNames(3), legendNames(3)+' Te']
-        endcase
-     endelse
-  endelse
-
   loadcolors
 
   color_I = [0,5,6,1,2]
@@ -1586,12 +1560,12 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
          charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos,$
          xtickname=REPLICATE(' ', 7),xtitle=' '
   outplot,time_simu1, u_simu1, color=color_I[1],thick=9
-  if (DoPlot2 eq 1) then outplot,time_simu2,u_simu2,color=color_I[2],thick=9
-  if (DoPlot3 eq 1) then outplot,time_simu3,u_simu3,color=color_I[3],thick=9
-  if (DoPlot4 eq 1) then outplot,time_simu4,u_simu4,color=color_I[4],thick=9
+  if (nPlot eq 2) then outplot,time_simu2,u_simu2,color=color_I[2],thick=9
+  if (nPlot eq 3) then outplot,time_simu3,u_simu3,color=color_I[3],thick=9
+  if (nPlot eq 4) then outplot,time_simu4,u_simu4,color=color_I[4],thick=9
 
   if (DoPlotTe) then begin
-     case nplot of
+     case nPlot of
         1: begin
            colortmp_I = [0,5,5]
            linestyletmp = [0,0,2]
@@ -1618,7 +1592,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
      legend,dist_int(0),thick=6,charsize=1,charthick=5,position=[0.75,0.94],$
             /norm,box=0
   endif else begin
-     legend,legendNames, colors=color_I[indgen(nplot+1)], $
+     legend,legendNames, colors=color_I[indgen(nPlot+1)], $
             psym=0,textcolor=0,thick=6,linestyle=0,$
             charsize=1,pspacing=1.8,charthick=5,bthick=5,position=[0.15,0.95],$
             /norm,box=0
@@ -1641,9 +1615,9 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
          ythick=5,position=pos,xtickname=REPLICATE(' ', 7),xtitle=' ', $
          yrange=[ymin,ymax], ystyle=1
   outplot,time_simu1, n_simu1, color=color_I[1],thick=9
-  if (DoPlot2 eq 1) then outplot,time_simu2,n_simu2,color=color_I[2],thick=9
-  if (DoPlot3 eq 1) then outplot,time_simu3,n_simu3,color=color_I[3],thick=9
-  if (DoPlot4 eq 1) then outplot,time_simu4,n_simu4,color=color_I[4],thick=9
+  if (nPlot eq 2) then outplot,time_simu2,n_simu2,color=color_I[2],thick=9
+  if (nPlot eq 3) then outplot,time_simu3,n_simu3,color=color_I[3],thick=9
+  if (nPlot eq 4) then outplot,time_simu4,n_simu4,color=color_I[4],thick=9
   
   legend,dist_int(1),thick=5,charsize=1,charthick=5,position=[0.75,0.72],/norm,box=0  
   ;;----------------------------------------------------------------------
@@ -1660,16 +1634,16 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
          charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos,$
          xtickname=REPLICATE(' ', 7),xtitle=' ',yrange=[ymin,ymax],ystyle=1
   outplot,time_simu1, ti_simu1, color=color_I[1],thick=9
-  if (DoPlot2 eq 1) then outplot,time_simu2,ti_simu2,color=color_I[2],thick=9
-  if (DoPlot3 eq 1) then outplot,time_simu3,ti_simu3,color=color_I[3],thick=9
-  if (DoPlot4 eq 1) then outplot,time_simu4,ti_simu4,color=color_I[4],thick=9
+  if (nPlot eq 2) then outplot,time_simu2,ti_simu2,color=color_I[2],thick=9
+  if (nPlot eq 3) then outplot,time_simu3,ti_simu3,color=color_I[3],thick=9
+  if (nPlot eq 4) then outplot,time_simu4,ti_simu4,color=color_I[4],thick=9
   if (DoPlotTe) then begin
      outplot,time_simu1, te_simu1, color=color_I[1],thick=9, linestyle=2
-     if (DoPlot2 eq 1) then outplot,time_simu2,te_simu2,color=color_I[2], $
+     if (nPlot eq 2) then outplot,time_simu2,te_simu2,color=color_I[2], $
                                     thick=9,linestyle=2
-     if (DoPlot3 eq 1) then outplot,time_simu3,te_simu3,color=color_I[3], $
+     if (nPlot eq 3) then outplot,time_simu3,te_simu3,color=color_I[3], $
                                     thick=9,linestyle=2
-     if (DoPlot4 eq 1) then outplot,time_simu4,te_simu4,color=color_I[4], $
+     if (nPlot eq 4) then outplot,time_simu4,te_simu4,color=color_I[4], $
                                     thick=9,linestyle=2
   endif
   legend,dist_int(2),thick=5,charsize=1,charthick=5,position=[0.75,0.49],/norm,box=0
@@ -1687,9 +1661,9 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
          charsize=charsize,$
          charthick=5,xthick=5,ythick=5,position=pos
   outplot,time_simu1, b_simu1*1.e5, color=color_I[1],thick=9
-  if (DoPlot2 eq 1) then outplot,time_simu2,b_simu2*1e5,color=color_I[2],thick=9
-  if (DoPlot3 eq 1) then outplot,time_simu3,b_simu3*1e5,color=color_I[3],thick=9
-  if (DoPlot4 eq 1) then outplot,time_simu4,b_simu4*1e5,color=color_I[4],thick=9
+  if (nPlot eq 2) then outplot,time_simu2,b_simu2*1e5,color=color_I[2],thick=9
+  if (nPlot eq 3) then outplot,time_simu3,b_simu3*1e5,color=color_I[3],thick=9
+  if (nPlot eq 4) then outplot,time_simu4,b_simu4*1e5,color=color_I[4],thick=9
 
   legend,dist_int(3),thick=5,charsize=1,charthick=5,position=[0.75,0.27],/norm,box=0
   device,/close_file
@@ -1902,7 +1876,9 @@ rmse = sqrt(((diff_data)^2)/count)
 return, rmse
 
 end
+
 ;--------------------------------------------------------------------
+
 pro quantify_los, obs_data, sim_data, $
                DoDiffMap=DoDiffMap, DoRatioMap=DoRatioMap, DoRmse=DoRmse,$
                unitlog=unitlog
@@ -1971,7 +1947,9 @@ if keyword_set(DoRmse) then begin
           trim(nrmse)
 endif
 end
+
 ;--------------------------------------------------------------------
+
 pro compare_IDL_plot,file_obs,file_sim,file_plot,unitlog=unitlog
   common getpict_param
   common file_head
@@ -2034,4 +2012,74 @@ pro compare_IDL_plot,file_obs,file_sim,file_plot,unitlog=unitlog
   device,xsize=20,ysize=26
   animate_data
   close_device,/pdf
+end
+
+;--------------------------------------------------------------------
+
+pro get_insitu_data, start_time, end_time, type, u_obs, $
+                     n_obs, tem_obs, mag_obs, time_obs, $
+                     DoContainData=DoContainData
+
+  DoContainData = 1
+
+  case type of
+     'OMNI': begin
+        obs_data=spdfgetdata('OMNI_COHO1HR_MERGED_MAG_PLASMA', $
+                             ['ABS_B' , 'V', 'N','T'],         $
+                             [start_time, end_time])
+
+        if(not isa(obs_data)) then begin
+           print, ' Could not obtain OMNI data.'
+           RETURN
+        endif
+
+        u_obs    = obs_data.v.dat
+        n_obs    = obs_data.n.dat
+        tem_obs  = obs_data.t.dat
+        mag_obs  = obs_data.abs_b.dat
+        time_obs = obs_data.epoch.dat
+     end
+
+     'Stereo A': begin
+        obs_data=spdfgetdata('STA_COHO1HR_MERGED_MAG_PLASMA',       $
+                             ['B' , 'plasmaSpeed', 'plasmaDensity', $
+                              'plasmaTemp'],[start_time, end_time])
+
+        if(not isa(obs_data)) then begin
+           DoContainData = 0
+           print, ' Could not obtain Stereo A data.'
+           RETURN
+        endif
+
+        u_obs    = obs_data.plasmaSpeed.dat
+        n_obs    = obs_data.plasmaDensity.dat
+        tem_obs  = obs_data.plasmaTemp.dat
+        mag_obs  = obs_data.B.dat
+        time_obs = obs_data.epoch.dat
+     end
+
+     'Stereo B': begin
+        obs_data=spdfgetdata('STB_COHO1HR_MERGED_MAG_PLASMA',       $
+                             ['B' , 'plasmaSpeed', 'plasmaDensity', $
+                              'plasmaTemp'],[start_time, end_time])
+
+        if(not isa(obs_data)) then begin
+           DoContainData = 0
+           print, ' Could not obtain Stereo B data.'
+           RETURN
+        endif
+
+        u_obs    = obs_data.plasmaSpeed.dat
+        n_obs    = obs_data.plasmaDensity.dat
+        tem_obs  = obs_data.plasmaTemp.dat
+        mag_obs  = obs_data.B.dat
+        time_obs = obs_data.epoch.dat
+     end
+
+     'none': begin
+        DoContainData = 0
+        print, ' case: unknown type.'
+        RETURN
+     end
+  endcase
 end
