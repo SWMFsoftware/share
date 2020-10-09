@@ -124,8 +124,8 @@ setenv MPI_TYPE_DEPTH 20
 # the date/time stamp for runlog is only necessary for automated resubmission
 mpiexec ./SWMF.exe > runlog_`date +%y%m%d%H%M`
 
-# Request PostProc.pl to stop but give it some time to finish
-#touch PostProc.STOP; sleep 120;
+# Request PostProc.pl to stop and wait for it to finish
+#touch PostProc.STOP; wait;
 
 exit
 
