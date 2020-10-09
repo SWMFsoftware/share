@@ -35,51 +35,51 @@ can be written into files in the same formats.
 
 \section{IDL path and startup file \label{s-idl-path}}
 
-   It is necessary to let IDL know about the existence of the macros.  
-   You can define the search path for IDL, for example
+It is necessary to let IDL know about the existence of the macros.  
+You can define the search path for IDL, for example
 \begin{verbatim}
 setenv IDL_PATH "${HOME}/SWMF/share/IDL/General:<IDL_DEFAULT>"
 \end{verbatim}
-   for the csh or tcsh shell. You can also make IDL to read 
-   the {\bf idlrc} file automatically upon start up with
+for the csh or tcsh shell. You can also make IDL to read 
+the {\bf idlrc} file automatically upon start up with
 \begin{verbatim}
 setenv IDL_STARTUP idlrc
 \end{verbatim}
-   These environment settings can be put into your \~{}/.login or \~{}/.cshrc 
-   files. The above is valid for the csh and tcsh UNIX shells. 
+These environment settings can be put into your \~{}/.login or \~{}/.cshrc 
+files. The above is valid for the csh and tcsh UNIX shells. 
 
-   For other UNIX shells (bash, ksh, zsh), use
+For other UNIX shells (bash, ksh, zsh), use
 \begin{verbatim}
 export IDL_PATH="${HOME}/BATSRUS/share/IDL/General:<IDL_DEFAULT>"
 export IDL_STARTUP=idlrc
 \end{verbatim}
-   in the \~{}/.profile or similar file.
+in the \~{}/.profile or similar file.
 
 \section{Running IDL \label{s-run-idl}}
 
-   If the IDL\_PATH and the IDL\_STARTUP variables are set, simply 
-   start IDL from the directory where the {\bf *.out} IDL plot files
-   and the {\bf *.log} logfiles are, e.g.
+If the IDL\_PATH and the IDL\_STARTUP variables are set, simply 
+start IDL from the directory where the {\bf *.out} IDL plot files
+and the {\bf *.log} logfiles are, e.g.
 \begin{verbatim}
 cd run/IO2
 idl
 \end{verbatim}
-   If IDL\_STARTUP is not set, type
+If IDL\_STARTUP is not set, type
 \begin{verbatim}
 @idlrc
 \end{verbatim}
-   at the IDL$>$ prompt, so that the commands in the {\bf idlrc} file are
-   executed: 
-   the procedures in {\bf procedures.pro, funcdef.pro} and 
-   {\bf vector.pro} are compiled and 
-   the script {\bf set\_defaults} is executed to set some
-   common block variables to their default values. You can customize the startup
-   of IDL by editing {\bf idlrc}, e.g. you can
-   compile your own IDL procedures. 
+at the IDL$>$ prompt, so that the commands in the {\bf idlrc} file are
+executed: 
+the procedures in {\bf procedures.pro, funcdef.pro} and 
+{\bf vector.pro} are compiled and 
+the script {\bf set\_defaults} is executed to set some
+common block variables to their default values. You can customize the startup
+of IDL by editing {\bf idlrc}, e.g. you can
+compile your own IDL procedures. 
 
-   If an error occurs, the code usually returns to the main level, so one
-   can fix the settings and try again. The corresponds to the default 
-   setting
+If an error occurs, the code usually returns to the main level, so one
+can fix the settings and try again. The corresponds to the default 
+setting
 \begin{verbatim}
 onerror=2
 \end{verbatim}
@@ -87,38 +87,38 @@ onerror=2
 \begin{verbatim}
 onerror=0
 \end{verbatim}
-   so that variables can be written out inside the macro where the error
-   occurred. In this case, or in general if you get trapped by an error 
-   inside some IDL routine, typing
+so that variables can be written out inside the macro where the error
+occurred. In this case, or in general if you get trapped by an error 
+inside some IDL routine, typing
 \begin{verbatim}
 retall
 \end{verbatim}
-   will return to the main level. To exit IDL type
+will return to the main level. To exit IDL type
 \begin{verbatim}
 exit
 \end{verbatim}
-   The alternative 'quit' command is also defined for convenience.
+The alternative 'quit' command is also defined for convenience.
 
 \section{Reading a snapshot with read\_data \label{s-readdata}}
 
-   To read a snapshot from a file, type at the "IDL$>$" prompt of IDL
+To read a snapshot from a file, type at the "IDL$>$" prompt of IDL
 \begin{verbatim}
 read_data
 \end{verbatim}
-   The procedure will prompt you for the {\bf filename}, 
-   and it determines the {\bf filetypes} and {\bf npictinfiles}
-   (the number of snapshots in the file) automatically. Then it asks for
-   the frame-number {\bf npict} (1, 2,... npictinfiles) 
-   of the snapshot to be read from the file. When {\bf npictinfiles=1},
-   the frame number is set to 1 automatically:
+The procedure will prompt you for the {\bf filename}, 
+and it determines the {\bf filetypes} and {\bf npictinfiles}
+(the number of snapshots in the file) automatically. Then it asks for
+the frame-number {\bf npict} (1, 2,... npictinfiles) 
+of the snapshot to be read from the file. When {\bf npictinfiles=1},
+the frame number is set to 1 automatically:
 \begin{verbatim}
 filename(s)   ? example1.out
 filetype(s)   = binary
 npictinfile(s)=      1
 npict=       1
 \end{verbatim}
-   The header of the file is read and echoed on the screen. 
-   A typical result:
+The header of the file is read and echoed on the screen. 
+A typical result:
 \begin{verbatim}
 filename   = cut.outs
 filetype   = ascii
@@ -138,64 +138,64 @@ Read x and w
 GRID (PLOT_DATA)
                 LONG      = Array[256]
 \end{verbatim}
-   At the end, the {\bf x} and {\bf w} variables (containing the coordinates 
-   and the plot variables respectively) are read from the file. 
-   Note that IDL, unlike FORTRAN, starts indexing from 0 instead of 1. 
-   The {\bf GRID} index array is useful for defining
-   cuts of the computational domain for plotting, see details 
-   in section~\ref{s-plot-part}. 
+At the end, the {\bf x} and {\bf w} variables (containing the coordinates 
+and the plot variables respectively) are read from the file. 
+Note that IDL, unlike FORTRAN, starts indexing from 0 instead of 1. 
+The {\bf GRID} index array is useful for defining
+cuts of the computational domain for plotting, see details 
+in section~\ref{s-plot-part}. 
 
-   After reading the data you can do whatever you want with {\bf x}, {\bf w}, 
-   and all the other variables 
-   {\bf headline, it, time, gencoord, ndim, neqpar, nw, nx, eqpar, variables}
-   defined by the header. 
-   You can use the {\bf plot\_data} procedure (see section~\ref{s-plot_data}
-   to get some sophisticated plots or you can use any of the IDL procedures 
-   directly to examine and/or plot the data, e.g. for 1D data
+After reading the data you can do whatever you want with {\bf x}, {\bf w}, 
+and all the other variables 
+{\bf headline, it, time, gencoord, ndim, neqpar, nw, nx, eqpar, variables}
+defined by the header. 
+You can use the {\bf plot\_data} procedure (see section~\ref{s-plot_data}
+to get some sophisticated plots or you can use any of the IDL procedures 
+directly to examine and/or plot the data, e.g. for 1D data
 \begin{verbatim}
 print,time,it
 print,nx
 print,variables
 plot,x,w(*,0),xtitle='X [km]',ytitle='Density'
 \end{verbatim}
-   while for unstructured 2D data, for example, use
+while for unstructured 2D data, for example, use
 \begin{verbatim}
 contour,w(*,*,2),x(*,*,0),x(*,*,1),/fill,nlevel=30,/irr
 oplot,x(*,*,0),x(*,*,1),psym=1,color=0
 \end{verbatim}
-   The first command produces a color plot of the 3rd variable (index 2).
-   The second command will show the grid points. Another way to plot the
-   grid points is to use the {\bf plotgrid} procedure as
+The first command produces a color plot of the 3rd variable (index 2).
+The second command will show the grid points. Another way to plot the
+grid points is to use the {\bf plotgrid} procedure as
 \begin{verbatim}
 plotgrid,x
 \end{verbatim}
-   For structured 2D grid, you can plot the grid lines connecting
-   the grid points with 
+For structured 2D grid, you can plot the grid lines connecting
+the grid points with 
 \begin{verbatim}
 plotgrid,x,/lines
 \end{verbatim}
 
 \section{Transformation of non-regular grid \label{s-transform}}
 
-   The file may contain data on a generalized or unstructured 2D grid.
-   This is signaled by a negative {\bf ndim} in the plotfile 
-   and by the variable {\bf gencoord=1} in IDL.
-   A {\bf generalized grid} has the same topology as a regular grid
-   but the coordinates are not Cartesian. It is a {\it continuouus}
-   distortion of the original grid. On the other hand, 
-   {\bf an unstructured grid} has the grid points in an arbitrary
-   order, therefore the second and third elements of the 
-   {\bf nx} array are 1. The AMR grids of \BATSRUS\ and AMRVAC are
-   unstructured, while VAC can produce generalized grids.
+The file may contain data on a generalized or unstructured 2D grid.
+This is signaled by a negative {\bf ndim} in the plotfile 
+and by the variable {\bf gencoord=1} in IDL.
+A {\bf generalized grid} has the same topology as a regular grid
+but the coordinates are not Cartesian. It is a {\it continuouus}
+distortion of the original grid. On the other hand, 
+{\bf an unstructured grid} has the grid points in an arbitrary
+order, therefore the second and third elements of the 
+{\bf nx} array are 1. The AMR grids of \BATSRUS\ and AMRVAC are
+unstructured, while VAC can produce generalized grids.
 
-   The default behavior is to leave the grid in its original form.
-   This choice saves the time of transformation, and uses the original grid 
-   and variables, but only some of the plotting modes are available for 
-   generalized and unstructured grids: contour, contfill, contlabel, contbar,
-   vector and stream. Others (e.g. surface, tv, tvbar, velovect) are not.
-   To allow all plotting modes (and cuts across the grid), the data
-   has to be transformed (interpolated) onto a regular grid.
-   To achieve that select the 'regular' transformation with
+The default behavior is to leave the grid in its original form.
+This choice saves the time of transformation, and uses the original grid 
+and variables, but only some of the plotting modes are available for 
+generalized and unstructured grids: contour, contfill, contlabel, contbar,
+vector and stream. Others (e.g. surface, tv, tvbar, velovect) are not.
+To allow all plotting modes (and cuts across the grid), the data
+has to be transformed (interpolated) onto a regular grid.
+To achieve that select the 'regular' transformation with
 \begin{verbatim}
 transform (r=regular/p=polar/u=unpolar/n=none)=none ? r
 \end{verbatim}
@@ -203,29 +203,29 @@ transform (r=regular/p=polar/u=unpolar/n=none)=none ? r
 \begin{verbatim}
 nxreg=[100,100]
 \end{verbatim}
-   If {\bf nxreg} is not set, then  the size of the regular grid will be asked
-   when the data is read with {\bf read\_data} or {\bf animate\_data}:
+If {\bf nxreg} is not set, then  the size of the regular grid will be asked
+when the data is read with {\bf read\_data} or {\bf animate\_data}:
 \begin{verbatim}
 Generalized coordinates, dimensions for regular grid
 nxreg(0) (use negative sign to limit x)=      100
 nxreg(1) (use negative sign to limit y)=      100
 \end{verbatim}
-   With these settings the original {\bf w} array is interpolated to 
-   a $100\times100$ {\bf wreg} array and the
-   coordinates for the regular grid {\bf xreg} are also determined. 
-   You can plot the first variable, usually density, in {\bf wreg} the 
-   same way as before
+With these settings the original {\bf w} array is interpolated to 
+a $100\times100$ {\bf wreg} array and the
+coordinates for the regular grid {\bf xreg} are also determined. 
+You can plot the first variable, usually density, in {\bf wreg} the 
+same way as before
 \begin{verbatim}
 surface,wreg(*,*,0)
 \end{verbatim}
-   It is possible to restrict the transformation to a rectangular
-   part of the original 2D data by setting the {\bf xreglimits} array
+It is possible to restrict the transformation to a rectangular
+part of the original 2D data by setting the {\bf xreglimits} array
 \begin{verbatim}
 xreglimits=[-15, -10, 30.5, 10]
 \end{verbatim}
-   Note that the order of the elements is xmin, ymin, xmax, ymax.
-   Another way to do this is adding a negative sign when prompted for 
-   nxreg(0) and nxreg(1), e.g.
+Note that the order of the elements is xmin, ymin, xmax, ymax.
+Another way to do this is adding a negative sign when prompted for 
+nxreg(0) and nxreg(1), e.g.
 \begin{verbatim}
 nxreg(0) (use negative sign to limit x)? -100
 xreglimits(0) (xmin)? -15.
@@ -234,30 +234,30 @@ nxreg(1) (use negative sign to limit y)? -50
 xreglimits(1) (ymin)? -10.
 xreglimits(3) (ymax)? 10.
 \end{verbatim}
-   Now the $100\times 50$ {\bf xreg} array is limited to the range 
-   [-15.,30.5] in x, and [-10.,10.] in y, and this is where the {\bf wreg} 
-   array is defined. 
-   To return to the default behaviour, which is plotting the whole 
-   computational domain, set
+Now the $100\times 50$ {\bf xreg} array is limited to the range 
+[-15.,30.5] in x, and [-10.,10.] in y, and this is where the {\bf wreg} 
+array is defined. 
+To return to the default behaviour, which is plotting the whole 
+computational domain, set
 \begin{verbatim}
 xreglimits=0
 \end{verbatim}
-   If the transformation or the transformation parameters are changed,
-   the {\bf read\_data} or {\bf animate\_data} procedures, which read data from
-   the disk, will calculate {\bf wreg} with the new tranformation settings
-   as expected. The {\bf plot\_data} procedure does not do the transformation
-   by default to speed things up. If the transformation parameters are changed set
+If the transformation or the transformation parameters are changed,
+the {\bf read\_data} or {\bf animate\_data} procedures, which read data from
+the disk, will calculate {\bf wreg} with the new tranformation settings
+as expected. The {\bf plot\_data} procedure does not do the transformation
+by default to speed things up. If the transformation parameters are changed set
 \begin{verbatim}
 dotransform='y'
 \end{verbatim}
-   to force {\bf plot\_data} to redo the transformation as necessary.
-   After that you can return to dotransform='n' to save the time of
-   transformation.
+to force {\bf plot\_data} to redo the transformation as necessary.
+After that you can return to dotransform='n' to save the time of
+transformation.
 
 \section{Other grid transformations \label{s-gridtransform}}
 
-   The {\bf transform} parameter can be used to perform various
-   grid transformations by setting it to one of the following values
+The {\bf transform} parameter can be used to perform various
+grid transformations by setting it to one of the following values
 \begin{verbatim}
 n, none    - no tranformation
 r, regular - interpolate onto a regular Cartesian grid (previous section)
@@ -296,8 +296,8 @@ complicated transformations too.
 
 \section{Comparison of data \label{s-compare}}
 
-   You can read snapshots from up to 10 files for purposes of
-   comparison. Simply give the filenames separated by spaces:
+You can read snapshots from up to 10 files for purposes of
+comparison. Simply give the filenames separated by spaces:
 \begin{verbatim}
 set_default_values
 read_data
@@ -306,31 +306,31 @@ filetype(s)   = real4 real4
 npictinfile(s)=      21     10
 npict?  2
 \end{verbatim}
-   This will read the second snapshots from 'example1.out' and
-   'example2.out'. You may also use wild card characters 
+This will read the second snapshots from 'example1.out' and
+'example2.out'. You may also use wild card characters 
 \begin{verbatim}
   *  ?  [ ]
 \end{verbatim}
-    that are recognized by the Unix 'ls' command, e.g.
+that are recognized by the Unix 'ls' command, e.g.
 \begin{verbatim}
 IDL> filename='example[12].out'
 IDL> filename='example?.out'
 IDL> filename='exampl*.out'
 \end{verbatim}
-   Note that if any wild card character is used then the order of the files will 
-   be alphabetical.
+Note that if any wild card character is used then the order of the files will 
+be alphabetical.
 
-   After reading the files with read\_data, 
-   the coordinates and the conservative variables 
-   will be put into {\bf x0, x1} and {\bf w0, w1} respectively, however, 
-   the header information, which is printed for each file onto the screen, 
-   will be overwritten by the last file read, in this case it will belong to
-   {\bf example2.out}. The generic {\bf x, w} arrays will also be
-   filled by the data read from the last file, and this is what 
-   {\bf plot\_data} plots. If the files contained data on non-regular grid,
-   and transform='regular' is set, the data will be interpolated into 
-   the arrays {\bf wreg0} and {\bf wreg1}. 
-   To compare the two data sets run
+After reading the files with read\_data, 
+the coordinates and the conservative variables 
+will be put into {\bf x0, x1} and {\bf w0, w1} respectively, however, 
+the header information, which is printed for each file onto the screen, 
+will be overwritten by the last file read, in this case it will belong to
+{\bf example2.out}. The generic {\bf x, w} arrays will also be
+filled by the data read from the last file, and this is what 
+{\bf plot\_data} plots. If the files contained data on non-regular grid,
+and transform='regular' is set, the data will be interpolated into 
+the arrays {\bf wreg0} and {\bf wreg1}. 
+To compare the two data sets run
 \begin{verbatim}
 IDL> compare,w0,w1
 iw max(|w1-w2|)/max(|w1|+|w2|) sum(|w1-w2|)/sum(|w1|+|w2|)
@@ -356,15 +356,15 @@ bx     0.014965503   0.00022646554
 by     0.018034518   0.00020733169
 bz wsum=0
 \end{verbatim}
-   The comparison shows the maximum difference divided by the sum of maximum 
-   absolute
-   values and the sum of absolute differences divided by the sum of absolute
-   values for each variable in {\bf w0} and {\bf w1}. If a variable is zero
-   everywhere both in {\bf w0} and {\bf w1}, the {\bf wsum=0} message is shown.
-   You can compare arbitrary 1, 2, 3 and 4 dimensional arrays as long as they 
-   have the same size.
-   The last dimension is interpreted as the variable index {\bf iw}.
-   E.g. you could compare two cuts of {\tt wreg} with
+The comparison shows the maximum difference divided by the sum of maximum 
+absolute
+values and the sum of absolute differences divided by the sum of absolute
+values for each variable in {\bf w0} and {\bf w1}. If a variable is zero
+everywhere both in {\bf w0} and {\bf w1}, the {\bf wsum=0} message is shown.
+You can compare arbitrary 1, 2, 3 and 4 dimensional arrays as long as they 
+have the same size.
+The last dimension is interpreted as the variable index {\bf iw}.
+E.g. you could compare two cuts of {\tt wreg} with
 \begin{verbatim}
 compare,wreg(0:20,2,*),wreg(0:20,3,*)}
 \end{verbatim}
@@ -372,9 +372,9 @@ compare,wreg(0:20,2,*),wreg(0:20,3,*)}
 \begin{verbatim}
 compare,x0,x1
 \end{verbatim}
-   If the two files have different resolutions, the {\bf coarsen} 
-   function can be used. For example, if two solutions were obtained on 
-   100 x 50 and 300 x 150 grids, then 
+If the two files have different resolutions, the {\bf coarsen} 
+function can be used. For example, if two solutions were obtained on 
+100 x 50 and 300 x 150 grids, then 
 \begin{verbatim}
 rholow =w0(*,*,0)
 rhohigh=coarsen(w1(*,*,0), 3)
@@ -413,25 +413,25 @@ ax,az=  30, 30, contourlevel= 30, velvector= 200, velspeed (0..5)= 5
 multiplot= 0 (default), axistype (coord/cells)=coord, fixaspect=1
 bottomline=3, headerline=0
 \end{verbatim}
-   The plots are normally shown in physical coordinates, i.e.
-   {\bf axistype='coord'}, but the axes can also run in cell indices 
-   if {\bf axistype='cells'} is set (that works for structured grid only!).
-   If {\bf fixaspect=1} or -1 the aspect ratio of the plot will be the same
-   as the true aspect ratio of the two axes, while {\bf fixaspect=0} allows
-   the aspect ratio to adjust so that 
-   the plot fits into the plotting window tightly. The {\bf fixaspect=-1}
-   setting preserves the aspect ratio but it allows adjusting the spacing 
-   between rows and columns of subplots independent of the shape
-   of the plotting window (this can result in large margins).
-   The variables {\bf bottomline} and {\bf headerline} control the number
-   of values shown at the bottom from {\bf time, it, nx} and at the top 
-   from {\bf headline, nx}.
-   You can change these values explicitly (e.g. {\bf bottomline=0}), or change 
-   their default values in procedure {\bf set\_default\_values} in {\bf procedures.pro}. 
-   See sections \ref{s-plotmode} and \ref{s-plot-part} for more detail.
+The plots are normally shown in physical coordinates, i.e.
+{\bf axistype='coord'}, but the axes can also run in cell indices 
+if {\bf axistype='cells'} is set (that works for structured grid only!).
+If {\bf fixaspect=1} or -1 the aspect ratio of the plot will be the same
+as the true aspect ratio of the two axes, while {\bf fixaspect=0} allows
+the aspect ratio to adjust so that 
+the plot fits into the plotting window tightly. The {\bf fixaspect=-1}
+setting preserves the aspect ratio but it allows adjusting the spacing 
+between rows and columns of subplots independent of the shape
+of the plotting window (this can result in large margins).
+The variables {\bf bottomline} and {\bf headerline} control the number
+of values shown at the bottom from {\bf time, it, nx} and at the top 
+from {\bf headline, nx}.
+You can change these values explicitly (e.g. {\bf bottomline=0}), or change 
+their default values in procedure {\bf set\_default\_values} in {\bf procedures.pro}. 
+See sections \ref{s-plotmode} and \ref{s-plot-part} for more detail.
 
-   Now, you will be prompted 
-   for the name of function(s) and the corresponding plotting mode(s):
+Now, you will be prompted 
+for the name of function(s) and the corresponding plotting mode(s):
 \begin{verbatim}
 ======= PLOTTING PARAMETERS =========================
 wnames                     =  rho ux uy uz p bx by bz
@@ -439,83 +439,84 @@ func(s) (e.g. rho p m1;m2) ? rho uy
 2D scalar: shade/surface/contour/contlabel/contfill/contbar/tv/tvbar
 2D polar : polar/polarlabel/polarfill/polarbar
 2D vector: stream/stream2/vector/velovect/ovelovect
-plotmode(s)                ? surface
+plotmode(s)                ? default
 plottitle(s) (e.g. B [G];J)=default
 autorange(s) (y/n)         =y
 GRID            INT       = Array(50, 50)
 \end{verbatim}
-   The function(s) to be plotted are determined by the {\bf func}
-   string parameter, which is a list of function names separated by spaces.
-   The number of functions {\bf nfunc} is thus determined by the number of
-   function names listed in {\bf func}. 
+The function(s) to be plotted are determined by the {\bf func}
+string parameter, which is a list of function names separated by spaces.
+The number of functions {\bf nfunc} is thus determined by the number of
+function names listed in {\bf func}. 
 
-   For each function you may set the plotting mode with the {\bf plotmode} string.
-   If you give fewer plotting mode(s) than {\bf nfunc}, the rest of
-   the functions will use the last plotting mode given, in the above example
-   {\bf surface}. This padding rule is used for all the arrays described 
-   by strings. See section~\ref{s-plotmode} for more details on plotting modes.
+For each function you may set the plotting mode with the {\bf plotmode} string.
+If you give fewer plotting mode(s) than {\bf nfunc}, the rest of
+the functions will use the last plotting mode given, in the above example
+{\bf default}, which is 'contbar' for scalars and 'streamover' for vector valued
+functions. This padding rule is used for all the arrays described 
+by strings. See section~\ref{s-plotmode} for more details on plotting modes.
 
-   The {\bf plottitle} parameter is usually set to {\bf 'default'} which
-   means that the function name is used for the title, but you can set it
-   explicitly, e.g. {\bf plottitle='Density;Momentum'}. Here the 
-   separator character is a semicolon, thus the titles may contain spaces.
-   No titles are produced if {\bf plottitle=' '} is set.
+The {\bf plottitle} parameter is usually set to {\bf 'default'} which
+means that the function name is used for the title, but you can set it
+explicitly, e.g. {\bf plottitle='Density;Momentum'}. Here the 
+separator character is a semicolon, thus the titles may contain spaces.
+No titles are produced if {\bf plottitle=' '} is set.
 
-   For each function you may set the plotting range by hand or let IDL
-   calculate the minimum and maximum by itself. This is defined by
-   the {\bf autorange} string parameter, which is a list of 'y' and 'n'
-   characters, each referring to the respective function. If you set 'n'
-   for any of the variables, the {\bf fmin} and {\bf fmax} arrays have
-   to be set, e.g.
+For each function you may set the plotting range by hand or let IDL
+calculate the minimum and maximum by itself. This is defined by
+the {\bf autorange} string parameter, which is a list of 'y' and 'n'
+characters, each referring to the respective function. If you set 'n'
+for any of the variables, the {\bf fmin} and {\bf fmax} arrays have
+to be set, e.g.
 \begin{verbatim}
 fmin=[1. ,-1.]
 fmax=[1.1, 1.]
 \end{verbatim}
-   IDL remembers the previous setting and uses it, unless the number
-   of functions are changed. You can always set fmin=0, fmax=0, and let
-   IDL prompt you for the values.
+IDL remembers the previous setting and uses it, unless the number
+of functions are changed. You can always set fmin=0, fmax=0, and let
+IDL prompt you for the values.
 
 \section{Function names in string func \label{s-functions}}
 
-   The function names listed in the {\bf func} string can be any of 
-   the variable names listed in the string array {\bf wnames}, which is 
-   read from the header of the file, or any of the function name strings 
-   shown in the {\bf functiondef} array at the beginning of
-   {\bf funcdef.pro} (see section \ref{s-funcdef}), 
-   or any expression using the standard variable, 
-   coordinate and scalar parameter names and various constants:
+The function names listed in the {\bf func} string can be any of 
+the variable names listed in the string array {\bf wnames}, which is 
+read from the header of the file, or any of the function name strings 
+shown in the {\bf functiondef} array at the beginning of
+{\bf funcdef.pro} (see section \ref{s-funcdef}), 
+or any expression using the standard variable, 
+coordinate and scalar parameter names and various constants:
 \begin{verbatim}
 x y z r
 rho p ux uy uz uu u bx by bz bb b
 xSI gamma gammae Mi Me Qi Qe clight rbody
 mu0 mu0A c0 op0 oc0 rg0 di0 ld0
 \end{verbatim}
-   Here "uu" and "bb" are the velocity and magnetic field squared, while
-   "u" and "b" are the velocity and magnetic field magnitudes, 
-   respectively. Note that "x ... b" are arrays, while  "gamma" is
-   a scalar.  For example the maximum Alfv\'en 
-   speed could be given as {\bf func='b/sqrt(rho*mu0A)'}, but this is already 
-   defined in funcdef.pro as 'calfven'. However, for a multifluid data
-   file, one can use a different density, e.g. 
+Here "uu" and "bb" are the velocity and magnetic field squared, while
+"u" and "b" are the velocity and magnetic field magnitudes, 
+respectively. Note that "x ... b" are arrays, while  "gamma" is
+a scalar.  For example the maximum Alfv\'en 
+speed could be given as {\bf func='b/sqrt(rho*mu0A)'}, but this is already 
+defined in funcdef.pro as 'calfven'. However, for a multifluid data
+file, one can use a different density, e.g. 
 \begin{verbatim}
 func='b/sqrt({OpRho}*mu0A)'
 \end{verbatim}
-   where mu0A is the vacuum permeability together with the unit conversion
-   factors.
-   Note that the OpRho variable (density of O+ ion) is not among the standard
-   arrays, but it can still be used by enclosing it with the curly brackets.
+where mu0A is the vacuum permeability together with the unit conversion
+factors.
+Note that the OpRho variable (density of O+ ion) is not among the standard
+arrays, but it can still be used by enclosing it with the curly brackets.
 
-   You may combine two function names with the {\bf ;} character representing
-   two components of a vector, 
-   e.g. {\bf ux;uy} or {\bf bx;bz}, which can either be plotted as a 
-   vectorfield by the {\bf velovect}, {\bf vector} and {\bf arrow} plot modes, 
-   or as streamlines or fieldlines, using the {\bf stream} plotting modes.
-   For other plotting modes the absolute value
-   $\sqrt{ux^2+uy^2}$ is plotted.
-   You can also put a minus sign in front of any function or variable
-   name, which will simply multiply the value of the rest of the string by $-$1. 
-   For example '-Ti' plots ($-$1)*temperature of ions. This is just a shorthand for
-   the general syntax '-{Ti}'.
+You may combine two function names with the {\bf ;} character representing
+two components of a vector, 
+e.g. {\bf ux;uy} or {\bf bx;bz}, which can either be plotted as a 
+vectorfield by the {\bf velovect}, {\bf vector} and {\bf arrow} plot modes, 
+or as streamlines or fieldlines, using the {\bf stream} plotting modes.
+For other plotting modes the absolute value
+$\sqrt{ux^2+uy^2}$ is plotted.
+You can also put a minus sign in front of any function or variable
+name, which will simply multiply the value of the rest of the string by $-$1. 
+For example '-Ti' plots ($-$1)*temperature of ions. This is just a shorthand for
+the general syntax '-{Ti}'.
 
 \section{Plotting modes in string plotmode \label{s-plotmode}}
 
@@ -609,10 +610,10 @@ Option  Description
 log     show the 10 based logarithm of the function if it is positive
 over    overplot the previous function
 noaxis  do not show the axes
-#ctNNN  use color table NNN (NNN is an integer from 0 to 999).
-#cNNN   use color NNN
+#ctNNN  use color table NNN (NNN is an integer from 0 to 999)
+#cNNN   use color NNN       (NNN is an integer from 0 to 255)
 max     plot maximum of the last "nplotstore" snapshots
-mean    plot mean value of the last "nplotstore" snapshots
+mean    plot average of the last "nplotstore" snapshots
 \end{verbatim}
 
 For 2D plots there are a few more options
@@ -628,42 +629,42 @@ white   draw vectors, stream lines and the grid/mesh with white color even
 body    show the spherical body with radius rBody 
            at the origin as a black circle
 map     draw a world map under the plot
-usa     drwa the USA map under the plot
+usa     draw the USA map under the plot
 \end{verbatim}
-   Note that it makes no sense to overplot the grid for the 
-   {\tt surface} plotting mode, on the other hand {\tt plotmode='shademesh'}
-   will plot the shaded surface together with the mesh of 'surface'.
-   The radius of the body {\bf rBody} is usueally read from the 
-   scalar parameter named 'r' or 'rbody' in the data file, or it can be set
-   manually.
+Note that it makes no sense to overplot the grid for the 
+{\tt surface} plotting mode, on the other hand {\tt plotmode='shademesh'}
+will plot the shaded surface together with the mesh of 'surface'.
+The radius of the body {\bf rBody} is usueally read from the 
+scalar parameter named 'r' or 'rbody' in the data file, or it can be set
+manually.
 
-   Here is an example for some more complex plotmode strings:
+Here is an example for some more complex plotmode strings:
 \begin{verbatim}
 plotmode='contbargridlog streamwhiteoverbody'
 \end{verbatim} 
-   will show the 10 based logarithm of the first scalar quantity with 
-   a color bar and the grid points, 
-   and overplot the second vector quantity with white streamlines
-   and a black body at the origin.
+will show the 10 based logarithm of the first scalar quantity with 
+a color bar and the grid points, 
+and overplot the second vector quantity with white streamlines
+and a black body at the origin.
 
-   For any of the colored plotting modes ('shade', 'contfill', 'contbar', 
-   'polarfill', 'polarbar', 'tv', and 'tvbar') the colortable can be 
-   changed by one of the 
+For any of the colored plotting modes ('shade', 'contfill', 'contbar', 
+'polarfill', 'polarbar', 'tv', and 'tvbar') the colortable can be 
+changed by one of the 
 \begin{verbatim}
 xloadct
 loadct,3
 makect,'red'
 \end{verbatim}
-   commands. The {\tt xloadct} and {\tt loadct} commands are part of IDL, while
-   the {\tt makect} procedure is defined in {\bf procedures.pro}.
-   When no argument is given for {\tt loadct} or {\tt makect}, 
-   all the available color tables are listed
-   and the choice can be made interactively.
-   If multiple color tables are needed, they can be loaded with the \#ctNNN
-   option. The color can be set with the \#cNNN option. 
+commands. The {\tt xloadct} and {\tt loadct} commands are part of IDL, while
+the {\tt makect} procedure is defined in {\bf procedures.pro}.
+When no argument is given for {\tt loadct} or {\tt makect}, 
+all the available color tables are listed
+and the choice can be made interactively.
+If multiple color tables are needed, they can be loaded with the \#ctNNN
+option. The color can be set with the \#cNNN option. 
 
-   Many characteristics of the plots can be adjusted with system variables.
-   Here is a partial list of these:
+Many characteristics of the plots can be adjusted with system variables.
+Here is a partial list of these:
 \begin{verbatim}
 system variable     description
 -------------------------------------------------------------------------
@@ -680,53 +681,53 @@ system variable     description
 !x.tickname         strings at X axis tick marks
 !x.minor            number of minor tickmarks
 \end{verbatim}
-  The Y and Z axes are affected by the analogous !y. and !z. variables.
+The Y and Z axes are affected by the analogous !y. and !z. variables.
 
 \section{Plotting part of the domain \label{s-plot-part}}
 
-   It is possible to plot a part of the simulation domain.
-   One way that works for both structured and unstructured grids is
-   to set the global system variables
+It is possible to plot a part of the simulation domain.
+One way that works for both structured and unstructured grids is
+to set the global system variables
 \begin{verbatim}
 !x.range=[-10.,10.]
 !y.range=[-20.,-5.]
 \end{verbatim}
-   This will work well for 'flat' plotting modes, like 'contour',
-   'contfill', etc. For unstructured grids which are not transformed
-   to a regular grid, it works for all the available plotting modes.
-   To switch back to the default maximum range, use
+This will work well for 'flat' plotting modes, like 'contour',
+'contfill', etc. For unstructured grids which are not transformed
+to a regular grid, it works for all the available plotting modes.
+To switch back to the default maximum range, use
 \begin{verbatim}
 !x.range=0
 !y.range=0
 \end{verbatim}
-   When the data is transfored to a regular grids, the domain of transformation
-   can be limited by the {\bf xreglimits} array as described in section
-   \ref{s-transform}. 
+When the data is transfored to a regular grids, the domain of transformation
+can be limited by the {\bf xreglimits} array as described in section
+\ref{s-transform}. 
 
-   For structured grids, there is a further option of limiting or coarsening
-   the plot domain, and/or reducing the dimensionality of the plot.
-   The {\bf cut} index array selects some part of the function(s)
-   determined by {\bf func}.
-   This is done {\em after} any grid transformation and {\em after} 
-   the functions are calculated so that derivatives can be properly taken 
-   by the {\bf funcdef} function.
-   The {\bf grid} index array is defined to help to construct
-   the {\bf cut} array, e.g. if the grid size is 100 times 100:
+For structured grids, there is a further option of limiting or coarsening
+the plot domain, and/or reducing the dimensionality of the plot.
+The {\bf cut} index array selects some part of the function(s)
+determined by {\bf func}.
+This is done {\em after} any grid transformation and {\em after} 
+the functions are calculated so that derivatives can be properly taken 
+by the {\bf funcdef} function.
+The {\bf grid} index array is defined to help to construct
+the {\bf cut} array, e.g. if the grid size is 100 times 100:
 \begin{verbatim}
 cut=grid(*,50:*)
 plot_data
 \end{verbatim}
-   will show the upper half of the domain. To eliminate the edges use
+will show the upper half of the domain. To eliminate the edges use
 \begin{verbatim}
 cut=grid(1:98,1:98)
 \end{verbatim}
-   A cross section of the domain can be plotted by reducing
-   the number of dimensions of {\bf cut} relative to {\bf grid}:
+A cross section of the domain can be plotted by reducing
+the number of dimensions of {\bf cut} relative to {\bf grid}:
 \begin{verbatim}
 cut=grid(*,50)
 \end{verbatim}
-   will produce 1D plots of the cross section along the midline parallel to 
-   the first coordinate axis. For a 2D cut of 3D data, use for example
+will produce 1D plots of the cross section along the midline parallel to 
+the first coordinate axis. For a 2D cut of 3D data, use for example
 \begin{verbatim}
 cut=grid(*,50,*)
 \end{verbatim}
@@ -734,15 +735,15 @@ cut=grid(*,50,*)
 \begin{verbatim}
 cut=0
 \end{verbatim}
-   or by running {\bf set\_default\_values}.
+or by running {\bf set\_default\_values}.
 
-   The {\bf triplet} function provides an easy way to set the {\bf cut} 
-   index array to represent a coarser grid. This is particularly useful
-   for the {\bf velovect} plotting mode, which tends to draw too many tiny arrows.
-   The {\bf triplet} function can have 3, 6, 9, or 12 parameters depending on 
-   the number of dimensions, and each triplet describes a subset of the 
-   indices in the given direction. The three elements are the 
-   minimum, maximum, and stride (like in Fortran 90), e.g. 
+The {\bf triplet} function provides an easy way to set the {\bf cut} 
+index array to represent a coarser grid. This is particularly useful
+for the {\bf velovect} plotting mode, which tends to draw too many tiny arrows.
+The {\bf triplet} function can have 3, 6, 9, or 12 parameters depending on 
+the number of dimensions, and each triplet describes a subset of the 
+indices in the given direction. The three elements are the 
+minimum, maximum, and stride (like in Fortran 90), e.g. 
 \begin{verbatim}
 filename='example2.out'
 npict=10
@@ -752,24 +753,24 @@ plotmode='velovect'
 cut=triplet(0,49,2, 33,66,1)
 plot_data
 \end{verbatim}
-   will show every second cell in the {\bf x} direction and the middle third 
-   in the {\bf y} direction. Note that the maximum index value should be
-   the actual grid size$-$1 except for the last dimension, otherwise the 
-   indices will not be correct. This problem can be solved by the use of the 
-   {\bf quadruplet} function, which has four parameters per dimension:
-   size, minimum, maximum, and stride. To show a coarse 20$*$20 grid 
-   from the top left 40$*$40 part of the 50$*$50 grid use
+will show every second cell in the {\bf x} direction and the middle third 
+in the {\bf y} direction. Note that the maximum index value should be
+the actual grid size$-$1 except for the last dimension, otherwise the 
+indices will not be correct. This problem can be solved by the use of the 
+{\bf quadruplet} function, which has four parameters per dimension:
+size, minimum, maximum, and stride. To show a coarse 20$*$20 grid 
+from the top left 40$*$40 part of the 50$*$50 grid use
 \begin{verbatim}
 cut=quadruplet(50,0,39,2, 50,10,49,2)
 plot_data
 \end{verbatim}
-   Another way to show velocity vectors at fixed positions is the use of 
-   the "vector" plotting mode after setting the number of vectors {\bf velvector} 
-   and the array of positions {\bf velpos(velvector,2)} containing the 
-   X and Y coordinates for each vector. In principle {\bf velpos} can
-   be defined as an arbitrary set of points.
-   For a simple coarsening of the original grid points, the triplet and 
-   quadruplet functions can be used again:
+Another way to show velocity vectors at fixed positions is the use of 
+the "vector" plotting mode after setting the number of vectors {\bf velvector} 
+and the array of positions {\bf velpos(velvector,2)} containing the 
+X and Y coordinates for each vector. In principle {\bf velpos} can
+be defined as an arbitrary set of points.
+For a simple coarsening of the original grid points, the triplet and 
+quadruplet functions can be used again:
 \begin{verbatim}
 cut=grid(0:39,10:49)
 velvector=20*13 & velpos=fltarr(velvector,2)
@@ -782,14 +783,14 @@ velvector=25*25 & velpos=fltarr(velvector,2)
 velpos(*,*)=x(triplet(0,49,2, 0,49,2, 0,1,1))
 plot_data
 \end{verbatim}
-   Note that the last 0,1,1 triplet and 2,0,1,1 quadruplet correspond to
-   the second dimension of {\bf velpos} that always runs from 
-   0 (X coordinate) to 1 (Y coordinate). This approach is very useful when 
-   the velocity vectors are shown together with plots of other functions 
-   that should not be coarsened. To use random positions again, 
-   set {\bf velpos=0}.
-   The {\bf velpos} array can also be used to position streamlines for 
-   plotmode='stream' and 'stream2'.
+Note that the last 0,1,1 triplet and 2,0,1,1 quadruplet correspond to
+the second dimension of {\bf velpos} that always runs from 
+0 (X coordinate) to 1 (Y coordinate). This approach is very useful when 
+the velocity vectors are shown together with plots of other functions 
+that should not be coarsened. To use random positions again, 
+set {\bf velpos=0}.
+The {\bf velpos} array can also be used to position streamlines for 
+plotmode='stream' and 'stream2'.
 
 Finally the {\bf rcut} parameter can be used to cut out a circle around
 the origin. While the {\bf body} modifier in the plotting mode simply covers
@@ -856,78 +857,78 @@ functions, so the curves can be distinguished.
 
 \section{Plotting another snapshot \label{s-plot-another}}
 
-   If you type
+If you type
 \begin{verbatim}
 read_data
 plot_data
 \end{verbatim}
-   again, the data will be read and plotted again without any questions asked,
-   since IDL remembers the previous settings. 
+again, the data will be read and plotted again without any questions asked,
+since IDL remembers the previous settings. 
 
-   If you want to read another frame, say the second, from the same file, type
+If you want to read another frame, say the second, from the same file, type
 \begin{verbatim}
 npict=2
 read_data
 \end{verbatim}
-   You can change the {\bf func} and {\bf plotmode} variables the same way:
+You can change the {\bf func} and {\bf plotmode} variables the same way:
 \begin{verbatim}
 func='rho p'
 plotmode='contour surface'
 plot_data
 \end{verbatim}
-   Note that we did not need to reread the data.
-   Other variables, all listed in the common blocks at the beginning of the
-   {\bf procedues.pro} file, can be set similarly.
-   If you set
+Note that we did not need to reread the data.
+Other variables, all listed in the common blocks at the beginning of the
+{\bf procedues.pro} file, can be set similarly.
+If you set
 \begin{verbatim}
 doask=1
 \end{verbatim}
-   the macros will ask for all the parameters to be confirmed by a simple
-   RETURN, or to be changed by typing a new value. Set {\bf doask=0} to
-   get the default behaviour, which is no confirmation asked.
-   To overplot previous plots without erasing the screen, set
+the macros will ask for all the parameters to be confirmed by a simple
+RETURN, or to be changed by typing a new value. Set {\bf doask=0} to
+get the default behaviour, which is no confirmation asked.
+To overplot previous plots without erasing the screen, set
 \begin{verbatim}
 noerase=1
 \end{verbatim}
-   You can return to the default settings for all parameters by calling the
+You can return to the default settings for all parameters by calling the
 \begin{verbatim}
 set_default_values
 \end{verbatim}
-   procedure.
+procedure.
 
 \section{Animation and plotting with animate\_data \label{s-animate}}
 
-   This general procedure can plot, save into image and video file(s), or animate 
-   (using IDL's Xinteranimate) different functions of data 
-   read from one or more files. If a single snapshot is read, the
-   plot is drawn without animation. In essence, {\bf animate\_data} combines
-   {\bf read\_data} and {\bf plot\_data} for any number of files and any number 
-   of snapshots.
+This general procedure can plot, save into image and video file(s), or animate 
+(using IDL's Xinteranimate) different functions of data 
+read from one or more files. If a single snapshot is read, the
+plot is drawn without animation. In essence, {\bf animate\_data} combines
+{\bf read\_data} and {\bf plot\_data} for any number of files and any number 
+of snapshots.
 \begin{verbatim}
 animate_data
 \end{verbatim}
-   will first prompt you for {\bf filename(s)} unless already given. 
-   Animating more than one input files in parallel is
-   most useful for comparing simulations with the same or very similar physics
-   using different methods or grid resolution. It is a good idea to save 
-   snapshots at the same {\it physical} time into the data files.
-   By default (if multiplot=0), 
-   the functions corresponding to the files will be plot columnwise
-   with the leftmost column belonging to the first file.
-   The headlines and the grid sizes will be shown in 
-   for each file separately above the corresponding columns
-   if {\bf headerline=2} is set.
+will first prompt you for {\bf filename(s)} unless already given. 
+Animating more than one input files in parallel is
+most useful for comparing simulations with the same or very similar physics
+using different methods or grid resolution. It is a good idea to save 
+snapshots at the same {\it physical} time into the data files.
+By default (if multiplot=0), 
+the functions corresponding to the files will be plot columnwise
+with the leftmost column belonging to the first file.
+The headlines and the grid sizes will be shown in 
+for each file separately above the corresponding columns
+if {\bf headerline=2} is set.
 
-   The function(s) to be animated and the plotting mode(s) for the functions 
-   are determined by the same {\bf func, plotmode}, and {\bf plottitle} 
-   strings as for {\bf plot\_data}. To plot different functions, plot modes,
-   and/or plot titles per file, set the {\bf func\_file, plotmode\_file} and/or
-   {\bf plottitle\_file} string arrays with as many elements as the number of files.
-   If any part of the {\bf autorange} string is set to {\bf 'y'},
-   the data file(s) will be read twice: first for setting the common range(s) 
-   for all the snapshots and the second time for plotting.
-   If {\bf autorange='n'} the file(s) will only be read once.
-   Here is an example showing two cuts of a 3D simulation together:
+The function(s) to be animated and the plotting mode(s) for the functions 
+are determined by the same {\bf func, plotmode}, and {\bf plottitle} 
+strings as for {\bf plot\_data}. To plot different functions, plot modes,
+and/or plot titles per file, set the {\bf func\_file, plotmode\_file} and/or
+{\bf plottitle\_file} string arrays with as many elements as the number of files.
+If any part of the {\bf autorange} string is set to {\bf 'y'},
+the data file(s) will be read twice: first for setting the common range(s) 
+for all the snapshots and the second time for plotting.
+If {\bf autorange='n'} the file(s) will only be read once.
+Here is an example showing two cuts of a 3D simulation together:
 \begin{verbatim}
    filename='y=0.outs z=0.outs'
    plottitle_file=['Density and velocity in y=0 plane', 'Density and U in z=0 plane']
@@ -937,33 +938,33 @@ animate_data
    showytitle=1
    animate_data
 \end{verbatim}
-   The {\bf showxtitle} and {\bf showytitle} logicals control if the axis labels are shown
-   for each subplot or not. The default is to show the X axis for the bottom row only
-   and the Y axis for the left column only. When the axes vary from file to file, it is best
-   to show the axis labels for each subplot.
+The {\bf showxtitle} and {\bf showytitle} logicals control if the axis labels are shown
+for each subplot or not. The default is to show the X axis for the bottom row only
+and the Y axis for the left column only. When the axes vary from file to file, it is best
+to show the axis labels for each subplot.
 
-   The number of snapshots to be animated is limited by the end of 
-   file(s) and/or by the {\bf npictmax} parameter. With a formula
+The number of snapshots to be animated is limited by the end of 
+file(s) and/or by the {\bf npictmax} parameter. With a formula
 \begin{verbatim}
 npict=min( npictmax, min( 1 + (npictinfiles-firstpict)/dpict ) )
 \end{verbatim}
-   The animation runs from {\bf firstpict}, every {\bf dpict}-th picture is
-   plotted and the total number of animated frames is at most {\bf npictmax}. 
-   If {\bf firstpict} and {\bf dpict} are scalars, the same values are
-   applied for all the files, but it is also possible to use different
-   values for each file by setting array values, e.g. for two files
+The animation runs from {\bf firstpict}, every {\bf dpict}-th picture is
+plotted and the total number of animated frames is at most {\bf npictmax}. 
+If {\bf firstpict} and {\bf dpict} are scalars, the same values are
+applied for all the files, but it is also possible to use different
+values for each file by setting array values, e.g. for two files
 \begin{verbatim}
 firstpict=[5,9]
 dpict    =[1,2]
 \end{verbatim}
-   will plot every frame starting from the 5th in the first file,
-   and every second frame from the 9th in the second file.
+will plot every frame starting from the 5th in the first file,
+and every second frame from the 9th in the second file.
 
-   The {\bf multiplot} array can be used to get some really interesting
-   effects in {\bf animate\_data}: 
-   the data from multiple files can be overplotted for comparison purposes.
-   Probably it is a good idea to compare 1D slices rather than full 2D plots,
-   e.g. 
+The {\bf multiplot} array can be used to get some really interesting
+effects in {\bf animate\_data}: 
+the data from multiple files can be overplotted for comparison purposes.
+Probably it is a good idea to compare 1D slices rather than full 2D plots,
+e.g. 
 \begin{verbatim}
 filename='example[12].out'
 func='rho ux'
@@ -971,9 +972,9 @@ cut=grid(*,25)
 multiplot=2
 animate_data
 \end{verbatim}
-   will overplot density and velocity read from the two files. 
-   The lines belonging to the two data files are distinguished by
-   the different line styles. For a 2D comparison, one could use
+will overplot density and velocity read from the two files. 
+The lines belonging to the two data files are distinguished by
+the different line styles. For a 2D comparison, one could use
 \begin{verbatim}
 filename='example[12].out'
 func='rho ux'
@@ -981,7 +982,7 @@ plotmode_file=['contfill', 'contour']
 multiplot=2
 animate_data
 \end{verbatim}
-   Timeseries can also be produced easily with {\bf multiplot}. 
+Timeseries can also be produced easily with {\bf multiplot}. 
 \begin{verbatim}
 filename='example2.out'
 func='rho ux;uy'
@@ -991,14 +992,14 @@ multiplot=[3,2,0]
 bottomline=1
 animate_data
 \end{verbatim}
-   will show the first 6 snapshots of density with overplot velocity vectors
-   in a single plot. 
-   Now the time is shown for each plot individually, and setting
-   {\bf bottomline=1} limits the time stamp to the most essential
-   information, time. The {\bf bottomline=2} shows the iteration number
-   and the time, while {\bf bottomline=3} also shows the grid size.
-   This information can be customized by setting {\bf bottomline} to
-   a string valued expression, e.g.
+will show the first 6 snapshots of density with overplot velocity vectors
+in a single plot. 
+Now the time is shown for each plot individually, and setting
+{\bf bottomline=1} limits the time stamp to the most essential
+information, time. The {\bf bottomline=2} shows the iteration number
+and the time, while {\bf bottomline=3} also shows the grid size.
+This information can be customized by setting {\bf bottomline} to
+a string valued expression, e.g.
 \begin{verbatim}
 bottomline='"Time="+stime+", Grid="+snx+", Iteration="+sit'
 \end{verbatim}
@@ -1024,136 +1025,136 @@ timetitleunit=3600.0
 timetitlestart=60.0
 timetitle='(``t='',f5.2,''h'')'
 \end{verbatim}
-   will show the time as {\bf t= 6.67h}. Note that timetitleunit is
-   relative to the time units used in the data file (e.g. seconds)
-   while the offset is given in the time units defined by timetitleunit.
+will show the time as {\bf t= 6.67h}. Note that timetitleunit is
+relative to the time units used in the data file (e.g. seconds)
+while the offset is given in the time units defined by timetitleunit.
 
-   Set timetitle to an empty string and/or timetitleunit and timetitlestart
-   to zero to return to the default behavior. 
-   If {\bf npict*nfile*nplot} is greater than the number 
-   of subplots defined by {\bf multiplot}, an animation is done. 
-   Type 
+Set timetitle to an empty string and/or timetitleunit and timetitlestart
+to zero to return to the default behavior. 
+If {\bf npict*nfile*nplot} is greater than the number 
+of subplots defined by {\bf multiplot}, an animation is done. 
+Type 
 \begin{verbatim}
 multiplot=0
 \end{verbatim}
-   to return to default behavior, which is one snapshot per plot.
+to return to default behavior, which is one snapshot per plot.
 
-   Even after exiting from Xinteranimate, the animation can be repeated
-   again without rereading the data file(s) by typing
+Even after exiting from Xinteranimate, the animation can be repeated
+again without rereading the data file(s) by typing
 \begin{verbatim}
 xinteranimate,/keep_pixmaps
 \end{verbatim}
-   Sometimes it is interesting to visualize the difference of two runs, e.g.
-   to visualize deviations from the initial state, or from a steady state.
-   This can be achieved by setting the {\bf wsubtract} array, which will be 
-   subtracted from {\bf w} for each snapshot. Note that the subtraction is
-   done for the original variables in {\bf w}, 
-   so derived quantities should not be plotted. 
-   Set {\bf wsubtract=0} to switch off the subtraction.
- 
-   The {\bf timediff=1} setting can be used to calculate the time
-   derivative by subtracting the previous plot data stored as {\bf wprev}
-   from the current one and dividing by the elapsed time {\bf time-timeprev}. 
-   Again, derived quantities may not be meaningful.
-   Set {\bf timediff=0} to switch off this feature.
+Sometimes it is interesting to visualize the difference of two runs, e.g.
+to visualize deviations from the initial state, or from a steady state.
+This can be achieved by setting the {\bf wsubtract} array, which will be 
+subtracted from {\bf w} for each snapshot. Note that the subtraction is
+done for the original variables in {\bf w}, 
+so derived quantities should not be plotted. 
+Set {\bf wsubtract=0} to switch off the subtraction.
 
-   Note that the {\bf wsubtract} and {\bf timediff} features are only 
-   used by "animate\_data", since a single snapshot can be easily 
-   manipulated explicitly, e.g. {\bf w=w1-w0}, before plotting with
-   {\bf plot\_data}. 
+The {\bf timediff=1} setting can be used to calculate the time
+derivative by subtracting the previous plot data stored as {\bf wprev}
+from the current one and dividing by the elapsed time {\bf time-timeprev}. 
+Again, derived quantities may not be meaningful.
+Set {\bf timediff=0} to switch off this feature.
 
-   Even more access to the animated data is provided by the variables found in the
-   {\bf plot\_store} common block. Setting {\bf nplotstore}
-   to the number of snapshots to be stored, for example
+Note that the {\bf wsubtract} and {\bf timediff} features are only 
+used by "animate\_data", since a single snapshot can be easily 
+manipulated explicitly, e.g. {\bf w=w1-w0}, before plotting with
+{\bf plot\_data}. 
+
+Even more access to the animated data is provided by the variables found in the
+{\bf plot\_store} common block. Setting {\bf nplotstore}
+to the number of snapshots to be stored, for example
 \begin{verbatim}
 nplotstore = npictmax
 animate_data
 help, plotstore, timestore
 \end{verbatim}
-   will produce the four dimensional {\bf plotstore(n,nplotstore,nfunc,nfile)} array.
-   The first index is for the discrete points in the plotted functions in the
-   same order as in the {\bf w} or {\bf wreg} array.
-   The second index is for the snapshot (time), the third is for the
-   plot function (for multiple functions), and the last is the file index 
-   (for multiple files).
-   The times of the snapshots are saved into the {\bf timestore(nplotstore,nfilestore)}
-   array. 
+will produce the four dimensional {\bf plotstore(n,nplotstore,nfunc,nfile)} array.
+The first index is for the discrete points in the plotted functions in the
+same order as in the {\bf w} or {\bf wreg} array.
+The second index is for the snapshot (time), the third is for the
+plot function (for multiple functions), and the last is the file index 
+(for multiple files).
+The times of the snapshots are saved into the {\bf timestore(nplotstore,nfilestore)}
+array. 
 
-   Note that if the plot mode contain `max' or 'mean' option, the 
-   maximum or mean will be calculated for the last nplotstore snapshots,
-   but the plotstore array will still contain the original function values.
+Note that if the plot mode contain `max' or 'mean' option, the 
+maximum or mean will be calculated for the last nplotstore snapshots,
+but the plotstore array will still contain the original function values.
 
 \section{Slicing structured 3D data \label{s-slice}}
 
-   For visualizing 3D data, plot\_data or animate\_data can be used after a
-   1 or 2D {\bf cut} array has been defined. Alternatively slices of a single
-   snapshot (read by read\_data) can be animated by
+For visualizing 3D data, plot\_data or animate\_data can be used after a
+1 or 2D {\bf cut} array has been defined. Alternatively slices of a single
+snapshot (read by read\_data) can be animated by
 \begin{verbatim}
 slice_data
 \end{verbatim}
-   The 3D data is cut along {\bf slicedir}, e.g. for cuts parallel to the
-   X-Y plane, set
+The 3D data is cut along {\bf slicedir}, e.g. for cuts parallel to the
+X-Y plane, set
 \begin{verbatim}
 slicedir (1, 2, or 3)? 3
 \end{verbatim}
-   If the grid size is e.g. 50$*$100$*$60, then there are 60 slices to plot.
-   The number of animated slices can be reduced:
-   at most {\bf nslicemax} slices are shown starting from {\bf firstslice},
-   and only every {\bf dslice}-th slice is shown.
-   The plots can be further reduced by setting the {\bf cut} array,
-   however, now indices in cut refer to a single slice. The {\bf grid2d} 
-   index array (generated by the first slice\_data, in this case it is a 50$*$100 
-   array) can be used, e.g.
+If the grid size is e.g. 50$*$100$*$60, then there are 60 slices to plot.
+The number of animated slices can be reduced:
+at most {\bf nslicemax} slices are shown starting from {\bf firstslice},
+and only every {\bf dslice}-th slice is shown.
+The plots can be further reduced by setting the {\bf cut} array,
+however, now indices in cut refer to a single slice. The {\bf grid2d} 
+index array (generated by the first slice\_data, in this case it is a 50$*$100 
+array) can be used, e.g.
 \begin{verbatim}
 cut=grid2d(*,30:70)
 \end{verbatim}
-   For {\bf plotmode='vector'} the vectors are not advected with the flow 
-   (i.e. velspeed=0) since it does not make sense for the slices.
+For {\bf plotmode='vector'} the vectors are not advected with the flow 
+(i.e. velspeed=0) since it does not make sense for the slices.
 
-   The x and w arrays are overwritten with the 2D cuts during the slicing,
-   and only restored to the 3D arrays at the end.
-   If the slicing failed for any reason, use
+The x and w arrays are overwritten with the 2D cuts during the slicing,
+and only restored to the 3D arrays at the end.
+If the slicing failed for any reason, use
 \begin{verbatim}
 slice_data_restore
 \end{verbatim}
-   to restore the arrays.
+to restore the arrays.
 
 \section{Function definitions in funcdef \label{s-funcdef}}
 
-   The plot functions are set by the {\bf funcdef.pro} procedure.
-   This may be customized by the user. If it is modified, 
-   it should be recompiled before being used:
+The plot functions are set by the {\bf funcdef.pro} procedure.
+This may be customized by the user. If it is modified, 
+it should be recompiled before being used:
 \begin{verbatim}
 .r funcdef
 \end{verbatim}
-   Any function of the variables in {\bf w}, the coordinates in
-   {\bf x}, the scalar parameters in {\bf eqpar} can be defined in the 
-   {\bf funcdef.pro} file. The names of these variables are defined
-   by the {\bf variables} string array.
-   Further information is provided by various
-   unit conversion constants set by the {\bf set\_units} procedure that
-   is usually called internally when the data file is read, 
-   but it can also be called directly, for example:
+Any function of the variables in {\bf w}, the coordinates in
+{\bf x}, the scalar parameters in {\bf eqpar} can be defined in the 
+{\bf funcdef.pro} file. The names of these variables are defined
+by the {\bf variables} string array.
+Further information is provided by various
+unit conversion constants set by the {\bf set\_units} procedure that
+is usually called internally when the data file is read, 
+but it can also be called directly, for example:
 \begin{verbatim}
 set_units,'PIC',distunit=0.01,Mion=16,Melectron=0.16
 fixunits=1
 \end{verbatim}
-   where the first argument sets the unit system
-   ('SI', 'CGS', 'NORMALIZED', 'PIC', 'PLANETARY', or 'SOLAR')
-   which is normally guessed from the {\bf headerline} variable
-   of the data file;
-   the distance unit is given in meters (usually set by the xSI
-   scalar parameter in the data file); finally 
-   Mion and Melectron set the ion and electron masses in AMU
-   that may be defined by the Mi and Me scalar parameters.
-   All these arguments are optional.
-   The {\bf fixunits=1} ensures that the settings are not changed
-   when (re)reading a data file.
+where the first argument sets the unit system
+('SI', 'CGS', 'NORMALIZED', 'PIC', 'PLANETARY', or 'SOLAR')
+which is normally guessed from the {\bf headerline} variable
+of the data file;
+the distance unit is given in meters (usually set by the xSI
+scalar parameter in the data file); finally 
+Mion and Melectron set the ion and electron masses in AMU
+that may be defined by the Mi and Me scalar parameters.
+All these arguments are optional.
+The {\bf fixunits=1} ensures that the settings are not changed
+when (re)reading a data file.
 
-   Once the units are properly set, many functions can be derived
-   from the basic variables. Here is a list of the currently 
-   defined functions (for vectors, only the X components are 
-   listed for sake of brevity):
+Once the units are properly set, many functions can be derived
+from the basic variables. Here is a list of the currently 
+defined functions (for vectors, only the X components are 
+listed for sake of brevity):
 \begin{verbatim}
 Function name   Meaning
 ------------------------------------------------------------
