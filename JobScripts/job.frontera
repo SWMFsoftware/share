@@ -52,3 +52,19 @@ export UCX_LOG_LEVEL=ERROR
 # Use ibrun instead of mpirun or mpiexec
 ibrun ./SWMF.exe  > runlog_`date +%y%m%d%H%M`
 
+# The first node running ./PostProc.pl
+# ibrun -n 1 ./PostProc.pl -r=300 -n=10 >& PostProc.log &
+
+# the remianing nodes running SWMF
+# Remember to change the number of processors if -N is changed
+# Based on the system admin, task_affinity might be needed
+# if PostProc.pl and SWMF.exe share the same node, but with
+# -o (offset) 56, they should not share the same node.
+# But if the performance is greatly reduced, then task_affinity
+# is suggested to add ahead of ./SWMF.exe.
+
+# ibrun -n 3528 -o 56 ./SWMF.exe > runlog_`date +%y%m%d%H%M`
+
+#sleep 60
+#touch PostProc.STOP
+#wait
