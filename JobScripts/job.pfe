@@ -125,6 +125,8 @@ setenv MPI_TYPE_DEPTH 20
 mpiexec ./SWMF.exe > runlog_`date +%y%m%d%H%M`
 
 # Request PostProc.pl to stop and wait for it to finish
+
+#sleep 60
 #touch PostProc.STOP; wait;
 
 exit
