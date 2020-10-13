@@ -23,6 +23,7 @@ my $Components  = $C; undef $C;
 my $Precision   = $p; undef $p;
 my $GridSize    = $g; undef $g;
 my $nProc       = $n; undef $n;
+my $Settings    = $s; undef $s;
 my $StandAlone  = $S; undef $S;
 my $Format      = $F; undef $F;
 
@@ -240,6 +241,12 @@ sub init_comp{
 
 	# Initialize COMP::_UsedComp hash with the registered components
 	%COMP::_UsedComp = %COMP::_Registered;
+    }
+
+    if($Settings){
+	# Create a COMP::_Value hash for name:value pairs listed in $Settings
+	%COMP::_Value = (split /[,:]/, $Settings);
+	#print "nFluid=$COMP::_Value{nFluid} nIonFluid=$COMP::_Value{nIonFluid}\n";
     }
 }
 ##############################################################################
@@ -1371,7 +1378,8 @@ sub print_help{
 Usage:
 
   CheckParam.pl [-h] [-H] [-X] [-v] [-D] [-F] [-x=XMLFILE]
-                [-S] [-c=ID] [-C=IDLIST] [-p=PRECISION] [-i] [PARAMFILE]
+                [-S] [-c=ID] [-C=IDLIST] [-p=PRECISION] [-s=SETTINGS]
+		[-i] [PARAMFILE]
 
   -h            print help message and stop
 
@@ -1407,6 +1415,9 @@ Usage:
   -p=PRECISION  The default precision for real numbers. Possible values are
                 'single' and 'double'. Default value is 'double'.
 
+  -s=SETTINGS   Pass values to the %COMP::_Value hash in the format
+                -s=NAME1:VALUE1,NAME2:VALUE2,...
+
   -i            Interactive mode. The parameters are read from STDIN.
 
   PARAMFILE     The file containing the parameters to test. 
@@ -1421,9 +1432,9 @@ Examples:
 
 CheckParam.pl -F -C='GM,IH,IE' -v
 
-    Check GM parameters in run/PARAM_new.in for correctness:
+    Check GM parameters in run1/PARAM.in for correctness:
 
-CheckParam.pl -x=GM/BATSRUS/PARAM.XML -c=GM run/PARAM_new.in
+CheckParam.pl -x=GM/BATSRUS/PARAM.XML -c=GM -s=nVar:10,nWave:2 run1/PARAM.in
 
     Check lines typed through standard input with debug info:
 
