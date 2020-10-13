@@ -1398,9 +1398,6 @@ Usage:
   -C=IDLIST     List of registered component ID-s separated with commas.
                 The default is not checking the registration.
 
-  -g=GRIDSIZE   List of grid dimensions separated with commas.
-                The default is not checking the grid size.
-
   -p=PRECISION  The default precision for real numbers. Possible values are
                 'single' and 'double'. Default value is 'double'.
 
@@ -1411,8 +1408,7 @@ Usage:
 
   PARAMFILE     The file containing the parameters to test. 
                 The default file name is run/PARAM.in.
-                In interactive mode (-i) or when the XML tree is saved (-s)
-                the PARAMFILE is ignored.
+                In interactive mode (-i) the PARAMFILE is ignored.
 
 Examples:
 
@@ -1423,7 +1419,7 @@ CheckParam.pl -F -C='GM,IH,IE' -v
 
     Check GM parameters in run1/PARAM.in for correctness:
 
-CheckParam.pl -x=GM/BATSRUS/PARAM.XML -c=GM -s=nVar:10,nWave:2 run1/PARAM.in
+CheckParam.pl -x=GM/BATSRUS/PARAM.XML -c=GM -s=nI:4,nJ:6,nK:8 run1/PARAM.in
 
     Check lines typed through standard input with debug info:
 
