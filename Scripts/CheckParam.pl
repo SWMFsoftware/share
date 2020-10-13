@@ -21,7 +21,6 @@ my $XmlFile     = $x; undef $x;
 my $NameComp    = $c; undef $c;
 my $Components  = $C; undef $C;
 my $Precision   = $p; undef $p;
-my $GridSize    = $g; undef $g;
 my $nProc       = $n; undef $n;
 my $Settings    = $s; undef $s;
 my $StandAlone  = $S; undef $S;
@@ -188,11 +187,6 @@ sub check_arguments{
 	die "$ERROR -p=$Precision is not 'single' or 'double'\n";
     }
 
-    if($GridSize and not $GridSize =~ /^\d+(,\d+)*$/){
-	die "$ERROR -g=$GridSize is not"
-	    ." a comma separated list of integers\n";
-    }
-
     if(length($nProc) and not $nProc =~ /^[1-9]\d*$/){
 	die "$ERROR -n=$nProc is not a positive integer\n";
     }
@@ -213,11 +207,6 @@ sub init_comp{
 
     # Set COMP::_IsFirstSession to true
     $COMP::_IsFirstSession = 1;
-
-    # Set the size of the grid 
-    if($GridSize){
-	@COMP::_GridSize = split(',',$GridSize);
-    }
 
     # Set the number of processors
     if($nProc){
