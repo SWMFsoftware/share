@@ -31,8 +31,9 @@ my $WARNING = "WARNING in PostProc.pl"; # Warning message string
 my $ERROR   = "ERROR in PostProc.pl";   # Error message string
 my $StopFile = "PostProc.STOP";         # Don't repeat if this file is present
 
-my $ParamIn = "PARAM.in";
-my $RunLog  = "runlog runlog_[0-9]*";
+my $ParamIn     = "PARAM.in";
+my $ParamInOrig = "PARAM.in_orig_";
+my $RunLog      = "runlog runlog_[0-9]*";
 
 
 my $NameOutput;
@@ -250,6 +251,7 @@ if(-f $ParamIn){
 	&shell_info("cp PARAM.* LAYOUT.* $NameOutput");
     }else{
 	&shell_info("cp $ParamIn $NameOutput");
+	&shell_info("mv $ParamInOrig $NameOutput") if -f $ParamInOrig;
     }
 }else{
     warn "$WARNING: no $ParamIn file was found\n";
