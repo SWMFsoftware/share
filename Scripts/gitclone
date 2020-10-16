@@ -6,9 +6,9 @@ my $History = $history;
 
 use strict;
 
-my $swmf_software     = 'git@gitlab.umich.edu:swmf_software';
-my $csem_software     = 'git@gitlab.umich.edu:csem_software';
-my $solstice_software = 'git@gitlab.umich.edu:solstice-software';
+my $swmf_software     = "git\@gitlab.umich.edu:swmf_software";
+my $csem_software     = "git\@gitlab.umich.edu:csem_software";
+my $solstice_software = "git\@gitlab.umich.edu:solstice-software";
 
 # The project name should be all capitalized.
 my %url = (
