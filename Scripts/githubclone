@@ -5,7 +5,7 @@ my $History = $history;
 
 use strict;
 
-my $mstemquda_software = 'https://github.com/mstemquda';
+my $mstemquda_software = 'https://github.com/MSTEM-QUDA';
 
 # The project name should be all capitalized.
 my %url = (
@@ -14,7 +14,7 @@ my %url = (
     "VISANAJULIA"  => "https://github.com/henry2004y",
     );
 
-my @repo = ("SWMF, BATSRUS, RCM2, CIMI2, RBE ...", 
+my @repo = ("SWMF, BATSRUS, RCM2, RBE, Ridley_serial", 
             sort keys %url);
 
 if($Help or not @ARGV){
