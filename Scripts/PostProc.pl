@@ -8,7 +8,7 @@ my $Verbose       = ($v or $verbose);
 my $Gzip          = ($g or $gzip);
 my $Repeat        = ($r or $repeat);
 my $Stop          = ($s or $stop or 2);
-my $Concat        = ($c or $cat and not $Repeat);
+my $Concat        = (($c or $cat) and not $Repeat);
 my $MakeMovie     = ($m or $movie or $M or $MOVIE);
 my $KeepMovieOnly = ($M or $MOVIE);
 my $nThread       = ($n or 4);
@@ -29,7 +29,8 @@ my $exclude = " --exclude '*.idl' --exclude '*.tec' --exclude '*.dat'".
 my $INFO    = "PostProc.pl";            # Info message string
 my $WARNING = "WARNING in PostProc.pl"; # Warning message string
 my $ERROR   = "ERROR in PostProc.pl";   # Error message string
-my $StopFile = "PostProc.STOP";         # Don't repeat if this file is present
+my $StopFile = "PostProc.STOP";         # Stop repeat if this file is present
+my $FinalRepeat;                        # True for the final repaat
 
 my $ParamIn     = "PARAM.in";
 my $ParamInOrig = "PARAM.in_orig_";
@@ -192,6 +193,11 @@ REPEAT:{
 
     if($Repeat){
 	if(-f $StopFile){
+	    if(not $FinalRepeat){
+		$FinalRepeat = 1;
+		print "$INFO doing final post-processing since $StopFile file is present.\n";
+		redo REPEAT;
+	    }
 	    print "$INFO stopping because $StopFile file is present.\n";
 	    exit 0;
 	}
