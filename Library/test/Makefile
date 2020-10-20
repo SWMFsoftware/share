@@ -66,7 +66,6 @@ test:
 	-@make test_sort
 	-@make test_time_convert
 	-@make test_triangulate
-	-@make test_process_var_name
 	-@make test_utilities
 	@echo ---------------------------------------------------------
 	@ls -l *.diff
