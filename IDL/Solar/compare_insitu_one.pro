@@ -5,7 +5,7 @@ pro compare_insitu_one, file_sim=file_sim,                      $
                         CharSizeLocal=CharSizeLocal,            $
                         DoPlotTe=DoPlotTe, Model=Model,         $
                         dir_obs=dir_obs, dir_plot=dir_plot,     $
-                        DoSaveObs=DoSaveObs
+                        DoSaveObs=DoSaveObs,DoLogT=DoLogT
 
   if (not keyword_set(extra_plt_info)) then begin
      extra_plt_info = ''
@@ -21,6 +21,8 @@ pro compare_insitu_one, file_sim=file_sim,                      $
 
   if (not isa(DoSaveObs)) then DoSaveObs = 1
 
+  print, "compare_insitu_one: DoSaveObs=", DoSaveObs
+
   read_swmf_sat, file_sim, time_swmf, n_swmf, ux_swmf, uy_swmf,        $
                  uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf, $
                  ut_swmf, ur_swmf, B_swmf, DoContainData=DoContainData,$
@@ -28,7 +30,8 @@ pro compare_insitu_one, file_sim=file_sim,                      $
                  start_time=start_time, end_time=end_time
   
   if DoContainData ne 1 then begin
-     print, " Error: filename=", file_sim, " does not contain any data"
+     print, "compare_insitu_one error: filename=", $
+            file_sim, " does not contain any data"
      return
   endif
 
@@ -36,7 +39,7 @@ pro compare_insitu_one, file_sim=file_sim,                      $
                    mag_obs, time_obs, DoContainData=DoContainData
 
   if DoContainData ne 1 then begin
-     print, " Error: no observational data are found."
+     print, "compare_insitu_one: error: no observational data are found."
      return
   endif
 
@@ -46,6 +49,8 @@ pro compare_insitu_one, file_sim=file_sim,                      $
      EventTime=repstr(EventTime,'-','_')
      EventTime=repstr(EventTime,':','_')
 
+     print, "compare_insitu_one: dir_obs =", dir_obs
+
      ObsFileName = dir_obs + '/' + strmid(TypePlot,1) + '_' +EventTime + '.out'
      w = fltarr(n_elements(u_obs),5)
      w = [[time_obs], [n_obs], [u_obs], [tem_obs], [mag_obs]]
@@ -53,7 +58,7 @@ pro compare_insitu_one, file_sim=file_sim,                      $
      varname = ['count', 'time', 'density', 'velocity', 'temperature', $
                 'magnetic_field']
      save_pict,ObsFileName,TypeData+' Observational data',varname,w,x
-     print, ' saving the observation file to ObsFileName: ', ObsFileName
+     print, 'compare_insitu_one: saving the observation file to ObsFileName: ', ObsFileName
   endif
 
   if (UseTimePlotName) then begin
@@ -74,7 +79,7 @@ pro compare_insitu_one, file_sim=file_sim,                      $
                time_swmf, ur_swmf, n_swmf,  ti_swmf,  te_swmf, B_swmf, $
                start_time, end_time, typeData=typeData,                $
                charsize=CharSizeLocal, DoPlotTe = DoPlotTe,            $
-               legendNames=Model
+               legendNames=Model, DoLogT=DoLogT
 
   device,/close_file
 end
