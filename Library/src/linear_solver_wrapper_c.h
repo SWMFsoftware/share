@@ -1,6 +1,6 @@
 // function interface for the fortran code ModLinearSolver
 extern "C" {
-void linear_wrapper_matvec_c(double* VecIn, double* VecOut, int n);
+void linear_wrapper_matvec_c(const double* VecIn, double* VecOut, int n);
 void linear_solver_wrapper(const char* solverType, double* tolerance,
                            int* nIteration, int* nVar, int* nDim, int* nI,
                            int* nJ, int* nK, int* nBlock, int* iComm,
@@ -9,4 +9,4 @@ void linear_solver_wrapper(const char* solverType, double* tolerance,
 }
 
 // matvec function interface for user
-extern void (*linear_solver_matvec_c)(double* VecIn, double* VecOut, int n);
+extern void (*linear_solver_matvec_c)(const double* VecIn, double* VecOut, int n);
