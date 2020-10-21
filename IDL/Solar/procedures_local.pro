@@ -1169,9 +1169,25 @@ end
 
 pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
                    ut, ur, bt, nvars, data, varnames,                     $
-                   DoContainData=DoContainData
+                   DoContainData=DoContainData, nData=nData,              $
+                   TypeData=TypeData, TypePlot=TypePlot, start_time=start_time,   $
+                   end_time=end_time
 
   DoContainData = 1
+  TypeData = 'none'
+
+  if (strpos(strlowcase(filename), 'earth') ge 0) then begin
+     TypeData      = 'OMNI'
+     TypePlot  = '_omni'
+  endif else if (strpos(strlowcase(filename), 'sta')     ge 0 or $
+                 strpos(strlowcase(filename), 'stereoa') ge 0) then begin
+     TypeData      = 'Stereo A'
+     TypePlot  = '_sta'
+  endif else if (strpos(strlowcase(filename), 'stb')     ge 0 or $
+                 strpos(strlowcase(filename), 'stereob') ge 0) then begin
+     TypeData      = 'Stereo B'
+     TypePlot  = '_stb'
+  endif
 
   itype = size(filename,/type)
 
@@ -1383,6 +1399,9 @@ pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
   ti = p*ProtonMass/rho/k*1.e-7
   te = pe*ProtonMass/rho/k*1.e-7
 
+  start_time = time(0)
+  end_time   = time(n_elements(time)-1)
+
 end
 
 ;--------------------------------------------------------------------
@@ -1426,28 +1445,13 @@ end
 ;------------------------------------------------------------------------------
 
 pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
-                 time_simu1, u_simu1, n_simu1, ti_simu1, te_simu1, b_simu1,   $
-                 start_time, end_time, fileplot=fileplot, type=type,          $
-                 charsize=charsize,                                           $
-                 u_simu2 =u_simu2,  n_simu2=n_simu2, ti_simu2  =ti_simu2,     $
-                 te_simu2=te_simu2, b_simu2=b_simu2, time_simu2=time_simu2,   $
-                 u_simu3 =u_simu3,  n_simu3=n_simu3, ti_simu3  =ti_simu3,     $
-                 te_simu3=te_simu3, b_simu3=b_simu3, time_simu3=time_simu3,   $
-                 u_simu4 =u_simu4,  n_simu4=n_simu4, ti_simu4  =ti_simu4,     $
-                 te_simu4=te_simu4, b_simu4=b_simu4, time_simu4=time_simu4,   $
-                 DoPlotTe=DoPlotTe, legendNames = legendNames
-
-  nPlot = 1
-
-  if (keyword_set(time_simu2)) then begin
-     nPlot   = 2
-  endif
-  if (keyword_set(time_simu3)) then begin
-     nPlot   = 3
-  endif
-  if (keyword_set(time_simu4)) then begin
-     nPlot   = 4
-  endif
+                 time_simu, u_simu, n_simu, ti_simu, te_simu, b_simu,         $
+                 start_time, end_time, fileplot=fileplot, typeData=typeData,  $
+                 charsize=charsize, colorLocal=colorIn,                       $
+                 DoPlotTe=DoPlotTe, legendNames = legendNames,                $
+                 legendPosL=legendPosL, legendPosR=legendPosR,                $
+                 DoShowDist=DoShowDist, DoLogRho=DoLogRho, DoLogT=DoLogT,     $
+                 autorange=autorange, IsOverPlot=IsOverPlot
 
   if (not isa(DoPlotTe)) then DoPlotTe = 1
 
@@ -1459,37 +1463,26 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
      endelse
   endif else begin
      if DoPlotTe then begin
-        nlegend        = n_elements(legendNames)
-        legendNamesOld = legendNames
-        legendNames    = STRARR(nlegend*2)
-        for ilegend = 1, nlegend do begin
-           legendNames((ilegend-1)*2)   = legendNamesOld(ilegend-1)
-           legendNames((ilegend-1)*2+1) = legendNamesOld(ilegend-1) + ' Te'
-        endfor
+        legendNames = [legendNames, legendNames+' Te']
      endif
   endelse
 
-  if (n_elements(legendNames) ne nPlot*(DoPlotTe+1)) then begin
-     ;; difficult to have more than 4 legends...
-     if nPlot le 4 then begin
-        if DoPlotTe then begin
-           legendNames = STRARR(nPlot*2) + 'Model '
-           for iPlot = 1, nPlot do begin
-              legendNames((iPlot-1)*2) = $
-                 legendNames((iPlot-1)*2) + strtrim(string(iPlot),2)
-              legendNames((iPlot-1)*2+1) = $
-                 legendNames((iPlot-1)*2+1) + strtrim(string(iPlot),2) + ' Te'
-           endfor
-        endif else begin
-           legendNames = STRARR(nPlot) + 'Model '
-           for iPlot = 1, nPlot do begin
-              legendNames(iPlot-1) = legendNames(iPlot-1) + strtrim(string(iPlot),2)
-           endfor
-        endelse
-     endif
-  endif
+  if (not isa(IsOverPlot)) then IsOverPlot = 0
+  if (not isa(DoShowDist)) then DoShowDist = 1
+  if (not isa(legendPosL)) then legendPosL = 0.95
+  if (not isa(legendPosR)) then legendPosR = 0.94
+  if (not isa(DoLogRho))   then DoLogRho   = 0
+  if (not isa(DoLogT))     then DoLogT     = 0
+  if (not isa(autorange))  then autorange  = 1
+  if (not isa(colorLocal)) then colorLocal = 5
 
-  legendNames = [type, legendNames]
+  if IsOverPlot eq 1 then begin
+     if (not isa(DoShowDist)) then DoShowDist = 0
+  endif else begin
+     if (not isa(DoShowDist)) then DoShowDist = 1
+  endelse
+
+  if IsOverPlot ne 1 then legendNames = [typeData, legendNames]
 
   index_u = where(u_obs gt 0)
   index_n = where(n_obs gt 0)
@@ -1512,21 +1505,21 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   
   ;time in units of t_norm days
   t_obsv = time_obs/(24.*60.*60.*1.e3)/t_norm
-  t_swmf = time_simu1
+  t_swmf = time_simu
 
   ; Converting swmf time (YYYY-MO-DDTHH:MM:SS) to epoch time in sec
-  TIMESTAMPTOVALUES,time_simu1+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
+  TIMESTAMPTOVALUES,time_simu+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
   cdf_epoch,t_swmf,yy,mo,dy,hh,mm,ss,/compute_epoch     ; in milliseconds
   t_swmf=t_swmf/(24.*60.*60.*1.e3)/t_norm
 
   dist_int_u=curve_int_distance(t_obsv(index_u), u_obs(index_u)/u_norm,$
-                                t_swmf, u_simu1/u_norm)
+                                t_swmf, u_simu/u_norm)
   dist_int_t=curve_int_distance(t_obsv(index_T), T_obs(index_T)/tem_norm,$
-                                t_swmf, ti_simu1/tem_norm)
+                                t_swmf, ti_simu/tem_norm)
   dist_int_n=curve_int_distance(t_obsv(index_n), n_obs(index_n)/n_norm,$
-                                t_swmf, n_simu1/n_norm)
+                                t_swmf, n_simu/n_norm)
   dist_int_b=curve_int_distance(t_obsv(index_B), B_obs(index_B)/mag_norm,$
-                                t_swmf, b_simu1*1.e5/mag_norm)
+                                t_swmf, b_simu*1.e5/mag_norm)
   print,FORMAT='(a,f7.3,f7.4,f7.4,f7.4)',$
         'Integrated  Curve distance (Ur, Np, T, B) is: '$
         ,trim(dist_int_u),dist_int_N,dist_int_t,dist_int_b
@@ -1535,15 +1528,9 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
             'Dist_N ='+STRING(trim(dist_int_n),format='(f6.3)'),$
             'Dist_T ='+STRING(trim(dist_int_t),format='(f6.3)'),$
             'Dist_B ='+STRING(trim(dist_int_b),format='(f6.3)')]
-  
+
   loadcolors
 
-  color_I = [0,5,6,1,2]
-
-  set_plot,'PS'
-  device,/encapsulated
-  device,filename=fileplot,/color,bits_per_pixel=8
-  device,xsize=20,ysize=20
   nx=1 & ny=4
   !p.multi=[0,1,4]
   cal_pos,nx,ny,y_x_ratio=y_x,x1=x1,y1=y1,x2=x2,y2=y2,$
@@ -1552,123 +1539,115 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   ;;----------------------------------------------------------------------
   ;; plot velocity
 
-  ymin = 200
-  ymax = max([max(u_obs(index_u)), max(u_simu1)])*1.3
+  if autorange ne 0 then begin
+     ymin = 200
+     ymax = max([max(u_obs(index_u)), max(u_simu)])*1.3
+  endif
+
   pos=[x1[0],y1[3],x2[0],y2[3]]
 
-  utplot,utc_obs(index_u),u_obs(index_u),background=7,color=color_I[0],$
-         ytitle='Ur [km/s]',thick=9,$
-         timerange=[start_time,end_time],xstyle=1,yrange=[ymin,ymax],ystyle=1,$
-         charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos,$
-         xtickname=REPLICATE(' ', 7),xtitle=' '
-  outplot,time_simu1, u_simu1, color=color_I[1],thick=9
-  if (nPlot eq 2) then outplot,time_simu2,u_simu2,color=color_I[2],thick=9
-  if (nPlot eq 3) then outplot,time_simu3,u_simu3,color=color_I[3],thick=9
-  if (nPlot eq 4) then outplot,time_simu4,u_simu4,color=color_I[4],thick=9
+  if IsOverPlot ne 1 then $
+     utplot,utc_obs(index_u),u_obs(index_u),background=7,color=0,         $
+            ytitle='Ur [km/s]',thick=9, timerange=[start_time,end_time],  $
+            xstyle=1,yrange=[ymin,ymax],ystyle=1,                         $
+            charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos, $
+            xtickname=REPLICATE(' ', 7),xtitle=' '
+  outplot,time_simu, u_simu, color=colorLocal,thick=9
 
   if (DoPlotTe) then begin
-     case nPlot of
-        1: begin
-           colortmp_I = [0,5,5]
-           linestyletmp = [0,0,2]
-        end
-        2: begin
-           colortmp_I = [0,5,5,6,6]
-           linestyletmp= [0,0,2,0,2]
-        end
-        3: begin
-           colortmp_I = [0,5,5,6,6,1,1]
-           linestyletmp= [0,0,2,0,2,0,2]
-        end
-        4: begin
-           colortmp_I = [0,5,5,6,6,1,1,2,2]
-           linestyletmp= [0,0,2,0,2,0,2,0,2]
-        end
-     endcase
-
-     legend,legendNames, colors=colortmp_I,                  $
-            psym=0,textcolor=0,thick=6,$
-            linestyle=linestyletmp,                   $
-            charsize=1,pspacing=1.8,charthick=5,bthick=5,position=[0.15,0.95],$
-            /norm,box=0
-     legend,dist_int(0),thick=6,charsize=1,charthick=5,position=[0.75,0.94],$
-            /norm,box=0
+     if IsOverPlot ne 1 then begin
+        legend,legendNames, colors=[0,colorLocal,colorLocal],            $
+               psym=0,textcolor=0,thick=6,                               $
+               linestyle=[0,0,2],                                        $
+               charsize=1,pspacing=1.8,charthick=5,bthick=5,position=[0.15,legendPosL],$
+               /norm,box=0
+     endif else begin
+        legend,legendNames, colors=[colorLocal,colorLocal],             $
+               psym=0,textcolor=0,thick=6,                              $
+               linestyle=[0,2],                                         $
+               charsize=1,pspacing=1.8,charthick=5,bthick=5,position=[0.15,legendPosL],$
+               /norm,box=0
+     endelse        
   endif else begin
-     legend,legendNames, colors=color_I[indgen(nPlot+1)], $
-            psym=0,textcolor=0,thick=6,linestyle=0,$
-            charsize=1,pspacing=1.8,charthick=5,bthick=5,position=[0.15,0.95],$
-            /norm,box=0
-     legend,dist_int(0),thick=6,charsize=1,charthick=5,position=[0.75,0.94],$
-            /norm,box=0
+     if IsOverPlot ne 1 then begin
+        legend,legendNames, colors=[0, colorLocal],                      $
+               psym=0,textcolor=0,thick=6,linestyle=0,                   $
+               charsize=1,pspacing=1.8,charthick=5,bthick=5,position=[0.15,legendPosL],$
+               /norm,box=0
+     endif else begin
+        legend,legendNames, colors=colorLocal,                           $
+               psym=0,textcolor=0,thick=6,linestyle=0,                   $
+               charsize=1,pspacing=1.8,charthick=5,bthick=5,position=[0.15,legendPosL],$
+               /norm,box=0
+     endelse        
   endelse
+
+  if DoShowDist ne 0 then legend,dist_int(0),thick=6,charsize=1,charthick=5,  $
+                                 position=[0.75,legendPosR], /norm, box=0
   
   ;;----------------------------------------------------------------------
   ;; plot density
 
-  ymin = 0
-  ymax = max([max(n_obs[index_n]), max(n_simu1)])*1.3
+  if autorange ne 0 then begin
+     ymin = 0
+     ymax = max([max(n_obs[index_n]), max(n_simu)])*1.3
+  endif
 
   pos=[x1[0],y1[2],x2[0],y2[2]]
 
-  utplot,utc_obs[index_n],n_obs[index_n],background=7,color=0,$
-         ytitle='Np [cm!E-3!N]',thick=9,$
-         timerange=[start_time,end_time],xstyle=1,charsize=charsize, $
-         charthick=5,xthick=5,$
-         ythick=5,position=pos,xtickname=REPLICATE(' ', 7),xtitle=' ', $
-         yrange=[ymin,ymax], ystyle=1
-  outplot,time_simu1, n_simu1, color=color_I[1],thick=9
-  if (nPlot eq 2) then outplot,time_simu2,n_simu2,color=color_I[2],thick=9
-  if (nPlot eq 3) then outplot,time_simu3,n_simu3,color=color_I[3],thick=9
-  if (nPlot eq 4) then outplot,time_simu4,n_simu4,color=color_I[4],thick=9
+  if IsOverPlot ne 1 then $
+     utplot,utc_obs[index_n],n_obs[index_n],background=7,color=0,         $
+            ytitle='Np [cm!E-3!N]',thick=9,                               $
+            timerange=[start_time,end_time],xstyle=1,charsize=charsize,   $
+            charthick=5,xthick=5,                                         $
+            ythick=5,position=pos,xtickname=REPLICATE(' ', 7),xtitle=' ', $
+            yrange=[ymin,ymax], ystyle=1
+  outplot,time_simu, n_simu, color=colorLocal,thick=9
   
-  legend,dist_int(1),thick=5,charsize=1,charthick=5,position=[0.75,0.72],/norm,box=0  
+  if DoShowDist ne 0 then legend,dist_int(1),thick=5,charsize=1,charthick=5, $
+                            position=[0.75,legendPosL-0.22],/norm,box=0  
   ;;----------------------------------------------------------------------
   ;; plot temperature
 
-  ymin = 0
-  ymax = max([max(T_obs[index_T]), max(ti_simu1)])*1.3
+  if autorange ne 0 then begin
+     ymin = 0
+     ymax = max([max(T_obs[index_T]), max(ti_simu)])*1.3
+  endif
 
   pos=[x1[0],y1[1],x2[0],y2[1]]
 
-  utplot,utc_obs[index_T],T_obs[index_T],background=7,color=0,$
-         ytitle='Temperature [K]',thick=9,timerange=[start_time,end_time], $
-         xstyle=1,$
-         charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos,$
-         xtickname=REPLICATE(' ', 7),xtitle=' ',yrange=[ymin,ymax],ystyle=1
-  outplot,time_simu1, ti_simu1, color=color_I[1],thick=9
-  if (nPlot eq 2) then outplot,time_simu2,ti_simu2,color=color_I[2],thick=9
-  if (nPlot eq 3) then outplot,time_simu3,ti_simu3,color=color_I[3],thick=9
-  if (nPlot eq 4) then outplot,time_simu4,ti_simu4,color=color_I[4],thick=9
+  if IsOverPlot ne 1 then $
+     utplot,utc_obs[index_T],T_obs[index_T],background=7,color=0,              $
+            ytitle='Temperature [K]',thick=9,timerange=[start_time,end_time],  $
+            xstyle=1,                                                          $
+            charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos,      $
+            xtickname=REPLICATE(' ', 7),xtitle=' ',yrange=[ymin,ymax],ystyle=1
+  outplot,time_simu, ti_simu, color=colorLocal,thick=9
   if (DoPlotTe) then begin
-     outplot,time_simu1, te_simu1, color=color_I[1],thick=9, linestyle=2
-     if (nPlot eq 2) then outplot,time_simu2,te_simu2,color=color_I[2], $
-                                    thick=9,linestyle=2
-     if (nPlot eq 3) then outplot,time_simu3,te_simu3,color=color_I[3], $
-                                    thick=9,linestyle=2
-     if (nPlot eq 4) then outplot,time_simu4,te_simu4,color=color_I[4], $
-                                    thick=9,linestyle=2
+     outplot,time_simu, te_simu, color=colorLocal,thick=9, linestyle=2
   endif
-  legend,dist_int(2),thick=5,charsize=1,charthick=5,position=[0.75,0.49],/norm,box=0
+  if DoShowDist ne 0 then legend,dist_int(2),thick=5,charsize=1,charthick=5, $
+                            position=[0.75,legendPosL-0.45],/norm,box=0
   ;;----------------------------------------------------------------------
   ;; plot magnetic field
 
-  ymin = 0
-  ymax = max([max(B_obs[index_B]), max(b_simu1)*1.e5])*1.3
+  if autorange ne 0 then begin
+     ymin = 0
+     ymax = max([max(B_obs[index_B]), max(b_simu)*1.e5])*1.3
+  endif
 
   pos=[x1[0],y1[0],x2[0],y2[0]]
 
-  utplot,utc_obs(index_B),B_obs(index_B),background=7,color=0,$
-         ytitle='B [nT]',thick=9,$
-         timerange=[start_time,end_time],xstyle=1,yrange=[ymin,ymax],ysytle=1,$
-         charsize=charsize,$
-         charthick=5,xthick=5,ythick=5,position=pos
-  outplot,time_simu1, b_simu1*1.e5, color=color_I[1],thick=9
-  if (nPlot eq 2) then outplot,time_simu2,b_simu2*1e5,color=color_I[2],thick=9
-  if (nPlot eq 3) then outplot,time_simu3,b_simu3*1e5,color=color_I[3],thick=9
-  if (nPlot eq 4) then outplot,time_simu4,b_simu4*1e5,color=color_I[4],thick=9
+  if IsOverPlot ne 1 then $
+     utplot,utc_obs(index_B),B_obs(index_B),background=7,color=0,                 $
+            ytitle='B [nT]',thick=9,                                              $
+            timerange=[start_time,end_time],xstyle=1,yrange=[ymin,ymax],ysytle=1, $
+            charsize=charsize,                                                    $
+            charthick=5,xthick=5,ythick=5,position=pos
+  outplot,time_simu, b_simu*1.e5, color=colorLocal,thick=9
 
-  legend,dist_int(3),thick=5,charsize=1,charthick=5,position=[0.75,0.27],/norm,box=0
-  device,/close_file
+  if DoShowDist ne 0 then legend,dist_int(3),thick=5,charsize=1,charthick=5,   $
+                            position=[0.75,legendPosL-0.67],/norm,box=0
 end
 
 ;--------------------------------------------------------------------
@@ -2018,13 +1997,13 @@ end
 
 ;--------------------------------------------------------------------
 
-pro get_insitu_data, start_time, end_time, type, u_obs, $
+pro get_insitu_data, start_time, end_time, TypeData, u_obs, $
                      n_obs, tem_obs, mag_obs, time_obs, $
                      DoContainData=DoContainData
 
   DoContainData = 1
 
-  case type of
+  case TypeData of
      'OMNI': begin
         obs_data=spdfgetdata('OMNI_COHO1HR_MERGED_MAG_PLASMA', $
                              ['ABS_B' , 'V', 'N','T'],         $
@@ -2080,7 +2059,7 @@ pro get_insitu_data, start_time, end_time, type, u_obs, $
 
      'none': begin
         DoContainData = 0
-        print, ' case: unknown type.'
+        print, ' case: unknown TypeData.'
         RETURN
      end
   endcase
