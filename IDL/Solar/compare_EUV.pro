@@ -54,13 +54,43 @@ pro compare_EUV, TimeEvent=TimeEvent, varnames=varnames, nvars=nvars,        $
   ;; prepare the image for plotting
 
   process_euv, filename_I(0), DetName = DetName, euv_map = euv171_map, $
-               InstName = InstName, xy_map = xs_map, ys_map = ys_map
+               InstName = InstName, xy_map = xs_map, ys_map = ys_map,  $
+               index=index
 
   process_euv, filename_I(1), DetName = DetName, euv_map = euv195_map, $
                InstName = InstName, xy_map = xs_map, ys_map = ys_map
 
   process_euv, filename_I(2), DetName = DetName, euv_map = euv284_map, $
                InstName = InstName, xy_map = xs_map, ys_map = ys_map
+
+
+  ;; Save for IDL comparisons
+  XPixelToRadius = (index.naxis1/xs_map) / index.rsun
+  YPixelToRadius = (index.naxis2/ys_map) / index.rsun
+
+  EventTime = strmid(TimeEvent,0,19)
+  EventTime=repstr(EventTime,'/','_')
+  EventTime=repstr(EventTime,':','_')
+
+  ObsFileName=dir_obs+'/'+InstPlt+'_Observations_'+EventTime+'.out'
+
+  ;; only save the Observations in BATSRUS format if the file
+  ;; does not exist
+  if (file_test(ObsFileName) ne 1) then begin
+     print,'Saving Observations in BATSRUS format'
+     nw = 3
+     w  = fltarr(nx,ny,nw)
+     x  = fltarr(nx,ny,2)
+     w(*) =[[euv171_map.data],[euv195_map.data], [euv284_map.data]]
+     varname  = ['x','y','EUV:171','EUV:195','EUV:284']
+     x(*,*,0) = ((findgen(nx) - nx/2)*XPixelToRadius) # (fltarr(ny) + 1)
+     x(*,*,1) = (fltarr(nx) + 1) # ((findgen(ny) - ny/2)*YPixelToRadius)
+     it = 0.
+     time = 0.0
+
+     ;;Save Observations in BATSRUS format
+     save_pict,ObsFileName,InstPlt+'_Observations_data',varname,w,x
+  endif
 
   ;;---------------------------------------------------------------------------
   ;; processing the swmf data
