@@ -14,7 +14,7 @@ my %url = (
     "VISANAJULIA"  => "https://github.com/henry2004y",
     );
 
-my @repo = ("SWMF, BATSRUS, RCM2, RBE, Ridley_serial", 
+my @repo = ("SWMF, BATSRUS, RCM2, RBE, Ridley_serial, BATL", 
             sort keys %url);
 
 if($Help or not @ARGV){
