@@ -1447,24 +1447,27 @@ end
 pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
                  time_simu, u_simu, n_simu, ti_simu, te_simu, b_simu,         $
                  start_time, end_time, fileplot=fileplot, typeData=typeData,  $
-                 charsize=charsize, colorLocal=colorIn,                       $
+                 charsize=charsize, colorLocal=colorLocal,                    $
                  DoPlotTe=DoPlotTe, legendNames = legendNames,                $
                  legendPosL=legendPosL, legendPosR=legendPosR,                $
                  DoShowDist=DoShowDist, DoLogRho=DoLogRho, DoLogT=DoLogT,     $
-                 autorange=autorange, IsOverPlot=IsOverPlot
+                 IsOverPlot=IsOverPlot, DoLegend=DoLegend,                    $
+                 ymin_I=ymin_I, ymax_I=ymax_I, linethick=linethick
 
   if (not isa(DoPlotTe)) then DoPlotTe = 1
 
-  if (not keyword_set(legendNames)) then begin
+  if (not isa(legendNames)) then begin
      if DoPlotTe then begin
-        legendNames = ['AWSoM', 'AWSoM Te']
+        legendNamesLocal = ['AWSoM', 'AWSoM Te']
      endif else begin
-        legendNames = 'AWSoM'
+        legendNamesLocal = 'AWSoM'
      endelse
   endif else begin
      if DoPlotTe then begin
-        legendNames = [legendNames, legendNames+' Te']
-     endif
+        legendNamesLocal = [legendNames, legendNames+' Te']
+     endif else begin
+        legendNamesLocal = [legendNames]
+     endelse
   endelse
 
   if (not isa(IsOverPlot)) then IsOverPlot = 0
@@ -1473,8 +1476,13 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   if (not isa(legendPosR)) then legendPosR = 0.94
   if (not isa(DoLogRho))   then DoLogRho   = 0
   if (not isa(DoLogT))     then DoLogT     = 0
-  if (not isa(autorange))  then autorange  = 1
   if (not isa(colorLocal)) then colorLocal = 5
+  if (not isa(DoLegend))   then DoLegend   = 1
+  if (not isa(linethick))  then linethick  = 9
+
+  if (not keyword_set(ymin_I)) then ymin_I = [200,0,0,0]
+
+  if DoLogT then ymin_I[2]=1e3
 
   if IsOverPlot eq 1 then begin
      if (not isa(DoShowDist)) then DoShowDist = 0
@@ -1482,67 +1490,74 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
      if (not isa(DoShowDist)) then DoShowDist = 1
   endelse
 
-  if IsOverPlot ne 1 then legendNames = [typeData, legendNames]
+  if IsOverPlot ne 1 then legendNamesLocal = [typeData, legendNamesLocal]
 
   index_u = where(u_obs gt 0)
   index_n = where(n_obs gt 0)
   index_T = where(T_obs gt 0)
   index_B = where(B_obs gt 0)
 
+  if (not keyword_set(ymax_I)) then $
+     ymax_I = [max([max(u_obs(index_u)), max(u_simu)])*1.3,      $
+               max([max(n_obs[index_n]), max(n_simu)])*1.3,      $
+               max([max(T_obs[index_T]), max(ti_simu)])*1.3,     $
+               max([max(B_obs[index_B]), max(b_simu)*1.e5])*1.3]
+
   utc_obs = anytim2utc(cdf2utc(time_obs),/external)
 
-  print,'Calculating integrated curve distance between obs. & SWMF output at 1 AU'
-  
-  ;Normalization for OMNI data
-  t_norm=10                     ;10 days
-  u_norm = max(u_obs) - min(u_obs(index_u))
-  n_norm = max(n_obs) - min(n_obs(index_n))
-  tem_norm = max(T_obs) - min(T_obs(index_T))
-  mag_norm = max(B_obs) - min(B_obs(index_B))
+  if DoShowDist eq 1 then begin
+     print,'Calculating integrated curve distance between obs. & SWMF output at 1 AU'
+     
+     ;;Normalization for OMNI data
+     t_norm=10                  ;10 days
+     u_norm = max(u_obs) - min(u_obs(index_u))
+     n_norm = max(n_obs) - min(n_obs(index_n))
+     tem_norm = max(T_obs) - min(T_obs(index_T))
+     mag_norm = max(B_obs) - min(B_obs(index_B))
 
-  print,'Normalizations:'
-  help,t_norm,u_norm,n_norm,tem_norm,mag_norm
-  
-  ;time in units of t_norm days
-  t_obsv = time_obs/(24.*60.*60.*1.e3)/t_norm
-  t_swmf = time_simu
+     print,'Normalizations:'
+     help,t_norm,u_norm,n_norm,tem_norm,mag_norm
+     
+     ;;time in units of t_norm days
+     t_obsv = time_obs/(24.*60.*60.*1.e3)/t_norm
+     t_swmf = time_simu
 
-  ; Converting swmf time (YYYY-MO-DDTHH:MM:SS) to epoch time in sec
-  TIMESTAMPTOVALUES,time_simu+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
-  cdf_epoch,t_swmf,yy,mo,dy,hh,mm,ss,/compute_epoch     ; in milliseconds
-  t_swmf=t_swmf/(24.*60.*60.*1.e3)/t_norm
+     ;; Converting swmf time (YYYY-MO-DDTHH:MM:SS) to epoch time in sec
+     TIMESTAMPTOVALUES,time_simu+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
+     cdf_epoch,t_swmf,yy,mo,dy,hh,mm,ss,/compute_epoch ; in milliseconds
+     t_swmf=t_swmf/(24.*60.*60.*1.e3)/t_norm
 
-  dist_int_u=curve_int_distance(t_obsv(index_u), u_obs(index_u)/u_norm,$
-                                t_swmf, u_simu/u_norm)
-  dist_int_t=curve_int_distance(t_obsv(index_T), T_obs(index_T)/tem_norm,$
-                                t_swmf, ti_simu/tem_norm)
-  dist_int_n=curve_int_distance(t_obsv(index_n), n_obs(index_n)/n_norm,$
-                                t_swmf, n_simu/n_norm)
-  dist_int_b=curve_int_distance(t_obsv(index_B), B_obs(index_B)/mag_norm,$
-                                t_swmf, b_simu*1.e5/mag_norm)
-  print,FORMAT='(a,f7.3,f7.4,f7.4,f7.4)',$
-        'Integrated  Curve distance (Ur, Np, T, B) is: '$
-        ,trim(dist_int_u),dist_int_N,dist_int_t,dist_int_b
-  
-  dist_int=['Dist_U ='+STRING(trim(dist_int_u),format='(f6.3)'),$
-            'Dist_N ='+STRING(trim(dist_int_n),format='(f6.3)'),$
-            'Dist_T ='+STRING(trim(dist_int_t),format='(f6.3)'),$
-            'Dist_B ='+STRING(trim(dist_int_b),format='(f6.3)')]
+     dist_int_u=curve_int_distance(t_obsv(index_u), u_obs(index_u)/u_norm,$
+                                   t_swmf, u_simu/u_norm)
+     dist_int_t=curve_int_distance(t_obsv(index_T), T_obs(index_T)/tem_norm,$
+                                   t_swmf, ti_simu/tem_norm)
+     dist_int_n=curve_int_distance(t_obsv(index_n), n_obs(index_n)/n_norm,$
+                                   t_swmf, n_simu/n_norm)
+     dist_int_b=curve_int_distance(t_obsv(index_B), B_obs(index_B)/mag_norm,$
+                                   t_swmf, b_simu*1.e5/mag_norm)
+     print,FORMAT='(a,f7.3,f7.4,f7.4,f7.4)',$
+           'Integrated  Curve distance (Ur, Np, T, B) is: '$
+           ,trim(dist_int_u),dist_int_N,dist_int_t,dist_int_b
+     
+     dist_int=['Dist_U ='+STRING(trim(dist_int_u),format='(f6.3)'),$
+               'Dist_N ='+STRING(trim(dist_int_n),format='(f6.3)'),$
+               'Dist_T ='+STRING(trim(dist_int_t),format='(f6.3)'),$
+               'Dist_B ='+STRING(trim(dist_int_b),format='(f6.3)')]
+
+  endif
 
   loadcolors
 
   nx=1 & ny=4
-  !p.multi=[0,1,4]
+  if IsOverPlot ne 1 then !p.multi=[0,1,4]
   cal_pos,nx,ny,y_x_ratio=y_x,x1=x1,y1=y1,x2=x2,y2=y2,$
           dx=0.4,dy=0.2,bm=0.9,tm=0.35,lm=0.4,rm=0.2
 
   ;;----------------------------------------------------------------------
   ;; plot velocity
 
-  if autorange ne 0 then begin
-     ymin = 200
-     ymax = max([max(u_obs(index_u)), max(u_simu)])*1.3
-  endif
+  ymin = ymin_I[0]
+  ymax = ymax_I[0]
 
   pos=[x1[0],y1[3],x2[0],y2[3]]
 
@@ -1552,35 +1567,41 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
             xstyle=1,yrange=[ymin,ymax],ystyle=1,                         $
             charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos, $
             xtickname=REPLICATE(' ', 7),xtitle=' '
-  outplot,time_simu, u_simu, color=colorLocal,thick=9
+  utplot,time_simu, u_simu, background=7, color=colorLocal,               $
+         thick=linethick, timerange=[start_time,end_time],                        $
+         xstyle=1,yrange=[ymin,ymax],ystyle=1,                            $
+         charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos, $
+         xtickname=REPLICATE(' ', 7),xtitle=' ', /noerase
 
-  if (DoPlotTe) then begin
-     if IsOverPlot ne 1 then begin
-        legend,legendNames, colors=[0,colorLocal,colorLocal],            $
-               psym=0,textcolor=0,thick=6,                               $
-               linestyle=[0,0,2],                                        $
-               charsize=1,pspacing=1.8,charthick=5,bthick=5,position=[0.15,legendPosL],$
-               /norm,box=0
+  if DoLegend eq 1 then begin
+     if (DoPlotTe) then begin
+        if IsOverPlot ne 1 then begin
+           legend,legendNamesLocal, colors=[0,colorLocal,colorLocal],       $
+                  psym=0,textcolor=0,thick=6,                               $
+                  linestyle=[0,0,2],                                        $
+                  charsize=1,pspacing=1.8,charthick=5,bthick=5,             $
+                  position=[0.15,legendPosL],/norm,box=0
+        endif else begin
+           legend,legendNamesLocal, colors=[colorLocal,colorLocal],        $
+                  psym=0,textcolor=0,thick=6,                              $
+                  linestyle=[0,2],                                         $
+                  charsize=1,pspacing=1.8,charthick=5,bthick=5,            $
+                  position=[0.15,legendPosL],/norm,box=0
+        endelse        
      endif else begin
-        legend,legendNames, colors=[colorLocal,colorLocal],             $
-               psym=0,textcolor=0,thick=6,                              $
-               linestyle=[0,2],                                         $
-               charsize=1,pspacing=1.8,charthick=5,bthick=5,position=[0.15,legendPosL],$
-               /norm,box=0
-     endelse        
-  endif else begin
-     if IsOverPlot ne 1 then begin
-        legend,legendNames, colors=[0, colorLocal],                      $
-               psym=0,textcolor=0,thick=6,linestyle=0,                   $
-               charsize=1,pspacing=1.8,charthick=5,bthick=5,position=[0.15,legendPosL],$
-               /norm,box=0
-     endif else begin
-        legend,legendNames, colors=colorLocal,                           $
-               psym=0,textcolor=0,thick=6,linestyle=0,                   $
-               charsize=1,pspacing=1.8,charthick=5,bthick=5,position=[0.15,legendPosL],$
-               /norm,box=0
-     endelse        
-  endelse
+        if IsOverPlot ne 1 then begin
+           legend,legendNamesLocal, colors=[0, colorLocal],                 $
+                  psym=0,textcolor=0,thick=6,linestyle=0,                   $
+                  charsize=1,pspacing=1.8,charthick=5,bthick=5,             $
+                  position=[0.15,legendPosL], /norm,box=0
+        endif else begin
+           legend,legendNamesLocal, colors=colorLocal,                      $
+                  psym=0,textcolor=0,thick=6,linestyle=0,                   $
+                  charsize=1,pspacing=1.8,charthick=5,bthick=5,             $
+                  position=[0.15,legendPosL],/norm,box=0
+        endelse        
+     endelse
+  endif
 
   if DoShowDist ne 0 then legend,dist_int(0),thick=6,charsize=1,charthick=5,  $
                                  position=[0.75,legendPosR], /norm, box=0
@@ -1588,10 +1609,8 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   ;;----------------------------------------------------------------------
   ;; plot density
 
-  if autorange ne 0 then begin
-     ymin = 0
-     ymax = max([max(n_obs[index_n]), max(n_simu)])*1.3
-  endif
+  ymin = ymin_I[1]
+  ymax = ymax_I[1]
 
   pos=[x1[0],y1[2],x2[0],y2[2]]
 
@@ -1602,17 +1621,20 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
             charthick=5,xthick=5,                                         $
             ythick=5,position=pos,xtickname=REPLICATE(' ', 7),xtitle=' ', $
             yrange=[ymin,ymax], ystyle=1
-  outplot,time_simu, n_simu, color=colorLocal,thick=9
+  utplot,time_simu, n_simu, background=7, color=colorLocal,thick=linethick,   $
+         timerange=[start_time,end_time],xstyle=1,charsize=charsize,          $
+         charthick=5,xthick=5,                                                $
+         ythick=5,position=pos,xtickname=REPLICATE(' ', 7),xtitle=' ',        $
+         yrange=[ymin,ymax], ystyle=1, /noerase
+
   
   if DoShowDist ne 0 then legend,dist_int(1),thick=5,charsize=1,charthick=5, $
-                            position=[0.75,legendPosL-0.22],/norm,box=0  
+                                 position=[0.75,legendPosL-0.22],/norm,box=0  
   ;;----------------------------------------------------------------------
   ;; plot temperature
 
-  if autorange ne 0 then begin
-     ymin = 0
-     ymax = max([max(T_obs[index_T]), max(ti_simu)])*1.3
-  endif
+  ymin = ymin_I[2]
+  ymax = ymax_I[2]
 
   pos=[x1[0],y1[1],x2[0],y2[1]]
 
@@ -1621,33 +1643,44 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
             ytitle='Temperature [K]',thick=9,timerange=[start_time,end_time],  $
             xstyle=1,                                                          $
             charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos,      $
-            xtickname=REPLICATE(' ', 7),xtitle=' ',yrange=[ymin,ymax],ystyle=1
-  outplot,time_simu, ti_simu, color=colorLocal,thick=9
+            xtickname=REPLICATE(' ', 7),xtitle=' ',yrange=[ymin,ymax],ystyle=1,$
+            ytype=DoLogT
+  utplot,time_simu, ti_simu, background=7, color=colorLocal,thick=linethick,   $
+         timerange=[start_time,end_time], xstyle=1,                            $
+         charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos,         $
+         xtickname=REPLICATE(' ', 7),xtitle=' ',yrange=[ymin,ymax],ystyle=1,   $
+         /noerase,ytype=DoLogT
+
   if (DoPlotTe) then begin
-     outplot,time_simu, te_simu, color=colorLocal,thick=9, linestyle=2
+     utplot,time_simu, te_simu, background=7, color=colorLocal,thick=linethick,$
+            timerange=[start_time,end_time], xstyle=1, linestyle=2,            $
+            charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos,      $
+            xtickname=REPLICATE(' ', 7),xtitle=' ',yrange=[ymin,ymax],         $
+            ystyle=1,/noerase, ytype=DoLogT
   endif
   if DoShowDist ne 0 then legend,dist_int(2),thick=5,charsize=1,charthick=5, $
-                            position=[0.75,legendPosL-0.45],/norm,box=0
+                                 position=[0.75,legendPosL-0.45],/norm,box=0
   ;;----------------------------------------------------------------------
   ;; plot magnetic field
 
-  if autorange ne 0 then begin
-     ymin = 0
-     ymax = max([max(B_obs[index_B]), max(b_simu)*1.e5])*1.3
-  endif
+  ymin = ymin_I[3]
+  ymax = ymax_I[3]
 
   pos=[x1[0],y1[0],x2[0],y2[0]]
 
   if IsOverPlot ne 1 then $
-     utplot,utc_obs(index_B),B_obs(index_B),background=7,color=0,                 $
-            ytitle='B [nT]',thick=9,                                              $
-            timerange=[start_time,end_time],xstyle=1,yrange=[ymin,ymax],ysytle=1, $
-            charsize=charsize,                                                    $
+     utplot,utc_obs(index_B),B_obs(index_B),background=7,color=0,            $
+            ytitle='B [nT]',thick=9,                                         $
+            timerange=[start_time,end_time],xstyle=1,yrange=[ymin,ymax],     $
+            ysytle=1, charsize=charsize,                                     $
             charthick=5,xthick=5,ythick=5,position=pos
-  outplot,time_simu, b_simu*1.e5, color=colorLocal,thick=9
+  utplot,time_simu, b_simu*1.e5, color=colorLocal,thick=linethick,            $
+         timerange=[start_time,end_time],xstyle=1,yrange=[ymin,ymax],ysytle=1,$
+         charsize=charsize,                                                   $
+         charthick=5,xthick=5,ythick=5,position=pos, /noerase
 
-  if DoShowDist ne 0 then legend,dist_int(3),thick=5,charsize=1,charthick=5,   $
-                            position=[0.75,legendPosL-0.67],/norm,box=0
+  if DoShowDist ne 0 then legend,dist_int(3),thick=5,charsize=1,charthick=5,  $
+                                 position=[0.75,legendPosL-0.67],/norm,box=0
 end
 
 ;--------------------------------------------------------------------
