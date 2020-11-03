@@ -1,0 +1,102 @@
+#!/bin/bash
+#
+# Alternative post processing script that's main difference is that
+# it tarballs the .out files instead of concatenates them. This is for
+# easier compatibility with SpacePy and other tools since tar is a
+# ubiquitous tool.
+#
+# TODO(qusai):
+# This also prefers the .xz format over the .gz because it is more modern
+# but still ubiquitous.
+#
+
+help='
+Postprocess .out files into singular tar files.
+
+    Usage:
+        ./postproc.sh [-v] [-r]
+
+    Run in the SWMF run/ folder.
+
+    Example:
+        # Run every 60s and run in background
+        ./postproc.sh -v -r 60 &
+'
+
+# Output helpers
+err() {
+  echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $*" >&2
+}
+
+verbose() {
+  [ -n "$verbose" ] && echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $*"
+}
+
+
+# Option parsing
+verbose=''
+zflag=''
+gflag=''
+numproc=0
+repeat=''
+
+while getopts 'hvr:' flag; do
+  case "${flag}" in
+    h) echo "${help}" ;;
+    v) verbose='true' ;;
+    r) repeat="${OPTARG}" ;;
+    ?)
+      echo "${help}" 
+      echo "Unexpected option ${OPTARG}" >&2 
+      exit 1 
+      ;;
+  esac
+done
+
+
+# Env variables
+out_folders="GM/IO2"
+out_suffix='(_t[\.0-9]+)?_[en][0-9\-]+\.out'
+
+function get_basenames() {
+  # Outputs: Unique basenames without .out or numbers.
+
+  find -name '*out' \
+    | sed -E "s/$out_suffix//g" \
+    | sort \
+    | uniq
+}
+
+function make_tarballs() {
+  # Makes the tarballs
+
+  verbose "Basenames are: $(get_basenames)"
+  for name in $(get_basenames); do
+
+    # Create if non-existent
+    [ -f "$name.tar" ] || ( tar --create -f "$name.out.tar" -T /dev/null \
+                            && verbose "Created $name.out.tar" )
+
+    # Append out files to tar
+    for file in $(find -regex ".*$name.+\.out" | sort); do
+      tar -f "$name.out.tar" --append $file \
+        && verbose "Appended $file to $name.out.tar" \
+        && rm -f $file
+    done
+
+  done
+
+}
+
+while true; do
+
+  # Make .tar files
+  for out_folder in "$out_folders"; do
+    ( cd $out_folder && make_tarballs )  # in subshell to not cd into dir
+  done
+
+  # Repeat
+  [ -n "$repeat" ] && sleep "$repeat" || break
+done
+
+# vim: expandtab tw=80 sts=2 sw=2
