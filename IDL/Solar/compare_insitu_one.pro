@@ -51,12 +51,20 @@ pro compare_insitu_one, file_sim=file_sim,                      $
 
      print, "compare_insitu_one: dir_obs =", dir_obs
 
+     utc_obs = anytim2utc(cdf2utc(time_obs),/external)
+     yy = utc_obs.YEAR
+     mo = utc_obs.MONTH
+     dy = utc_obs.DAY
+     hh = utc_obs.HOUR
+     mm = utc_obs.MINUTE
+     ss = utc_obs.SECOND
+
      ObsFileName = dir_obs + '/' + strmid(TypePlot,1) + '_' +EventTime + '.out'
      w = fltarr(n_elements(u_obs),5)
-     w = [[time_obs], [n_obs], [u_obs], [tem_obs], [mag_obs]]
+     w = [[yy], [mo], [dy], [hh], [mm], [ss], [n_obs], [u_obs], [tem_obs], [mag_obs]]
      x = indgen(n_elements(u_obs))
-     varname = ['count', 'time', 'density', 'velocity', 'temperature', $
-                'magnetic_field']
+     varname = ['count', 'year', 'mo', 'dy', 'hr', 'mn', 'sc', 'Rho', $
+                'V_tot', 'Temperature', 'B_tot']
      save_pict,ObsFileName,TypeData+' Observational data',varname,w,x
      print, 'compare_insitu_one: saving the observation file to ObsFileName: ', ObsFileName
   endif
