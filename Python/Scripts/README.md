@@ -23,16 +23,19 @@ SWMF$ ./Config.pl -install
 # Compile then make the run directory if worked
 SWMF$ make -j test_swpc_compile && make rundir
 ```
+
 Make sure [swmfpy](https://gitlab.umich.edu/swmf_software/swmfpy) is installed.
+
+```bash
+$ pip install swmfpy || pip install --user swmfpy
+```
 
 ### Set up
 
-
-Soft link the script into your run directory:
-
+It would be useful to set up an environment variable to this script location.
 ```bash
-SWMF$ ln -s "$(realpath share/Python/Scripts/prepare_geospace.py)" run/
-# The soft link is so that any updates automatically update this when you pull
+SWMF$ echo 'export PYSCRIPTS='"$(realpath share/Python/Scripts)" >> ~/.profile
+SWMF$ . ~/.profile
 ```
 
 Go to your run directory and copy a sensible `PARAM.in`:
@@ -49,7 +52,7 @@ Then the final steps copy the script and the run directory into a work directory
 ```bash
 SWMF$ cp run /some/work/dir/
 SWMF$ cd /some/work/dir/
-/some/work/dir$ python3 prepare_geospace.py --start_time 2014 2 3 4 5 6 --end_time 2014 3 4 5 6 7
+/some/work/dir$ python3 "$PYSCRIPTS"/prepare_geospace.py --start_time 2014 2 3 4 5 6 --end_time 2014 3 4 5 6 7
 # Your PARAM.in will be overwritten with those values
 # Then submit job
 ```
