@@ -70,10 +70,10 @@ supercomputers that you are familiar with and is missing.
 
 ### Library
 
-[Library/src] contains header files that are shared amongst different parts of
+[Library/src](Library/src) contains header files that are shared amongst different parts of
 SWMF. For example plotting or wrapper libraries.
 
 ### Python
 
 Here you can find a collection of python scripts, specifically in
-[Python/Scripts].
+[Python/Scripts](Python/Scripts).
