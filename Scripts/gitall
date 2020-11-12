@@ -53,9 +53,6 @@ my $Remote    = ($remote);
 
 use strict;
 
-# Make sure pull is replaced with rebase
-`git config --global pull.rebase true`;
-
 # Default remote
 $Remote = 'git@gitlab.umich.edu:swmf_software' if $Remote eq "1";
 
@@ -100,7 +97,14 @@ exit 0;
 #==============================================================================
 
 sub execute_gitall(){
+
    my($dir) = @_;
+
+   # Make sure pull is using rebase by default in this git repo.
+   # Use git pull -rebase=false to overwrite this.
+   `cd $dir; git config pull.rebase true` if -d "$dir/.git" 
+       and not `grep 'rebase = true' $dir/.git/config`;
+   
    opendir(my $DIR,"$dir") or die "gitall can't open directory $dir\n";
    my @gits= grep { /^.git$/ } readdir($DIR);
    closedir($DIR);
