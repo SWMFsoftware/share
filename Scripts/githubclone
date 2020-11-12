@@ -46,12 +46,6 @@ Clone GITM repositiry from GitHub without history into GITM_no_history:
     exit 0;
 }
 
-
-
-
-# Make sure pull is replaced with rebase
-`git config --global pull.rebase true`;
-
 my $project = $ARGV[0]; $project =~ s/\.git$//;
 
 my $url = ($url{uc($project)} or $mstemquda_software);
