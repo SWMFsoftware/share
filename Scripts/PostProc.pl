@@ -9,8 +9,14 @@ my $Gzip          = ($g or $gzip);
 my $Repeat        = ($r or $repeat);
 my $Stop          = ($s or $stop or 2);
 my $Concat        = (($c or $cat) and not $Repeat);
-my $MakeMovie     = ($m or $movie or $M or $MOVIE);
+my $MovieFlag; # for pIDL
+$MovieFlag        = '-m' if ($m or $movie);
+$MovieFlag        = '-M' if ($M or $MOVIE);
+$MovieFlag        = '-t' if ($t or $tar);
+$MovieFlag        = '-T' if ($T or $TAR);
 my $KeepMovieOnly = ($M or $MOVIE);
+my $MakeTar       = ($t or $tar or $T or $TAR);
+my $KeepTarOnly   = ($T or $TAR);
 my $nThread       = ($n or 4);
 my $Rsync         = ($rsync or $sync);
 my $AllParam      = ($param or $allparam);
@@ -59,14 +65,6 @@ my $Pwd = `pwd`; chop $Pwd;
 
 # Remove StopFile at the beginning.
 unlink $StopFile;
-
-# Set the movie option for pIDL
-my $MovieFlag;
-if($KeepMovieOnly){
-    $MovieFlag = '-M';
-}elsif($MakeMovie){
-    $MovieFlag = '-m';
-}
 
 # Set sleep option 
 my $SleepFlag; 
@@ -410,7 +408,7 @@ sub print_help{
 
 Usage:
 
-   PostProc.pl [-h] [-v] [-c] [-g] [-m | -M] [-noptec]
+   PostProc.pl [-h] [-v] [-c] [-g] [-m | -M | -t | -T] [-noptec]
                [-r=REPEAT [-s=STOP] | DIR] [-n=NTHREAD] [-p=PATTERN] [-param|-allparam]
                [-vtu]
  
@@ -426,9 +424,13 @@ Usage:
 
    -g -gzip    Gzip the big ASCII files.
 
-   -m -movie   Create movies (.outs) from series of IDL files (.out) and keep IDL files.
+   -m -movie   Create movies (.outs) from series of IDL files (.out) and keep series.
 
    -M -MOVIE   Create movies from series of IDL files and remove IDL files.
+
+   -t -tar     Create tar files (.out.tar) from series of .out files and keep series.
+
+   -T -TAR     Create tar files from series of IDL files and remove IDL files.
 
    -noptec     Do not process Tecplot files with the pTEC script. 
 
@@ -496,10 +498,10 @@ PostProc.pl -vtk
 
 PostProc.pl -r=360 -s=3 -p=IO2/x= >& PostProc.log &
 
-   Repeat post-processing every minute and stop after the SWMF.exe run is 
-   finished:
+   Repeat post-processing every minute, collect .out files into .out.tar
+   files and stop after the SWMF.exe run is finished:
 
-PostProc.pl -r=60 -n=16 >& PostProc.log &
+PostProc.pl -r=60 -T -n=16 >& PostProc.log &
 mpiexec SWMF.exe
 touch '.$StopFile.'
 
