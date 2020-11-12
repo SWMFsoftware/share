@@ -5,8 +5,9 @@
 
 my $Help          = ($h or $help or $H or $HELP);
 my $Keep          = ($k or $keep or $K or $KEEP);
-my $MakeMovie     = ($m or $M or $movie or $MOVIE);
-my $KeepMovieOnly = ($M or $MOVIE);
+my $MakeMovie     = ($m or $M or $movie or $MOVIE or $t or $tar or $T or $TAR);
+my $KeepMovieOnly = ($M or $MOVIE or $T or $TAR);
+my $UseTar        = ($t or $tar or $T or $TAR);
 my $Verbose       = ($v or $V or $verbose or $VERBOSE);
 my $Quiet         = ($q or $quiet or $Q or $QUIET);
 my $Ccmc          = ($CCMC or $ccmc);
@@ -96,6 +97,10 @@ if($nThread > 1){
 # Done unless movie is to be made from the .out files
 exit 0 unless $MakeMovie;
 
+# Extension depends on tar vs movie
+my $Ext = '.outs';
+$Ext = '.out.tar' if $UseTar;
+
 # Collect the .out files
 opendir(DIR,'.');
 my @OutFiles = sort(grep /^$Pattern.*\.out$/, readdir(DIR));
@@ -134,37 +139,49 @@ foreach $BaseName (sort keys %Series){
     
     # Check if there is an old movie file
     my @OldMovieFiles; 
-    @OldMovieFiles = glob("$BaseName*.outs");
+    @OldMovieFiles = glob("$BaseName*$Ext");
     my $OldMovieFile;
 
     if(@OldMovieFiles){
-	die "$ERROR: multiple .outs files with the same base name: ".
+	die "$ERROR: multiple files with the same base name: ".
 	    "@OldMovieFiles\n" if $#OldMovieFiles > 0;
 
 	my $OldMovieFile = $OldMovieFiles[0];
 
-	$OldMovieFile =~ /$BaseName\_$Type([\d\-]+)_([\d\-]+)\.outs/
+	$OldMovieFile =~ /$BaseName\_$Type([\d\-]+)_([\d\-]+)$Ext/
 	    or die "$ERROR: file name $OldMovieFile does not match ".
-	    "_${Type}FIRST_LAST.outs\n";
+	    "_${Type}FIRST_LAST$Ext\n";
 
 	my $OldFirstStep = $1;
 	my $OldLastStep  = $2;
 
-	my $NewMovieFile = "${BaseName}_$Type${OldFirstStep}_${LastStep}.outs";
+	my $NewMovieFile = "${BaseName}_$Type${OldFirstStep}_${LastStep}$Ext";
 	if($FirstStep gt $OldLastStep){
 	    print "Creating $Dir/$NewMovieFile from $Dir/$OldMovieFile\n" 
 		unless $Quiet;
-	    &system("cat @Series >> $OldMovieFile");
+	    if($UseTar){
+		&system("tar -rf $OldMovieFile @Series");
+	    }else{
+		&system("cat @Series >> $OldMovieFile");
+	    }
 	    &system("mv $OldMovieFile $NewMovieFile");
 	}elsif($FirstStep eq $OldFirstStep and $LastStep eq $OldLastStep){
 	    print "Rewriting $Dir/$OldMovieFile\n" unless $Quiet;
 	    unlink($OldMovieFile);
-	    &system("cat @Series > $OldMovieFile");
+	    if($UseTar){
+		&system("tar -cf $OldMovieFile @Series");
+	    }else{
+		&system("cat @Series > $OldMovieFile");
+	    }
 	}elsif($FirstStep eq $OldFirstStep and $LastStep gt $OldLastStep){
 	    print "Replacing $Dir/$OldMovieFile with $Dir/$NewMovieFile\n" 
 		unless $Quiet;
 	    unlink($OldMovieFile);
-	    &system("cat @Series > $NewMovieFile");
+	    if($UseTar){
+		&system("tar -cf $NewMovieFile @Series");
+	    }else{
+		&system("cat @Series > $NewMovieFile");
+	    }
 	}else{
 	    warn "$WARNING: movie file $Dir/$OldMovieFile does not seem to ".
 		"belong\nto the $Dir/$Series[0] ... $Dir/$Series[-1] files\n";
@@ -174,11 +191,15 @@ foreach $BaseName (sort keys %Series){
 	# do not make movie file from a single file
 	next if $FirstStep eq $LastStep;
 
-	my $NewMovieFile = "${BaseName}_$Type${FirstStep}_${LastStep}.outs";
+	my $NewMovieFile = "${BaseName}_$Type${FirstStep}_${LastStep}$Ext";
 
 	print "Creating $Dir/$NewMovieFile\n" unless $Quiet;
 
-	&system("cat @Series > $NewMovieFile");
+	if($UseTar){
+	    &system("tar -cf $NewMovieFile @Series");
+	}else{
+	    &system("cat @Series > $NewMovieFile");
+	}
     }
     # Remove the .out files if requested
     &system("rm -f @Series") if $KeepMovieOnly;
@@ -241,11 +262,11 @@ sub print_help{
 Purpose: 
    Combine *.idl files written out separately by the processors 
    into .out files using the PostIDL.exe code. 
-   Create .outs movies from the .out files if requested.
+   Create .outs / .out.tar movies from the .out files if requested.
 
 Usage:
    pIDL [-h] [-v] [-q] [-i] [-k] [-ccmc] [-f=ascii|real4|real8|tec]
-        [-m|M] [-n=NUMBER] [BASENAME]
+        [-m|M|t|T] [-n=NUMBER] [BASENAME]
 
    -h -help    - print this help message
    -v -verbose - print verbose information
@@ -258,6 +279,8 @@ Usage:
    -format=FORM  options: ascii, real4, real8, tec
    -m -movie   - create movie from the .out files and keep the .out files
    -M -MOVIE   - create movie from the .out files and delete the .out files
+   -t -tar     - create tar file from the .out files and keep the .out files
+   -T -TAR     - create tar file from the .out files and delete the .out files
    -n=NUMBER   - execute PostIDL.exe in parallel on NUMBER cores. Default is 4.
    -s=SECONDS  - sleep SECOND seconds before processing files.
    BASENAME    - the beginning of the filenames to be processed.
@@ -270,11 +293,11 @@ pIDL
    Do the same in parallel using 8 threads
 pIDL -n=8
 
-   Process all files in the IO2/ directory, create .outs movies and remove
+   Process all files in the IO2/ directory, create .out.tar files and remove
    all the .h, .idl and .out files:
-pIDL -M
+pIDL -T
 
-   Process all files in the Plots/ directory, create .outs movies
+   Process all files in the Plots/ directory, create .outs file
    but keep the .h, .idl and .out files as well:
 pIDL -k -m Plots/
 
