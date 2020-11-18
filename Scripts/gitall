@@ -58,7 +58,7 @@ $Remote = 'git@gitlab.umich.edu:swmf_software' if $Remote eq "1";
 
 my $gitcmd;                # The variable to receive the git command
 
-$gitcmd = join(' ',@ARGV);
+$gitcmd = join(' ',@ARGV) . ' 2>&1'; # redirect STDERR to STDOUT
 $gitcmd .= "; sleep $Sleep" if $Sleep and $gitcmd =~ /\b(push|pull)\b/;
 
 my @RefList; 
@@ -69,6 +69,8 @@ my $mainrepo = $1 if $remote =~ s/\/(\w+)$//;
 if($gitcmd or $Reference or $List or $Remote){
     &execute_gitall($pwd);
 }
+
+my $Error;
 
 @RefList = sort {$b !~ /\// or ($a cmp $b)} @RefList;
 if($Reference =~ /c/i){
@@ -92,6 +94,8 @@ void print_git_info(){
 }else{
     print join("\n", @RefList),"\n";
 }
+
+warn "!!! number of gitall errors: $Error\n" if $Error;
 
 exit 0;
 #==============================================================================
@@ -159,7 +163,7 @@ sub execute_gitall(){
 	       # Store status into RefList array
 	       push @RefList, "$reponame $status";
 	   }else{
-	       my $result = `cd $dir; git $gitcmd 2>&1`;
+	       my $result = `cd $dir; git $gitcmd`;
 	       # remove verbose info
 	       if(not $Verbose){
 		   $result =~ s/On branch master//;
@@ -172,6 +176,7 @@ sub execute_gitall(){
 	       }else{
 		   print "$result" if $result;
 	       }
+	       $Error++ if $result =~ /error/;
 	   }
        }else{
            &execute_gitall("$dir/$subdir");
