@@ -269,7 +269,10 @@ contains
     endif
 
     ! Initialize uniform indices.
-    Ptr%IsUniform_I = .TRUE.
+    Ptr%IsUniform_I = .true.
+
+    ! Calculate increments
+    Ptr%dIndex_I = (Ptr%IndexMax_I - Ptr%IndexMin_I)/(Ptr%nIndex_I - 1)
 
     ! Set indices to non-uniform if provided.
     if(present(Index1_I))then
@@ -297,9 +300,6 @@ contains
        Ptr%Index5_I = Index5_I
        call check_index(iTable, Ptr%Index5_I, 5)
     endif
-
-    ! Calculate increments
-    Ptr%dIndex_I = (Ptr%IndexMax_I - Ptr%IndexMin_I)/(Ptr%nIndex_I - 1)
 
   end subroutine init_lookup_table
   !============================================================================
@@ -469,6 +469,9 @@ contains
     ! Calculate increments
     Ptr%dIndex_I = (Ptr%IndexMax_I - Ptr%IndexMin_I)/(Ptr % nIndex_I - 1)
 
+    ! Tables defined by "make" are always uniform
+    Ptr%IsUniform_I = .true.
+    
   contains
     !==========================================================================
 
@@ -1285,6 +1288,14 @@ contains
     where(Ptr%IsUniform_I) &
          Arg_I(1:Ptr%nIndex) = &
          (Arg_I(1:Ptr%nIndex) - Ptr%IndexMin_I)/Ptr%dIndex_I  + 1
+
+    ! write(*,*)'!!! Ptr%nIndex   =', Ptr%nIndex
+    ! write(*,*)'!!! IsLogIndex_I =', Ptr%IsLogIndex_I
+    ! write(*,*)'!!! IsUniform_I  =', Ptr%IsUniform_I
+    ! write(*,*)'!!! IndexMin_I   =', Ptr%IndexMin_I
+    ! write(*,*)'!!! Ptr%dIndex_I =', Ptr%dIndex_I
+    ! write(*,*)'!!! ArgIn_I      =', ArgIn_I
+    ! write(*,*)'!!! Finale Arg_I =', Arg_I(1:Ptr%nIndex)
 
     ! Interpolate values
     Value_V = interpolate_vector(Ptr%Value_VC, &
