@@ -1,5 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, 
-!  portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 module ModLookupTable
 
@@ -9,10 +9,10 @@ module ModLookupTable
   ! The function value can be scalar or an array of reals.
   ! The lookup table is stored in the standard IDL format file, so it
   ! can be easily visualized.
-  ! 
+  !
   ! Use lookup tables to calculate lookup properties, such as
-  ! equation of state, opacities, ionization level etc. 
-  ! For example interpolate pressure as a function of the logarithm of 
+  ! equation of state, opacities, ionization level etc.
+  ! For example interpolate pressure as a function of the logarithm of
   ! density and logarithm of internal energy. All variables are in SI units.
 
   use ModReadParam,   ONLY: read_var
@@ -29,7 +29,7 @@ module ModLookupTable
   public:: init_lookup_table        ! set parameters of  the lookup table(s)
   public:: read_lookup_table_param  ! read parameters of the lookup table(s)
   public:: i_lookup_table           ! function returning the index of table
-  public:: make_lookup_table        ! create/save 2D table from calculations 
+  public:: make_lookup_table        ! create/save 2D table from calculations
   public:: make_lookup_table_1d     ! create/save 1d table from calculations
   public:: make_lookup_table_3d     ! create/save 3D table from calculations
   public:: interpolate_lookup_table ! interpolate from lookup table
@@ -63,7 +63,7 @@ module ModLookupTable
      real, allocatable :: Index3_I(:)      ! non-uniform index 3
      real, allocatable :: Index4_I(:)      ! non-uniform index 4
      real, allocatable :: Index5_I(:)      ! non-uniform index 5
-  end type
+  end type TableType
 
   ! The array of tables
   type(TableType), public, target :: Table_I(MaxTable)
@@ -79,19 +79,19 @@ module ModLookupTable
           interpolate_arg5, interpolate_arg5_scalar, &
           interpolate_arg_array
      module procedure interpolate_with_known_val  ! Table value is given
-  end interface
+  end interface interpolate_lookup_table
 
   ! Array for variable names
   integer, parameter:: MaxVar = 200
   character(len=20):: NameVar_I(MaxVar)
 
 contains
+  !============================================================================
 
-  !==========================================================================
   subroutine deallocate_table_index(Ptr)
 
     type(TableType), pointer:: Ptr
-    !----------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     if(allocated(Ptr%nIndex_I))     deallocate(Ptr%nIndex_I)
     if(allocated(Ptr%IndexMin_I))   deallocate(Ptr%IndexMin_I)
     if(allocated(Ptr%IndexMax_I))   deallocate(Ptr%IndexMax_I)
@@ -105,11 +105,11 @@ contains
     if(allocated(Ptr%Index5_I))     deallocate(Ptr%Index5_I)
 
   end subroutine deallocate_table_index
-  !==========================================================================
+  !============================================================================
   subroutine allocate_table_index(Ptr)
 
     type(TableType), pointer:: Ptr
-    !----------------------------------------------------------------------
+    !--------------------------------------------------------------------------
 
     call deallocate_table_index(Ptr)
     allocate( &
@@ -121,12 +121,12 @@ contains
          Ptr%dIndex_I(Ptr%nIndex)      )
 
   end subroutine allocate_table_index
-  !==========================================================================
+  !============================================================================
   subroutine init_lookup_table(NameTable, NameCommand, NameVar, &
-    nIndex_I, IndexMin_I, IndexMax_I, &
-    NameFile, TypeFile, StringDescription, nParam, Param_I, &
-    Index1_I, Index2_I, Index3_I, Index4_I, Index5_I, &
-    Value1d_VC, Value2d_VC, Value3d_VC)
+       nIndex_I, IndexMin_I, IndexMax_I, &
+       NameFile, TypeFile, StringDescription, nParam, Param_I, &
+       Index1_I, Index2_I, Index3_I, Index4_I, Index5_I, &
+       Value1d_VC, Value2d_VC, Value3d_VC)
 
     ! Initialize a lookup table
     !
@@ -138,15 +138,15 @@ contains
     ! and range of indexes from IndexMin_I to IndexMax_I must be given.
     ! The "save" command makes the table and then saves it into NameFile.
     !
-    ! TypeFile defines the file type to "ascii" (text file) 
+    ! TypeFile defines the file type to "ascii" (text file)
     ! "real4" (single precision binary) or "real8" (double precision binary).
     !
     ! StringDescription should describe the content of the table and
     ! it is saved into the first line of the file.
-    ! 
+    !
     ! The file can contain nParam reals with values Param_I
 
-    character(len=*), intent(in):: NameTable, NameCommand 
+    character(len=*), intent(in):: NameTable, NameCommand
     character(len=*), optional, intent(in):: NameVar
     integer,          optional, intent(in):: nIndex_I(:)
     real,             optional, intent(in):: IndexMin_I(:), IndexMax_I(:)
@@ -160,31 +160,31 @@ contains
     real,             optional, intent(in):: Value1d_VC(:,:)
     real,             optional, intent(in):: Value2d_VC(:,:,:)
     real,             optional, intent(in):: Value3d_VC(:,:,:,:)
-    
-    integer :: iTable, iIndex
+
+    integer :: iTable
     type(TableType), pointer:: Ptr
 
     character(len=*), parameter:: NameSub = 'init_lookup_table'
-    !-----------------------------------------------------------------------
+    !--------------------------------------------------------------------------
 
     ! Check if the table has been set already (say in a previous session)
     iTable = i_lookup_table(NameTable)
     if(iTable < 0)then
        ! new table
        nTable = nTable + 1
-       
+
        if(nTable > MaxTable)then
           write(*,*)NameSub,' MaxTable =',MaxTable
           call CON_stop(NameSub//': number of tables exceeded MaxTable')
        end if
-       
+
        iTable = nTable
     end if
-       
+
     ! For sake of more concise source code, use a pointer to the table
     Ptr => Table_I(iTable)
     Ptr%NameTable = NameTable
-    
+
     Ptr%NameCommand = NameCommand
     call lower_case(Ptr%NameCommand)
 
@@ -192,13 +192,13 @@ contains
     case("load","save")
        Ptr%NameFile = NameFile
        Ptr%TypeFile = TypeFile
-       
+
     case("make")
        ! will be done below
     case default
        call CON_stop(NameSub//': unknown command='//Ptr%NameCommand)
     end select
-    
+
     if(Ptr%NameCommand == "load")then
        call load_lookup_table(iTable)
        RETURN
@@ -228,7 +228,7 @@ contains
     else
        Ptr%StringDescription = NameTable
     endif
- 
+
     Ptr%NameVar = NameVar
 
     call split_string(Ptr%NameVar, MaxVar, NameVar_I, Ptr%nValue, &
@@ -236,10 +236,10 @@ contains
 
     ! Do not count the names of the indexes and parameters
     Ptr%nValue = Ptr%nValue - Ptr%nIndex - Ptr%nParam
-    
+
     ! Figure out which index is logarithmic
     Ptr%IsLogIndex_I = index(NameVar_I(1:Ptr%nIndex), "log") == 1
-  
+
     ! Take logarithm of the ranges if logarithmic
     where(Ptr%IsLogIndex_I)
        Ptr%IndexMin_I = log10(Ptr%IndexMin_I)
@@ -249,7 +249,7 @@ contains
     ! Assign values if provided.
     ! Replaces the need for simplistic make_lookup_table calls.
     !  -> used for imf files in 1d
-     if(present(Value1d_VC))then
+    if(present(Value1d_VC))then
        if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
        allocate( &
             Ptr%Value_VC(Ptr%nValue, Ptr%nIndex_I(1),1,1,1,1))
@@ -267,10 +267,10 @@ contains
             Ptr%nIndex_I(2), Ptr%nIndex_I(3), 1, 1))
        Ptr%Value_VC(:,:,:,:,1,1) = Value3d_VC
     endif
-    
+
     ! Initialize uniform indices.
     Ptr%IsUniform_I = .TRUE.
-    
+
     ! Set indices to non-uniform if provided.
     if(present(Index1_I))then
        allocate(Ptr%Index1_I(Ptr%nIndex_I(1)))
@@ -297,12 +297,12 @@ contains
        Ptr%Index5_I = Index5_I
        call check_index(iTable, Ptr%Index5_I, 5)
     endif
-    
+
     ! Calculate increments
     Ptr%dIndex_I = (Ptr%IndexMax_I - Ptr%IndexMin_I)/(Ptr%nIndex_I - 1)
 
   end subroutine init_lookup_table
-  !==========================================================================
+  !============================================================================
   subroutine read_lookup_table_param
 
     ! Read parameters for one or more tables from an input parameter file.
@@ -327,7 +327,7 @@ contains
     character(len=100):: NameParam
 
     character(len=*), parameter:: NameSub = 'read_lookup_table_param'
-    !-----------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     call read_var('NameTable', NameTable)
 
     call read_var('NameCommand', NameCommand, IsLowerCase = .true.)
@@ -350,17 +350,17 @@ contains
        NameTable = NameTable_I(iTableName)
 
        ! Check if the table has been set already (say in a previous session)
-       
+
        iTable = i_lookup_table(NameTable)
        if(iTable < 0)then
           ! new table
           nTable = nTable + 1
-          
+
           if(nTable > MaxTable)then
              write(*,*)NameSub,' MaxTable =',MaxTable
              call CON_stop(NameSub//': number of tables exceeded MaxTable')
           end if
-       
+
           iTable = nTable
        end if
 
@@ -433,9 +433,9 @@ contains
     end do
 
     if(DoReadTableParam) deallocate(TableParam_I)
-   
+
     if(NameCommand == "load" .or. NameCommand == "para") RETURN
-    
+
     call read_var('StringDescription', Ptr%StringDescription)
     call read_var('NameVar',           Ptr%NameVar)
     call read_var('nIndex',            Ptr%nIndex)
@@ -458,19 +458,20 @@ contains
        call read_var('nIndex_I',   Ptr%nIndex_I(iIndex))
        call read_var('IndexMin',   Ptr%IndexMin_I(iIndex))
        call read_var('IndexMax',   Ptr%IndexMax_I(iIndex))
-       
+
        ! Take logarithm of the ranges if logarithmic
        if(Ptr%IsLogIndex_I(iIndex)) then
           Ptr%IndexMin_I(iIndex) = log10(Ptr%IndexMin_I(iIndex))
           Ptr%IndexMax_I(iIndex) = log10(Ptr%IndexMax_I(iIndex))
        end if
     end do
-    
+
     ! Calculate increments
     Ptr%dIndex_I = (Ptr%IndexMax_I - Ptr%IndexMin_I)/(Ptr % nIndex_I - 1)
 
   contains
-    
+    !==========================================================================
+
     subroutine check_braces(Name, Name_I, nString)
 
       character(LEN=*), intent(in) :: Name
@@ -478,14 +479,14 @@ contains
       integer, intent(out) :: nString
 
       integer:: iBracePosition1, iBracePosition2, iString
-      !--------------------------------------------------------------------
+      !------------------------------------------------------------------------
 
       iBracePosition1 = index(Name,'{')
       iBracePosition2 = index(Name,'}')
 
       if(iBracePosition1 < 1 .or. iBracePosition2 < 1 .or. &
            iBracePosition2 < iBracePosition1 )then
-         nString = 1 
+         nString = 1
          Name_I(1) = Name
          RETURN
       end if
@@ -507,10 +508,10 @@ contains
       end if
 
     end subroutine check_braces
+    !==========================================================================
 
   end subroutine read_lookup_table_param
-
-  !===========================================================================
+  !============================================================================
 
   integer function i_lookup_table(Name)
 
@@ -519,8 +520,8 @@ contains
 
     character(len=*), intent(in):: Name
     integer :: iTable
-    !------------------------------------------------------------------------
 
+    !--------------------------------------------------------------------------
     do iTable = 1, nTable
        if(Table_I(iTable)%NameTable == Name) then
           i_lookup_table = iTable
@@ -530,22 +531,21 @@ contains
     i_lookup_table = -1
 
   end function i_lookup_table
-
-  !===========================================================================
+  !============================================================================
 
   subroutine load_lookup_table(iTable)
 
     integer, intent(in) :: iTable
 
     type(TableType), pointer:: Ptr
-    integer :: nVar, iIndex, n
+    integer :: nVar, iIndex
 
     ! since number of parameters is not known in advance, this array is needed
     real, allocatable:: TableParam_I(:)
     integer, allocatable:: nIndex_I(:)
 
     character(len=*), parameter:: NameSub = 'load_lookup_table'
-    !------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
 
     if(iTable > nTable) call CON_stop(NameSub//' iTable larger than nTable')
 
@@ -586,7 +586,7 @@ contains
          Ptr%Index3_I(nIndex_I(3)), &
          Ptr%Index4_I(nIndex_I(4)), &
          Ptr%Index5_I(nIndex_I(5)) )
-    
+
     call read_plot_file( Ptr%NameFile,   &
          TypeFileIn    = Ptr%TypeFile,   &
          CoordMinOut_D = Ptr%IndexMin_I, &
@@ -597,7 +597,7 @@ contains
          Coord3Out_I   = Ptr%Index3_I,   &
          Coord4Out_I   = Ptr%Index4_I,   &
          Coord5Out_I   = Ptr%Index5_I    )
-    
+
     ! Calculate increments assuming uniform grid
     Ptr%dIndex_I = (Ptr%IndexMax_I - Ptr%IndexMin_I)/(Ptr%nIndex_I - 1)
 
@@ -620,27 +620,28 @@ contains
     deallocate(TableParam_I, nIndex_I)
 
   end subroutine load_lookup_table
+  !============================================================================
 
-  !=========================================================================
   subroutine check_index(iTable, Index_I, iIndex)
-    
+
     ! Check monotonicity and uniformity of index arrays
     ! Uniform indexes are reallocated to a one-element array
-    
+
     integer, intent(in)              :: iTable, iIndex
     real, allocatable, intent(inout) :: Index_I(:)
-    
+
     integer :: n
     type(TableType), pointer:: Ptr
+
     character(len=*), parameter:: NameSub = 'check_index'
-    !-----------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     Ptr => Table_I(iTable)
     n = size(Index_I)
     if(n < 3) RETURN
-    
+
     if(any(Index_I(2:n) < Index_I(1:n-1))) call CON_stop(NameSub// &
          ' ERROR: decreasing index in '//trim(Ptr%NameFile)//':', iIndex)
-    
+
     ! Figure out which indices are non-uniform.
     if (maxval(Index_I(2:n) - Index_I(1:n-1)) > 1.3*Ptr%dIndex_I(iIndex))then
        Ptr%IsUniform_I(iIndex) = .false.
@@ -649,11 +650,10 @@ contains
        deallocate(Index_I)
        allocate(Index_I(1))
     end if
-    
+
   end subroutine check_index
-  
-  !===========================================================================
-  
+  !============================================================================
+
   subroutine make_lookup_table_1d(iTable, calc_table_var, iComm, UseRealIndex)
 
     ! Fill in table iTable using the subroutine calc_table_var
@@ -678,11 +678,11 @@ contains
     real, allocatable:: Value_VC(:,:)
     type(TableType), pointer:: Ptr
 
-    character(len=*), parameter:: NameSub='make_lookup_table_1d'
-    !------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'make_lookup_table_1d'
+    !--------------------------------------------------------------------------
     UseRealIndex1 = .true.
     if(present(UseRealIndex)) UseRealIndex1 = UseRealIndex
-    
+
     Ptr => Table_I(iTable)
 
     if(Ptr%NameCommand /= "make" .and. Ptr%NameCommand /= "save") &
@@ -732,7 +732,6 @@ contains
        call calc_table_var(iTable, Index1, Value_VC(:,i1))
     end do
 
-
     ! Collect (or copy) result into table
     if(nProc > 1)then
        call MPI_allreduce(Value_VC, Ptr%Value_VC(:,:,1,1,1,1), nValue*n1, &
@@ -776,8 +775,7 @@ contains
     Ptr%NameCommand = "done"
 
   end subroutine make_lookup_table_1d
-
-  !===========================================================================
+  !============================================================================
 
   subroutine make_lookup_table(iTable, calc_table_var, iComm)
 
@@ -802,8 +800,8 @@ contains
     real, allocatable:: Value_VC(:,:,:)
     type(TableType), pointer:: Ptr
 
-    character(len=*), parameter:: NameSub='make_lookup_table'
-    !------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'make_lookup_table'
+    !--------------------------------------------------------------------------
 
     Ptr => Table_I(iTable)
 
@@ -897,8 +895,7 @@ contains
     Ptr%NameCommand = "done"
 
   end subroutine make_lookup_table
-
-  !===========================================================================
+  !============================================================================
 
   subroutine make_lookup_table_3d(iTable, calc_table_var, iComm)
 
@@ -924,8 +921,8 @@ contains
     real, allocatable:: Value_VC(:,:,:,:)
     type(TableType), pointer:: Ptr
 
-    character(len=*), parameter:: NameSub='make_lookup_table_3d'
-    !------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'make_lookup_table_3d'
+    !--------------------------------------------------------------------------
 
     Ptr => Table_I(iTable)
 
@@ -1032,15 +1029,14 @@ contains
     Ptr%NameCommand = "done"
 
   end subroutine make_lookup_table_3d
-
-  !===========================================================================
+  !============================================================================
 
   subroutine interpolate_arg1(iTable, Arg1, Value_V, DoExtrapolate)
 
     ! Return the array of values Value_V corresponding to argument Arg1.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
-    ! the closest element in the table. If it is present and true, do a 
+    ! the closest element in the table. If it is present and true, do a
     ! linear extrapolation.
 
     integer, intent(in) :: iTable            ! table
@@ -1048,11 +1044,11 @@ contains
     real,    intent(out):: Value_V(:)        ! output values
     logical, optional, intent(in):: DoExtrapolate ! optional extrapolation
 
-    call interpolate_arg_array(iTable, (/Arg1/), Value_V, DoExtrapolate)
+    !--------------------------------------------------------------------------
+    call interpolate_arg_array(iTable, [Arg1], Value_V, DoExtrapolate)
 
   end subroutine interpolate_arg1
-
-  !===========================================================================
+  !============================================================================
 
   subroutine interpolate_arg2(iTable, Arg1, Arg2, Value_V, DoExtrapolate)
 
@@ -1060,7 +1056,7 @@ contains
     ! Arg1 and Arg2.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
-    ! the closest element in the table. If it is present and true, do a 
+    ! the closest element in the table. If it is present and true, do a
     ! linear extrapolation.
 
     integer, intent(in) :: iTable            ! table
@@ -1068,12 +1064,12 @@ contains
     real,    intent(out):: Value_V(:)        ! output values
     logical, optional, intent(in):: DoExtrapolate ! optional extrapolation
 
-    call interpolate_arg_array(iTable, (/Arg1, Arg2/), Value_V, &
+    !--------------------------------------------------------------------------
+    call interpolate_arg_array(iTable, [Arg1, Arg2], Value_V, &
          DoExtrapolate)
 
   end subroutine interpolate_arg2
-
-  !===========================================================================
+  !============================================================================
 
   subroutine interpolate_arg3(iTable, Arg1, Arg2, Arg3, Value_V, DoExtrapolate)
 
@@ -1081,7 +1077,7 @@ contains
     ! Arg1, Arg2 and Arg3.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
-    ! the closest element in the table. If it is present and true, do a 
+    ! the closest element in the table. If it is present and true, do a
     ! linear extrapolation.
 
     integer, intent(in) :: iTable            ! table
@@ -1089,12 +1085,12 @@ contains
     real,    intent(out):: Value_V(:)        ! output values
     logical, optional, intent(in):: DoExtrapolate ! optional extrapolation
 
-    call interpolate_arg_array(iTable, (/Arg1, Arg2, Arg3/), Value_V, &
+    !--------------------------------------------------------------------------
+    call interpolate_arg_array(iTable, [Arg1, Arg2, Arg3], Value_V, &
          DoExtrapolate)
 
   end subroutine interpolate_arg3
-
-  !===========================================================================
+  !============================================================================
 
   subroutine interpolate_arg4(iTable, Arg1, Arg2, Arg3, Arg4, Value_V, &
        DoExtrapolate)
@@ -1103,7 +1099,7 @@ contains
     ! Arg1, Arg2, Arg3, and Arg4.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
-    ! the closest element in the table. If it is present and true, do a 
+    ! the closest element in the table. If it is present and true, do a
     ! linear extrapolation.
 
     integer, intent(in) :: iTable                 ! table
@@ -1111,12 +1107,12 @@ contains
     real,    intent(out):: Value_V(:)             ! output values
     logical, optional, intent(in):: DoExtrapolate ! optional extrapolation
 
-    call interpolate_arg_array(iTable, (/Arg1, Arg2, Arg3, Arg4/), Value_V, &
+    !--------------------------------------------------------------------------
+    call interpolate_arg_array(iTable, [Arg1, Arg2, Arg3, Arg4], Value_V, &
          DoExtrapolate)
 
   end subroutine interpolate_arg4
-
-  !===========================================================================
+  !============================================================================
 
   subroutine interpolate_arg5(iTable, Arg1, Arg2, Arg3, Arg4, Arg5, Value_V, &
        DoExtrapolate)
@@ -1125,7 +1121,7 @@ contains
     ! Arg1, Arg2, Arg3, Arg4, and Arg5.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
-    ! the closest element in the table. If it is present and true, do a 
+    ! the closest element in the table. If it is present and true, do a
     ! linear extrapolation.
 
     integer, intent(in) :: iTable                       ! table
@@ -1133,19 +1129,19 @@ contains
     real,    intent(out):: Value_V(:)                   ! output values
     logical, optional, intent(in):: DoExtrapolate ! optional extrapolation
 
-    call interpolate_arg_array(iTable, (/Arg1, Arg2, Arg3, Arg4, Arg5/), &
+    !--------------------------------------------------------------------------
+    call interpolate_arg_array(iTable, [Arg1, Arg2, Arg3, Arg4, Arg5], &
          Value_V, DoExtrapolate)
 
   end subroutine interpolate_arg5
-
-  !===========================================================================
+  !============================================================================
 
   subroutine interpolate_arg1_scalar(iTable, Arg1, Value, DoExtrapolate)
 
     ! Return the scalar Value corresponding to argument Arg1.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
-    ! the closest element in the table. If it is present and true, do a 
+    ! the closest element in the table. If it is present and true, do a
     ! linear extrapolation.
 
     integer, intent(in) :: iTable            ! table
@@ -1155,19 +1151,19 @@ contains
 
     real:: Value_V(1)
 
-    call interpolate_arg_array(iTable, (/Arg1/), Value_V, DoExtrapolate)
+    !--------------------------------------------------------------------------
+    call interpolate_arg_array(iTable, [Arg1], Value_V, DoExtrapolate)
     Value = Value_V(1)
 
   end subroutine interpolate_arg1_scalar
-
-  !===========================================================================
+  !============================================================================
 
   subroutine interpolate_arg2_scalar(iTable, Arg1, Arg2, Value, DoExtrapolate)
 
     ! Return the scalar Value corresponding to arguments Arg1 and Arg2.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
-    ! the closest element in the table. If it is present and true, do a 
+    ! the closest element in the table. If it is present and true, do a
     ! linear extrapolation.
 
     integer, intent(in) :: iTable            ! table
@@ -1177,12 +1173,12 @@ contains
 
     real:: Value_V(1)
 
-    call interpolate_arg_array(iTable, (/Arg1, Arg2/), Value_V, DoExtrapolate)
+    !--------------------------------------------------------------------------
+    call interpolate_arg_array(iTable, [Arg1, Arg2], Value_V, DoExtrapolate)
     Value = Value_V(1)
 
   end subroutine interpolate_arg2_scalar
-
-  !===========================================================================
+  !============================================================================
 
   subroutine interpolate_arg3_scalar(iTable, Arg1, Arg2, Arg3, Value, &
        DoExtrapolate)
@@ -1190,7 +1186,7 @@ contains
     ! Return the scalar Value corresponding to arguments Arg1, Arg2 and Arg3.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
-    ! the closest element in the table. If it is present and true, do a 
+    ! the closest element in the table. If it is present and true, do a
     ! linear extrapolation.
 
     integer, intent(in) :: iTable            ! table
@@ -1200,13 +1196,13 @@ contains
 
     real:: Value_V(1)
 
-    call interpolate_arg_array(iTable, (/Arg1, Arg2, Arg3/), Value_V, &
+    !--------------------------------------------------------------------------
+    call interpolate_arg_array(iTable, [Arg1, Arg2, Arg3], Value_V, &
          DoExtrapolate)
     Value = Value_V(1)
 
   end subroutine interpolate_arg3_scalar
-
-  !===========================================================================
+  !============================================================================
 
   subroutine interpolate_arg4_scalar(iTable, Arg1, Arg2, Arg3, Arg4, Value, &
        DoExtrapolate)
@@ -1214,7 +1210,7 @@ contains
     ! Return the scalar Value corresponding to arguments Arg1 ... Arg4.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
-    ! the closest element in the table. If it is present and true, do a 
+    ! the closest element in the table. If it is present and true, do a
     ! linear extrapolation.
 
     integer, intent(in) :: iTable                 ! table
@@ -1224,13 +1220,13 @@ contains
 
     real:: Value_V(1)
 
-    call interpolate_arg_array(iTable, (/Arg1, Arg2, Arg3, Arg4/), Value_V, &
+    !--------------------------------------------------------------------------
+    call interpolate_arg_array(iTable, [Arg1, Arg2, Arg3, Arg4], Value_V, &
          DoExtrapolate)
     Value = Value_V(1)
 
   end subroutine interpolate_arg4_scalar
-
-  !===========================================================================
+  !============================================================================
 
   subroutine interpolate_arg5_scalar(iTable, Arg1, Arg2, Arg3, Arg4, Arg5, &
        Value, DoExtrapolate)
@@ -1238,7 +1234,7 @@ contains
     ! Return the scalar Value corresponding to arguments Arg1 ... Arg5.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
-    ! the closest element in the table. If it is present and true, do a 
+    ! the closest element in the table. If it is present and true, do a
     ! linear extrapolation.
 
     integer, intent(in) :: iTable                       ! table
@@ -1248,13 +1244,13 @@ contains
 
     real:: Value_V(1)
 
-    call interpolate_arg_array(iTable, (/Arg1, Arg2, Arg3, Arg4, Arg5/), &
+    !--------------------------------------------------------------------------
+    call interpolate_arg_array(iTable, [Arg1, Arg2, Arg3, Arg4, Arg5], &
          Value_V, DoExtrapolate)
     Value = Value_V(1)
 
   end subroutine interpolate_arg5_scalar
-
-  !===========================================================================
+  !============================================================================
 
   subroutine interpolate_arg_array(iTable, ArgIn_I, Value_V, DoExtrapolate)
 
@@ -1262,7 +1258,7 @@ contains
     ! ArgIn_I in iTable. Use linear interpolation.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
-    ! the closest element in the table. If it is present and true, do a 
+    ! the closest element in the table. If it is present and true, do a
     ! linear extrapolation.
 
     integer, intent(in) :: iTable            ! table
@@ -1276,12 +1272,11 @@ contains
 
     integer, parameter :: MinIndex_I(5) = 1
 
-    character(len=*), parameter:: NameSub='interpolate_lookup_table'
+    character(len=*), parameter:: NameSub = 'interpolate_arg_array'
     !--------------------------------------------------------------------------
-
     Ptr => Table_I(iTable)
     Arg_I(1:Ptr%nIndex) = ArgIn_I(1:Ptr%nIndex)
-    
+
     ! This line is broken so that emacs does not get confused
     where(Ptr%IsLogIndex_I) &
          Arg_I(1:Ptr%nIndex) = log10(Arg_I(1:Ptr%nIndex))
@@ -1290,7 +1285,7 @@ contains
     where(Ptr%IsUniform_I) &
          Arg_I(1:Ptr%nIndex) = &
          (Arg_I(1:Ptr%nIndex) - Ptr%IndexMin_I)/Ptr%dIndex_I  + 1
-    
+
     ! Interpolate values
     Value_V = interpolate_vector(Ptr%Value_VC, &
          Ptr%nValue, Ptr%nIndex, MinIndex_I(1:Ptr%nIndex), Ptr%nIndex_I, &
@@ -1300,24 +1295,23 @@ contains
          Ptr%Index3_I, &
          Ptr%Index4_I, &
          Ptr%Index5_I, &
-         DoExtrapolate = DoExtrapolate)    
-    
-  end subroutine interpolate_arg_array
+         DoExtrapolate = DoExtrapolate)
 
-  !===========================================================================
+  end subroutine interpolate_arg_array
+  !============================================================================
 
   subroutine interpolate_with_known_val(&
        iTable, iVal, ValIn, Arg2In, Value_V, &
        Arg1Out, DoExtrapolate)
 
     ! Return the array of values Value_V corresponding to the argument
-    ! Arg2In in iTable, with Arg1Out calculated from the condition, that 
+    ! Arg2In in iTable, with Arg1Out calculated from the condition, that
     ! Value_V(iVal) equals the given value, ValIn.
     !
     ! Use linear interpolation.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
-    ! the closest element in the table. If it is present and true, do a 
+    ! the closest element in the table. If it is present and true, do a
     ! linear extrapolation.
 
     integer, intent(in) :: iTable            ! table
@@ -1325,7 +1319,7 @@ contains
     real,    intent(in) :: ValIn             ! known table value
     real,    optional,   intent(in) :: Arg2In! second input argument if any
     real,    intent(out):: Value_V(:)        ! output values
-    
+
     real, optional, intent(out) :: Arg1Out        ! optional calculated Arg
     logical, optional, intent(in):: DoExtrapolate ! optional extrapolation
 
@@ -1334,14 +1328,13 @@ contains
 
     real    :: Dx1, Dx2, Dy1, Dy2
     integer :: i1, i2, j1, j2
-    
-    character(len=*), parameter:: NameSub='interpolate_lookup_table'
+
+    character(len=*), parameter:: NameSub = 'interpolate_with_known_val'
     !--------------------------------------------------------------------------
-    
     Ptr => Table_I(iTable)
     if(present(Arg2In))then
        Arg2 = Arg2In
-    
+
        If(Ptr%IsLogIndex_I(2)) Arg2 = log10(Arg2)
 
        call find_cell(1, Ptr%nIndex_I(2), &
@@ -1374,9 +1367,9 @@ contains
        Arg1Out = (i1 - 1 + Dx1)*Ptr%dIndex_I(1) + Ptr%IndexMin_I(1)
        if(Ptr%IsLogIndex_I(1)) Arg1Out = 10**Arg1Out
     end if
-       
+
   end subroutine interpolate_with_known_val
-  !===========================================================================
+  !============================================================================
   subroutine get_lookup_table(iTable, &
        iParamIn, Param, nParam, Param_I, nValue, nIndex, nIndex_I, &
        IndexMin_I, IndexMax_I, IsLogIndex_I, &
@@ -1406,7 +1399,7 @@ contains
 
     type(TableType), pointer:: Ptr
     integer                 :: iParam
-    !------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     Ptr => Table_I(iTable)
     if(present(StringDescription)) StringDescription = Ptr%StringDescription
     if(present(NameVar))           NameVar           = Ptr%NameVar
@@ -1422,7 +1415,7 @@ contains
     if(present(Index3_I))          Index3_I          = Ptr%Index3_I
     if(present(Index4_I))          Index4_I          = Ptr%Index4_I
     if(present(Index5_I))          Index5_I          = Ptr%Index5_I
-    
+
     if(present(Param_I))then
        ! return an array of parameters
        if(Ptr%nParam == 0)then
@@ -1435,7 +1428,7 @@ contains
     end if
     if(present(Param))then
        ! return one parameter, the first one by default
-       iParam = 1 
+       iParam = 1
        if(present(iParamIn)) iParam = iParamIn
        if(iParam < 1 .or. iParam > Ptr%nParam)then
           Param = -777.77
@@ -1445,8 +1438,7 @@ contains
     end if
 
   end subroutine get_lookup_table
-
-  !===========================================================================
+  !============================================================================
 
   subroutine test_lookup_table
 
@@ -1460,7 +1452,7 @@ contains
     character(len=100):: String
 
     character(len=*), parameter:: NameSub = 'test_lookup_table'
-    !------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     call MPI_comm_rank(MPI_COMM_WORLD,iProc,iError)
 
     if(iProc==0) write(*,*)'testing 2D lookup table'
@@ -1469,12 +1461,12 @@ contains
          NameTable   = "RhoE",                  &
          NameCommand = "save",                  &
          NameVar     = "logrho e pXe pBe pPl zXe zBe zPl",  &
-         NameFile    = "test_lookup_table1.out",& 
+         NameFile    = "test_lookup_table1.out",&
          TypeFile    = "ascii",                 &
-         nIndex_I    = (/15, 10/),              &
-         IndexMin_I  = (/0.001,   1.0/),        &
-         IndexMax_I  = (/1000.0, 10.0/),        &
-         Param_I     = (/ 54.0, 4.0, -4.0 /) )
+         nIndex_I    = [15, 10],              &
+         IndexMin_I  = [0.001,   1.0],        &
+         IndexMax_I  = [1000.0, 10.0],        &
+         Param_I     = [ 54.0, 4.0, -4.0 ] )
 
     if(iProc==0) write(*,*)'testing i_lookup_table'
 
@@ -1501,7 +1493,7 @@ contains
        write(*,*)'nParam=',nParam,' is different from 3'
        call CON_stop(NameSub)
     end if
-    ValueGood_I = (/ 54.0, 4.0, -4.0 /)
+    ValueGood_I = [ 54.0, 4.0, -4.0 ]
     if(any(Value_I /= ValueGood_I)) then
        write(*,*)'Param_I=', Value_I,' is different from ', ValueGood_I
        call CON_stop(NameSub)
@@ -1514,11 +1506,11 @@ contains
     if(iProc==0) write(*,*)'testing make_lookup_table'
     call make_lookup_table(iTable, eos_rho_e, MPI_COMM_WORLD)
 
-    if(iProc==0) write(*,*)'testing interpolate_lookup_table'    
+    if(iProc==0) write(*,*)'testing interpolate_lookup_table'
     call interpolate_lookup_table(iTable, 1.0, 2.0, Value_I)
     ! rho=1.0 is exactly in the middle, e=2.0 is also an index, so exact result
 
-    ValueGood_I = (/ 4./3., 4./5., 3. /)
+    ValueGood_I = [ 4./3., 4./5., 3. ]
     if(any(abs(Value_I - ValueGood_I) > 1e-5))then
        write(*,*)'Value_I=',Value_I,' is different from ValueGood_I=', &
             ValueGood_I
@@ -1552,7 +1544,7 @@ contains
     end if
 
     ! Test with the condition that Value_I(3)=3.0 and find first argument Arg
-    call interpolate_lookup_table(2, 3, 3.0, 2.0, Value_I, Arg) 
+    call interpolate_lookup_table(2, 3, 3.0, 2.0, Value_I, Arg)
     if(any(abs(Value_I - ValueGood_I) > 1e-5) .or. abs(Arg - 1.0) >  1e-5)then
        write(*,*)'Value_I=',Value_I, ' Arg =', Arg,&
             ' are different from ValueGood_I=',ValueGood_I, ' ArgGood = 1.0'
@@ -1566,12 +1558,12 @@ contains
          NameTable   = "RadCool",               &
          NameCommand = "save",                  &
          NameVar     = "logTe lambdaT ChiantiVersion",  &
-         NameFile    = "test_lookup_table_radcool.out",& 
+         NameFile    = "test_lookup_table_radcool.out",&
          TypeFile    = "ascii",                 &
-         nIndex_I    = (/100/),                 &
-         IndexMin_I  = (/1e3/),                 &
-         IndexMax_I  = (/1e8/),                 &
-         Param_I     = (/7.0/) )
+         nIndex_I    = [100],                 &
+         IndexMin_I  = [1e3],                 &
+         IndexMax_I  = [1e8],                 &
+         Param_I     = [7.0] )
 
     iTable = i_lookup_table("RadCool")
     if(iTable /= 3)then
@@ -1624,11 +1616,11 @@ contains
          NameTable   = "B0(r,Lon,Lat)",                &
          NameCommand = "save",                         &
          NameVar     = "logR Lon Lat B0x B0y B0z",     &
-         NameFile    = "test_lookup_table_b0.out",     & 
+         NameFile    = "test_lookup_table_b0.out",     &
          TypeFile    = "ascii",                        &
-         nIndex_I    = (/11,21,11/),                   &
-         IndexMin_I  = (/ 1.0, 0.0, -cHalfPi/),        &
-         IndexMax_I  = (/36.0, cPi, +cHalfPi/)         )
+         nIndex_I    = [11,21,11],                   &
+         IndexMin_I  = [ 1.0, 0.0, -cHalfPi],        &
+         IndexMax_I  = [36.0, cPi, +cHalfPi]         )
 
     iTable = i_lookup_table("B0(r,Lon,Lat)")
     if(iTable /= 5)then
@@ -1643,7 +1635,7 @@ contains
     if(iProc==0) write(*,*)'testing interpolate_lookup_table'
     call interpolate_lookup_table(iTable, 6.0, cHalfPi, 0.0, Value_I)
 
-    ValueGood_I = (/0.0, 6.0, 0.0/)
+    ValueGood_I = [0.0, 6.0, 0.0]
     if(any(abs(Value_I - ValueGood_I) > 1e-5))then
        write(*,*)'Value_I=',Value_I,' is different from ValueGood_I=', &
             ValueGood_I
@@ -1670,12 +1662,12 @@ contains
 
     if(iProc==0) write(*,*)'testing interpolate_lookup_table for loaded table'
     call interpolate_lookup_table(iTable, 6.0, 0.0, cHalfPi, Value_I)
-    ValueGood_I = (/0.0, 0.0, 6.0/)
+    ValueGood_I = [0.0, 0.0, 6.0]
     if(abs(Value - ValueGood) > 1e-5)then
        write(*,*)'Value=', Value,' is different from ValueGood=', ValueGood
        call CON_stop(NameSub)
     end if
-    
+
     ! Test non-uniform 1D table
     call init_lookup_table(                               &
          NameTable   = "NonU1D"                          ,&
@@ -1690,7 +1682,7 @@ contains
     Ptr => Table_I(iTable)
     ! Test interpolate_lookup_table at provided index.
     call interpolate_lookup_table(iTable, 4.0, Value_I)
-    ValueGood_I = (/8.0, 2.0, 1.0/)
+    ValueGood_I = [8.0, 2.0, 1.0]
     if(any(abs(Value_I - ValueGood_I) > 1e-5))then
        if(iProc==0)write(*,*)'Testing values at provided index:'
        if(iProc==0)write(*,*)'Value_I=', Value_I,' is different from ValueGood_I=', ValueGood_I
@@ -1698,19 +1690,21 @@ contains
     end if
     ! Test interpolate_lookup_table at skipped index.
     call interpolate_lookup_table(iTable, 3.0, Value_I)
-    ValueGood_I = (/7.0, 3.0, 1.0/)
+    ValueGood_I = [7.0, 3.0, 1.0]
     if(any(abs(Value_I - ValueGood_I) > 1e-5))then
        if(iProc==0)write(*,*)'Testing values at interpolated index:'
        if(iProc==0)write(*,*)'Value_I=', Value_I,' is different from ValueGood_I=', ValueGood_I
        call CON_stop(NameSub)
     end if
-        
+
   contains
+    !==========================================================================
 
     subroutine compare_tables
 
       ! Compare tables pointed at by Ptr and Ptr2
 
+      !------------------------------------------------------------------------
       if(Ptr2%StringDescription /= Ptr%StringDescription) &
            call CON_stop(NameSub // &
            ' Description='//trim(Ptr2%StringDescription)// &
@@ -1758,10 +1752,10 @@ contains
       end if
 
     end subroutine compare_tables
+    !==========================================================================
 
   end subroutine test_lookup_table
-
-  !===========================================================================
+  !============================================================================
 
   subroutine eos_rho_e(iTable, rho, e, p_I)
     ! This is an example for the subroutine passed to make_lookup_table
@@ -1769,14 +1763,13 @@ contains
     integer, intent(in):: iTable
     real, intent(in)   :: rho, e
     real, intent(out)  :: p_I(:)
-    !-----------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     p_I(1) = (2./3.)*e
     p_I(2) = (2./5.)*e
     p_I(3) = e + rho
 
   end subroutine eos_rho_e
-
-  !===========================================================================
+  !============================================================================
 
   subroutine radcool_te(iTable, Te, Value_I)
     ! This is an example for the subroutine passed to make_lookup_table_1d
@@ -1784,12 +1777,11 @@ contains
     integer, intent(in):: iTable
     real, intent(in)   :: Te
     real, intent(out)  :: Value_I(:)
-    !-----------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     Value_I(1) = 0.1*log10(Te)
 
   end subroutine radcool_te
-
-  !===========================================================================
+  !============================================================================
 
   subroutine b0_rlonlat(iTable, r, Lon, Lat, B0_D)
     ! This is an example for the subroutine passed to make_lookup_table_3d
@@ -1797,11 +1789,13 @@ contains
     integer, intent(in):: iTable
     real, intent(in)   :: r, Lon, Lat
     real, intent(out)  :: B0_D(:)
-    !-----------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     B0_D(1) = r*cos(Lon)*cos(Lat)
     B0_D(2) = r*sin(Lon)*cos(Lat)
     B0_D(3) = r*sin(Lat)
 
   end subroutine b0_rlonlat
+  !============================================================================
 
 end module ModLookupTable
+!==============================================================================
