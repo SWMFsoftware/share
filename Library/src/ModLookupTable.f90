@@ -19,6 +19,7 @@ module ModLookupTable
   use ModPlotFile,    ONLY: read_plot_file, save_plot_file
   use ModInterpolate, ONLY: interpolate_vector, find_cell
   use ModUtilities,   ONLY: split_string, lower_case, CON_stop
+  use ModIoUnit,      ONLY: UnitTmp_
   use ModMpi
 
   implicit none
@@ -132,11 +133,13 @@ contains
     !
     ! NameTable is a unique string identifier for the table.
     !
-    ! NameCommand can be "load", "save", "make"
+    ! NameCommand can be "load", "save", "make", "use".
     ! For "load" the table is loaded from file NameFile.
     ! For "make" the table is produced in memory, so its size nIndex_I
     ! and range of indexes from IndexMin_I to IndexMax_I must be given.
     ! The "save" command makes the table and then saves it into NameFile.
+    ! The "use" command will load the table if the file already exists,
+    ! otherwise it makes and saves the table.
     !
     ! TypeFile defines the file type to "ascii" (text file)
     ! "real4" (single precision binary) or "real8" (double precision binary).
@@ -161,7 +164,7 @@ contains
     real,             optional, intent(in):: Value2d_VC(:,:,:)
     real,             optional, intent(in):: Value3d_VC(:,:,:,:)
 
-    integer :: iTable
+    integer :: iTable, iError
     type(TableType), pointer:: Ptr
 
     character(len=*), parameter:: NameSub = 'init_lookup_table'
@@ -189,7 +192,7 @@ contains
     call lower_case(Ptr%NameCommand)
 
     select case(Ptr%NameCommand)
-    case("load","save")
+    case("load", "save", "use")
        Ptr%NameFile = NameFile
        Ptr%TypeFile = TypeFile
 
@@ -198,8 +201,19 @@ contains
     case default
        call CON_stop(NameSub//': unknown command='//Ptr%NameCommand)
     end select
+    
+    if(ptr%NameCommand == "use")then
+       ! Check if the file is already there or not
+       open(UnitTmp_, FILE=NameFile, STATUS="old", IOSTAT=iError)
+       if(iError == 0)then
+          close(UnitTmp_)
+          ptr%NameCommand = "load"
+       else
+          ptr%NameCommand = "save"
+       end if
+    end if
 
-    if(Ptr%NameCommand == "load")then
+    if(Ptr%NameCommand == "load" )then
        call load_lookup_table(iTable)
        RETURN
     end if
@@ -311,8 +325,6 @@ contains
     ! table names: "Xe_eos", "Be_eos", "Pl_eos".
     !
     ! The table maybe loaded
-
-    use ModIoUnit, ONLY: UnitTmp_
 
     integer, parameter:: MaxTableName = 20
 
@@ -1288,14 +1300,6 @@ contains
     where(Ptr%IsUniform_I) &
          Arg_I(1:Ptr%nIndex) = &
          (Arg_I(1:Ptr%nIndex) - Ptr%IndexMin_I)/Ptr%dIndex_I  + 1
-
-    ! write(*,*)'!!! Ptr%nIndex   =', Ptr%nIndex
-    ! write(*,*)'!!! IsLogIndex_I =', Ptr%IsLogIndex_I
-    ! write(*,*)'!!! IsUniform_I  =', Ptr%IsUniform_I
-    ! write(*,*)'!!! IndexMin_I   =', Ptr%IndexMin_I
-    ! write(*,*)'!!! Ptr%dIndex_I =', Ptr%dIndex_I
-    ! write(*,*)'!!! ArgIn_I      =', ArgIn_I
-    ! write(*,*)'!!! Finale Arg_I =', Arg_I(1:Ptr%nIndex)
 
     ! Interpolate values
     Value_V = interpolate_vector(Ptr%Value_VC, &
