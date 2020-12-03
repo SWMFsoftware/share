@@ -94,7 +94,7 @@ pro set_default_values
   filename=''          ; space separated list of filenames. May contain *, []
   nfile=0              ; number of files
   filenames=0          ; array of filenames
-  filetype=''          ; file types (binary, real4, ascii...)
+  filetype=''          ; file types (real4, real8, ascii...)
   npictinfiles=0       ; number of pictures in each file
   npict=0              ; index of snapshot to be read
 
@@ -1776,10 +1776,10 @@ pro open_file,unit,filename,filetype
    case filetype of
        'log'   :openr,unit,filename
        'ascii' :openr,unit,filename
-       'binary':openr,unit,filename,/f77_unf
        'real4' :openr,unit,filename,/f77_unf
-       'BINARY':openr,unit,filename,/f77_unf
+       'real8' :openr,unit,filename,/f77_unf
        'REAL4' :openr,unit,filename,/f77_unf
+       'REAL8' :openr,unit,filename,/f77_unf
        'IPIC3D':
        else    :print,'open_file: unknown filetype:',filetype
    endcase
@@ -1827,14 +1827,14 @@ pro get_file_types
            lenhead=long(1)
            readu,10,lenhead
            if lenhead ne 79 and lenhead ne 500 then ftype='ascii' else begin
-              ;; The length of the 2nd line decides between real4 and binary
-              ;; since it contains the time, which is real*8 or real*4
+              ;; The length of the 2nd line decides between real4 and real8
+              ;; since it contains the time, which is real*4 or real*8
               head=bytarr(lenhead+4)
               len=long(1)
               readu,10,head,len
               case len of
                  20: ftype='real4'
-                 24: ftype='binary'
+                 24: ftype='real8'
                  else: begin
                     print,'Error in get_file_types: strange unformatted file:',$
                           filenames(ifile)
@@ -1957,7 +1957,7 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
         endif
         readf,unit,varname
      end
-     'binary':begin
+     'real8':begin
         time=double(1)
         readu,unit,headline
         readu,unit,it,time,ndim,neqpar,nw
@@ -2001,10 +2001,10 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
      for idim=1,ndim do nxs=nxs*nx(idim-1)
                                 ; Snapshot size = header + data + recordmarks
      case ftype of
-        'log'   :pictsize = 1
-        'ascii' :pictsize = headlen + (18*(ndim+nw)+1)*nxs
-        'binary':pictsize = headlen + 8*(1+nw)+8*(ndim+nw)*nxs
-        'real4' :pictsize = headlen + 8*(1+nw)+4*(ndim+nw)*nxs
+        'log'  : pictsize = 1
+        'ascii': pictsize = headlen + (18*(ndim+nw)+1)*nxs
+        'real8': pictsize = headlen + 8*(1+nw)+8*(ndim+nw)*nxs
+        'real4': pictsize = headlen + 8*(1+nw)+4*(ndim+nw)*nxs
      endcase
   endif
 
@@ -2316,10 +2316,10 @@ pro get_pict, unit, filename, filetype, npict, error
 
                                 ; Read data
      case strlowcase(filetype) of
-        'log':    get_pict_log ,unit
-        'ascii':  get_pict_asc ,unit, npict
-        'binary': get_pict_bin ,unit, npict
-        'real4':  get_pict_real,unit, npict
+        'log':   get_pict_log ,unit
+        'ascii': get_pict_asc ,unit, npict
+        'real8': get_pict_bin ,unit, npict
+        'real4': get_pict_real,unit, npict
         else:    begin
            print,'get_pict: unknown filetype:',filetype
            error=1
