@@ -1113,7 +1113,7 @@ contains
     character (len=15) :: NameFormat
 
     !--------------------------------------------------------------------------
-    write(NameFormat,'(a,i1,a,i1,a)')'(',n,'(',n,'f14.10,])'
+    write(NameFormat,'(a,i1,a,i1,a)')'(',n,'(',n,'f14.10,/))'
     write(*,NameFormat)transpose(Matrix_II)
 
   end subroutine show_nbyn_matrix
