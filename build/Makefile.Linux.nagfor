@@ -38,7 +38,7 @@ OPT2 = -O2
 OPT3 = -O3
 OPT4 = -O4
 
-CFLAG = ${SEARCH} -c -w -ideclient ${DEBUG}
+CFLAG = ${SEARCH} -c -w -ideclient ${DEBUG} -kind=byte
 
 Cflag0  = ${CFLAG} ${PRECISION} ${OPT0}
 Cflag1  = ${CFLAG} ${PRECISION} ${OPT1}
@@ -77,7 +77,7 @@ BLAS  = lapack.o blas.o
 	${COMPILE.f90} -DsysLinux -DcompNAGF95 ${Cflag3} $<
 
 .f.o:
-	${COMPILE.f77} ${Cflag4} -132 $<
+	${COMPILE.f77} ${Cflag4} -132 -dusty $<
 
 .for.o:
 	${COMPILE.f77} ${Cflag4} -132 $<
