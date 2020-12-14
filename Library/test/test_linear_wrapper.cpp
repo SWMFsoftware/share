@@ -107,7 +107,7 @@ int main(){
   //dt =1e-5;
   double  dx=1.0/((double)n-1);
   double nTotalStep=2;
-  double Tol=1e-5;
+  double Tol=1e-8;
   int nIter=200;
   int iError;
   int lTest = (rank == 0);
