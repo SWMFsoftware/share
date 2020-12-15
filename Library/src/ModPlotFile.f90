@@ -70,6 +70,9 @@ contains
        VarIn_I,  VarIn_II,  VarIn_III,  &
        VarIn_VI, VarIn_VII, VarIn_VIII, &
        VarIn_IV, VarIn_IIV, VarIn_IIIV, &
+       Var4In_I,  Var4In_II,  Var4In_III,  &
+       Var4In_VI, Var4In_VII, Var4In_VIII, &
+       Var4In_IV, Var4In_IIV, Var4In_IIIV, &
        StringFormatIn, StringFormatParamIn, iCommIn)
 
     use ModUtilities, ONLY: split_string, join_string, open_file, close_file
@@ -105,8 +108,20 @@ contains
     real,             optional, intent(in):: VarIn_IV(:,:)  ! variables in 1D
     real,             optional, intent(in):: VarIn_IIV(:,:,:)            ! 2D
     real,             optional, intent(in):: VarIn_IIIV(:,:,:,:)         ! 3D
+    real(Real4_),     optional, intent(in):: Var4In_I(:)    ! Real4 variable in 1D
+    real(Real4_),     optional, intent(in):: Var4In_II(:,:)               ! 2D
+    real(Real4_),     optional, intent(in):: Var4In_III(:,:,:)            ! 3D
+    real(Real4_),     optional, intent(in):: Var4In_VI(:,:)  ! variables in 1D
+    real(Real4_),     optional, intent(in):: Var4In_VII(:,:,:)            ! 2D
+    real(Real4_),     optional, intent(in):: Var4In_VIII(:,:,:,:)         ! 3D
+    real(Real4_),     optional, intent(in):: Var4In_IV(:,:)  ! variables in 1D
+    real(Real4_),     optional, intent(in):: Var4In_IIV(:,:,:)            ! 2D
+    real(Real4_),     optional, intent(in):: Var4In_IIIV(:,:,:,:)         ! 3D
     integer,          optional, intent(in):: iCommIn ! MPI communicator for HDF
 
+    ! True if Var4In* is present (single precision)
+    logical:: UseReal4
+    
     character(len=10)  :: TypePosition
     character(len=10)  :: TypeStatus
     character(len=20), allocatable  :: NameVar_I(:)
@@ -118,10 +133,9 @@ contains
     integer :: nCell_D(3), iBlock, nBlock
     real    :: Time, Coord
 
-    logical          :: IsCartesian
-    real, allocatable :: Coord_D(:), Var_V(:)
-    real, allocatable:: Param_I(:), Coord_ID(:,:), Var_IV(:,:)
-    real(Real4_), allocatable:: Param4_I(:), Coord4_ID(:,:), Var4_I(:)
+    logical :: IsCartesian
+    real,         allocatable:: Param_I(:), Coord_ID(:,:), Var_I(:), Var_IV(:,:)
+    real(Real4_), allocatable:: Param4_I(:), Coord4_ID(:,:), Var4_I(:), Var4_IV(:,:)
 
     integer :: n_D(0:MaxDim)
     integer :: i, j, k, i_D(3), iDim, iVar, n, nDimOut
@@ -162,6 +176,12 @@ contains
     else
        nParam = 0
     end if
+
+    ! Figure out precision of input variable
+    UseReal4 = present(Var4In_I) .or. present(Var4In_II) .or. present(Var4In_III)  &
+         .or.  present(Var4In_VI).or. present(Var4In_VII).or. present(Var4In_VIII) &
+         .or.  present(Var4In_IV).or. present(Var4In_IIV).or. present(Var4In_IIIV)
+    
     ! Figure out grid dimensions and number of variables. Default is 1.
     n_D = 1
     if(present(VarIn_I))then
@@ -195,9 +215,40 @@ contains
        nDim = 3
        n_D(0:3) = shape(VarIn_IIIV)
        n_D = cshift(n_D, -1)        ! shift nVar/n_D(3) to n_D(0)
+    elseif(present(Var4In_I))then
+       nDim = 1
+       n_D(1:1) = shape(Var4In_I)
+    elseif(present(Var4In_II)) then
+       nDim = 2
+       n_D(1:2) = shape(Var4In_II)
+    elseif(present(Var4In_III)) then
+       nDim = 3
+       n_D(1:3) = shape(Var4In_III)
+    elseif(present(Var4In_VI))then
+       nDim = 1
+       n_D(0:1) = shape(Var4In_VI)
+    elseif(present(Var4In_VII))then
+       nDim = 2
+       n_D(0:2) = shape(Var4In_VII)
+    elseif(present(Var4In_VIII))then
+       nDim = 3
+       n_D(0:3) = shape(Var4In_VIII)
+       ! For IV, IIV, IIIV types
+    elseif(present(Var4In_IV))then
+       nDim = 1
+       n_D(0:1) = shape(Var4In_IV)
+       n_D(0:1) = cshift(n_D(0:1), -1)   ! shift nVar/n_D(1) to n_D(0)
+    elseif(present(Var4In_IIV))then
+       nDim = 2
+       n_D(0:2) = shape(Var4In_IIV)
+       n_D(0:2) = cshift(n_D(0:2), -1)   ! shift nVar/n_D(2) to n_D(0)
+    elseif(present(Var4In_IIIV))then
+       nDim = 3
+       n_D(0:3) = shape(Var4In_IIIV)
+       n_D = cshift(n_D, -1)        ! shift nVar/n_D(3) to n_D(0)
     else
        call CON_stop(NameSub // &
-            ': none of the VarIn_* variables are present')
+            ': none of the VarIn_* or Var4In_* variables are present')
     endif
     ! Extract information
     nVar = n_D(0)
@@ -326,13 +377,31 @@ contains
              elseif(present(VarIn_VII)) then
                 VarHdf5_CBV(i,j,1,iBlock,1:nVar) = VarIn_VII(1:nVar,iG,jG)
              elseif(present(VarIn_VIII)) then
-                VarHdf5_CBV(i,j,k,iBlock,1:nVar)= VarIn_VIII(1:nVar,iG,jG,kG)
+                VarHdf5_CBV(i,j,k,iBlock,1:nVar) = VarIn_VIII(1:nVar,iG,jG,kG)
              elseif(present(VarIn_IV)) then
                 VarHdf5_CBV(i,1,1,iBlock,1:nVar) = VarIn_IV(iG,1:nVar)
              elseif(present(VarIn_IIV)) then
                 VarHdf5_CBV(i,j,1,iBlock,1:nVar) = VarIn_IIV(iG,jG,1:nVar)
              elseif(present(VarIn_IIIV)) then
-                VarHdf5_CBV(i,j,k,iBlock,1:nVar)= VarIn_IIIV(iG,jG,kG,1:nVar)
+                VarHdf5_CBV(i,j,k,iBlock,1:nVar) = VarIn_IIIV(iG,jG,kG,1:nVar)
+             elseif(present(Var4In_I)) then
+                VarHdf5_CBV(i,1,1,iBlock,1)      = Var4In_I(iG)
+             elseif(present(Var4In_II)) then
+                VarHdf5_CBV(i,j,1,iBlock,1)      = Var4In_II(iG,jG)
+             elseif(present(Var4In_III)) then
+                VarHdf5_CBV(i,j,k,iBlock,1)      = Var4In_III(iG,jG,kG)
+             elseif(present(Var4In_VI)) then
+                VarHdf5_CBV(i,1,1,iBlock,1:nVar) = Var4In_VI(1:nVar,iG)
+             elseif(present(Var4In_VII)) then
+                VarHdf5_CBV(i,j,1,iBlock,1:nVar) = Var4In_VII(1:nVar,iG,jG)
+             elseif(present(Var4In_VIII)) then
+                VarHdf5_CBV(i,j,k,iBlock,1:nVar) = Var4In_VIII(1:nVar,iG,jG,kG)
+             elseif(present(Var4In_IV)) then
+                VarHdf5_CBV(i,1,1,iBlock,1:nVar) = Var4In_IV(iG,1:nVar)
+             elseif(present(Var4In_IIV)) then
+                VarHdf5_CBV(i,j,1,iBlock,1:nVar) = Var4In_IIV(iG,jG,1:nVar)
+             elseif(present(Var4In_IIIV)) then
+                VarHdf5_CBV(i,j,k,iBlock,1:nVar) = Var4In_IIIV(iG,jG,kG,1:nVar)
              endif
           end do; end do; end do;
           do n = 1, nDim
@@ -359,8 +428,12 @@ contains
 
        end do; end do; end do;
     else
-       allocate(Coord_D(nDim), Var_V(nVar))
-       allocate(Coord_ID(n1*n2*n3,nDim), Var_IV(n1*n2*n3,nVar))
+       allocate(Coord_ID(n1*n2*n3,nDim))
+       if(UseReal4)then
+          allocate(Var4_IV(n1*n2*n3,nVar))
+       else
+          allocate(Var_IV(n1*n2*n3,nVar))
+       end if
        ! Fill in the Coord_ID coordinate array using the available information
        do iDim = 1, nDim
           n = 0
@@ -387,8 +460,12 @@ contains
        if(any(Coord_ID == huge(1.0))) call CON_stop(NameSub // &
             ' coordinates were not defined')
 
-       ! Fill in the Var_IV variable array using the available information
-       Var_IV = huge(1.0)
+       ! Fill in the Var_IV/Var4_IV variable array using the available information
+       if(UseReal4)then
+          Var4_IV = huge(1.0_Real4_)
+       else
+          Var_IV = huge(1.0)
+       end if
        do iVar = 1, nVar
           n = 0
           do k = 1, n3; do j = 1, n2; do i = 1,n1
@@ -402,12 +479,26 @@ contains
              if(present(VarIn_IV))   Var_IV(n,iVar) = VarIn_IV(i,iVar)
              if(present(VarIn_IIV))  Var_IV(n,iVar) = VarIn_IIV(i,j,iVar)
              if(present(VarIn_IIIV)) Var_IV(n,iVar) = VarIn_IIIV(i,j,k,iVar)
+             if(present(Var4In_I))    Var4_IV(n,iVar) = Var4In_I(i)
+             if(present(Var4In_II))   Var4_IV(n,iVar) = Var4In_II(i,j)
+             if(present(Var4In_III))  Var4_IV(n,iVar) = Var4In_III(i,j,k)
+             if(present(Var4In_VI))   Var4_IV(n,iVar) = Var4In_VI(iVar,i)
+             if(present(Var4In_VII))  Var4_IV(n,iVar) = Var4In_VII(iVar,i,j)
+             if(present(Var4In_VIII)) Var4_IV(n,iVar) = Var4In_VIII(iVar,i,j,k)
+             if(present(Var4In_IV))   Var4_IV(n,iVar) = Var4In_IV(i,iVar)
+             if(present(Var4In_IIV))  Var4_IV(n,iVar) = Var4In_IIV(i,j,iVar)
+             if(present(Var4In_IIIV)) Var4_IV(n,iVar) = Var4In_IIIV(i,j,k,iVar)
           end do; end do; end do;
        end do
 
        ! Check if all variables were set
-       if(any(Var_IV == huge(1.0))) call CON_stop(NameSub // &
-            ' variables were not defined')
+       if(UseReal4)then
+          if(any(Var4_IV == huge(1.0_Real4_))) call CON_stop(NameSub // &
+               ' variables were not defined')
+       else
+          if(any(Var_IV == huge(1.0))) call CON_stop(NameSub // &
+               ' variables were not defined')
+       end if
     end if
 
     select case(TypeFile)
@@ -462,8 +553,11 @@ contains
           if(n2 > 1)write(UnitTmp_, "(i6)", ADVANCE="NO") j
           if(n1 > 1)write(UnitTmp_, "(i8)", ADVANCE="NO") i
           n = n + 1
-          Coord_D = Coord_ID(n,:); Var_V = Var_IV(n,:)
-          write(UnitTmp_, StringFormat) Coord_D, Var_V
+          if(UseReal4)then
+             write(UnitTmp_, StringFormat) Coord_ID(n,:), Var4_IV(n,:)
+          else
+             write(UnitTmp_, StringFormat) Coord_ID(n,:), Var_IV(n,:)
+          end if
        end do; end do; end do
 
        call close_file
@@ -483,8 +577,11 @@ contains
        n = 0
        do k = 1, n3; do j = 1, n2; do i = 1, n1
           n = n + 1
-          Coord_D = Coord_ID(n,:); Var_V = Var_IV(n,:)
-          write(UnitTmp_, StringFormat) Coord_D, Var_V
+          if(UseReal4)then
+             write(UnitTmp_, StringFormat) Coord_ID(n,:), Var4_IV(n,:)
+          else
+             write(UnitTmp_, StringFormat) Coord_ID(n,:), Var_IV(n,:)
+          end if
        end do; end do; end do
        call close_file
     case('real8')
@@ -498,9 +595,18 @@ contains
        write(UnitTmp_) Coord_ID
        ! write out variables 1 by 1 to avoid segmentation fault
        ! for very large Var_IV array
-       do iVar = 1, nVar
-          write(UnitTmp_) Var_IV(:,iVar)
-       end do
+       if(UseReal4)then
+          allocate(Var_I(n1*n2*n3))
+          do iVar = 1, nVar
+             Var_I = Var4_IV(:,iVar) ! convert to default precision
+             write(UnitTmp_) Var_I
+          end do
+          deallocate(Var_I)
+       else
+          do iVar = 1, nVar
+             write(UnitTmp_) Var_IV(:,iVar)
+          end do
+       end if
        call close_file
     case('real4')
        call open_file(FILE=NameFile, FORM='unformatted', &
@@ -521,12 +627,18 @@ contains
        Coord4_ID = Coord_ID
        write(UnitTmp_) Coord4_ID
        deallocate(Coord4_ID)
-       allocate(Var4_I(n1*n2*n3))
-       do iVar = 1, nVar
-          Var4_I = Var_IV(:,iVar)
-          write(UnitTmp_) Var4_I
-       end do
-       deallocate(Var4_I)
+       if(UseReal4)then
+          do iVar = 1, nVar
+             write(UnitTmp_) Var4_IV(:,iVar)
+          end do
+       else
+          allocate(Var4_I(n1*n2*n3))
+          do iVar = 1, nVar
+             Var4_I = Var_IV(:,iVar) ! convert to single precision
+             write(UnitTmp_) Var4_I
+          end do
+          deallocate(Var4_I)
+       end if
        call close_file
     case default
        call CON_stop(NameSub // ' unknown TypeFile =' // trim(TypeFile))
@@ -534,9 +646,10 @@ contains
 
     if(allocated(Param_I))   deallocate(Param_I)
     if(allocated(NameVar_I)) deallocate(NameVar_I)
-    if(allocated(Coord_ID)) &
-       deallocate(Coord_ID,Var_IV,Coord_D,Var_V)
-
+    if(allocated(Coord_ID))  deallocate(Coord_ID)
+    if(allocated(Var_IV))    deallocate(Var_IV)
+    if(allocated(Var4_IV))   deallocate(Var4_IV)
+    
   end subroutine save_plot_file
   !============================================================================
 
@@ -553,9 +666,12 @@ contains
        VarOut_I,  VarOut_II,  VarOut_III,  VarOut_I4,  VarOut_I5,           &
        VarOut_VI, VarOut_VII, VarOut_VIII, VarOut_VI4, VarOut_VI5,          &
        VarOut_IV, VarOut_IIV, VarOut_IIIV, VarOut_I4V, VarOut_I5V,          &
+       Var4Out_I,  Var4Out_II,  Var4Out_III,  Var4Out_I4,  Var4Out_I5,      &
+       Var4Out_VI, Var4Out_VII, Var4Out_VIII, Var4Out_VI4, Var4Out_VI5,     &
+       Var4Out_IV, Var4Out_IIV, Var4Out_IIIV, Var4Out_I4V, Var4Out_I5V,     &
        iErrorOut)
 
-    ! Both VarOut_VI and CoordOut_DI can be used in 1D, 2D, and 3D
+    ! VarOut_VI, Var4Out_VI and CoordOut_DI can be used in 1D, 2D, and 3D
 
     character(len=*),           intent(in) :: NameFile
     integer,          optional, intent(in) :: iUnitIn
@@ -600,7 +716,25 @@ contains
     real,             optional, intent(out):: VarOut_IIIV(:,:,:,:)        ! 3D
     real,             optional, intent(out):: VarOut_I4V(:,:,:,:,:)       ! 4D
     real,             optional, intent(out):: VarOut_I5V(:,:,:,:,:,:)     ! 5D
+    real(Real4_),     optional, intent(out):: Var4Out_I(:) ! Real4 variable in 1D
+    real(Real4_),     optional, intent(out):: Var4Out_II(:,:)             ! 2D
+    real(Real4_),     optional, intent(out):: Var4Out_III(:,:,:)          ! 3D
+    real(Real4_),     optional, intent(out):: Var4Out_I4(:,:,:,:)         ! 4D
+    real(Real4_),     optional, intent(out):: Var4Out_I5(:,:,:,:,:)       ! 5D
+    real(Real4_),     optional, intent(out):: Var4Out_VI(:,:) ! Real4 variables in 1D
+    real(Real4_),     optional, intent(out):: Var4Out_VII(:,:,:)          ! 2D
+    real(Real4_),     optional, intent(out):: Var4Out_VIII(:,:,:,:)       ! 3D
+    real(Real4_),     optional, intent(out):: Var4Out_VI4(:,:,:,:,:)      ! 4D
+    real(Real4_),     optional, intent(out):: Var4Out_VI5(:,:,:,:,:,:)    ! 5D
+    real(Real4_),     optional, intent(out):: Var4Out_IV(:,:)             ! 1D
+    real(Real4_),     optional, intent(out):: Var4Out_IIV(:,:,:)          ! 2D
+    real(Real4_),     optional, intent(out):: Var4Out_IIIV(:,:,:,:)       ! 3D
+    real(Real4_),     optional, intent(out):: Var4Out_I4V(:,:,:,:,:)      ! 4D
+    real(Real4_),     optional, intent(out):: Var4Out_I5V(:,:,:,:,:,:)    ! 5D
     integer,          optional, intent(out):: iErrorOut            ! I/O error
+
+    ! True if Var4Out* is present (single precision)
+    logical:: UseReal4
 
     integer            :: iUnit
     character(len=20)  :: TypeFile
@@ -612,8 +746,8 @@ contains
     real               :: Time, Coord
     real(Real4_)       :: Time4
     logical            :: IsCartesian
-    real(Real4_), allocatable:: Param4_I(:), Coord4_ID(:,:), Var4_IV(:,:)
-    real,         allocatable:: Param_I(:),  Coord_ID(:,:),  Var_IV(:,:)
+    real(Real4_), allocatable:: Param4_I(:), Coord4_ID(:,:), Var4_I(:), Var4_IV(:,:)
+    real,         allocatable:: Param_I(:),  Coord_ID(:,:),  Var_I(:), Var_IV(:,:)
     real    :: TecIndex_I(MaxDim)
     integer :: nTecIndex
     integer :: i, j, k, l, m, iDim, iVar, n
@@ -634,15 +768,27 @@ contains
     if(DoReadHeader) call read_header
     DoReadHeader = .false.
 
+    ! Check for single precision output
+    UseReal4= present(Var4Out_I)   .or. present(Var4Out_II) &
+         .or. present(Var4Out_III) .or. present(Var4Out_I4) &
+         .or. present(Var4Out_I5) &
+         .or. present(Var4Out_VI)  .or. present(Var4Out_VII) &
+         .or. present(Var4Out_VIII).or. present(Var4Out_VI4) &
+         .or. present(Var4Out_VI5) &
+         .or. present(Var4Out_IV)  .or. present(Var4Out_IIV) &
+         .or. present(Var4Out_IIIV).or. present(Var4Out_I4V) &
+         .or. present(Var4Out_I5V)
+
     ! No data is read. Leave file open !
-    if(.not. (present(VarOut_I) .or. present(VarOut_II) &
+    if(.not. ( UseReal4 &
+         .or. present(VarOut_I)   .or. present(VarOut_II) &
          .or. present(VarOut_III) .or. present(VarOut_I4) &
          .or. present(VarOut_I5) &
-         .or. present(VarOut_VI) .or. present(VarOut_VII) &
-         .or. present(VarOut_VIII) .or. present(VarOut_VI4) &
+         .or. present(VarOut_VI)  .or. present(VarOut_VII) &
+         .or. present(VarOut_VIII).or. present(VarOut_VI4) &
          .or. present(VarOut_VI5) &
-         .or. present(VarOut_IV) .or. present(VarOut_IIV) &
-         .or. present(VarOut_IIIV) .or. present(VarOut_I4V) &
+         .or. present(VarOut_IV)  .or. present(VarOut_IIV) &
+         .or. present(VarOut_IIIV).or. present(VarOut_I4V) &
          .or. present(VarOut_I5V))) RETURN
 
     if((present(VarOut_I) .or. present(VarOut_II) .or. present(VarOut_III) &
@@ -656,38 +802,77 @@ contains
     DoReadHeader = .true.
 
     ! Read coordinates and variables into suitable 2D arrays
-    allocate(Coord_ID(n1*n2*n3*n4*n5, nDim), Var_IV(n1*n2*n3*n4*n5, nVar))
+    allocate(Coord_ID(n1*n2*n3*n4*n5,nDim))
+    if(UseReal4)then
+       allocate(Var4_IV(n1*n2*n3*n4*n5,nVar))
+    else
+       allocate(Var_IV(n1*n2*n3*n4*n5,nVar))
+    end if
     select case(TypeFile)
     case('tec')
        nTecIndex = count(n_D>1, 1)
        n = 0
-       do m = 1, n5; do l = 1, n4; do k = 1, n3; do j = 1, n2; do i = 1, n1
-          n = n + 1
-          read(iUnit, *, ERR=77, END=77) &
-               TecIndex_I(1:nTecIndex), Coord_ID(n, :), Var_IV(n, :)
-       end do; end do; end do; end do; end do
+       if(UseReal4)then
+          do m = 1, n5; do l = 1, n4; do k = 1, n3; do j = 1, n2; do i = 1, n1
+             n = n + 1
+             read(iUnit, *, ERR=77, END=77) &
+                  TecIndex_I(1:nTecIndex), Coord_ID(n,:), Var4_IV(n,:)
+          end do; end do; end do; end do; end do
+       else
+          do m = 1, n5; do l = 1, n4; do k = 1, n3; do j = 1, n2; do i = 1, n1
+             n = n + 1
+             read(iUnit, *, ERR=77, END=77) &
+                  TecIndex_I(1:nTecIndex), Coord_ID(n,:), Var_IV(n,:)
+          end do; end do; end do; end do; end do
+       end if
+
     case('ascii', 'formatted')
        n = 0
-       do m = 1, n5; do l = 1, n4; do k = 1, n3; do j = 1, n2; do i = 1, n1
-          n = n + 1
-          read(iUnit, *, ERR=77, END=77) Coord_ID(n, :), Var_IV(n, :)
-       end do; end do; end do; end do; end do
+       if(UseReal4)then
+          do m = 1, n5; do l = 1, n4; do k = 1, n3; do j = 1, n2; do i = 1, n1
+             n = n + 1
+             read(iUnit, *, ERR=77, END=77) Coord_ID(n,:), Var4_IV(n,:)
+          end do; end do; end do; end do; end do
+       else
+          do m = 1, n5; do l = 1, n4; do k = 1, n3; do j = 1, n2; do i = 1, n1
+             n = n + 1
+             read(iUnit, *, ERR=77, END=77) Coord_ID(n,:), Var_IV(n,:)
+          end do; end do; end do; end do; end do
+       end if
 
     case('real8')
        read(iUnit, ERR=77, END=77) Coord_ID
-       do iVar = 1, nVar
-          read(iUnit, ERR=77, END=77) Var_IV(:, iVar)
-       end do
+       if(UseReal4)then
+          allocate(Var_I(n1*n2*n3*n4*n5))
+          do iVar = 1, nVar
+             read(iUnit, ERR=77, END=77) Var_I
+             Var4_IV(:,iVar) = Var_I ! convert to single precision
+          end do
+          deallocate(Var_I)
+       else
+          do iVar = 1, nVar
+             read(iUnit, ERR=77, END=77) Var_IV(:,iVar)
+          end do
+       end if
 
     case('real4')
-       allocate(Coord4_ID(n1*n2*n3*n4*n5, nDim), Var4_IV(n1*n2*n3*n4*n5, nVar))
+       allocate(Coord4_ID(n1*n2*n3*n4*n5,nDim))
        read(iUnit, ERR=77, END=77) Coord4_ID
-       Coord_ID = Coord4_ID
-       do iVar = 1, nVar
-          read(iUnit, ERR=77, END=77) Var4_IV(:, iVar)
-       end do
-       Var_IV = Var4_IV
-       deallocate(Coord4_ID, Var4_IV)
+       Coord_ID = Coord4_ID ! convert to default precision
+       deallocate(Coord4_ID)
+       if(UseReal4) then
+          do iVar = 1, nVar
+             read(iUnit, ERR=77, END=77) Var4_IV(:, iVar)
+          end do
+       else
+          allocate(Var4_I(n1*n2*n3*n4*n5))
+          do iVar = 1, nVar
+             read(iUnit, ERR=77, END=77) Var4_I
+             Var_IV(:,iVar) = Var4_I ! copy into default precision variable
+          end do
+          deallocate(Var4_I)
+       end if
+
     end select
 
     ! if iUnitIn is passed, keep file connected
@@ -725,8 +910,8 @@ contains
                Coord5Out_I(m) = Coord
        end do; end do; end do; end do; end do
     end do
-    ! Reduce nVar, if some variables are not needed
 
+    ! Reduce nVar, if some variables are not needed
     if(present(VarOut_VI))   nVar = min(nVar,size(VarOut_VI  ,1))
     if(present(VarOut_VII))  nVar = min(nVar,size(VarOut_VII ,1))
     if(present(VarOut_VIII)) nVar = min(nVar,size(VarOut_VIII,1))
@@ -737,6 +922,18 @@ contains
     if(present(VarOut_IIIV)) nVar = min(nVar,size(VarOut_IIIV,4))
     if(present(VarOut_I4V))  nVar = min(nVar,size(VarOut_I4V, 5))
     if(present(VarOut_I5V))  nVar = min(nVar,size(VarOut_I5V, 6))
+
+    if(present(Var4Out_VI))   nVar = min(nVar,size(Var4Out_VI  ,1))
+    if(present(Var4Out_VII))  nVar = min(nVar,size(Var4Out_VII ,1))
+    if(present(Var4Out_VIII)) nVar = min(nVar,size(Var4Out_VIII,1))
+    if(present(Var4Out_VI4))  nVar = min(nVar,size(Var4Out_VI4, 1))
+    if(present(Var4Out_VI5))  nVar = min(nVar,size(Var4Out_VI5, 1))
+    if(present(Var4Out_IV))   nVar = min(nVar,size(Var4Out_IV  ,2))
+    if(present(Var4Out_IIV))  nVar = min(nVar,size(Var4Out_IIV ,3))
+    if(present(Var4Out_IIIV)) nVar = min(nVar,size(Var4Out_IIIV,4))
+    if(present(Var4Out_I4V))  nVar = min(nVar,size(Var4Out_I4V, 5))
+    if(present(Var4Out_I5V))  nVar = min(nVar,size(Var4Out_I5V, 6))
+
     ! Fill in output variable arrays
     do iVar = 1, nVar
        n = 0
@@ -758,10 +955,28 @@ contains
           if(present(VarOut_I4V))  VarOut_I4V(i,j,k,l,iVar)   = Var_IV(n,iVar)
           if(present(VarOut_I5V))  VarOut_I5V(i,j,k,l,m,iVar) = Var_IV(n,iVar)
 
+          if(present(Var4Out_I))    Var4Out_I(n)                = Var4_IV(n,iVar)
+          if(present(Var4Out_II))   Var4Out_II(i,j)             = Var4_IV(n,iVar)
+          if(present(Var4Out_III))  Var4Out_III(i,j,k)          = Var4_IV(n,iVar)
+          if(present(Var4Out_I4))   Var4Out_I4(i,j,k,l)         = Var4_IV(n,iVar)
+          if(present(Var4Out_I5))   Var4Out_I5(i,j,k,l,m)       = Var4_IV(n,iVar)
+          if(present(Var4Out_VI))   Var4Out_VI(iVar,n)          = Var4_IV(n,iVar)
+          if(present(Var4Out_VII))  Var4Out_VII(iVar,i,j)       = Var4_IV(n,iVar)
+          if(present(Var4Out_VIII)) Var4Out_VIII(iVar,i,j,k)    = Var4_IV(n,iVar)
+          if(present(Var4Out_VI4))  Var4Out_VI4(iVar,i,j,k,l)   = Var4_IV(n,iVar)
+          if(present(Var4Out_VI5))  Var4Out_VI5(iVar,i,j,k,l,m) = Var4_IV(n,iVar)
+          if(present(Var4Out_IV))   Var4Out_IV(i,iVar)          = Var4_IV(n,iVar)
+          if(present(Var4Out_IIV))  Var4Out_IIV(i,j,iVar)       = Var4_IV(n,iVar)
+          if(present(Var4Out_IIIV)) Var4Out_IIIV(i,j,k,iVar)    = Var4_IV(n,iVar)
+          if(present(Var4Out_I4V))  Var4Out_I4V(i,j,k,l,iVar)   = Var4_IV(n,iVar)
+          if(present(Var4Out_I5V))  Var4Out_I5V(i,j,k,l,m,iVar) = Var4_IV(n,iVar)
+
        end do; end do; end do; end do; end do
     end do
 
-    deallocate(Coord_ID, Var_IV)
+    deallocate(Coord_ID)
+    if(allocated(Var_IV))  deallocate(Var_IV)
+    if(allocated(Var4_IV)) deallocate(Var4_IV)
 
     RETURN
 
@@ -770,8 +985,10 @@ contains
 
     iErrorOut = 3
     close(iUnit)
-    if(allocated(Coord_ID))  deallocate(Coord_ID, Var_IV)
-    if(allocated(Coord4_ID)) deallocate(Coord4_ID, Var4_IV)
+    if(allocated(Coord_ID))  deallocate(Coord_ID)
+    if(allocated(Coord4_ID)) deallocate(Coord4_ID)
+    if(allocated(Var_IV))    deallocate(Var_IV)
+    if(allocated(Var4_IV))   deallocate(Var4_IV)
 
   contains
     !==========================================================================
