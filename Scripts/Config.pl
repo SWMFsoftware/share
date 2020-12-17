@@ -190,8 +190,8 @@ foreach (@Arguments){
     if(/^-nompi$/i)           {$NewMpi="no";                    next};
     if(/^-openmp$/i)          {$NewOpenMp="yes";                next};
     if(/^-noopenmp$/i)        {$NewOpenMp="no";                 next};
-	if(/^-acc$/i)             {$NewOpenACC="yes";               next};
-	if(/^-noacc$/i)           {$NewOpenACC="no";                next};
+    if(/^-(open)?acc$/i)      {$NewOpenACC="yes";               next};
+    if(/^-no(open)?acc$/i)    {$NewOpenACC="no";                next};
     if(/^-debug$/i)           {$NewDebug="yes";                 next};
     if(/^-nodebug$/i)         {$NewDebug="no";                  next};
     if(/^-hdf5$/i)            {$NewHdf5="yes";                  next};
@@ -405,7 +405,7 @@ sub get_settings_{
 
     $Debug     = "no";
     $OpenMp    = "no";
-	$OpenACC   = "no";
+    $OpenACC   = "no";
     $Mpi       = "yes";
     $Hdf5      = "no";
     $Hypre     = "no";
@@ -1296,6 +1296,8 @@ Compilation:
 -double         set precision to double in Makefile.conf and make clean
 -debug          select debug options for the compiler in Makefile.conf
 -nodebug        do not use debug options for the compiler in Makefile.conf
+-openacc        compile and link with OpenACC flag
+-noopenacc      compile and link without OpenACC flag
 -openmp         compile and link with OpenMP flag
 -noopenmp       compile and link without the OpenMP flag
 -mpi            compile and link with the MPI library for parallel execution
