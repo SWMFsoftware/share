@@ -1252,11 +1252,11 @@ This script edits the appropriate Makefile-s, copies files and executes
 shell commands. The script can also show the current settings.
 
 Usage: Config.pl [-help] [-verbose] [-dryrun] [-gitinfo] [-show] [-compiler] 
-                 [-install[=s|=c] [-compiler=FC[,CC] [-nompi]]
-                 [-uninstall]
-                 [-single|-double] [-debug|-nodebug] [-mpi|-nompi]
-                 [-hdf5|-nohdf5] [-hypre|-nohypre] [-spice=SPICELIB|-nospice]
-		 [-amrex|-noamrex]
+                 [[-install[=s|=c] [-compiler=FC[,CC] [-nompi]] | -uninstall]
+                 [-single|-double] [-debug|-nodebug] 
+		 [-mpi|-nompi] [-openmp|-noopenmp] [-openacc|-noopenacc]
+                 [-hdf5|-nohdf5] [-hypre|-nohypre] [-amrex|-noamrex] 
+		 [-spice=SPICELIB|-nospice]
                  [-O0|-O1|-O2|-O3|-O4|-O5]
 
 If called without arguments, the current settings are shown.
@@ -1296,20 +1296,20 @@ Compilation:
 -double         set precision to double in Makefile.conf and make clean
 -debug          select debug options for the compiler in Makefile.conf
 -nodebug        do not use debug options for the compiler in Makefile.conf
+-mpi            compile and link with the MPI library for parallel execution
+-nompi          compile and link with the NOMPI library for serial execution
 -openacc        compile and link with OpenACC flag
 -noopenacc      compile and link without OpenACC flag
 -openmp         compile and link with OpenMP flag
 -noopenmp       compile and link without the OpenMP flag
--mpi            compile and link with the MPI library for parallel execution
--nompi          compile and link with the NOMPI library for serial execution
+-amrex          link with AMREX library 
+-noamrex        do not link with AMREX library 
 -hdf5           compile and link with HDF5 library for HDF5 plot output
 -nohdf5         do not compile with HDF5 library
 -hypre          link with HYPRE library for linear solver
 -nohypre        do not link with HYPRE library
 -spice=SPICELIB link with SPICE library SPICELIB for coordinate transforms
 -nospice        do not link with SPICE library
--amrex          link with AMREX library 
--noamrex        do not link with AMREX library 
 -O0             set all optimization levels to -O0
 -O1             set optimization levels to at most -O1
 -O2             set optimization levels to at most -O2
