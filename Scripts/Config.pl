@@ -141,6 +141,7 @@ my $NewOptimize;
 my $NewDebug;
 my $NewMpi;
 my $NewOpenMp;
+my $NewOpenACC;
 my $NewHypre;
 my $NewAmrex;
 my $NewFishpak;
@@ -148,6 +149,7 @@ my $NewSpice;
 my $IsCompilerSet;
 my $Debug;
 my $OpenMp;
+my $OpenACC;
 my $Mpi;
 my $Fcompiler;
 my $Ccompiler;
@@ -188,6 +190,8 @@ foreach (@Arguments){
     if(/^-nompi$/i)           {$NewMpi="no";                    next};
     if(/^-openmp$/i)          {$NewOpenMp="yes";                next};
     if(/^-noopenmp$/i)        {$NewOpenMp="no";                 next};
+	if(/^-acc$/i)             {$NewOpenACC="yes";               next};
+	if(/^-noacc$/i)           {$NewOpenACC="no";                next};
     if(/^-debug$/i)           {$NewDebug="yes";                 next};
     if(/^-nodebug$/i)         {$NewDebug="no";                  next};
     if(/^-hdf5$/i)            {$NewHdf5="yes";                  next};
@@ -333,6 +337,9 @@ if($Compiler eq "nagfor" and $Debug eq "yes" and
 # Switch on or off the OPENMPFLAG
 &set_openmp_ if $NewOpenMp and $NewOpenMp ne $OpenMp;
 
+# Switch on or off the OPENACCFLAG
+&set_openacc_ if $NewOpenACC and $NewOpenACC ne $OpenACC;
+
 # Link with HDF5 library if required
 &set_hdf5_ 
     if ($Install and not $IsComponent) or ($NewHdf5 and $NewHdf5 ne $Hdf5);
@@ -398,6 +405,7 @@ sub get_settings_{
 
     $Debug     = "no";
     $OpenMp    = "no";
+	$OpenACC   = "no";
     $Mpi       = "yes";
     $Hdf5      = "no";
     $Hypre     = "no";
@@ -427,6 +435,7 @@ sub get_settings_{
 	  $Precision = lc($1) if /^\s*PRECISION\s*=.*(SINGLE|DOUBLE)PREC/;
           $Debug = "yes" if /^\s*DEBUG\s*=\s*\$\{DEBUGFLAG\}/;
 	  $OpenMp = "yes" if /^OPENMPFLAG/;
+	  $OpenACC = "yes" if /^ACCFLAG/;
 	  $Mpi   = "no"  if /^\s*MPILIB\s*=.*\-lNOMPI/;
 	  $Hdf5  = "yes" if /^\# HDF5=YES/;
 	  $Hypre = "yes" if /^\s*HYPRELIB/;
@@ -481,6 +490,7 @@ The default precision for reals is $Precision precision.
 The maximum optimization level is $Optimize
 Debugging flags:   $Debug
 OpenMP flags:      $OpenMp
+OpenACC flags:     $OpenACC
 Linked with MPI:   $Mpi
 Linked with HDF5:  $Hdf5
 Linked with HYPRE: $Hypre
@@ -673,6 +683,30 @@ sub set_openmp_{
 	}
     }
 }
+
+##############################################################################
+
+sub set_openacc_{
+
+    # Set the OpenACC compilation flags in $MakefileConf
+
+    # Clean the code so it gets recompiled with consistent openacc flag
+    &shell_command('make clean');
+
+    # OpenACC will be NewOpenACC after changes
+    $OpenACC = $NewOpenACC;
+
+    print "Setting OpenACC flags to '$OpenACC' in $MakefileConf\n";
+    if(not $DryRun){
+	@ARGV = ($MakefileConf);
+	while(<>){
+	    s/^#(ACCFLAG)/$1/ if $OpenACC eq "yes";
+	    s/^(ACCFLAG)/#$1/ if $OpenACC eq "no";
+	    print;
+	}
+    }
+}
+
 ##############################################################################
 
 sub set_mpi_{
