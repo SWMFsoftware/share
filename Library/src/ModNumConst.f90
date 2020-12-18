@@ -1,13 +1,14 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-Module ModNumConst
+module ModNumConst
   use ModKind
   implicit none
 
   real, parameter:: &
-       cZero      =  0.0, & 
-       cOne       =  1.0, & 
-       cHalf      =  0.5, & 
+       cZero      =  0.0, &
+       cOne       =  1.0, &
+       cHalf      =  0.5, &
        cTiny      =  1.0E-6,                                &
        cHuge      =  1.0E18,                                &
        cSqrtTwo   =  1.4142135623730951,                    &
@@ -26,17 +27,18 @@ Module ModNumConst
 
   ! integer unit matrix
   integer, parameter, dimension(3,3) :: i_DD = reshape( &
-       (/1,0,0, 0,1,0, 0,0,1/), (/3,3/))
+       [1,0,0, 0,1,0, 0,0,1], [3,3])
 
   ! real unit matrix (also Kronecker delta)
   real, parameter, dimension(3,3) :: cUnit_DD = reshape( &
-       (/1.0,0.0,0.0, 0.0,1.0,0.0, 0.0,0.0,1.0/),&
-       (/3,3/))
+       [1.0,0.0,0.0, 0.0,1.0,0.0, 0.0,0.0,1.0],&
+       [3,3])
 
   ! Levi-Civita tensor
-  integer, parameter :: iLeviCivita_III(3,3,3) = reshape( (/ &
+  integer, parameter :: iLeviCivita_III(3,3,3) = reshape( [ &
        0, 0, 0,   0, 0,-1,  0, 1, 0,   &
        0, 0, 1,   0, 0, 0, -1, 0, 0,   &
-       0,-1, 0,   1, 0, 0,  0, 0, 0 /), (/3,3,3/) )
-  
+       0,-1, 0,   1, 0, 0,  0, 0, 0 ], [3,3,3] )
+
 end module ModNumConst
+!==============================================================================
