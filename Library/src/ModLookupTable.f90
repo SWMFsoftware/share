@@ -17,9 +17,10 @@ module ModLookupTable
 
   use ModReadParam,   ONLY: read_var
   use ModPlotFile,    ONLY: read_plot_file, save_plot_file
-  use ModInterpolate, ONLY: interpolate_vector, find_cell
+  use ModInterpolate, ONLY: interpolate_vector, interpolate_vector4, find_cell
   use ModUtilities,   ONLY: split_string, lower_case, CON_stop
   use ModIoUnit,      ONLY: UnitTmp_
+  use ModKind,        ONLY: Real4_
   use ModMpi
 
   implicit none
@@ -45,7 +46,7 @@ module ModLookupTable
      character(len=100):: NameTable        ! unique name for identification
      character(len=4)  :: NameCommand      ! command: load, make, save
      character(len=100):: NameFile         ! file name containing the table
-     character(len=10) :: TypeFile         ! file type (ascii, real4, real8)
+     character(len=10) :: TypeFile='real4' ! file type (ascii, real4, real8)
      character(len=500):: StringDescription! description of table
      character(len=500):: NameVar          ! name of indexes and values
      integer:: nIndex                      ! number of function arguments
@@ -55,7 +56,8 @@ module ModLookupTable
      real   , allocatable:: IndexMax_I(:)  ! maximum values for indexes
      real   , allocatable:: dIndex_I(:)    ! increment of indexes
      logical, allocatable:: IsLogIndex_I(:)! true if arguments are logarithmic
-     real, allocatable :: Value_VC(:,:,:,:,:,:)! array of actual values
+     real,         allocatable :: Value_VC(:,:,:,:,:,:) ! array of values
+     real(Real4_), allocatable:: Value4_VC(:,:,:,:,:,:) ! real4 values
      integer:: nParam                      ! number of extra parameters
      real, allocatable :: Param_I(:)       ! parameter values
      logical, allocatable :: IsUniform_I(:)! false if index is non-uniform
@@ -195,13 +197,12 @@ contains
     case("load", "save", "use")
        Ptr%NameFile = NameFile
        Ptr%TypeFile = TypeFile
-
     case("make")
-       ! will be done below
+       Ptr%TypeFile = TypeFile
     case default
        call CON_stop(NameSub//': unknown command='//Ptr%NameCommand)
     end select
-    
+
     if(ptr%NameCommand == "use")then
        ! Check if the file is already there or not
        open(UnitTmp_, FILE=NameFile, STATUS="old", IOSTAT=iError)
@@ -260,27 +261,46 @@ contains
        Ptr%IndexMax_I = log10(Ptr%IndexMax_I)
     end where
 
-    ! Assign values if provided.
+    ! Assign values if provided by optional arguments.
     ! Replaces the need for simplistic make_lookup_table calls.
     !  -> used for imf files in 1d
-    if(present(Value1d_VC))then
-       if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
-       allocate( &
-            Ptr%Value_VC(Ptr%nValue, Ptr%nIndex_I(1),1,1,1,1))
-       Ptr%Value_VC(:,:,1,1,1,1) = Value1d_VC
-    elseif(present(Value2d_VC))then
-       if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
-       allocate( &
-            Ptr%Value_VC(Ptr%nValue, Ptr%nIndex_I(1), &
-            Ptr%nIndex_I(2), 1, 1, 1))
-       Ptr%Value_VC(:,:,:,1,1,1) = Value2d_VC
-    elseif(present(Value3d_VC))then
-       if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
-       allocate( &
-            Ptr%Value_VC(Ptr%nValue, Ptr%nIndex_I(1), &
-            Ptr%nIndex_I(2), Ptr%nIndex_I(3), 1, 1))
-       Ptr%Value_VC(:,:,:,:,1,1) = Value3d_VC
-    endif
+    if(present(Value1d_VC) .or. present(Value2d_VC) .or. present(Value3d_VC))then
+       if(allocated(Ptr%Value4_VC)) deallocate(Ptr%Value4_VC)
+       if(allocated(Ptr%Value_VC))  deallocate(Ptr%Value_VC)
+    end if
+    if(ptr%TypeFile == 'real4')then
+       if(present(Value1d_VC))then
+          allocate( &
+               Ptr%Value4_VC(Ptr%nValue, Ptr%nIndex_I(1),1,1,1,1))
+          Ptr%Value4_VC(:,:,1,1,1,1) = Value1d_VC
+       elseif(present(Value2d_VC))then
+          allocate( &
+               Ptr%Value4_VC(Ptr%nValue, Ptr%nIndex_I(1), &
+               Ptr%nIndex_I(2), 1, 1, 1))
+          Ptr%Value4_VC(:,:,:,1,1,1) = Value2d_VC
+       elseif(present(Value3d_VC))then
+          allocate( &
+               Ptr%Value4_VC(Ptr%nValue, Ptr%nIndex_I(1), &
+               Ptr%nIndex_I(2), Ptr%nIndex_I(3), 1, 1))
+          Ptr%Value4_VC(:,:,:,:,1,1) = Value3d_VC
+       endif
+    else
+       if(present(Value1d_VC))then
+          allocate( &
+               Ptr%Value_VC(Ptr%nValue, Ptr%nIndex_I(1),1,1,1,1))
+          Ptr%Value_VC(:,:,1,1,1,1) = Value1d_VC
+       elseif(present(Value2d_VC))then
+          allocate( &
+               Ptr%Value_VC(Ptr%nValue, Ptr%nIndex_I(1), &
+               Ptr%nIndex_I(2), 1, 1, 1))
+          Ptr%Value_VC(:,:,:,1,1,1) = Value2d_VC
+       elseif(present(Value3d_VC))then
+          allocate( &
+               Ptr%Value_VC(Ptr%nValue, Ptr%nIndex_I(1), &
+               Ptr%nIndex_I(2), Ptr%nIndex_I(3), 1, 1))
+          Ptr%Value_VC(:,:,:,:,1,1) = Value3d_VC
+       endif
+    end if
 
     ! Initialize uniform indices.
     Ptr%IsUniform_I = .true.
@@ -391,7 +411,7 @@ contains
                   ' to the number of files names')
              call read_var('TypeFile', TypeFile)
           case("make", "para")
-             ! will be done below
+             call read_var('TypeFile', TypeFile)
           case default
              call CON_stop(NameSub//': unknown command='//Ptr%NameCommand)
           end select
@@ -422,12 +442,13 @@ contains
 
        end if
 
-       if(NameCommand /= "para") Ptr%NameCommand = NameCommand
-
-       if(NameCommand == "load" .or. NameCommand == "save")then
-          Ptr%NameFile = NameFile_I(iTableName)
+       if(NameCommand /= "para")then
+          Ptr%NameCommand = NameCommand
           Ptr%TypeFile = TypeFile
        end if
+
+       if(NameCommand == "load" .or. NameCommand == "save") &
+            Ptr%NameFile = NameFile_I(iTableName)
 
        ! Load table on all processors
        if(NameCommand == "load") call load_lookup_table(iTable)
@@ -483,7 +504,7 @@ contains
 
     ! Tables defined by "make" are always uniform
     Ptr%IsUniform_I = .true.
-    
+
   contains
     !==========================================================================
 
@@ -592,26 +613,42 @@ contains
     call split_string(Ptr%NameVar, MaxVar, NameVar_I, nVar)
     Ptr%IsLogIndex_I = index(NameVar_I(1:Ptr%nIndex), "log") == 1
 
-    if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
     allocate( &
-         Ptr%Value_VC(Ptr%nValue,nIndex_I(1),nIndex_I(2),nIndex_I(3),&
-         nIndex_I(4),nIndex_I(5)),     &
          Ptr%Index1_I(nIndex_I(1)), &
          Ptr%Index2_I(nIndex_I(2)), &
          Ptr%Index3_I(nIndex_I(3)), &
          Ptr%Index4_I(nIndex_I(4)), &
          Ptr%Index5_I(nIndex_I(5)) )
 
-    call read_plot_file( Ptr%NameFile,   &
-         TypeFileIn    = Ptr%TypeFile,   &
-         CoordMinOut_D = Ptr%IndexMin_I, &
-         CoordMaxOut_D = Ptr%IndexMax_I, &
-         VarOut_VI5    = Ptr%Value_VC,   &
-         Coord1Out_I   = Ptr%Index1_I,   &
-         Coord2Out_I   = Ptr%Index2_I,   &
-         Coord3Out_I   = Ptr%Index3_I,   &
-         Coord4Out_I   = Ptr%Index4_I,   &
-         Coord5Out_I   = Ptr%Index5_I    )
+    if(allocated(Ptr%Value_VC))  deallocate(Ptr%Value_VC)
+    if(allocated(Ptr%Value4_VC)) deallocate(Ptr%Value4_VC)
+    if(Ptr%TypeFile == 'real4')then
+       allocate(Ptr%Value4_VC(Ptr%nValue, &
+            nIndex_I(1),nIndex_I(2),nIndex_I(3),nIndex_I(4),nIndex_I(5)))
+       call read_plot_file( Ptr%NameFile,   &
+            TypeFileIn    = Ptr%TypeFile,   &
+            CoordMinOut_D = Ptr%IndexMin_I, &
+            CoordMaxOut_D = Ptr%IndexMax_I, &
+            Var4Out_VI5   = Ptr%Value4_VC,  &
+            Coord1Out_I   = Ptr%Index1_I,   &
+            Coord2Out_I   = Ptr%Index2_I,   &
+            Coord3Out_I   = Ptr%Index3_I,   &
+            Coord4Out_I   = Ptr%Index4_I,   &
+            Coord5Out_I   = Ptr%Index5_I    )
+    else
+       allocate(Ptr%Value_VC(Ptr%nValue, &
+            nIndex_I(1),nIndex_I(2),nIndex_I(3),nIndex_I(4),nIndex_I(5)))
+       call read_plot_file( Ptr%NameFile,   &
+            TypeFileIn    = Ptr%TypeFile,   &
+            CoordMinOut_D = Ptr%IndexMin_I, &
+            CoordMaxOut_D = Ptr%IndexMax_I, &
+            VarOut_VI5    = Ptr%Value_VC,   &
+            Coord1Out_I   = Ptr%Index1_I,   &
+            Coord2Out_I   = Ptr%Index2_I,   &
+            Coord3Out_I   = Ptr%Index3_I,   &
+            Coord4Out_I   = Ptr%Index4_I,   &
+            Coord5Out_I   = Ptr%Index5_I    )
+    end if
 
     ! Calculate increments assuming uniform grid
     Ptr%dIndex_I = (Ptr%IndexMax_I - Ptr%IndexMin_I)/(Ptr%nIndex_I - 1)
@@ -688,16 +725,13 @@ contains
 
     integer:: iProc, nProc, iError
     integer:: i1, n1, nValue
-    logical:: IsLog1, IsUniform1, UseRealIndex1
+    logical:: IsLog1, IsUniform1
     real   :: Index1Min, dIndex1, Index1
     real, allocatable:: Value_VC(:,:)
     type(TableType), pointer:: Ptr
 
     character(len=*), parameter:: NameSub = 'make_lookup_table_1d'
     !--------------------------------------------------------------------------
-    UseRealIndex1 = .true.
-    if(present(UseRealIndex)) UseRealIndex1 = UseRealIndex
-
     Ptr => Table_I(iTable)
 
     if(Ptr%NameCommand /= "make" .and. Ptr%NameCommand /= "save") &
@@ -728,8 +762,9 @@ contains
          trim(Ptr%NameTable)
 
     ! Allocate Value_VC array
-    if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
-    allocate(Value_VC(nValue,n1), Ptr%Value_VC(nValue,n1,1,1,1,1))
+    if(allocated(Ptr%Value4_VC)) deallocate(Ptr%Value4_VC)
+    if(allocated(Ptr%Value_VC))  deallocate(Ptr%Value_VC)
+    allocate(Value_VC(nValue,n1))
     Value_VC = 0.0
 
     ! Fill up lookup table in parallel
@@ -747,11 +782,15 @@ contains
        call calc_table_var(iTable, Index1, Value_VC(:,i1))
     end do
 
-    ! Collect (or copy) result into table
-    if(nProc > 1)then
-       call MPI_allreduce(Value_VC, Ptr%Value_VC(:,:,1,1,1,1), nValue*n1, &
-            MPI_REAL, MPI_SUM, iComm, iError)
+    ! Collect and copy result into table
+    if(nProc > 1)call MPI_allreduce(MPI_IN_PLACE, Value_VC, nValue*n1, &
+         MPI_REAL, MPI_SUM, iComm, iError)
+
+    if(Ptr%TypeFile == 'real4')then
+       allocate(Ptr%Value4_VC(nValue,n1,1,1,1,1))
+       Ptr%Value4_VC(:,:,1,1,1,1) = Value_VC
     else
+       allocate(Ptr%Value_VC(nValue,n1,1,1,1,1))
        Ptr%Value_VC(:,:,1,1,1,1) = Value_VC
     end if
 
@@ -760,26 +799,51 @@ contains
     if(Ptr%NameCommand == "save" .and. iProc == 0)then
        ! Cannot pass unallocated arrays so check Ptr%Param_I
        if( allocated(Ptr%Param_I) ) then
-          call save_plot_file( &
-               Ptr%NameFile,                                 &
-               TypeFileIn     = Ptr%TypeFile,                &
-               StringHeaderIn = Ptr%StringDescription,       &
-               NameVarIn      = Ptr%NameVar,                 &
-               nDimIn         = Ptr%nIndex,                  &
-               CoordMinIn_D   = Ptr%IndexMin_I,              &
-               CoordMaxIn_D   = Ptr%IndexMax_I,              &
-               VarIn_VI       = Ptr%Value_VC(:,:,1,1,1,1),   &
-               ParamIn_I      = Ptr%Param_I)
+          if(Ptr%TypeFile == 'real4')then
+             call save_plot_file( &
+                  Ptr%NameFile,                                 &
+                  TypeFileIn     = Ptr%TypeFile,                &
+                  StringHeaderIn = Ptr%StringDescription,       &
+                  NameVarIn      = Ptr%NameVar,                 &
+                  nDimIn         = Ptr%nIndex,                  &
+                  CoordMinIn_D   = Ptr%IndexMin_I,              &
+                  CoordMaxIn_D   = Ptr%IndexMax_I,              &
+                  Var4In_VI      = Ptr%Value4_VC(:,:,1,1,1,1),  &
+                  ParamIn_I      = Ptr%Param_I)
+          else
+             call save_plot_file( &
+                  Ptr%NameFile,                                 &
+                  TypeFileIn     = Ptr%TypeFile,                &
+                  StringHeaderIn = Ptr%StringDescription,       &
+                  NameVarIn      = Ptr%NameVar,                 &
+                  nDimIn         = Ptr%nIndex,                  &
+                  CoordMinIn_D   = Ptr%IndexMin_I,              &
+                  CoordMaxIn_D   = Ptr%IndexMax_I,              &
+                  VarIn_VI      = Ptr%Value_VC(:,:,1,1,1,1),    &
+                  ParamIn_I      = Ptr%Param_I)
+          end if
        else
-          call save_plot_file( &
-               Ptr%NameFile,                                 &
-               TypeFileIn     = Ptr%TypeFile,                &
-               StringHeaderIn = Ptr%StringDescription,       &
-               NameVarIn      = Ptr%NameVar,                 &
-               nDimIn         = Ptr%nIndex,                  &
-               CoordMinIn_D   = Ptr%IndexMin_I,              &
-               CoordMaxIn_D   = Ptr%IndexMax_I,              &
-               VarIn_VI       = Ptr%Value_VC(:,:,1,1,1,1))
+          if(Ptr%TypeFile == 'real4')then
+             call save_plot_file( &
+                  Ptr%NameFile,                                 &
+                  TypeFileIn     = Ptr%TypeFile,                &
+                  StringHeaderIn = Ptr%StringDescription,       &
+                  NameVarIn      = Ptr%NameVar,                 &
+                  nDimIn         = Ptr%nIndex,                  &
+                  CoordMinIn_D   = Ptr%IndexMin_I,              &
+                  CoordMaxIn_D   = Ptr%IndexMax_I,              &
+                  Var4In_VI      = Ptr%Value4_VC(:,:,1,1,1,1))
+          else
+             call save_plot_file( &
+                  Ptr%NameFile,                                 &
+                  TypeFileIn     = Ptr%TypeFile,                &
+                  StringHeaderIn = Ptr%StringDescription,       &
+                  NameVarIn      = Ptr%NameVar,                 &
+                  nDimIn         = Ptr%nIndex,                  &
+                  CoordMinIn_D   = Ptr%IndexMin_I,              &
+                  CoordMaxIn_D   = Ptr%IndexMax_I,              &
+                  VarIn_VI       = Ptr%Value_VC(:,:,1,1,1,1))
+          end if
        end if
     end if
 
@@ -851,9 +915,10 @@ contains
     if(iProc == 0)write(*,'(3a)')NameSub,' is creating table ', &
          trim(Ptr%NameTable)
 
-    ! Allocate Value_VC array
-    if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
-    allocate(Value_VC(nValue,n1,n2), Ptr%Value_VC(nValue,n1,n2,1,1,1))
+    ! Allocate Value_VC arrays
+    if(allocated(Ptr%Value4_VC)) deallocate(Ptr%Value4_VC)
+    if(allocated(Ptr%Value_VC))  deallocate(Ptr%Value_VC)
+    allocate(Value_VC(nValue,n1,n2))
     Value_VC = 0.0
 
     ! Fill up lookup table in parallel
@@ -867,11 +932,15 @@ contains
        end do
     end do
 
-    ! Collect (or copy) result into table
-    if(nProc > 1)then
-       call MPI_allreduce(Value_VC, Ptr%Value_VC(:,:,:,1,1,1), nValue*n1*n2, &
-            MPI_REAL, MPI_SUM, iComm, iError)
+    ! Collect and copy result into table
+    if(nProc > 1) call MPI_allreduce(MPI_IN_PLACE, Value_VC, nValue*n1*n2, &
+         MPI_REAL, MPI_SUM, iComm, iError)
+
+    if(Ptr%TypeFile == 'real4')then
+       allocate(Ptr%Value4_VC(nValue,n1,n2,1,1,1))
+       Ptr%Value4_VC(:,:,:,1,1,1) = Value_VC
     else
+       allocate(Ptr%Value_VC(nValue,n1,n2,1,1,1))
        Ptr%Value_VC(:,:,:,1,1,1) = Value_VC
     end if
 
@@ -880,26 +949,51 @@ contains
     if(Ptr%NameCommand == "save" .and. iProc == 0)then
        ! Cannot pass unallocated arrays so check Ptr%Param_I
        if( allocated(Ptr%Param_I) ) then
-          call save_plot_file( &
-               Ptr%NameFile,                                 &
-               TypeFileIn     = Ptr%TypeFile,                &
-               StringHeaderIn = Ptr%StringDescription,       &
-               NameVarIn      = Ptr%NameVar,                 &
-               nDimIn         = Ptr%nIndex,                  &
-               CoordMinIn_D   = Ptr%IndexMin_I,              &
-               CoordMaxIn_D   = Ptr%IndexMax_I,              &
-               VarIn_VII      = Ptr%Value_VC(:,:,:,1,1,1),   &
-               ParamIn_I      = Ptr%Param_I)
+          if(Ptr%TypeFile == 'real4')then
+             call save_plot_file( &
+                  Ptr%NameFile,                                 &
+                  TypeFileIn     = Ptr%TypeFile,                &
+                  StringHeaderIn = Ptr%StringDescription,       &
+                  NameVarIn      = Ptr%NameVar,                 &
+                  nDimIn         = Ptr%nIndex,                  &
+                  CoordMinIn_D   = Ptr%IndexMin_I,              &
+                  CoordMaxIn_D   = Ptr%IndexMax_I,              &
+                  Var4In_VII     = Ptr%Value4_VC(:,:,:,1,1,1),  &
+                  ParamIn_I      = Ptr%Param_I)
+          else
+             call save_plot_file( &
+                  Ptr%NameFile,                                 &
+                  TypeFileIn     = Ptr%TypeFile,                &
+                  StringHeaderIn = Ptr%StringDescription,       &
+                  NameVarIn      = Ptr%NameVar,                 &
+                  nDimIn         = Ptr%nIndex,                  &
+                  CoordMinIn_D   = Ptr%IndexMin_I,              &
+                  CoordMaxIn_D   = Ptr%IndexMax_I,              &
+                  VarIn_VII      = Ptr%Value_VC(:,:,:,1,1,1),   &
+                  ParamIn_I      = Ptr%Param_I)
+          end if
        else
-          call save_plot_file( &
-               Ptr%NameFile,                                 &
-               TypeFileIn     = Ptr%TypeFile,                &
-               StringHeaderIn = Ptr%StringDescription,       &
-               NameVarIn      = Ptr%NameVar,                 &
-               nDimIn         = Ptr%nIndex,                  &
-               CoordMinIn_D   = Ptr%IndexMin_I,              &
-               CoordMaxIn_D   = Ptr%IndexMax_I,              &
-               VarIn_VII      = Ptr%Value_VC(:,:,:,1,1,1))
+          if(Ptr%TypeFile == 'real4')then
+             call save_plot_file( &
+                  Ptr%NameFile,                                 &
+                  TypeFileIn     = Ptr%TypeFile,                &
+                  StringHeaderIn = Ptr%StringDescription,       &
+                  NameVarIn      = Ptr%NameVar,                 &
+                  nDimIn         = Ptr%nIndex,                  &
+                  CoordMinIn_D   = Ptr%IndexMin_I,              &
+                  CoordMaxIn_D   = Ptr%IndexMax_I,              &
+                  Var4In_VII     = Ptr%Value4_VC(:,:,:,1,1,1))
+          else
+             call save_plot_file( &
+                  Ptr%NameFile,                                 &
+                  TypeFileIn     = Ptr%TypeFile,                &
+                  StringHeaderIn = Ptr%StringDescription,       &
+                  NameVarIn      = Ptr%NameVar,                 &
+                  nDimIn         = Ptr%nIndex,                  &
+                  CoordMinIn_D   = Ptr%IndexMin_I,              &
+                  CoordMaxIn_D   = Ptr%IndexMax_I,              &
+                  VarIn_VII      = Ptr%Value_VC(:,:,:,1,1,1))
+          end if
        end if
     end if
 
@@ -978,8 +1072,9 @@ contains
          trim(Ptr%NameTable)
 
     ! Allocate Value_VC array
-    if(allocated(Ptr%Value_VC)) deallocate(Ptr%Value_VC)
-    allocate(Value_VC(nValue,n1,n2,n3), Ptr%Value_VC(nValue,n1,n2,n3,1,1))
+    if(allocated(Ptr%Value4_VC)) deallocate(Ptr%Value4_VC)
+    if(allocated(Ptr%Value_VC))  deallocate(Ptr%Value_VC)
+    allocate(Value_VC(nValue,n1,n2,n3))
     Value_VC = 0.0
 
     ! Fill up lookup table in parallel
@@ -1001,11 +1096,15 @@ contains
        end do
     end do
 
-    ! Collect (or copy) result into table
-    if(nProc > 1)then
-       call MPI_allreduce(Value_VC, Ptr%Value_VC(:,:,:,:,1,1), nValue*n1*n2*n3, &
-            MPI_REAL, MPI_SUM, iComm, iError)
+    ! Collect and copy result into table
+    if(nProc > 1) call MPI_allreduce(MPI_IN_PLACE, Value_VC, nValue*n1*n2*n3, &
+         MPI_REAL, MPI_SUM, iComm, iError)
+
+    if(Ptr%TypeFile == 'real4')then
+       allocate(Ptr%Value4_VC(nValue,n1,n2,n3,1,1))
+       Ptr%Value4_VC(:,:,:,:,1,1) = Value_VC
     else
+       allocate(Ptr%Value_VC(nValue,n1,n2,n3,1,1))
        Ptr%Value_VC(:,:,:,:,1,1) = Value_VC
     end if
 
@@ -1014,26 +1113,51 @@ contains
     if(Ptr%NameCommand == "save" .and. iProc == 0)then
        ! Cannot pass unallocated arrays so check Ptr%Param_I
        if( allocated(Ptr%Param_I) ) then
-          call save_plot_file( &
-               Ptr%NameFile,                                 &
-               TypeFileIn     = Ptr%TypeFile,                &
-               StringHeaderIn = Ptr%StringDescription,       &
-               NameVarIn      = Ptr%NameVar,                 &
-               nDimIn         = Ptr%nIndex,                  &
-               CoordMinIn_D   = Ptr%IndexMin_I,              &
-               CoordMaxIn_D   = Ptr%IndexMax_I,              &
-               VarIn_VIII     = Ptr%Value_VC(:,:,:,:,1,1),   &
-               ParamIn_I      = Ptr%Param_I)
+          if(Ptr%TypeFile == 'real4')then
+             call save_plot_file( &
+                  Ptr%NameFile,                                 &
+                  TypeFileIn     = Ptr%TypeFile,                &
+                  StringHeaderIn = Ptr%StringDescription,       &
+                  NameVarIn      = Ptr%NameVar,                 &
+                  nDimIn         = Ptr%nIndex,                  &
+                  CoordMinIn_D   = Ptr%IndexMin_I,              &
+                  CoordMaxIn_D   = Ptr%IndexMax_I,              &
+                  Var4In_VIII    = Ptr%Value4_VC(:,:,:,:,1,1),  &
+                  ParamIn_I      = Ptr%Param_I)
+          else
+             call save_plot_file( &
+                  Ptr%NameFile,                                 &
+                  TypeFileIn     = Ptr%TypeFile,                &
+                  StringHeaderIn = Ptr%StringDescription,       &
+                  NameVarIn      = Ptr%NameVar,                 &
+                  nDimIn         = Ptr%nIndex,                  &
+                  CoordMinIn_D   = Ptr%IndexMin_I,              &
+                  CoordMaxIn_D   = Ptr%IndexMax_I,              &
+                  VarIn_VIII     = Ptr%Value_VC(:,:,:,:,1,1),   &
+                  ParamIn_I      = Ptr%Param_I)
+          end if
        else
-          call save_plot_file( &
-               Ptr%NameFile,                                 &
-               TypeFileIn     = Ptr%TypeFile,                &
-               StringHeaderIn = Ptr%StringDescription,       &
-               NameVarIn      = Ptr%NameVar,                 &
-               nDimIn         = Ptr%nIndex,                  &
-               CoordMinIn_D   = Ptr%IndexMin_I,              &
-               CoordMaxIn_D   = Ptr%IndexMax_I,              &
-               VarIn_VIII     = Ptr%Value_VC(:,:,:,:,1,1))
+          if(Ptr%TypeFile == 'real4')then
+             call save_plot_file( &
+                  Ptr%NameFile,                                 &
+                  TypeFileIn     = Ptr%TypeFile,                &
+                  StringHeaderIn = Ptr%StringDescription,       &
+                  NameVarIn      = Ptr%NameVar,                 &
+                  nDimIn         = Ptr%nIndex,                  &
+                  CoordMinIn_D   = Ptr%IndexMin_I,              &
+                  CoordMaxIn_D   = Ptr%IndexMax_I,              &
+                  Var4In_VIII    = Ptr%Value4_VC(:,:,:,:,1,1))
+          else
+             call save_plot_file( &
+                  Ptr%NameFile,                                 &
+                  TypeFileIn     = Ptr%TypeFile,                &
+                  StringHeaderIn = Ptr%StringDescription,       &
+                  NameVarIn      = Ptr%NameVar,                 &
+                  nDimIn         = Ptr%nIndex,                  &
+                  CoordMinIn_D   = Ptr%IndexMin_I,              &
+                  CoordMaxIn_D   = Ptr%IndexMax_I,              &
+                  VarIn_VIII     = Ptr%Value_VC(:,:,:,:,1,1))
+          end if
        end if
     end if
 
@@ -1302,16 +1426,21 @@ contains
          (Arg_I(1:Ptr%nIndex) - Ptr%IndexMin_I)/Ptr%dIndex_I  + 1
 
     ! Interpolate values
-    Value_V = interpolate_vector(Ptr%Value_VC, &
-         Ptr%nValue, Ptr%nIndex, MinIndex_I(1:Ptr%nIndex), Ptr%nIndex_I, &
-         Arg_I(1:Ptr%nIndex),  &
-         Ptr%Index1_I, &
-         Ptr%Index2_I, &
-         Ptr%Index3_I, &
-         Ptr%Index4_I, &
-         Ptr%Index5_I, &
-         DoExtrapolate = DoExtrapolate)
-
+    if(allocated(Ptr%Value4_VC))then
+       Value_V = interpolate_vector4(Ptr%Value4_VC, &
+            Ptr%nValue, Ptr%nIndex, MinIndex_I(1:Ptr%nIndex), Ptr%nIndex_I, &
+            Arg_I(1:Ptr%nIndex),  &
+            Ptr%Index1_I, Ptr%Index2_I, Ptr%Index3_I, Ptr%Index4_I, &
+            Ptr%Index5_I, &
+            DoExtrapolate = DoExtrapolate)
+    else
+       Value_V = interpolate_vector(Ptr%Value_VC, &
+            Ptr%nValue, Ptr%nIndex, MinIndex_I(1:Ptr%nIndex), Ptr%nIndex_I, &
+            Arg_I(1:Ptr%nIndex),  &
+            Ptr%Index1_I, Ptr%Index2_I, Ptr%Index3_I, Ptr%Index4_I, &
+            Ptr%Index5_I, &
+            DoExtrapolate = DoExtrapolate)
+    end if
   end subroutine interpolate_arg_array
   !============================================================================
 
@@ -1363,21 +1492,33 @@ contains
        j1 = 1; j2 = 1; Dy1 = 1.0; Dy2 = 0.0
     end if
 
-    call find_cell(1, Ptr%nIndex_I(1), &
-         ValIn, &
-         i1, Dx1, &
-         Dy2*Ptr%Value_VC(iVal,:,j1,1,1,1) + &
-         Dy1*Ptr%Value_VC(iVal,:,j2,1,1,1), &
-         DoExtrapolate, &
-         'Called from '//NameSub)
+    if(allocated(Ptr%Value4_VC))then
+       call find_cell(1, Ptr%nIndex_I(1), ValIn, i1, Dx1, &
+            Dy2*Ptr%Value4_VC(iVal,:,j1,1,1,1) + &
+            Dy1*Ptr%Value4_VC(iVal,:,j2,1,1,1), &
+            DoExtrapolate, 'Called from '//NameSub)
 
-    i2 = i1 + 1; Dx2 = 1.0 - Dx1
+       i2 = i1 + 1; Dx2 = 1.0 - Dx1
 
-    ! If value is outside table, use the last value (works well for constant)
-    Value_V = Dy2*( Dx2*Ptr%Value_VC(:,i1,j1,1,1,1)   &
-         +          Dx1*Ptr%Value_VC(:,i2,j1,1,1,1))  &
-         +    Dy1*( Dx2*Ptr%Value_VC(:,i1,j2,1,1,1)   &
-         +          Dx1*Ptr%Value_VC(:,i2,j2,1,1,1))
+       ! If value is outside table, use last value (works well for constant)
+       Value_V = Dy2*( Dx2*Ptr%Value4_VC(:,i1,j1,1,1,1)   &
+            +          Dx1*Ptr%Value4_VC(:,i2,j1,1,1,1))  &
+            +    Dy1*( Dx2*Ptr%Value4_VC(:,i1,j2,1,1,1)   &
+            +          Dx1*Ptr%Value4_VC(:,i2,j2,1,1,1))
+    else
+       call find_cell(1, Ptr%nIndex_I(1), ValIn, i1, Dx1, &
+            Dy2*Ptr%Value_VC(iVal,:,j1,1,1,1) + &
+            Dy1*Ptr%Value_VC(iVal,:,j2,1,1,1), &
+            DoExtrapolate, 'Called from '//NameSub)
+
+       i2 = i1 + 1; Dx2 = 1.0 - Dx1
+
+       ! If value is outside table, use last value (works well for constant)
+       Value_V = Dy2*( Dx2*Ptr%Value_VC(:,i1,j1,1,1,1)   &
+            +          Dx1*Ptr%Value_VC(:,i2,j1,1,1,1))  &
+            +    Dy1*( Dx2*Ptr%Value_VC(:,i1,j2,1,1,1)   &
+            +          Dx1*Ptr%Value_VC(:,i2,j2,1,1,1))
+    end if
     if(present(Arg1Out))then
        Arg1Out = (i1 - 1 + Dx1)*Ptr%dIndex_I(1) + Ptr%IndexMin_I(1)
        if(Ptr%IsLogIndex_I(1)) Arg1Out = 10**Arg1Out
