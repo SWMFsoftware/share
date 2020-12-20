@@ -44,6 +44,7 @@ module ModUtilities
   public:: CON_set_do_test
   public:: test_mod_utility
   public:: norm2
+  public:: find_cell
 
   logical, public :: DoFlush = .true. ! parameter for flush_unit
   logical, public :: DoWriteCallSequence = .false. ! parameter for CON_stop
@@ -1092,5 +1093,238 @@ contains
 
   end function norm2
   !=========================================================================== 
+  subroutine find_cell(MinCoord, MaxCoord, Coord, iCoord, dCoord, &
+       Coord_I, DoExtrapolate, StringError, IsInside)
+
+    ! Find cell index and distance from cell for either
+    ! - a uniform grid with normalized coordinate (Coord_I is NOT present)
+    ! - a nonuniform grid with monotone coordinates (Coord_I is present)
+    !
+    ! For sake of easy usage the returned coordinate index iCoord always
+    ! satisfies MinCoord <= iCoord < MaxCoord.
+    !
+    ! If the coordinate is out of bounds, and DoExtrapolate is not present,
+    ! the code stops with an error message. If DoExtrapolate is present and
+    ! false, dCoord is modified to 0 or 1 so that the last grid cell is used.
+    ! If DoExtrapolate is true, iCoord and dCoord are set
+    ! corresponding to linear extrapolation from the last two grid values.
+    !
+    ! For interpolation the normalized distance dCoord measured from
+    ! coordinate iCoord satisfies 0.0 <= dCoord <= 1.0
+    ! but for extrapolation dCoord < 0.0 or > 1.0 is also possible.
+    !---
+    ! FOR THE UNIFORM CASE the normalized coordinate Coord should be equal to
+    ! the index at the cell centers, therefore:
+    !
+    ! iCoord = max(MinCoord, min(MaxCoord-1, floor(Coord)))
+    ! dCoord = Coord - iCoord
+    !
+    ! The optional IsInside = MinCoord <= Coord <= MaxCoord
+
+    ! IN THE NON-UNIFORM CASE the cell iCoord that is left to coordinate Coord
+    ! is found with a binary search in the Coord_I coordinates.
+    !
+    ! The normalized distance is set to
+    !    dCoord = (Coord-Coord_I(iCoord))/(Coord_I(iCoord+1)-Coord_I(iCoord))
+    !
+    ! The optional IsInside = Coord_I(1) <= Coord <= Coord_I(nCoord).
+
+    ! Example for linear interpolation on a 1D uniform grid of nX cells,
+    ! DeltaX cell size and the first cell center is at DeltaX/2:
+    !
+    !   call find_cell(1, nX, x/DeltaX+0.5, iX, d)
+    !   State_V = (1.0 - d)*State_VC(:,iX) + d*State_VC(:,iX+1)
+    !
+    ! Example for linear interpolation on a 1D non-uniform grid
+    ! with 2 ghost cells:
+    !
+    !   call find_cell(-1, nI+2, x, iX, d, x_G)
+    !   State_V = (1.0 - d)*State_VG(:,iX) + d*State_VG(:,iX+1)
+
+    integer, intent(in)           :: MinCoord, MaxCoord
+    real,    intent(in)           :: Coord
+    integer, intent(out)          :: iCoord
+    real,    intent(out), optional:: dCoord
+    real,    intent(in),  optional:: Coord_I(MinCoord:)
+    logical, intent(in),  optional:: DoExtrapolate
+    character(len=*),     optional:: StringError
+    logical, intent(out), optional:: IsInside
+
+    integer:: i, Di
+
+    logical:: IsUniform
+
+    character(len=*), parameter:: NameSub = 'find_cell'
+    !--------------------------------------------------------------------------
+
+    if(present(Coord_I)) then
+       IsUniform = size(Coord_I) < 2
+    else
+       IsUniform = .true.
+    endif
+
+    if(IsUniform)then
+       ! Uniform grid case with normalized coordinate
+
+       iCoord = min(MaxCoord-1, max(MinCoord, floor(Coord)))
+       dCoord = Coord - iCoord
+
+       if(Coord < MinCoord)then
+          if(.not. (present(DoExtrapolate))) then
+             if(present(StringError)) write(*,*) NameSub, ': ', StringError
+             write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
+             write(*,*) NameSub,': Coord=', Coord
+             call CON_stop(NameSub//': normalized coordinate is to small!')
+          elseif(.not.DoExtrapolate)then
+             ! Use lefttmost cell (first order accurate)
+             dCoord = 0.0
+          end if
+          if(present(IsInside)) IsInside = .false.
+       elseif(Coord > MaxCoord)then
+          if(.not. (present(DoExtrapolate))) then
+             if(present(StringError)) write(*,*) StringError
+             write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
+             write(*,*) NameSub,': Coord=', Coord
+             call CON_stop(NameSub//': normalized coordinate is too large!')
+          elseif(.not.DoExtrapolate)then
+             ! Use rightmost cell (first order accurate)
+             dCoord = 1.0
+          endif
+          if(present(IsInside)) IsInside = .false.
+       else
+          if(present(IsInside)) IsInside = .true.
+       end if
+
+    elseif(Coord_I(MinCoord) < Coord_I(MaxCoord))then
+
+       ! Monotone increasing coordinates
+
+       if(Coord < Coord_I(MinCoord))then
+          if(.not. (present(DoExtrapolate))) then
+             if(present(StringError)) write(*,*) StringError
+             write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
+             write(*,*) NameSub,': Coord, CoordMin, CoordMax=', &
+                  Coord, Coord_I(MinCoord), Coord_I(MaxCoord)
+             call CON_stop(NameSub//': coordinate is too small!')
+          elseif(DoExtrapolate)then
+             iCoord = MinCoord
+             dCoord = (Coord - Coord_I(iCoord)) &
+                  /   (Coord_I(iCoord+1) - Coord_I(iCoord))
+          else
+             iCoord = MinCoord
+             dCoord = 0.0
+          end if
+          if(present(IsInside)) IsInside = .false.
+          RETURN
+       end if
+
+       if(Coord > Coord_I(MaxCoord))then
+          if(.not. (present(DoExtrapolate))) then
+             if(present(StringError)) write(*,*) StringError
+             write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
+             write(*,*) NameSub,': Coord, CoordMin, CoordMax=', &
+                  Coord, Coord_I(MinCoord), Coord_I(MaxCoord)
+             call CON_stop(NameSub//': coordinate is too large!')
+          elseif(DoExtrapolate)then
+             iCoord = MaxCoord - 1
+             dCoord = (Coord - Coord_I(iCoord))  &
+                  /   (Coord_I(iCoord+1) - Coord_I(iCoord))
+          else
+             iCoord = MaxCoord - 1
+             dCoord = 1.0
+          end if
+          if(present(IsInside)) IsInside = .false.
+          RETURN
+       end if
+
+       if(present(IsInside)) IsInside = .true.
+
+       ! binary search
+       i  = (MinCoord + MaxCoord)/2
+       Di = (MaxCoord - MinCoord)/2
+       do
+          Di = (Di + 1)/2
+          if(Coord < Coord_I(i)) then
+             i = max(MinCoord, i - Di)
+          elseif(Coord > Coord_I(i+1))then
+             i = min(MaxCoord-1, i + Di)
+          else
+             EXIT
+          end if
+       end do
+       iCoord = i
+       if(Coord_I(iCoord+1) == Coord_I(iCoord))then
+          dCoord = 0.0
+       else
+          dCoord = (Coord             - Coord_I(iCoord)) &
+               /   (Coord_I(iCoord+1) - Coord_I(iCoord))
+       end if
+    else
+
+       ! Monotone decreasing coordinates
+
+       if(Coord < Coord_I(MaxCoord))then
+          if(.not. (present(DoExtrapolate))) then
+             if(present(StringError)) write(*,*) StringError
+             write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
+             write(*,*) NameSub,': Coord, CoordMin, CoordMax=', &
+                  Coord, Coord_I(MaxCoord), Coord_I(MinCoord)
+             call CON_stop(NameSub//': coordinate is too small!')
+          elseif(DoExtrapolate)then
+             iCoord = MaxCoord - 1
+             dCoord = (Coord_I(iCoord) - Coord) &
+                  /   (Coord_I(iCoord) - Coord_I(iCoord+1))
+          else
+             iCoord = MaxCoord - 1
+             dCoord = 1.0
+          end if
+          if(present(IsInside)) IsInside = .false.
+          RETURN
+       end if
+
+       if(Coord > Coord_I(MinCoord))then
+          if(.not. (present(DoExtrapolate))) then
+             if(present(StringError)) write(*,*) StringError
+             write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
+             write(*,*) NameSub,': Coord, CoordMin, CoordMax=', &
+                  Coord, Coord_I(MaxCoord), Coord_I(MinCoord)
+             call CON_stop(NameSub//': coordinate is too large!')
+          elseif(DoExtrapolate)then
+             iCoord = MinCoord
+             dCoord = (Coord_I(iCoord) - Coord)  &
+                  /   (Coord_I(iCoord) - Coord_I(iCoord+1))
+          else
+             iCoord = MinCoord
+             dCoord = 0.0
+          end if
+          if(present(IsInside)) IsInside = .false.
+          RETURN
+       end if
+
+       if(present(IsInside)) IsInside = .true.
+
+       ! binary search
+       i  = (MinCoord + MaxCoord)/2
+       Di = (MaxCoord - MinCoord)/2
+       do
+          Di = (Di + 1)/2
+          if(Coord > Coord_I(i)) then
+             i = max(MinCoord, i - Di)
+          elseif(Coord < Coord_I(i+1))then
+             i = min(MaxCoord-1, i + Di)
+          else
+             EXIT
+          end if
+       end do
+       iCoord = i
+       if(Coord_I(iCoord+1) == Coord_I(iCoord))then
+          dCoord = 0.0
+       else
+          dCoord = (Coord_I(iCoord) - Coord  ) &
+               /   (Coord_I(iCoord) - Coord_I(iCoord+1))
+       end if
+    end if
+
+  end subroutine find_cell
 
 end module ModUtilities
