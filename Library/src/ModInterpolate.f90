@@ -1,7 +1,12 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-module ModInterpolate
+
+
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
+!  For more information, see http://csem.engin.umich.edu/tools/swmf
+module ModInterpolateScalar
 
   ! Calculate second order accurate interpolation for
   !
@@ -41,7 +46,7 @@ module ModInterpolate
   !                       (/ x, y, (z - z0)/DeltaZ /), x_I, y_I)
   !
 
-  use ModUtilities, ONLY: CON_stop
+  use ModUtilities, ONLY: CON_stop, find_cell
   use ModKind,      ONLY: Real4_, Real8_
 
   implicit none
@@ -50,38 +55,13 @@ module ModInterpolate
 
   public :: interpolate_scalar  ! interpolate real scalar in 1...5D
   public :: interpolate_scalar4 ! single precision scalar
-  public :: interpolate_vector  ! interpolate real vector in 1...5D
-  public :: interpolate_vector4 ! single precision vector
-  public :: linear              ! interpolate integer/real/complex in 1D
-  public :: bilinear            ! interpolate integer/real/complex in 2D
-  public :: trilinear           ! interpolate integer/real/complex in 3D
-  public :: quadlinear          ! interpolate integer/real/complex in 4D
-  public :: pentalinear         ! interpolate integer/real/complex in 5D
-  public :: find_cell           ! find cell in non-uniform grid
-  public :: fit_parabola        ! fit a parabola around an extremum
-  public :: test_interpolation  ! unit test
+  public :: linear_scalar       ! interpolate integer/real/complex in 1D
+  public :: bilinear_scalar     ! interpolate integer/real/complex in 2D
+  public :: trilinear_scalar    ! interpolate integer/real/complex in 3D
+  public :: quadlinear_scalar   ! interpolate integer/real/complex in 4D
+  public :: pentalinear_scalar  ! interpolate integer/real/complex in 5D
 
-  character(len=*), parameter :: NameMod='ModInterpolate'
-
-  interface linear
-     module procedure linear_scalar, linear_vector
-  end interface
-
-  interface bilinear
-     module procedure bilinear_scalar, bilinear_vector
-  end interface
-
-  interface trilinear
-     module procedure trilinear_scalar, trilinear_vector
-  end interface
-
-  interface quadlinear
-     module procedure quadlinear_scalar, quadlinear_vector
-  end interface
-
-  interface pentalinear
-     module procedure pentalinear_scalar, pentalinear_vector
-  end interface
+  character(len=*), parameter :: NameMod='ModInterpolateScalar'
 
 contains
   !============================================================================
@@ -190,119 +170,6 @@ contains
   end function interpolate_scalar4
   !============================================================================
 
-  function interpolate_vector( &
-       a_VC, nVar, nDim, Min_D, Max_D, x_D, &
-       x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
-
-    ! Interpolate default precision real vector array of up to 5 dimensions
-    ! Index and distance can be returned in 1D only
-
-    real,    intent(in):: a_VC(*)
-    integer, intent(in):: nVar
-    integer, intent(in):: nDim
-    integer, intent(in):: Min_D(nDim), Max_D(nDim)
-
-    real,    optional, intent(in):: x_D(nDim)
-    real,    optional, intent(in):: x1_I(:), x2_I(:), x3_I(:), x4_I(:), x5_I(:)
-    logical, optional, intent(in):: DoExtrapolate
-    integer, optional, intent(in):: iCell_D(nDim)
-    real,    optional, intent(in):: Dist_D(nDim)
-
-    ! return value
-    real:: interpolate_vector(nVar)
-
-    character(len=*), parameter:: NameSub = 'interpolate_vector'
-    !--------------------------------------------------------------------------
-    select case(nDim)
-    case(1)
-       if(present(iCell_D))then
-          interpolate_vector = linear_vector_real( a_VC, nVar, &
-               Min_D(1), Max_D(1), iCell=iCell_D(1), Dist=Dist_D(1))
-       else
-          interpolate_vector = linear_vector_real( a_VC, nVar, &
-               Min_D(1), Max_D(1), x_D(1), x1_I, DoExtrapolate)
-       end if
-    case(2)
-       interpolate_vector = bilinear_vector_real( a_VC, nVar, &
-            Min_D(1), Max_D(1), Min_D(2), Max_D(2), &
-            x_D, x1_I, x2_I, DoExtrapolate, iCell_D, Dist_D)
-    case(3)
-       interpolate_vector = trilinear_vector_real( a_VC, nVar, &
-            Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
-            x_D, x1_I, x2_I, x3_I, DoExtrapolate, iCell_D, Dist_D)
-    case(4)
-       interpolate_vector = quadlinear_vector_real( a_VC, nVar, &
-            Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
-            Min_D(4), Max_D(4), &
-            x_D, x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
-    case(5)
-       interpolate_vector = pentalinear_vector_real( a_VC, nVar, &
-            Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
-            Min_D(4), Max_D(4), Min_D(5), Max_D(5), &
-            x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
-    case default
-       call CON_stop(NameSub//' nDim should be 1 to 5')
-    end select
-
-  end function interpolate_vector
-  !============================================================================
-
-  function interpolate_vector4( &
-       a_VC, nVar, nDim, Min_D, Max_D, x_D, &
-       x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
-
-    ! Interpolate single precision real vector array of up to 5 dimensions
-    ! Index and distance can be returned in 1D only
-
-    real(Real4_), intent(in):: a_VC(*) ! single precision
-    integer,      intent(in):: nVar
-    integer,      intent(in):: nDim
-    integer,      intent(in):: Min_D(nDim), Max_D(nDim)
-
-    real,    optional, intent(in):: x_D(nDim)
-    real,    optional, intent(in):: x1_I(:), x2_I(:), x3_I(:), x4_I(:), x5_I(:)
-    logical, optional, intent(in):: DoExtrapolate
-    integer, optional, intent(in):: iCell_D(nDim)
-    real,    optional, intent(in):: Dist_D(nDim)
-
-    ! return value
-    real:: interpolate_vector4(nVar)
-
-    character(len=*), parameter:: NameSub = 'interpolate_vector4'
-    !--------------------------------------------------------------------------
-    select case(nDim)
-     case(1)
-        if(present(iCell_D))then
-           interpolate_vector4 = linear_vector_real4( a_VC, nVar, &
-                Min_D(1), Max_D(1), iCell=iCell_D(1), Dist=Dist_D(1))
-        else
-           interpolate_vector4 = linear_vector_real4( a_VC, nVar, &
-                Min_D(1), Max_D(1), x_D(1), x1_I, DoExtrapolate)
-        end if
-     case(2)
-        interpolate_vector4 = bilinear_vector_real4( a_VC, nVar, &
-             Min_D(1), Max_D(1), Min_D(2), Max_D(2), &
-             x_D, x1_I, x2_I, DoExtrapolate, iCell_D, Dist_D)
-     case(3)
-        interpolate_vector4 = trilinear_vector_real4( a_VC, nVar, &
-             Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
-             x_D, x1_I, x2_I, x3_I, DoExtrapolate, iCell_D, Dist_D)
-     case(4)
-        interpolate_vector4 = quadlinear_vector_real4( a_VC, nVar, &
-             Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
-             Min_D(4), Max_D(4), &
-             x_D, x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
-     case(5)
-        interpolate_vector4 = pentalinear_vector_real4( a_VC, nVar, &
-             Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
-             Min_D(4), Max_D(4), Min_D(5), Max_D(5), &
-             x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
-    case default
-       call CON_stop(NameSub//' nDim should be 1 to 5')
-    end select
-
-  end function interpolate_vector4
-  !============================================================================
 
   real function linear_scalar_real(a_I, iMin, iMax, x, x_I, DoExtrapolate, &
        iCell, Dist)
@@ -393,108 +260,6 @@ contains
     end select
 
   end function linear_scalar
-  !============================================================================
-
-  function linear_vector_real(a_VI, nVar, iMin, iMax, x, x_I, DoExtrapolate, &
-       iCell, Dist)
-
-    ! interpolate default precision real a_VI vector array
-
-    integer, intent(in):: nVar, iMin, iMax
-    real,    intent(in):: a_VI(nVar,iMin:iMax)
-
-    real,    intent(in), optional :: x, x_I(iMin:), Dist
-    logical, intent(in), optional :: DoExtrapolate
-    integer, intent(in), optional :: iCell
-
-    ! return value
-    real                :: linear_vector_real(nVar)
-
-    !--------------------------------------------------------------------------
-    linear_vector_real = linear_vector( &
-         a_VI, nVar, iMin, iMax, x, x_I, DoExtrapolate, iCell, Dist)
-
-  end function linear_vector_real
-  !============================================================================
-  function linear_vector_real4(a_VI, nVar, iMin, iMax, x, x_I, DoExtrapolate, &
-       iCell, Dist)
-
-    ! interpolate single precision real a_VI vector array
-
-    integer,      intent(in):: nVar, iMin, iMax
-    real(Real4_), intent(in):: a_VI(nVar,iMin:iMax)
-
-    real,    intent(in), optional :: x, x_I(iMin:), Dist
-    logical, intent(in), optional :: DoExtrapolate
-    integer, intent(in), optional :: iCell
-
-    ! return value
-    real                :: linear_vector_real4(nVar)
-
-    !--------------------------------------------------------------------------
-    linear_vector_real4 = linear_vector( &
-         a_VI, nVar, iMin, iMax, x, x_I, DoExtrapolate, iCell, Dist)
-
-  end function linear_vector_real4
-  !============================================================================
-  function linear_vector(a_VI, nVar, iMin, iMax, x, x_I, DoExtrapolate, &
-       iCell, Dist)
-
-    ! Calculate linear interpolation of a_VI(nVar,iMin:iMax) at position x
-    ! or at the position given by iCell + Dist.
-    ! Assume normalized coordinates unless the coordinates x_I is present.
-    ! Extrapolate if DoExtrapolate is present.
-
-    integer, intent(in):: nVar, iMin, iMax
-    class(*),intent(in):: a_VI(:,iMin:)
-
-    real,    intent(in), optional :: x
-    real,    intent(in), optional :: x_I(iMin:)
-    logical, intent(in), optional :: DoExtrapolate
-    integer, intent(in), optional :: iCell
-    real,    intent(in), optional :: Dist
-
-    ! return value
-    real                :: linear_vector(nVar)
-
-    integer :: i1, i2
-    real    :: Dx1, Dx2
-    character(len=*), parameter:: NameSub = 'linear_vector'
-    !--------------------------------------------------------------------------
-
-    if ( present(iCell) .and. present(Dist) ) then
-
-       ! Calculate the remaining cell indices and interpolation weights
-
-       i1 = iCell
-       i2 = i1 + 1
-       Dx1 = Dist
-       Dx2 = 1.0 - Dx1
-
-    else
-
-       ! Locate the point Xyz_D on the grid
-       call find_cell(iMin, iMax, x, i1, Dx1, x_I, DoExtrapolate, &
-            "Called from "//NameSub)
-
-       ! Calculate the remaining cell indices and interpolation weights
-       i2 = i1 + 1; Dx2 = 1.0 - Dx1
-
-    end if
-
-    ! Perform interpolation (or extrapolation) for multiple variables
-    select type (a_VI)
-    type is (real(Real4_))
-       linear_vector = Dx2*a_VI(:,i1) + Dx1*a_VI(:,i2)
-    type is (real(Real8_))
-       linear_vector = Dx2*a_VI(:,i1) + Dx1*a_VI(:,i2)
-    type is (integer)
-       linear_vector = Dx2*a_VI(:,i1) + Dx1*a_VI(:,i2)
-    type is (complex)
-       linear_vector = Dx2*a_VI(:,i1) + Dx1*a_VI(:,i2)
-    end select
-
-  end function linear_vector
   !============================================================================
 
   real function bilinear_scalar_real( &
@@ -610,134 +375,6 @@ contains
     end select
 
   end function bilinear_scalar
-  !============================================================================
-
-  function bilinear_vector_real( &
-       a_VII, nVar, iMin, iMax, jMin, jMax, Xy_D, x_I, y_I, DoExtrapolate, &
-       iCell_D, Dist_D)
-
-    ! Calculate bilinear interpolation of default precision real a_VII
-
-    integer, intent(in) :: nVar, iMin, iMax, jMin, jMax
-    real, intent(in)    :: a_VII(nVar, iMin:iMax,jMin:jMax)
-
-    real,    intent(in), optional:: Xy_D(2), x_I(iMin:), y_I(jMin:), Dist_D(2)
-    logical, intent(in), optional:: DoExtrapolate
-    integer, intent(in), optional:: iCell_D(2)
-
-    ! return value
-    real                :: bilinear_vector_real(nVar)
-
-    !--------------------------------------------------------------------------
-    bilinear_vector_real = bilinear_vector( &
-         a_VII, nVar, iMin, iMax, jMin, jMax, Xy_D, x_I, y_I, DoExtrapolate, &
-         iCell_D, Dist_D)
-
-  end function bilinear_vector_real
-  !============================================================================
-  function bilinear_vector_real4( &
-       a_VII, nVar, iMin, iMax, jMin, jMax, Xy_D, x_I, y_I, DoExtrapolate, &
-       iCell_D, Dist_D)
-
-    ! Calculate bilinear interpolation of default precision real a_VII
-
-    integer,      intent(in):: nVar, iMin, iMax, jMin, jMax
-    real(Real4_), intent(in):: a_VII(nVar, iMin:iMax,jMin:jMax)
-
-    real,    intent(in), optional:: Xy_D(2), x_I(iMin:), y_I(jMin:), Dist_D(2)
-    logical, intent(in), optional:: DoExtrapolate
-    integer, intent(in), optional:: iCell_D(2)
-
-    ! return value
-    real                :: bilinear_vector_real4(nVar)
-
-    !--------------------------------------------------------------------------
-    bilinear_vector_real4 = bilinear_vector( &
-         a_VII, nVar, iMin, iMax, jMin, jMax, Xy_D, x_I, y_I, DoExtrapolate, &
-         iCell_D, Dist_D)
-
-  end function bilinear_vector_real4
-  !============================================================================
-  function bilinear_vector( &
-       a_VII, nVar, iMin, iMax, jMin, jMax, Xy_D, x_I, y_I, DoExtrapolate, &
-       iCell_D, Dist_D)
-
-    ! Calculate bilinear interpolation of a_VII at position Xy_D
-    ! Assume normalized coordinates unless x_I and/or y_I are present.
-    ! If present x_I and y_I contain the coordinates in an increasing order.
-
-    integer,  intent(in):: nVar, iMin, iMax, jMin, jMax
-    class(*), intent(in):: a_VII(:,iMin:,jMin:)
-
-    real,    intent(in), optional:: Xy_D(2)
-    real,    intent(in), optional:: x_I(iMin:)
-    real,    intent(in), optional:: y_I(jMin:)
-    logical, intent(in), optional:: DoExtrapolate
-    integer, intent(in), optional:: iCell_D(2)
-    real,    intent(in), optional:: Dist_D(2)
-
-    ! return value
-    real                :: bilinear_vector(nVar)
-
-    integer :: i1, i2, j1, j2
-    real :: Dx1, Dx2, Dy1, Dy2
-
-    character(len=*), parameter:: NameSub = 'bilinear_vector'
-    !--------------------------------------------------------------------------
-    if ( present(iCell_D) .and. present(Dist_D) ) then
-
-       ! Calculate the remaining cell indices and interpolation weights
-
-       i1 = iCell_D(1)
-       i2 = i1 + 1
-       Dx1 = Dist_D(1)
-       Dx2 = 1.0 - Dx1
-
-       j1 = iCell_D(2)
-       j2 = j1 + 1
-       Dy1 = Dist_D(2)
-       Dy2 = 1.0 - Dy1
-
-    else
-
-       ! Locate the point Xyz_D on the grid
-       call find_cell(iMin, iMax, Xy_D(1), i1, Dx1, x_I, DoExtrapolate, &
-            "Called for coord1 from "//NameSub)
-
-       call find_cell(jMin, jMax, Xy_D(2), j1, Dy1, y_I, DoExtrapolate, &
-            "Called for coord2 from "//NameSub)
-
-       ! Calculate the remaining cell indices and interpolation weights
-       i2 = i1 + 1; Dx2 = 1.0 - Dx1
-       j2 = j1 + 1; Dy2 = 1.0 - Dy1
-
-    end if
-
-    ! Perform interpolation (or extrapolation) for multiple variables
-    select type (a_VII)
-    type is (real(Real4_))
-       bilinear_vector = Dy2*( Dx2*a_VII(:,i1,j1)   &
-            +                  Dx1*a_VII(:,i2,j1))  &
-            +            Dy1*( Dx2*a_VII(:,i1,j2)   &
-            +                  Dx1*a_VII(:,i2,j2))
-    type is (real(Real8_))
-       bilinear_vector = Dy2*( Dx2*a_VII(:,i1,j1)   &
-            +                  Dx1*a_VII(:,i2,j1))  &
-            +            Dy1*( Dx2*a_VII(:,i1,j2)   &
-            +                  Dx1*a_VII(:,i2,j2))
-    type is (integer)
-       bilinear_vector = Dy2*( Dx2*a_VII(:,i1,j1)   &
-            +                  Dx1*a_VII(:,i2,j1))  &
-            +            Dy1*( Dx2*a_VII(:,i1,j2)   &
-            +                  Dx1*a_VII(:,i2,j2))
-    type is (complex)
-       bilinear_vector = Dy2*( Dx2*a_VII(:,i1,j1)   &
-            +                  Dx1*a_VII(:,i2,j1))  &
-            +            Dy1*( Dx2*a_VII(:,i1,j2)   &
-            +                  Dx1*a_VII(:,i2,j2))
-    end select
-
-  end function bilinear_vector
   !============================================================================
 
   real function trilinear_scalar_real( &
@@ -883,161 +520,6 @@ contains
 
   end function trilinear_scalar
   !============================================================================
-  function trilinear_vector_real( &
-       a_VIII, nVar, iMin, iMax, jMin, jMax, kMin, kMax, Xyz_D, &
-       x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
-
-    ! Calculate trilinear interpolation of a_III at position Xyz_D
-
-    integer, intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax
-    real,    intent(in):: a_VIII(nVar,iMin:iMax,jMin:jMax,kMin:kMax)
-
-    real,    intent(in), optional:: &
-         Xyz_D(3), x_I(iMin:), y_I(jMin:), z_I(kMin:), Dist_D(3)
-    logical, intent(in), optional:: DoExtrapolate
-    integer,    intent(in), optional :: iCell_D(3)
-
-    ! return value
-    real :: trilinear_vector_real(nVar)
-
-    !--------------------------------------------------------------------------
-    trilinear_vector_real = trilinear_vector( &
-         a_VIII, nVar, iMin, iMax, jMin, jMax, kMin, kMax, Xyz_D, &
-         x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
-
-  end function trilinear_vector_real
-  !============================================================================
-  function trilinear_vector_real4( &
-       a_VIII, nVar, iMin, iMax, jMin, jMax, kMin, kMax, Xyz_D, &
-       x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
-
-    ! Calculate trilinear interpolation of a_III at position Xyz_D
-
-    integer,      intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax
-    real(Real4_), intent(in):: a_VIII(nVar,iMin:iMax,jMin:jMax,kMin:kMax)
-
-    real,    intent(in), optional:: &
-         Xyz_D(3), x_I(iMin:), y_I(jMin:), z_I(kMin:), Dist_D(3)
-    logical, intent(in), optional:: DoExtrapolate
-    integer,    intent(in), optional :: iCell_D(3)
-
-    ! return value
-    real :: trilinear_vector_real4(nVar)
-
-    !--------------------------------------------------------------------------
-    trilinear_vector_real4 = trilinear_vector( &
-         a_VIII, nVar, iMin, iMax, jMin, jMax, kMin, kMax, Xyz_D, &
-         x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
-
-  end function trilinear_vector_real4
-  !============================================================================
-
-  function trilinear_vector( &
-       a_VIII, nVar, iMin, iMax, jMin, jMax, kMin, kMax, Xyz_D, &
-       x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
-
-    ! Calculate trilinear interpolation of a_III at position Xyz_D
-
-    integer, intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax
-    class(*),intent(in):: a_VIII(:,iMin:,jMin:,kMin:)
-
-    real,    intent(in), optional:: Xyz_D(3)
-    real,    intent(in), optional:: x_I(iMin:)
-    real,    intent(in), optional:: y_I(jMin:)
-    real,    intent(in), optional:: z_I(kMin:)
-    logical, intent(in), optional:: DoExtrapolate
-
-    integer,    intent(in), optional :: iCell_D(3)
-    real,    intent(in), optional :: Dist_D(3)
-
-    ! return value
-    real :: trilinear_vector(nVar)
-
-    integer :: i1, i2, j1, j2, k1, k2
-    real    :: Dx1, Dx2, Dy1, Dy2, Dz1, Dz2
-    character(len=*), parameter:: NameSub = 'trilinear_vector'
-    !--------------------------------------------------------------------------
-
-    if ( present(iCell_D) .and. present(Dist_D) ) then
-
-       ! Calculate the remaining cell indices and interpolation weights
-
-       i1 = iCell_D(1)
-       i2 = i1 + 1
-       Dx1 = Dist_D(1)
-       Dx2 = 1.0 - Dx1
-
-       j1 = iCell_D(2)
-       j2 = j1 + 1
-       Dy1 = Dist_D(2)
-       Dy2 = 1.0 - Dy1
-
-       k1 = iCell_D(3)
-       k2 = k1 + 1
-       Dz1 = Dist_D(3)
-       Dz2 = 1.0 - Dz1
-
-    else
-
-       ! Locate the point Xyz_D on the grid
-       call find_cell(iMin, iMax, Xyz_D(1), i1, Dx1, x_I, DoExtrapolate, &
-            "Called for coord1 from "//NameSub)
-
-       call find_cell(jMin, jMax, Xyz_D(2), j1, Dy1, y_I, DoExtrapolate, &
-            "Called for coord2 from "//NameSub)
-
-       call find_cell(kMin, kMax, Xyz_D(3), k1, Dz1, z_I, DoExtrapolate, &
-            "Called for coord3 from "//NameSub)
-
-       ! Calculate the remaining cell indices and interpolation weights
-       i2 = i1 + 1; Dx2 = 1.0 - Dx1
-       j2 = j1 + 1; Dy2 = 1.0 - Dy1
-       k2 = k1 + 1; Dz2 = 1.0 - Dz1
-
-    end if
-
-    select type (a_VIII)
-    type is (real(Real4_))
-       trilinear_vector = Dz2*(Dy2*(Dx2*a_VIII(:,i1,j1,k1)   &
-            +                       Dx1*a_VIII(:,i2,j1,k1))  &
-            +                  Dy1*(Dx2*a_VIII(:,i1,j2,k1)   &
-            +                       Dx1*a_VIII(:,i2,j2,k1))) &
-            +             Dz1*(Dy2*(Dx2*a_VIII(:,i1,j1,k2)   &
-            +                       Dx1*a_VIII(:,i2,j1,k2))  &
-            +                  Dy1*(Dx2*a_VIII(:,i1,j2,k2)   &
-            +                       Dx1*a_VIII(:,i2,j2,k2)))
-    type is (real(Real8_))
-       trilinear_vector = Dz2*(Dy2*(Dx2*a_VIII(:,i1,j1,k1)   &
-            +                       Dx1*a_VIII(:,i2,j1,k1))  &
-            +                  Dy1*(Dx2*a_VIII(:,i1,j2,k1)   &
-            +                       Dx1*a_VIII(:,i2,j2,k1))) &
-            +             Dz1*(Dy2*(Dx2*a_VIII(:,i1,j1,k2)   &
-            +                       Dx1*a_VIII(:,i2,j1,k2))  &
-            +                  Dy1*(Dx2*a_VIII(:,i1,j2,k2)   &
-            +                       Dx1*a_VIII(:,i2,j2,k2)))
-    type is (integer)
-       trilinear_vector = Dz2*(Dy2*(Dx2*a_VIII(:,i1,j1,k1)   &
-            +                       Dx1*a_VIII(:,i2,j1,k1))  &
-            +                  Dy1*(Dx2*a_VIII(:,i1,j2,k1)   &
-            +                       Dx1*a_VIII(:,i2,j2,k1))) &
-            +             Dz1*(Dy2*(Dx2*a_VIII(:,i1,j1,k2)   &
-            +                       Dx1*a_VIII(:,i2,j1,k2))  &
-            +                  Dy1*(Dx2*a_VIII(:,i1,j2,k2)   &
-            +                       Dx1*a_VIII(:,i2,j2,k2)))
-    type is (complex)
-       trilinear_vector = Dz2*(Dy2*(Dx2*a_VIII(:,i1,j1,k1)   &
-            +                       Dx1*a_VIII(:,i2,j1,k1))  &
-            +                  Dy1*(Dx2*a_VIII(:,i1,j2,k1)   &
-            +                       Dx1*a_VIII(:,i2,j2,k1))) &
-            +             Dz1*(Dy2*(Dx2*a_VIII(:,i1,j1,k2)   &
-            +                       Dx1*a_VIII(:,i2,j1,k2))  &
-            +                  Dy1*(Dx2*a_VIII(:,i1,j2,k2)   &
-            +                       Dx1*a_VIII(:,i2,j2,k2)))
-    end select
-
-  end function trilinear_vector
-  !============================================================================
-
   real function quadlinear_scalar_real( &
        a_I4, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, &
        x_D, x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
@@ -1227,204 +709,6 @@ contains
   end function quadlinear_scalar
   !============================================================================
 
-  function quadlinear_vector_real( &
-       a_VI4, nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, x_D, &
-       x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
-
-    ! Calculate quadlinear interpolation of single precision a_I4
-
-    integer, intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax
-    real,    intent(in):: a_VI4(nVar,iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax)
-    real,    intent(in), optional:: &
-         x_D(4), x1_I(iMin:), x2_I(jMin:), x3_I(kMin:), x4_I(lMin:), Dist_D(4)
-    logical, intent(in), optional:: DoExtrapolate
-    integer, intent(in), optional:: iCell_D(4)
-
-    ! return value
-    real :: quadlinear_vector_real(nVar)
-
-    !--------------------------------------------------------------------------
-    quadlinear_vector_real = quadlinear_vector( &
-         a_VI4, nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, x_D, &
-         x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
-
-  end function quadlinear_vector_real
-  !============================================================================
-  function quadlinear_vector_real4( &
-       a_VI4, nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, x_D, &
-       x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
-
-    ! Calculate quadlinear interpolation of single precision a_I4
-
-    integer, intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax
-    real(Real4_), intent(in):: &
-         a_VI4(nVar,iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax)
-    real,    intent(in), optional:: &
-         x_D(4), x1_I(iMin:), x2_I(jMin:), x3_I(kMin:), x4_I(lMin:), Dist_D(4)
-    logical, intent(in), optional:: DoExtrapolate
-    integer, intent(in), optional:: iCell_D(4)
-
-    ! return value
-    real :: quadlinear_vector_real4(nVar)
-
-    !--------------------------------------------------------------------------
-    quadlinear_vector_real4 = quadlinear_vector( &
-         a_VI4, nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, x_D, &
-         x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
-
-  end function quadlinear_vector_real4
-  !============================================================================
-
-  function quadlinear_vector( &
-       a_VI4, nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, x_D, &
-       x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
-
-    ! Calculate quadlinear interpolation of a_I4 at position x_D
-
-    integer, intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax
-    class(*),intent(in):: a_VI4(:,iMin:,jMin:,kMin:,lMin:)
-
-    real,    intent(in), optional:: x_D(4)
-    real,    intent(in), optional:: x1_I(iMin:)
-    real,    intent(in), optional:: x2_I(jMin:)
-    real,    intent(in), optional:: x3_I(kMin:)
-    real,    intent(in), optional:: x4_I(lMin:)
-    logical, intent(in), optional:: DoExtrapolate
-
-    integer, intent(in), optional :: iCell_D(4)
-    real,    intent(in), optional :: Dist_D(4)
-
-    ! return value
-    real :: quadlinear_vector(nVar)
-
-    integer :: i1, i2, j1, j2, k1, k2, l1, l2
-    real    :: Dx1L, Dx1R, Dx2L, Dx2R, Dx3L, Dx3R, Dx4L, Dx4R
-    character(len=*), parameter:: NameSub = 'quadlinear_vector'
-    !--------------------------------------------------------------------------
-
-    if ( present(iCell_D) .and. present(Dist_D) ) then
-
-       ! Calculate the remaining cell indices and interpolation weights
-
-       i1 = iCell_D(1)
-       i2 = i1 + 1
-       Dx1L = Dist_D(1)
-       Dx1R = 1.0 - Dx1L
-
-       j1 = iCell_D(2)
-       j2 = j1 + 1
-       Dx2L = Dist_D(2)
-       Dx2R = 1.0 - Dx2L
-
-       k1 = iCell_D(3)
-       k2 = k1 + 1
-       Dx3L = Dist_D(3)
-       Dx3R = 1.0 - Dx3L
-
-       l1 = iCell_D(4)
-       l2 = l1 + 1
-       Dx4L = Dist_D(4)
-       Dx4R = 1.0 - Dx4L
-
-    else
-
-       ! Locate the point Xyz_D on the grid
-       call find_cell(iMin, iMax, x_D(1), i1, Dx1L, x1_I, DoExtrapolate, &
-            "Called for coord1 from "//NameSub)
-
-       call find_cell(jMin, jMax, x_D(2), j1, Dx2L, x2_I, DoExtrapolate, &
-            "Called for coord2 from "//NameSub)
-
-       call find_cell(kMin, kMax, x_D(3), k1, Dx3L, x3_I, DoExtrapolate, &
-            "Called for coord3 from "//NameSub)
-
-       call find_cell(lMin, lMax, x_D(4), l1, Dx4L, x4_I, DoExtrapolate, &
-            "Called for coord4 from "//NameSub)
-
-       ! Calculate the remaining cell indices and interpolation weights
-       i2 = i1 + 1; Dx1R = 1.0 - Dx1L
-       j2 = j1 + 1; Dx2R = 1.0 - Dx2L
-       k2 = k1 + 1; Dx3R = 1.0 - Dx3L
-       l2 = l1 + 1; Dx4R = 1.0 - Dx4L
-
-    end if
-
-    select type (a_VI4)
-    type is (real(Real4_))
-       quadlinear_vector = &
-            +Dx4R*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l1)   &
-            +                  Dx1L*a_VI4(:,i2,j1,k1,l1))  &
-            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l1)   &
-            +                  Dx1L*a_VI4(:,i2,j2,k1,l1))) &
-            +      Dx3L*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k2,l1)   &
-            +                  Dx1L*a_VI4(:,i2,j1,k2,l1))  &
-            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l1)   &
-            +                  Dx1L*a_VI4(:,i2,j2,k2,l1))))&
-            +Dx4L*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l2)   &
-            +                  Dx1L*a_VI4(:,i2,j1,k1,l2))  &
-            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l2)   &
-            +                  Dx1L*a_VI4(:,i2,j2,k1,l2))) &
-            +      Dx3L*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k2,l2)   &
-            +                  Dx1L*a_VI4(:,i2,j1,k2,l2))  &
-            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l2)   &
-            +                  Dx1L*a_VI4(:,i2,j2,k2,l2))))
-    type is (real(Real8_))
-       quadlinear_vector = &
-            +Dx4R*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l1)   &
-            +                  Dx1L*a_VI4(:,i2,j1,k1,l1))  &
-            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l1)   &
-            +                  Dx1L*a_VI4(:,i2,j2,k1,l1))) &
-            +      Dx3L*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k2,l1)   &
-            +                  Dx1L*a_VI4(:,i2,j1,k2,l1))  &
-            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l1)   &
-            +                  Dx1L*a_VI4(:,i2,j2,k2,l1))))&
-            +Dx4L*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l2)   &
-            +                  Dx1L*a_VI4(:,i2,j1,k1,l2))  &
-            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l2)   &
-            +                  Dx1L*a_VI4(:,i2,j2,k1,l2))) &
-            +      Dx3L*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k2,l2)   &
-            +                  Dx1L*a_VI4(:,i2,j1,k2,l2))  &
-            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l2)   &
-            +                  Dx1L*a_VI4(:,i2,j2,k2,l2))))
-    type is (integer)
-       quadlinear_vector = &
-            +Dx4R*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l1)   &
-            +                  Dx1L*a_VI4(:,i2,j1,k1,l1))  &
-            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l1)   &
-            +                  Dx1L*a_VI4(:,i2,j2,k1,l1))) &
-            +      Dx3L*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k2,l1)   &
-            +                  Dx1L*a_VI4(:,i2,j1,k2,l1))  &
-            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l1)   &
-            +                  Dx1L*a_VI4(:,i2,j2,k2,l1))))&
-            +Dx4L*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l2)   &
-            +                  Dx1L*a_VI4(:,i2,j1,k1,l2))  &
-            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l2)   &
-            +                  Dx1L*a_VI4(:,i2,j2,k1,l2))) &
-            +      Dx3L*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k2,l2)   &
-            +                  Dx1L*a_VI4(:,i2,j1,k2,l2))  &
-            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l2)   &
-            +                  Dx1L*a_VI4(:,i2,j2,k2,l2))))
-    type is (complex)
-       quadlinear_vector = &
-            +Dx4R*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l1)   &
-            +                  Dx1L*a_VI4(:,i2,j1,k1,l1))  &
-            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l1)   &
-            +                  Dx1L*a_VI4(:,i2,j2,k1,l1))) &
-            +      Dx3L*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k2,l1)   &
-            +                  Dx1L*a_VI4(:,i2,j1,k2,l1))  &
-            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l1)   &
-            +                  Dx1L*a_VI4(:,i2,j2,k2,l1))))&
-            +Dx4L*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l2)   &
-            +                  Dx1L*a_VI4(:,i2,j1,k1,l2))  &
-            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l2)   &
-            +                  Dx1L*a_VI4(:,i2,j2,k1,l2))) &
-            +      Dx3L*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k2,l2)   &
-            +                  Dx1L*a_VI4(:,i2,j1,k2,l2))  &
-            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l2)   &
-            +                  Dx1L*a_VI4(:,i2,j2,k2,l2))))
-    end select
-
-  end function quadlinear_vector
   !============================================================================
 
   real function pentalinear_scalar_real( &
@@ -1695,6 +979,793 @@ contains
     end select
 
   end function pentalinear_scalar
+
+end module ModInterpolateScalar
+!==============================================================================
+
+module ModInterpolate
+
+  ! Calculate second order accurate interpolation for
+  !
+  ! - a uniform grid with normalized coordinates, or
+  ! - non-uniform grid with actual coordinates, or
+  ! - any mixture of the two, i.e. only some of the coordinates are uniform
+  !
+  ! Normalized coordinates mean that the coordinates coincide with the
+  ! indexes at the grid points. For uniform grid this is a very fast algorithm.
+  ! For non-uniform grid a binary search is needed. The coordinates are assumed
+  ! to be either monotone increasing or monotone decreasing.
+  !
+  ! One can interpolate both scalar and vector valued arrays of
+  ! integers, single and double precision reals, and complex numbers.
+  !
+  ! If the coordinates are outside the allowed ranges and the DoExtrapolate
+  ! argument is not present the code stops. If the DoExtrapolate argument
+  ! is present and false, the last grid cell value is used. If DoExtrapolate
+  ! is present and true, second order extrapolation is used.
+
+  ! Examples of usage:
+  !
+  ! Cell based 2D uniform grid with ghost cells, scalar valued:
+  !
+  !     InterpolatedValue = bilinear(Value_II, 0, nI+1, 0, nJ+1, &
+  !                         (/ (x - x0)/DeltaX, (y - y0)/DeltaY) /) )
+  !
+  ! Node based 2D grid with x(1)=y(1)=0.0, vector valued:
+  !
+  !     InterpolatedValue_V = bilinear(Value_VII, nVar, 1, nI, 1, nJ, &
+  !                        (/ x/DeltaX+1, y/DeltaY+1 /) )
+  !
+  ! Nonuniform 3D grid with ghost cells, third coordinate is uniform,
+  ! scalar valued:
+  !
+  !     InterpolatedValue = trilinear(Value_III, -1, nI+2, -1, nJ+2, -1, nK+2,&
+  !                       (/ x, y, (z - z0)/DeltaZ /), x_I, y_I)
+  !
+
+  use ModInterpolateScalar
+  use ModUtilities, ONLY: CON_stop, find_cell
+  use ModKind,      ONLY: Real4_, Real8_
+
+  implicit none
+
+  private ! except
+
+  public :: interpolate_scalar  ! interpolate real scalar in 1...5D
+  public :: interpolate_scalar4 ! single precision scalar
+  public :: interpolate_vector  ! interpolate real vector in 1...5D
+  public :: interpolate_vector4 ! single precision vector
+  public :: linear              ! interpolate integer/real/complex in 1D
+  public :: bilinear            ! interpolate integer/real/complex in 2D
+  public :: trilinear           ! interpolate integer/real/complex in 3D
+  public :: quadlinear          ! interpolate integer/real/complex in 4D
+  public :: pentalinear         ! interpolate integer/real/complex in 5D
+  public :: find_cell           ! find cell in non-uniform grid
+  public :: fit_parabola        ! fit a parabola around an extremum
+  public :: test_interpolation  ! unit test
+
+  character(len=*), parameter :: NameMod='ModInterpolate'
+
+  interface linear
+     module procedure linear_scalar, linear_vector
+  end interface
+
+  interface bilinear
+     module procedure bilinear_scalar, bilinear_vector
+  end interface
+
+  interface trilinear
+     module procedure trilinear_scalar, trilinear_vector
+  end interface
+
+  interface quadlinear
+     module procedure quadlinear_scalar, quadlinear_vector
+  end interface
+
+  interface pentalinear
+     module procedure pentalinear_scalar, pentalinear_vector
+  end interface
+
+contains
+  !============================================================================
+
+  function interpolate_vector( &
+       a_VC, nVar, nDim, Min_D, Max_D, x_D, &
+       x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
+
+    ! Interpolate default precision real vector array of up to 5 dimensions
+    ! Index and distance can be returned in 1D only
+
+    real,    intent(in):: a_VC(*)
+    integer, intent(in):: nVar
+    integer, intent(in):: nDim
+    integer, intent(in):: Min_D(nDim), Max_D(nDim)
+
+    real,    optional, intent(in):: x_D(nDim)
+    real,    optional, intent(in):: x1_I(:), x2_I(:), x3_I(:), x4_I(:), x5_I(:)
+    logical, optional, intent(in):: DoExtrapolate
+    integer, optional, intent(in):: iCell_D(nDim)
+    real,    optional, intent(in):: Dist_D(nDim)
+
+    ! return value
+    real:: interpolate_vector(nVar)
+
+    character(len=*), parameter:: NameSub = 'interpolate_vector'
+    !--------------------------------------------------------------------------
+    select case(nDim)
+    case(1)
+       if(present(iCell_D))then
+          interpolate_vector = linear_vector_real( a_VC, nVar, &
+               Min_D(1), Max_D(1), iCell=iCell_D(1), Dist=Dist_D(1))
+       else
+          interpolate_vector = linear_vector_real( a_VC, nVar, &
+               Min_D(1), Max_D(1), x_D(1), x1_I, DoExtrapolate)
+       end if
+    case(2)
+       interpolate_vector = bilinear_vector_real( a_VC, nVar, &
+            Min_D(1), Max_D(1), Min_D(2), Max_D(2), &
+            x_D, x1_I, x2_I, DoExtrapolate, iCell_D, Dist_D)
+    case(3)
+       interpolate_vector = trilinear_vector_real( a_VC, nVar, &
+            Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
+            x_D, x1_I, x2_I, x3_I, DoExtrapolate, iCell_D, Dist_D)
+    case(4)
+       interpolate_vector = quadlinear_vector_real( a_VC, nVar, &
+            Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
+            Min_D(4), Max_D(4), &
+            x_D, x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
+    case(5)
+       interpolate_vector = pentalinear_vector_real( a_VC, nVar, &
+            Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
+            Min_D(4), Max_D(4), Min_D(5), Max_D(5), &
+            x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
+    case default
+       call CON_stop(NameSub//' nDim should be 1 to 5')
+    end select
+
+  end function interpolate_vector
+  !============================================================================
+
+  function interpolate_vector4( &
+       a_VC, nVar, nDim, Min_D, Max_D, x_D, &
+       x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
+
+    ! Interpolate single precision real vector array of up to 5 dimensions
+    ! Index and distance can be returned in 1D only
+
+    real(Real4_), intent(in):: a_VC(*) ! single precision
+    integer,      intent(in):: nVar
+    integer,      intent(in):: nDim
+    integer,      intent(in):: Min_D(nDim), Max_D(nDim)
+
+    real,    optional, intent(in):: x_D(nDim)
+    real,    optional, intent(in):: x1_I(:), x2_I(:), x3_I(:), x4_I(:), x5_I(:)
+    logical, optional, intent(in):: DoExtrapolate
+    integer, optional, intent(in):: iCell_D(nDim)
+    real,    optional, intent(in):: Dist_D(nDim)
+
+    ! return value
+    real:: interpolate_vector4(nVar)
+
+    character(len=*), parameter:: NameSub = 'interpolate_vector4'
+    !--------------------------------------------------------------------------
+    select case(nDim)
+     case(1)
+        if(present(iCell_D))then
+           interpolate_vector4 = linear_vector_real4( a_VC, nVar, &
+                Min_D(1), Max_D(1), iCell=iCell_D(1), Dist=Dist_D(1))
+        else
+           interpolate_vector4 = linear_vector_real4( a_VC, nVar, &
+                Min_D(1), Max_D(1), x_D(1), x1_I, DoExtrapolate)
+        end if
+     case(2)
+        interpolate_vector4 = bilinear_vector_real4( a_VC, nVar, &
+             Min_D(1), Max_D(1), Min_D(2), Max_D(2), &
+             x_D, x1_I, x2_I, DoExtrapolate, iCell_D, Dist_D)
+     case(3)
+        interpolate_vector4 = trilinear_vector_real4( a_VC, nVar, &
+             Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
+             x_D, x1_I, x2_I, x3_I, DoExtrapolate, iCell_D, Dist_D)
+     case(4)
+        interpolate_vector4 = quadlinear_vector_real4( a_VC, nVar, &
+             Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
+             Min_D(4), Max_D(4), &
+             x_D, x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
+     case(5)
+        interpolate_vector4 = pentalinear_vector_real4( a_VC, nVar, &
+             Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
+             Min_D(4), Max_D(4), Min_D(5), Max_D(5), &
+             x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
+    case default
+       call CON_stop(NameSub//' nDim should be 1 to 5')
+    end select
+
+  end function interpolate_vector4
+  !============================================================================
+
+  function linear_vector_real(a_VI, nVar, iMin, iMax, x, x_I, DoExtrapolate, &
+       iCell, Dist)
+
+    ! interpolate default precision real a_VI vector array
+
+    integer, intent(in):: nVar, iMin, iMax
+    real,    intent(in):: a_VI(nVar,iMin:iMax)
+
+    real,    intent(in), optional :: x, x_I(iMin:), Dist
+    logical, intent(in), optional :: DoExtrapolate
+    integer, intent(in), optional :: iCell
+
+    ! return value
+    real                :: linear_vector_real(nVar)
+
+    !--------------------------------------------------------------------------
+    linear_vector_real = linear_vector( &
+         a_VI, nVar, iMin, iMax, x, x_I, DoExtrapolate, iCell, Dist)
+
+  end function linear_vector_real
+  !============================================================================
+  function linear_vector_real4(a_VI, nVar, iMin, iMax, x, x_I, DoExtrapolate, &
+       iCell, Dist)
+
+    ! interpolate single precision real a_VI vector array
+
+    integer,      intent(in):: nVar, iMin, iMax
+    real(Real4_), intent(in):: a_VI(nVar,iMin:iMax)
+
+    real,    intent(in), optional :: x, x_I(iMin:), Dist
+    logical, intent(in), optional :: DoExtrapolate
+    integer, intent(in), optional :: iCell
+
+    ! return value
+    real                :: linear_vector_real4(nVar)
+
+    !--------------------------------------------------------------------------
+    linear_vector_real4 = linear_vector( &
+         a_VI, nVar, iMin, iMax, x, x_I, DoExtrapolate, iCell, Dist)
+
+  end function linear_vector_real4
+  !============================================================================
+  function linear_vector(a_VI, nVar, iMin, iMax, x, x_I, DoExtrapolate, &
+       iCell, Dist)
+
+    ! Calculate linear interpolation of a_VI(nVar,iMin:iMax) at position x
+    ! or at the position given by iCell + Dist.
+    ! Assume normalized coordinates unless the coordinates x_I is present.
+    ! Extrapolate if DoExtrapolate is present.
+
+    integer, intent(in):: nVar, iMin, iMax
+    class(*),intent(in):: a_VI(:,iMin:)
+
+    real,    intent(in), optional :: x
+    real,    intent(in), optional :: x_I(iMin:)
+    logical, intent(in), optional :: DoExtrapolate
+    integer, intent(in), optional :: iCell
+    real,    intent(in), optional :: Dist
+
+    ! return value
+    real                :: linear_vector(nVar)
+
+    integer :: i1, i2
+    real    :: Dx1, Dx2
+    character(len=*), parameter:: NameSub = 'linear_vector'
+    !--------------------------------------------------------------------------
+
+    if ( present(iCell) .and. present(Dist) ) then
+
+       ! Calculate the remaining cell indices and interpolation weights
+
+       i1 = iCell
+       i2 = i1 + 1
+       Dx1 = Dist
+       Dx2 = 1.0 - Dx1
+
+    else
+
+       ! Locate the point Xyz_D on the grid
+       call find_cell(iMin, iMax, x, i1, Dx1, x_I, DoExtrapolate, &
+            "Called from "//NameSub)
+
+       ! Calculate the remaining cell indices and interpolation weights
+       i2 = i1 + 1; Dx2 = 1.0 - Dx1
+
+    end if
+
+    ! Perform interpolation (or extrapolation) for multiple variables
+    select type (a_VI)
+    type is (real(Real4_))
+       linear_vector = Dx2*a_VI(:,i1) + Dx1*a_VI(:,i2)
+    type is (real(Real8_))
+       linear_vector = Dx2*a_VI(:,i1) + Dx1*a_VI(:,i2)
+    type is (integer)
+       linear_vector = Dx2*a_VI(:,i1) + Dx1*a_VI(:,i2)
+    type is (complex)
+       linear_vector = Dx2*a_VI(:,i1) + Dx1*a_VI(:,i2)
+    end select
+
+  end function linear_vector
+  !============================================================================
+
+  function bilinear_vector_real( &
+       a_VII, nVar, iMin, iMax, jMin, jMax, Xy_D, x_I, y_I, DoExtrapolate, &
+       iCell_D, Dist_D)
+
+    ! Calculate bilinear interpolation of default precision real a_VII
+
+    integer, intent(in) :: nVar, iMin, iMax, jMin, jMax
+    real, intent(in)    :: a_VII(nVar, iMin:iMax,jMin:jMax)
+
+    real,    intent(in), optional:: Xy_D(2), x_I(iMin:), y_I(jMin:), Dist_D(2)
+    logical, intent(in), optional:: DoExtrapolate
+    integer, intent(in), optional:: iCell_D(2)
+
+    ! return value
+    real                :: bilinear_vector_real(nVar)
+
+    !--------------------------------------------------------------------------
+    bilinear_vector_real = bilinear_vector( &
+         a_VII, nVar, iMin, iMax, jMin, jMax, Xy_D, x_I, y_I, DoExtrapolate, &
+         iCell_D, Dist_D)
+
+  end function bilinear_vector_real
+  !============================================================================
+  function bilinear_vector_real4( &
+       a_VII, nVar, iMin, iMax, jMin, jMax, Xy_D, x_I, y_I, DoExtrapolate, &
+       iCell_D, Dist_D)
+
+    ! Calculate bilinear interpolation of default precision real a_VII
+
+    integer,      intent(in):: nVar, iMin, iMax, jMin, jMax
+    real(Real4_), intent(in):: a_VII(nVar, iMin:iMax,jMin:jMax)
+
+    real,    intent(in), optional:: Xy_D(2), x_I(iMin:), y_I(jMin:), Dist_D(2)
+    logical, intent(in), optional:: DoExtrapolate
+    integer, intent(in), optional:: iCell_D(2)
+
+    ! return value
+    real                :: bilinear_vector_real4(nVar)
+
+    !--------------------------------------------------------------------------
+    bilinear_vector_real4 = bilinear_vector( &
+         a_VII, nVar, iMin, iMax, jMin, jMax, Xy_D, x_I, y_I, DoExtrapolate, &
+         iCell_D, Dist_D)
+
+  end function bilinear_vector_real4
+  !============================================================================
+  function bilinear_vector( &
+       a_VII, nVar, iMin, iMax, jMin, jMax, Xy_D, x_I, y_I, DoExtrapolate, &
+       iCell_D, Dist_D)
+
+    ! Calculate bilinear interpolation of a_VII at position Xy_D
+    ! Assume normalized coordinates unless x_I and/or y_I are present.
+    ! If present x_I and y_I contain the coordinates in an increasing order.
+
+    integer,  intent(in):: nVar, iMin, iMax, jMin, jMax
+    class(*), intent(in):: a_VII(:,iMin:,jMin:)
+
+    real,    intent(in), optional:: Xy_D(2)
+    real,    intent(in), optional:: x_I(iMin:)
+    real,    intent(in), optional:: y_I(jMin:)
+    logical, intent(in), optional:: DoExtrapolate
+    integer, intent(in), optional:: iCell_D(2)
+    real,    intent(in), optional:: Dist_D(2)
+
+    ! return value
+    real                :: bilinear_vector(nVar)
+
+    integer :: i1, i2, j1, j2
+    real :: Dx1, Dx2, Dy1, Dy2
+
+    character(len=*), parameter:: NameSub = 'bilinear_vector'
+    !--------------------------------------------------------------------------
+    if ( present(iCell_D) .and. present(Dist_D) ) then
+
+       ! Calculate the remaining cell indices and interpolation weights
+
+       i1 = iCell_D(1)
+       i2 = i1 + 1
+       Dx1 = Dist_D(1)
+       Dx2 = 1.0 - Dx1
+
+       j1 = iCell_D(2)
+       j2 = j1 + 1
+       Dy1 = Dist_D(2)
+       Dy2 = 1.0 - Dy1
+
+    else
+
+       ! Locate the point Xyz_D on the grid
+       call find_cell(iMin, iMax, Xy_D(1), i1, Dx1, x_I, DoExtrapolate, &
+            "Called for coord1 from "//NameSub)
+
+       call find_cell(jMin, jMax, Xy_D(2), j1, Dy1, y_I, DoExtrapolate, &
+            "Called for coord2 from "//NameSub)
+
+       ! Calculate the remaining cell indices and interpolation weights
+       i2 = i1 + 1; Dx2 = 1.0 - Dx1
+       j2 = j1 + 1; Dy2 = 1.0 - Dy1
+
+    end if
+
+    ! Perform interpolation (or extrapolation) for multiple variables
+    select type (a_VII)
+    type is (real(Real4_))
+       bilinear_vector = Dy2*( Dx2*a_VII(:,i1,j1)   &
+            +                  Dx1*a_VII(:,i2,j1))  &
+            +            Dy1*( Dx2*a_VII(:,i1,j2)   &
+            +                  Dx1*a_VII(:,i2,j2))
+    type is (real(Real8_))
+       bilinear_vector = Dy2*( Dx2*a_VII(:,i1,j1)   &
+            +                  Dx1*a_VII(:,i2,j1))  &
+            +            Dy1*( Dx2*a_VII(:,i1,j2)   &
+            +                  Dx1*a_VII(:,i2,j2))
+    type is (integer)
+       bilinear_vector = Dy2*( Dx2*a_VII(:,i1,j1)   &
+            +                  Dx1*a_VII(:,i2,j1))  &
+            +            Dy1*( Dx2*a_VII(:,i1,j2)   &
+            +                  Dx1*a_VII(:,i2,j2))
+    type is (complex)
+       bilinear_vector = Dy2*( Dx2*a_VII(:,i1,j1)   &
+            +                  Dx1*a_VII(:,i2,j1))  &
+            +            Dy1*( Dx2*a_VII(:,i1,j2)   &
+            +                  Dx1*a_VII(:,i2,j2))
+    end select
+
+  end function bilinear_vector
+  !============================================================================
+
+  function trilinear_vector_real( &
+       a_VIII, nVar, iMin, iMax, jMin, jMax, kMin, kMax, Xyz_D, &
+       x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
+
+    ! Calculate trilinear interpolation of a_III at position Xyz_D
+
+    integer, intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax
+    real,    intent(in):: a_VIII(nVar,iMin:iMax,jMin:jMax,kMin:kMax)
+
+    real,    intent(in), optional:: &
+         Xyz_D(3), x_I(iMin:), y_I(jMin:), z_I(kMin:), Dist_D(3)
+    logical, intent(in), optional:: DoExtrapolate
+    integer,    intent(in), optional :: iCell_D(3)
+
+    ! return value
+    real :: trilinear_vector_real(nVar)
+
+    !--------------------------------------------------------------------------
+    trilinear_vector_real = trilinear_vector( &
+         a_VIII, nVar, iMin, iMax, jMin, jMax, kMin, kMax, Xyz_D, &
+         x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
+
+  end function trilinear_vector_real
+  !============================================================================
+  function trilinear_vector_real4( &
+       a_VIII, nVar, iMin, iMax, jMin, jMax, kMin, kMax, Xyz_D, &
+       x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
+
+    ! Calculate trilinear interpolation of a_III at position Xyz_D
+
+    integer,      intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax
+    real(Real4_), intent(in):: a_VIII(nVar,iMin:iMax,jMin:jMax,kMin:kMax)
+
+    real,    intent(in), optional:: &
+         Xyz_D(3), x_I(iMin:), y_I(jMin:), z_I(kMin:), Dist_D(3)
+    logical, intent(in), optional:: DoExtrapolate
+    integer,    intent(in), optional :: iCell_D(3)
+
+    ! return value
+    real :: trilinear_vector_real4(nVar)
+
+    !--------------------------------------------------------------------------
+    trilinear_vector_real4 = trilinear_vector( &
+         a_VIII, nVar, iMin, iMax, jMin, jMax, kMin, kMax, Xyz_D, &
+         x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
+
+  end function trilinear_vector_real4
+  !============================================================================
+
+  function trilinear_vector( &
+       a_VIII, nVar, iMin, iMax, jMin, jMax, kMin, kMax, Xyz_D, &
+       x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
+
+    ! Calculate trilinear interpolation of a_III at position Xyz_D
+
+    integer, intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax
+    class(*),intent(in):: a_VIII(:,iMin:,jMin:,kMin:)
+
+    real,    intent(in), optional:: Xyz_D(3)
+    real,    intent(in), optional:: x_I(iMin:)
+    real,    intent(in), optional:: y_I(jMin:)
+    real,    intent(in), optional:: z_I(kMin:)
+    logical, intent(in), optional:: DoExtrapolate
+
+    integer,    intent(in), optional :: iCell_D(3)
+    real,    intent(in), optional :: Dist_D(3)
+
+    ! return value
+    real :: trilinear_vector(nVar)
+
+    integer :: i1, i2, j1, j2, k1, k2
+    real    :: Dx1, Dx2, Dy1, Dy2, Dz1, Dz2
+    character(len=*), parameter:: NameSub = 'trilinear_vector'
+    !--------------------------------------------------------------------------
+
+    if ( present(iCell_D) .and. present(Dist_D) ) then
+
+       ! Calculate the remaining cell indices and interpolation weights
+
+       i1 = iCell_D(1)
+       i2 = i1 + 1
+       Dx1 = Dist_D(1)
+       Dx2 = 1.0 - Dx1
+
+       j1 = iCell_D(2)
+       j2 = j1 + 1
+       Dy1 = Dist_D(2)
+       Dy2 = 1.0 - Dy1
+
+       k1 = iCell_D(3)
+       k2 = k1 + 1
+       Dz1 = Dist_D(3)
+       Dz2 = 1.0 - Dz1
+
+    else
+
+       ! Locate the point Xyz_D on the grid
+       call find_cell(iMin, iMax, Xyz_D(1), i1, Dx1, x_I, DoExtrapolate, &
+            "Called for coord1 from "//NameSub)
+
+       call find_cell(jMin, jMax, Xyz_D(2), j1, Dy1, y_I, DoExtrapolate, &
+            "Called for coord2 from "//NameSub)
+
+       call find_cell(kMin, kMax, Xyz_D(3), k1, Dz1, z_I, DoExtrapolate, &
+            "Called for coord3 from "//NameSub)
+
+       ! Calculate the remaining cell indices and interpolation weights
+       i2 = i1 + 1; Dx2 = 1.0 - Dx1
+       j2 = j1 + 1; Dy2 = 1.0 - Dy1
+       k2 = k1 + 1; Dz2 = 1.0 - Dz1
+
+    end if
+
+    select type (a_VIII)
+    type is (real(Real4_))
+       trilinear_vector = Dz2*(Dy2*(Dx2*a_VIII(:,i1,j1,k1)   &
+            +                       Dx1*a_VIII(:,i2,j1,k1))  &
+            +                  Dy1*(Dx2*a_VIII(:,i1,j2,k1)   &
+            +                       Dx1*a_VIII(:,i2,j2,k1))) &
+            +             Dz1*(Dy2*(Dx2*a_VIII(:,i1,j1,k2)   &
+            +                       Dx1*a_VIII(:,i2,j1,k2))  &
+            +                  Dy1*(Dx2*a_VIII(:,i1,j2,k2)   &
+            +                       Dx1*a_VIII(:,i2,j2,k2)))
+    type is (real(Real8_))
+       trilinear_vector = Dz2*(Dy2*(Dx2*a_VIII(:,i1,j1,k1)   &
+            +                       Dx1*a_VIII(:,i2,j1,k1))  &
+            +                  Dy1*(Dx2*a_VIII(:,i1,j2,k1)   &
+            +                       Dx1*a_VIII(:,i2,j2,k1))) &
+            +             Dz1*(Dy2*(Dx2*a_VIII(:,i1,j1,k2)   &
+            +                       Dx1*a_VIII(:,i2,j1,k2))  &
+            +                  Dy1*(Dx2*a_VIII(:,i1,j2,k2)   &
+            +                       Dx1*a_VIII(:,i2,j2,k2)))
+    type is (integer)
+       trilinear_vector = Dz2*(Dy2*(Dx2*a_VIII(:,i1,j1,k1)   &
+            +                       Dx1*a_VIII(:,i2,j1,k1))  &
+            +                  Dy1*(Dx2*a_VIII(:,i1,j2,k1)   &
+            +                       Dx1*a_VIII(:,i2,j2,k1))) &
+            +             Dz1*(Dy2*(Dx2*a_VIII(:,i1,j1,k2)   &
+            +                       Dx1*a_VIII(:,i2,j1,k2))  &
+            +                  Dy1*(Dx2*a_VIII(:,i1,j2,k2)   &
+            +                       Dx1*a_VIII(:,i2,j2,k2)))
+    type is (complex)
+       trilinear_vector = Dz2*(Dy2*(Dx2*a_VIII(:,i1,j1,k1)   &
+            +                       Dx1*a_VIII(:,i2,j1,k1))  &
+            +                  Dy1*(Dx2*a_VIII(:,i1,j2,k1)   &
+            +                       Dx1*a_VIII(:,i2,j2,k1))) &
+            +             Dz1*(Dy2*(Dx2*a_VIII(:,i1,j1,k2)   &
+            +                       Dx1*a_VIII(:,i2,j1,k2))  &
+            +                  Dy1*(Dx2*a_VIII(:,i1,j2,k2)   &
+            +                       Dx1*a_VIII(:,i2,j2,k2)))
+    end select
+
+  end function trilinear_vector
+  !============================================================================
+
+  function quadlinear_vector_real( &
+       a_VI4, nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, x_D, &
+       x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
+
+    ! Calculate quadlinear interpolation of single precision a_I4
+
+    integer, intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax
+    real,    intent(in):: a_VI4(nVar,iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax)
+    real,    intent(in), optional:: &
+         x_D(4), x1_I(iMin:), x2_I(jMin:), x3_I(kMin:), x4_I(lMin:), Dist_D(4)
+    logical, intent(in), optional:: DoExtrapolate
+    integer, intent(in), optional:: iCell_D(4)
+
+    ! return value
+    real :: quadlinear_vector_real(nVar)
+
+    !--------------------------------------------------------------------------
+    quadlinear_vector_real = quadlinear_vector( &
+         a_VI4, nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, x_D, &
+         x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
+
+  end function quadlinear_vector_real
+  !============================================================================
+  function quadlinear_vector_real4( &
+       a_VI4, nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, x_D, &
+       x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
+
+    ! Calculate quadlinear interpolation of single precision a_I4
+
+    integer, intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax
+    real(Real4_), intent(in):: &
+         a_VI4(nVar,iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax)
+    real,    intent(in), optional:: &
+         x_D(4), x1_I(iMin:), x2_I(jMin:), x3_I(kMin:), x4_I(lMin:), Dist_D(4)
+    logical, intent(in), optional:: DoExtrapolate
+    integer, intent(in), optional:: iCell_D(4)
+
+    ! return value
+    real :: quadlinear_vector_real4(nVar)
+
+    !--------------------------------------------------------------------------
+    quadlinear_vector_real4 = quadlinear_vector( &
+         a_VI4, nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, x_D, &
+         x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
+
+  end function quadlinear_vector_real4
+  !============================================================================
+
+  function quadlinear_vector( &
+       a_VI4, nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, x_D, &
+       x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
+
+    ! Calculate quadlinear interpolation of a_I4 at position x_D
+
+    integer, intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax
+    class(*),intent(in):: a_VI4(:,iMin:,jMin:,kMin:,lMin:)
+
+    real,    intent(in), optional:: x_D(4)
+    real,    intent(in), optional:: x1_I(iMin:)
+    real,    intent(in), optional:: x2_I(jMin:)
+    real,    intent(in), optional:: x3_I(kMin:)
+    real,    intent(in), optional:: x4_I(lMin:)
+    logical, intent(in), optional:: DoExtrapolate
+
+    integer, intent(in), optional :: iCell_D(4)
+    real,    intent(in), optional :: Dist_D(4)
+
+    ! return value
+    real :: quadlinear_vector(nVar)
+
+    integer :: i1, i2, j1, j2, k1, k2, l1, l2
+    real    :: Dx1L, Dx1R, Dx2L, Dx2R, Dx3L, Dx3R, Dx4L, Dx4R
+    character(len=*), parameter:: NameSub = 'quadlinear_vector'
+    !--------------------------------------------------------------------------
+
+    if ( present(iCell_D) .and. present(Dist_D) ) then
+
+       ! Calculate the remaining cell indices and interpolation weights
+
+       i1 = iCell_D(1)
+       i2 = i1 + 1
+       Dx1L = Dist_D(1)
+       Dx1R = 1.0 - Dx1L
+
+       j1 = iCell_D(2)
+       j2 = j1 + 1
+       Dx2L = Dist_D(2)
+       Dx2R = 1.0 - Dx2L
+
+       k1 = iCell_D(3)
+       k2 = k1 + 1
+       Dx3L = Dist_D(3)
+       Dx3R = 1.0 - Dx3L
+
+       l1 = iCell_D(4)
+       l2 = l1 + 1
+       Dx4L = Dist_D(4)
+       Dx4R = 1.0 - Dx4L
+
+    else
+
+       ! Locate the point Xyz_D on the grid
+       call find_cell(iMin, iMax, x_D(1), i1, Dx1L, x1_I, DoExtrapolate, &
+            "Called for coord1 from "//NameSub)
+
+       call find_cell(jMin, jMax, x_D(2), j1, Dx2L, x2_I, DoExtrapolate, &
+            "Called for coord2 from "//NameSub)
+
+       call find_cell(kMin, kMax, x_D(3), k1, Dx3L, x3_I, DoExtrapolate, &
+            "Called for coord3 from "//NameSub)
+
+       call find_cell(lMin, lMax, x_D(4), l1, Dx4L, x4_I, DoExtrapolate, &
+            "Called for coord4 from "//NameSub)
+
+       ! Calculate the remaining cell indices and interpolation weights
+       i2 = i1 + 1; Dx1R = 1.0 - Dx1L
+       j2 = j1 + 1; Dx2R = 1.0 - Dx2L
+       k2 = k1 + 1; Dx3R = 1.0 - Dx3L
+       l2 = l1 + 1; Dx4R = 1.0 - Dx4L
+
+    end if
+
+    select type (a_VI4)
+    type is (real(Real4_))
+       quadlinear_vector = &
+            +Dx4R*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l1)   &
+            +                  Dx1L*a_VI4(:,i2,j1,k1,l1))  &
+            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l1)   &
+            +                  Dx1L*a_VI4(:,i2,j2,k1,l1))) &
+            +      Dx3L*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k2,l1)   &
+            +                  Dx1L*a_VI4(:,i2,j1,k2,l1))  &
+            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l1)   &
+            +                  Dx1L*a_VI4(:,i2,j2,k2,l1))))&
+            +Dx4L*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l2)   &
+            +                  Dx1L*a_VI4(:,i2,j1,k1,l2))  &
+            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l2)   &
+            +                  Dx1L*a_VI4(:,i2,j2,k1,l2))) &
+            +      Dx3L*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k2,l2)   &
+            +                  Dx1L*a_VI4(:,i2,j1,k2,l2))  &
+            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l2)   &
+            +                  Dx1L*a_VI4(:,i2,j2,k2,l2))))
+    type is (real(Real8_))
+       quadlinear_vector = &
+            +Dx4R*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l1)   &
+            +                  Dx1L*a_VI4(:,i2,j1,k1,l1))  &
+            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l1)   &
+            +                  Dx1L*a_VI4(:,i2,j2,k1,l1))) &
+            +      Dx3L*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k2,l1)   &
+            +                  Dx1L*a_VI4(:,i2,j1,k2,l1))  &
+            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l1)   &
+            +                  Dx1L*a_VI4(:,i2,j2,k2,l1))))&
+            +Dx4L*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l2)   &
+            +                  Dx1L*a_VI4(:,i2,j1,k1,l2))  &
+            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l2)   &
+            +                  Dx1L*a_VI4(:,i2,j2,k1,l2))) &
+            +      Dx3L*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k2,l2)   &
+            +                  Dx1L*a_VI4(:,i2,j1,k2,l2))  &
+            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l2)   &
+            +                  Dx1L*a_VI4(:,i2,j2,k2,l2))))
+    type is (integer)
+       quadlinear_vector = &
+            +Dx4R*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l1)   &
+            +                  Dx1L*a_VI4(:,i2,j1,k1,l1))  &
+            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l1)   &
+            +                  Dx1L*a_VI4(:,i2,j2,k1,l1))) &
+            +      Dx3L*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k2,l1)   &
+            +                  Dx1L*a_VI4(:,i2,j1,k2,l1))  &
+            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l1)   &
+            +                  Dx1L*a_VI4(:,i2,j2,k2,l1))))&
+            +Dx4L*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l2)   &
+            +                  Dx1L*a_VI4(:,i2,j1,k1,l2))  &
+            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l2)   &
+            +                  Dx1L*a_VI4(:,i2,j2,k1,l2))) &
+            +      Dx3L*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k2,l2)   &
+            +                  Dx1L*a_VI4(:,i2,j1,k2,l2))  &
+            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l2)   &
+            +                  Dx1L*a_VI4(:,i2,j2,k2,l2))))
+    type is (complex)
+       quadlinear_vector = &
+            +Dx4R*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l1)   &
+            +                  Dx1L*a_VI4(:,i2,j1,k1,l1))  &
+            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l1)   &
+            +                  Dx1L*a_VI4(:,i2,j2,k1,l1))) &
+            +      Dx3L*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k2,l1)   &
+            +                  Dx1L*a_VI4(:,i2,j1,k2,l1))  &
+            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l1)   &
+            +                  Dx1L*a_VI4(:,i2,j2,k2,l1))))&
+            +Dx4L*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l2)   &
+            +                  Dx1L*a_VI4(:,i2,j1,k1,l2))  &
+            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l2)   &
+            +                  Dx1L*a_VI4(:,i2,j2,k1,l2))) &
+            +      Dx3L*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k2,l2)   &
+            +                  Dx1L*a_VI4(:,i2,j1,k2,l2))  &
+            +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l2)   &
+            +                  Dx1L*a_VI4(:,i2,j2,k2,l2))))
+    end select
+
+  end function quadlinear_vector
   !============================================================================
 
   function pentalinear_vector_real( &
@@ -1977,241 +2048,7 @@ contains
     end select
 
   end function pentalinear_vector
-  !============================================================================
 
-  subroutine find_cell(MinCoord, MaxCoord, Coord, iCoord, dCoord, &
-       Coord_I, DoExtrapolate, StringError, IsInside)
-
-    ! Find cell index and distance from cell for either
-    ! - a uniform grid with normalized coordinate (Coord_I is NOT present)
-    ! - a nonuniform grid with monotone coordinates (Coord_I is present)
-    !
-    ! For sake of easy usage the returned coordinate index iCoord always
-    ! satisfies MinCoord <= iCoord < MaxCoord.
-    !
-    ! If the coordinate is out of bounds, and DoExtrapolate is not present,
-    ! the code stops with an error message. If DoExtrapolate is present and
-    ! false, dCoord is modified to 0 or 1 so that the last grid cell is used.
-    ! If DoExtrapolate is true, iCoord and dCoord are set
-    ! corresponding to linear extrapolation from the last two grid values.
-    !
-    ! For interpolation the normalized distance dCoord measured from
-    ! coordinate iCoord satisfies 0.0 <= dCoord <= 1.0
-    ! but for extrapolation dCoord < 0.0 or > 1.0 is also possible.
-    !---
-    ! FOR THE UNIFORM CASE the normalized coordinate Coord should be equal to
-    ! the index at the cell centers, therefore:
-    !
-    ! iCoord = max(MinCoord, min(MaxCoord-1, floor(Coord)))
-    ! dCoord = Coord - iCoord
-    !
-    ! The optional IsInside = MinCoord <= Coord <= MaxCoord
-
-    ! IN THE NON-UNIFORM CASE the cell iCoord that is left to coordinate Coord
-    ! is found with a binary search in the Coord_I coordinates.
-    !
-    ! The normalized distance is set to
-    !    dCoord = (Coord-Coord_I(iCoord))/(Coord_I(iCoord+1)-Coord_I(iCoord))
-    !
-    ! The optional IsInside = Coord_I(1) <= Coord <= Coord_I(nCoord).
-
-    ! Example for linear interpolation on a 1D uniform grid of nX cells,
-    ! DeltaX cell size and the first cell center is at DeltaX/2:
-    !
-    !   call find_cell(1, nX, x/DeltaX+0.5, iX, d)
-    !   State_V = (1.0 - d)*State_VC(:,iX) + d*State_VC(:,iX+1)
-    !
-    ! Example for linear interpolation on a 1D non-uniform grid
-    ! with 2 ghost cells:
-    !
-    !   call find_cell(-1, nI+2, x, iX, d, x_G)
-    !   State_V = (1.0 - d)*State_VG(:,iX) + d*State_VG(:,iX+1)
-
-    integer, intent(in)           :: MinCoord, MaxCoord
-    real,    intent(in)           :: Coord
-    integer, intent(out)          :: iCoord
-    real,    intent(out), optional:: dCoord
-    real,    intent(in),  optional:: Coord_I(MinCoord:)
-    logical, intent(in),  optional:: DoExtrapolate
-    character(len=*),     optional:: StringError
-    logical, intent(out), optional:: IsInside
-
-    integer:: i, Di
-
-    logical:: IsUniform
-
-    character(len=*), parameter:: NameSub = 'find_cell'
-    !--------------------------------------------------------------------------
-
-    if(present(Coord_I)) then
-       IsUniform = size(Coord_I) < 2
-    else
-       IsUniform = .true.
-    endif
-
-    if(IsUniform)then
-       ! Uniform grid case with normalized coordinate
-
-       iCoord = min(MaxCoord-1, max(MinCoord, floor(Coord)))
-       dCoord = Coord - iCoord
-
-       if(Coord < MinCoord)then
-          if(.not. (present(DoExtrapolate))) then
-             if(present(StringError)) write(*,*) NameSub, ': ', StringError
-             write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
-             write(*,*) NameSub,': Coord=', Coord
-             call CON_stop(NameSub//': normalized coordinate is to small!')
-          elseif(.not.DoExtrapolate)then
-             ! Use lefttmost cell (first order accurate)
-             dCoord = 0.0
-          end if
-          if(present(IsInside)) IsInside = .false.
-       elseif(Coord > MaxCoord)then
-          if(.not. (present(DoExtrapolate))) then
-             if(present(StringError)) write(*,*) StringError
-             write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
-             write(*,*) NameSub,': Coord=', Coord
-             call CON_stop(NameSub//': normalized coordinate is too large!')
-          elseif(.not.DoExtrapolate)then
-             ! Use rightmost cell (first order accurate)
-             dCoord = 1.0
-          endif
-          if(present(IsInside)) IsInside = .false.
-       else
-          if(present(IsInside)) IsInside = .true.
-       end if
-
-    elseif(Coord_I(MinCoord) < Coord_I(MaxCoord))then
-
-       ! Monotone increasing coordinates
-
-       if(Coord < Coord_I(MinCoord))then
-          if(.not. (present(DoExtrapolate))) then
-             if(present(StringError)) write(*,*) StringError
-             write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
-             write(*,*) NameSub,': Coord, CoordMin, CoordMax=', &
-                  Coord, Coord_I(MinCoord), Coord_I(MaxCoord)
-             call CON_stop(NameSub//': coordinate is too small!')
-          elseif(DoExtrapolate)then
-             iCoord = MinCoord
-             dCoord = (Coord - Coord_I(iCoord)) &
-                  /   (Coord_I(iCoord+1) - Coord_I(iCoord))
-          else
-             iCoord = MinCoord
-             dCoord = 0.0
-          end if
-          if(present(IsInside)) IsInside = .false.
-          RETURN
-       end if
-
-       if(Coord > Coord_I(MaxCoord))then
-          if(.not. (present(DoExtrapolate))) then
-             if(present(StringError)) write(*,*) StringError
-             write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
-             write(*,*) NameSub,': Coord, CoordMin, CoordMax=', &
-                  Coord, Coord_I(MinCoord), Coord_I(MaxCoord)
-             call CON_stop(NameSub//': coordinate is too large!')
-          elseif(DoExtrapolate)then
-             iCoord = MaxCoord - 1
-             dCoord = (Coord - Coord_I(iCoord))  &
-                  /   (Coord_I(iCoord+1) - Coord_I(iCoord))
-          else
-             iCoord = MaxCoord - 1
-             dCoord = 1.0
-          end if
-          if(present(IsInside)) IsInside = .false.
-          RETURN
-       end if
-
-       if(present(IsInside)) IsInside = .true.
-
-       ! binary search
-       i  = (MinCoord + MaxCoord)/2
-       Di = (MaxCoord - MinCoord)/2
-       do
-          Di = (Di + 1)/2
-          if(Coord < Coord_I(i)) then
-             i = max(MinCoord, i - Di)
-          elseif(Coord > Coord_I(i+1))then
-             i = min(MaxCoord-1, i + Di)
-          else
-             EXIT
-          end if
-       end do
-       iCoord = i
-       if(Coord_I(iCoord+1) == Coord_I(iCoord))then
-          dCoord = 0.0
-       else
-          dCoord = (Coord             - Coord_I(iCoord)) &
-               /   (Coord_I(iCoord+1) - Coord_I(iCoord))
-       end if
-    else
-
-       ! Monotone decreasing coordinates
-
-       if(Coord < Coord_I(MaxCoord))then
-          if(.not. (present(DoExtrapolate))) then
-             if(present(StringError)) write(*,*) StringError
-             write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
-             write(*,*) NameSub,': Coord, CoordMin, CoordMax=', &
-                  Coord, Coord_I(MaxCoord), Coord_I(MinCoord)
-             call CON_stop(NameSub//': coordinate is too small!')
-          elseif(DoExtrapolate)then
-             iCoord = MaxCoord - 1
-             dCoord = (Coord_I(iCoord) - Coord) &
-                  /   (Coord_I(iCoord) - Coord_I(iCoord+1))
-          else
-             iCoord = MaxCoord - 1
-             dCoord = 1.0
-          end if
-          if(present(IsInside)) IsInside = .false.
-          RETURN
-       end if
-
-       if(Coord > Coord_I(MinCoord))then
-          if(.not. (present(DoExtrapolate))) then
-             if(present(StringError)) write(*,*) StringError
-             write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
-             write(*,*) NameSub,': Coord, CoordMin, CoordMax=', &
-                  Coord, Coord_I(MaxCoord), Coord_I(MinCoord)
-             call CON_stop(NameSub//': coordinate is too large!')
-          elseif(DoExtrapolate)then
-             iCoord = MinCoord
-             dCoord = (Coord_I(iCoord) - Coord)  &
-                  /   (Coord_I(iCoord) - Coord_I(iCoord+1))
-          else
-             iCoord = MinCoord
-             dCoord = 0.0
-          end if
-          if(present(IsInside)) IsInside = .false.
-          RETURN
-       end if
-
-       if(present(IsInside)) IsInside = .true.
-
-       ! binary search
-       i  = (MinCoord + MaxCoord)/2
-       Di = (MaxCoord - MinCoord)/2
-       do
-          Di = (Di + 1)/2
-          if(Coord > Coord_I(i)) then
-             i = max(MinCoord, i - Di)
-          elseif(Coord < Coord_I(i+1))then
-             i = min(MaxCoord-1, i + Di)
-          else
-             EXIT
-          end if
-       end do
-       iCoord = i
-       if(Coord_I(iCoord+1) == Coord_I(iCoord))then
-          dCoord = 0.0
-       else
-          dCoord = (Coord_I(iCoord) - Coord  ) &
-               /   (Coord_I(iCoord) - Coord_I(iCoord+1))
-       end if
-    end if
-
-  end subroutine find_cell
   !============================================================================
   subroutine fit_parabola(x_I, y_I, &
        xExtremumOut, yExtremumOut, Weight2Out_I, Weight3Out_I)
