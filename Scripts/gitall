@@ -72,7 +72,7 @@ if($gitcmd or $Reference or $List or $Remote){
 
 my $Error;
 
-@RefList = sort {$b !~ /\// or ($a cmp $b)} @RefList;
+@RefList = sort {$b !~ /^  / or ($a cmp $b)} @RefList;
 if($Reference =~ /c/i){
     print '#include <iostream>
 void print_git_info(){
@@ -115,7 +115,7 @@ sub execute_gitall(){
    opendir(my $DIR,"$dir") or die "gitall can't open directory $dir\n";
    # Exclude directories starting with . and symbolic links
    my @subdirs = 
-       grep { /^[^.]/ and -d "$dir/$_" and not -l "$dir/$_"} readdir($DIR);
+       grep { /^[^.]/ and -d "$dir/$_" and not -l "$dir/$_"} sort(readdir($DIR));
    closedir($DIR);
    push @subdirs,@gits;
 
