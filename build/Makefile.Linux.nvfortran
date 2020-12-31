@@ -83,7 +83,7 @@ MPILIB =
 
 #OPENMPFLAG = -mp
 
-#ACCFLAG = -acc -Minfo=all
+#ACCFLAG = -acc -Minfo=all -DOPENACC
 
 #
 # This is the search path for used modules
@@ -110,7 +110,7 @@ OPT4 = -O4
 
 # Flags that are always need for compilation:
 
-CFLAG = ${SEARCH} -c ${OPENMPFLAG} ${ACCFLAG} ${DEBUG}
+CFLAG = ${SEARCH} -c -Mpreprocess ${OPENMPFLAG} ${ACCFLAG} ${DEBUG}
 
 Cflag0  = ${CFLAG} ${PRECISION} ${OPT0} 
 Cflag1  = ${CFLAG} ${PRECISION} ${OPT1}
