@@ -80,6 +80,14 @@
 # To run on the 40-core Aitken Cascade Lake nodes (192GB/node or 4.8GB/core)
 ### PBS -l select=16:ncpus=40:model=cas_ait
 
+# To run on K40 GPU
+#!! PBS -l select=1:ncpus=16:model=san_gpu
+### PBS -q k40
+
+# To run on v100 GPU (up to 4)
+#!! PBS -lselect=1:ncpus=36:ngpus=1:model=sky_gpu
+#!! PBS -lselect=1:ncpus=48:ngpus=1:model=cas_gpu
+### PBS -q v100@pbspl4
 
 # The default is the "normal" queue with an 8 hour walltime limit.
 
