@@ -12,13 +12,20 @@
 #
 #   qsub.pfe.pl job.pfe
 #
-# This can be used for the normal/long queues. Use qsub.pfe.pl -h for help on usage.
+# This can be used the for normal/long queues. For help, type 
 #
-# For the devel queue only one job can be submitted. To see the number of free nodes
-# per machine type and queue use
+#   qsub.pfe.pl -h
+#
+# For the devel queue only one job can be submitted. To see the number of
+# free nodes per machine type and queue use
 #
 # node_stats.sh
 # 
+# To check the status of submitted jobs, use
+#
+# qstat -u YOUR_USER_NAME
+# qstat v100@pbspl4 -u YOUR_USER_NAME # for v100 jobs
+#
 # Note that the run directory should be moved to the /nobackup filesystem,
 # otherwise the quota on the home directory will fill up before the run ends.
 # Even on the /nobackup system there is a limit on the number of files.
