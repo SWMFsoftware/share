@@ -690,6 +690,13 @@ sub set_openacc_{
 
     # Set the OpenACC compilation flags in $MakefileConf
 
+    # Check if OpenACC is available at all
+    if(not `grep ACCFLAG $MakefileConf`){
+	warn "$WARNING there is no ACCFLAG in $MakefileConf\n";
+	$OpenACC = "no"; $NewOpenACC = "no";
+	return;
+    }
+
     # Clean the code so it gets recompiled with consistent openacc flag
     &shell_command('make clean');
 
