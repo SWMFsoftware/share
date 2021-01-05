@@ -117,10 +117,10 @@
 # cd into the run directory
 cd $PBS_O_WORKDIR
 
-# These settings may or may not be useful
-#setenv MPI_MSGS_PER_HOST 100000
-#setenv MPI_MSGS_PER_PROC 100000
-#setenv MPI_MSGS_MAX      100000
+# For PGI compilers uncomment the 3 lines below:
+#module purge; module load comp-pgi mpi-hpe idl python
+#setenv MPICC_CC pgcc
+#setenv MPICXX_CXX pgc++
 
 # Seems to be needed for HDF5 plots
 setenv MPI_TYPE_DEPTH 20
