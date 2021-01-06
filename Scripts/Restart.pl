@@ -273,7 +273,7 @@ sub get_time_step{
     $nStep          = $Step if $nStep < 0;
 
     # Check if times are consistent in a time accurate run
-    die "$ERROR in file $File time $Time differs from ".
+    warn "$ERROR in file $File time $Time differs from ".
 	"simulation time $SimulationTime!\n" 
 	if $SimulationTime and abs($Time - $SimulationTime) > 0.01;
 }
