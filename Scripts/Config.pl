@@ -367,7 +367,7 @@ if($Compiler eq "nagfor" and $Debug eq "yes" and
 &create_makefile_rules unless $CloneOnly;
 
 # (re)create gitinfo.txt file in the main directory
-if($GetGitInfo or ($Install and not $IsComponent)){
+if($GetGitInfo or ($Install and not $IsComponent and $ENV{"GITINFO"} ne "NO")){
     shell_command("$gitall -r > gitinfo.txt; ls -l \`pwd\`/gitinfo.txt")
 }
 
