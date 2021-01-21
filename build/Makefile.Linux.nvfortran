@@ -94,7 +94,7 @@ SEARCH = -module ${INCLDIR} ${INCL_EXTRA}
 #
 # Flags used for debugging. 
 #
-DEBUGFLAG = -C -g -Ktrap=fp
+DEBUGFLAG = -C -g #-Ktrap=fp
 DEBUG     = 
 
 #
