@@ -582,7 +582,7 @@ MACHINE  = $Machine
 	    print;
 	}
     }
-
+    
     # Read info from main Makefile.def
     &get_settings_;
 
@@ -946,6 +946,7 @@ sub set_amrex_{
 	}
 	
 	$AmrexCompiler="nag" if $Compiler eq "nagfor";
+	$AmrexCompiler="pgi" if $Compiler eq "pgf90" or $Compiler eq "nvfortran";
 	
 	&shell_command("cd util/AMREX;", 
 		       "./configure --prefix $installdir --comp $AmrexCompiler --enable-fortran-api no --debug $Debug --enable-tiny-profile yes;",
