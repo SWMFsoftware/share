@@ -1,5 +1,5 @@
 # C language related part of Makefile.conf: Makefile.pgccmpicxx
-C_COMPILER_NAME=pgccmpicxx
+C_COMPILER_NAME=pgcc
 # This file is for Yellowstone (and similar) system with PGI C compiler
 
 COMPILE.c     = pgcc
