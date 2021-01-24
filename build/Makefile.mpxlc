@@ -1,5 +1,5 @@
 # C language related part of Makefile.conf: Makefile.mpxlc
-C_COMPILER_NAME=mpxlc
+C_COMPILER_NAME=xlc
 
 COMPILE.c     = mpxlc
 COMPILE.mpicc = mpxlc

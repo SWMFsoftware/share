@@ -1,5 +1,5 @@
 # C language related part of Makefile.conf: Makefile.intelcc
-C_COMPILER_NAME=intelcc
+C_COMPILER_NAME=icc
 # This file is for the Bluewaters Cray where cc and CC is used
 # for all C compilers. The flags are still specific for Intel.
 # Requires loading the Intel programming environment.

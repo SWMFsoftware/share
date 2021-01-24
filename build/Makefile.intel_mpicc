@@ -1,5 +1,5 @@
 # C language related part of Makefile.conf: Makefile.intel_mpicc
-C_COMPILER_NAME=intel_mpicc
+C_COMPILER_NAME=icc
 
 COMPILE.c     = icc
 COMPILE.mpicc = mpiicc
