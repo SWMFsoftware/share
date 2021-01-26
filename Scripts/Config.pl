@@ -1119,7 +1119,9 @@ sub create_makefile_rules{
 
     # Hash for general configuration settings
     my %Settings = (OS         => $OS, 
-		    Compiler   => $Compiler,
+		    Compiler   => $Fcompiler,
+		    Fcompiler  => $Fcompiler,
+		    Ccompiler  => $Ccompiler,
 		    Mpi        => $Mpi,
 		    Debug      => $Debug,
 		    Hdf5       => $Hdf5,
