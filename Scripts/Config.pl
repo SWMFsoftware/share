@@ -1123,7 +1123,13 @@ sub create_makefile_rules{
 		    Fcompiler  => $Fcompiler,
 		    Ccompiler  => $Ccompiler,
 		    Mpi        => $Mpi,
+		    MPI        => $Mpi,
+		    OpenACC    => $OpenACC,
+		    OpenMP     => $OpenMp,
+		    OpenMp     => $OpenMp,
 		    Debug      => $Debug,
+		    Hypre      => $Hypre,
+		    Amrex      => $Amrex,
 		    Hdf5       => $Hdf5,
 		    Machine    => $Machine,
 		    Precision  => $Precision);
@@ -1131,6 +1137,8 @@ sub create_makefile_rules{
     # Add settings from the caller Config.pl script
     my $Settings = shift;
     $Settings{$1}=$2 while $Settings =~ s/(\w+)\s*=\s*([^,\n]+)//;
+
+    #print "Settings: ",join(', ',%Settings),"\n";
 
     # Create Makefile.RULES from Makefile.RULES.all in all src* directories
     my $InFile;
