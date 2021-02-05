@@ -127,7 +127,9 @@ contains
     ! 01/22/2016: G.Toth updated to IGRF-12 coefficients to 2020.
     !             Fixed JDAY/365 to (JDAY-1)/365.25 (as in GEOPACK-2008).
     !             Rewrote the whole thing.
-
+    ! 02/04/2020: G.Toth updated to IGRF-13 coefficients to 2025 from
+    !             https://www.ngdc.noaa.gov/IAGA/vmod/coeffs/igrf13coeffs.txt
+    
     integer, intent(in):: iYearIn  ! Year number (four digits) 
     integer, intent(in):: iDayIn   ! Day of year (day 1 = JAN 1)
 
@@ -140,7 +142,7 @@ contains
 
     ! Year range
     integer, parameter:: MinYear = 1965
-    integer, parameter:: MaxYear = 2015
+    integer, parameter:: MaxYear = 2020
 
     ! IGRF coefficients are given every 5 year
     integer, parameter:: DnYear = 5
@@ -163,7 +165,8 @@ contains
          -1728.2,  +5186.1,  -29619.4,  & ! 2000
          -1669.05, +5077.99, -29554.63, & ! 2005
          -1586.42, +4944.26, -29496.57, & ! 2010
-         -1501.0,  +4797.1,  -29442.0   & ! 2015
+         -1501.77, +4795.99, -29441.46,  & ! 2015
+         -1450.9,  +4652.5,  -29404.8   & ! 2020
          /), (/3, nEpoch/) )
 
     integer:: iEpoch        ! Index of the 5 year "epoch"
