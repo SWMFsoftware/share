@@ -43,8 +43,8 @@ OPT3 = -O3
 OPT4 = -O3
 
 # Select the line with -ipo for inlining
-#CFLAG = ${SEARCH} -c -w -vec-report0 -xT -ipo ${DEBUG}
-CFLAG = ${SEARCH} -c -w -vec-report0 -xT ${DEBUG}
+#CFLAG = ${SEARCH} -c -w -fpp -vec-report0 -xT -ipo ${DEBUG}
+CFLAG = ${SEARCH} -c -w -fpp -vec-report0 -xT ${DEBUG}
 
 Cflag0  = ${CFLAG} ${PRECISION} ${OPT0}
 Cflag1  = ${CFLAG} ${PRECISION} ${OPT1}

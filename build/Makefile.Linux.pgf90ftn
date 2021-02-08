@@ -107,7 +107,7 @@ OPT4 = -O4
 
 # Flags that are always need for compilation:
 
-CFLAG = ${SEARCH} -c ${OPENMPFLAG} ${DEBUG}
+CFLAG = ${SEARCH} -c -Mpreprocess ${OPENMPFLAG} ${DEBUG}
 
 Cflag0  = ${CFLAG} ${PRECISION} ${OPT0} 
 Cflag1  = ${CFLAG} ${PRECISION} ${OPT1}
