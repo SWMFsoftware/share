@@ -32,7 +32,7 @@ my %Compiler = (
                 "slogin"              => "ifortftn,intelcc",
                 "cetuslac"            => "mpixlf2008,mpixlc",
                 "miralac"             => "mpixlf2008,mpixlc",
-                "frontera"            => "mpif90,iccmpicxx",
+                "frontera"            => "ifortmpif90,iccmpicxx",
                 "ascent"              => "pgf90,pgccmpicxx",
 		);
 
