@@ -7,7 +7,6 @@
 *.tmp
 *.out
 *.protex
-Python/swmfpy
 
 Library/src/Makefile.DEPEND
 Library/src/Makefile.RULES
