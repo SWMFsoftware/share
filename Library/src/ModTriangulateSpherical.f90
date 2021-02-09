@@ -8051,9 +8051,9 @@ contains
     integer, intent(in) :: iUnit  
     ! Nubmer of nodes involved into triangulation
     integer, intent(in) :: nNode  
-    integer, intent(in) :: iList_I(   6*(nNode-2)) !\
+    integer, intent(in) :: iList_I(   6*(nNode-2)) !
     integer, intent(in) :: iPointer_I(6*(nNode-2)) !Created by TRMESH routin
-    integer, intent(in) :: iEnd_I(nNode)           !/
+    integer, intent(in) :: iEnd_I(nNode)           !
     !\
     !    Input, integer iList_I, nodal indexes which, along with iPointer_I and
     !    iEnd_I define the triangulation as a set of nNode adjacency lists;
@@ -8179,9 +8179,9 @@ contains
     integer, intent(in) :: iNodeToFix
     ! Nubmer of nodes involved into triangulation
     integer, intent(in) :: nNode  
-    integer, intent(in) :: iList_I(   6*(nNode-2)) !\
+    integer, intent(in) :: iList_I(   6*(nNode-2)) !
     integer, intent(in) :: iPointer_I(6*(nNode-2)) !Created by TRMESH routin
-    integer, intent(in) :: iEnd_I(nNode)           !/
+    integer, intent(in) :: iEnd_I(nNode)           !
     !\
     !    Input, integer iList_I, nodal indexes which, along with iPointer_I and
     !    iEnd_I define the triangulation as a set of nNode adjacency lists;
