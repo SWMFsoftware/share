@@ -69,6 +69,11 @@ function funcdef,xx,w,func
      ['ue'       , 'sqrt({uex}^2+{uey}^2+{uez}^2)'           ], $
      ['ur'       , '(x*ux+y*uy+z*uz)/r'                      ], $ ; radial u
      ['Br'       , '(x*bx+y*by+z*bz)/r'                      ], $ ; radial B 
+     ['B0x'      , 'bx-{b1x}'                                ], $ ; B0x
+     ['B0y'      , 'by-{b1y}'                                ], $ ; B0y
+     ['B0z'      , 'bz-{b1z}'                                ], $ ; B0z
+     ['B0'       , 'sqrt({B0x}^2+{B0y}^2+{B0z}^2)'           ], $ ; B0
+     ['B0r'      , '(x*{B0x}+y*{B0y}+z*{B0z})/r'             ], $ ; radial B0
      ['jr'       , '(x*{jx}+y*{jy}+z*{jz})/r'                ], $ ; radial current
      ['j'        , 'sqrt({jx}^2+{jy}^2+{jz}^2)'              ], $ ; current density
      ['jxBx'     , '{jy}*bz-{jz}*by'                         ], $ ; Lorentz force
