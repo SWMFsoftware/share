@@ -153,6 +153,7 @@ foreach $source (@source){
     my $testarguments; # arguments for test_start and test_stop
     my $removeoktest;  # true while removing old oktest code
     my $interface;     # true inside interface .. end interface
+    my $formatline;    # true after NUMBER format and continuation lines
     my $istart0;       # first line of top level unit
     my $istart;        # first line of current method
     my $iseparator;    # index of !---- separator line (if present)
@@ -166,6 +167,16 @@ foreach $source (@source){
 	# remove trailing spaces
 	s/\s+\n/\n/;
 
+	# Avoid "format" statement and following lines
+	if(/^[\s\d]+format/i){
+	    $formatline = 1 if /\&\s*$/;
+	    next;
+	}
+	if($formatline){
+	    $formatline = /\&\s*$/;
+	    next;
+	}
+	  	
 	# Fix copyright message
 	s/Michigan, portions used/Michigan,\n!  portions used/;
 	$_ = "" if /This code is a copyright/ and /2002/;
@@ -200,11 +211,16 @@ foreach $source (@source){
 	# Fix omp/acc directives: !$ omp -> !$omp
 	s/(^\s*\!\$) (omp|acc)/$1$2/;
 	
-	# Remove lines with arbitrary decorations !\ and !/
-	s/^\s*\!\\\s*$//;
-	s/^\s*\!\/\s*\n//;
+	# Remove arbitrary decorations !\ and !/
+	s/^\s*\!\/\s*\n//;   # Remove full line with !/ only
+	s/\s*\!\\\s*\n/\n/;  # Remove !\ from end of line
+	s/\s*\!\/\s*\n/\n/;  # Remove !/ from end of line
 
-	# Replace (/ and /) with [ and ]
+	# Replace !\... and !/... with ! ...
+	# so fpp is not confusing it with continuation line
+	s/(\!)[\\\/](.+)/$1 $2/;
+
+	# Replace (/ and /) with [ and ]	
 	s/\(\//\[/g unless /^\s*\!/;
 	s/\/\)/\]/g unless /^\s*\!/;
 	
