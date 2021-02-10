@@ -1,5 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, 
-!  portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 
 module ModExactRS
@@ -10,26 +10,26 @@ module ModExactRS
 
   implicit none
   real,private:: GammaHere=1.6666666666666666
-  real        :: PStar,UnStar !pressure and velocity in the Star Region
-  real        :: RhoL, UnL, PL, RhoR, UnR, PR !Rho,Un,P: (L)eft and (R)ight
-  real,private:: CL,CR       !Sound speeds
-  real:: WL,WR       !Total perturbation speed 
+  real        :: PStar,UnStar ! pressure and velocity in the Star Region
+  real        :: RhoL, UnL, PL, RhoR, UnR, PR ! Rho,Un,P: (L)eft and (R)ight
+  real,private:: CL,CR       ! Sound speeds
+  real:: WL,WR       ! Total perturbation speed
                             !(advection+speed of sound for weak wave)
-                            !Shock wave speed for a shock.
+                            ! Shock wave speed for a shock.
   !$omp threadprivate( GammaHere )
   !$omp threadprivate( PStar,UnStar,RhoL,UnL,PL,RhoR,UnR,PR,CL,CR,WL,WR )
 contains
-  !========================================================================!
+  !============================================================================
   subroutine exact_rs_set_gamma(GammaIn)
     real,intent(in)::GammaIn
-    !Should be applied only if: 
-    !FIRST, Gamma=const, and, 
-    !SECOND, Gamma=const /= (5/3)
+    ! Should be applied only if:
+    ! FIRST, Gamma=const, and,
+    ! SECOND, Gamma=const /= (5/3)
+    !--------------------------------------------------------------------------
     GammaHere = GammaIn
   end subroutine exact_rs_set_gamma
-  !========================================================================!
+  !============================================================================
   subroutine  exact_rs_pu_star(GammaLIn,GammaRIn)
-    implicit none
     !     Programer: E. F. Toro                                            *
     !                                                                      *
     !     Last revision: 31st May 1999                                     *
@@ -49,7 +49,7 @@ contains
     !     Research and Applications,                                       *
     !     by E. F. Toro                                                    *
     !     Published by NUMERITEK LTD, 1999                                 *
-    !     Website: www.numeritek.com                 
+    !     Website: www.numeritek.com
     !     Revision history: re-wrote in f90, allow GammaL/=GammaR
     !     Purpose: to compute the solution for pressure and
     !              velocity in the Star Region
@@ -57,21 +57,22 @@ contains
     !
     real,optional,intent(in)::GammaLIn,GammaRIn
 
-    real :: FL, FLD, FR, FRD !Pressure (F)unctions and its (D)erivatives 
-    real :: POld             !Iterative values for pressure
-    real :: UDiff            !Function to be nullified
+    real :: FL, FLD, FR, FRD ! Pressure (F)unctions and its (D)erivatives
+    real :: POld             ! Iterative values for pressure
+    real :: UDiff            ! Function to be nullified
     integer,parameter::nIterMax=10
     integer::iIter
-    real,parameter::TolP=0.0010,ChangeStart=2.0*TolP 
+    real,parameter::TolP=0.0010,ChangeStart=2.0*TolP
     real::Change,UVac,GammaL,GammaR
-    real,parameter::cSafetyFactor=0.999 !Limits the speed of expansion
+    real,parameter::cSafetyFactor=0.999 ! Limits the speed of expansion
+    !--------------------------------------------------------------------------
     if(present(GammaLIn))then
        GammaL = GammaLIn
     else
        GammaL = GammaHere
     end if
     CL = sqrt(GammaL*PL/RhoL)
-    
+
     if(present(GammaRIn))then
        GammaR = GammaRIn
     else
@@ -83,7 +84,7 @@ contains
 
     UDiff = UnR - UnL
 
-    !Prevents the formation of vacuum regions:
+    ! Prevents the formation of vacuum regions:
     if(UDiff > cSafetyFactor*UVac)call CON_stop('Vacuum in RS')
 
     !
@@ -107,30 +108,31 @@ contains
     WR = UnR + WR
     WL = UnL - WL
   contains
-    !====================================================!
+    !==========================================================================
     subroutine pressure_function(F,FD,P,RhoK,PK,CK,WK,GammaIn)
       !
       !     Purpose: to evaluate the pressure functions
       !              FL and FR in exact Riemann solver
-      !              and their first derivatives 
+      !              and their first derivatives
       !
       real,intent(in):: P,RhoK,PK,CK
       real,intent(out):: F,FD,WK
       real,optional,intent(in):: GammaIn
       real:: Gamma
-      !Misc:
+      ! Misc:
       REAL:: BK, PRatio,PRatioPowG1, QRT
-      !-------------------------------------------!
+
+      !------------------------------------------------------------------------
       if(present(GammaIn))then
          Gamma=GammaIn
       else
          Gamma=GammaHere
       end if
-      IF(P.LE.PK)THEN
+      IF(P <= PK)THEN
          !
          !        Rarefaction wave
          !
-         PRatio = P/PK 
+         PRatio = P/PK
          PRatioPowG1= PRatio**((GAMMA - 1.0)/(2.0*GAMMA))
          F    = CK*(PRatioPowG1 - 1.0)*2.0/(GAMMA - 1.0)
          FD   = PRatioPowG1/(PRatio*RhoK*CK)
@@ -146,16 +148,16 @@ contains
          WK=0.50*(GAMMA + 1.0)*BK*QRT
       ENDIF
     end subroutine pressure_function
-    !===============================================!
+    !==========================================================================
     subroutine guess_p(PGuess)
 
       !     Purpose: to provide a guessed value for pressure
-      !              PM in the Star Region. 
+      !              PM in the Star Region.
       !     Author of the version : P.Voinovich, 1992
       real,intent(out)::PGuess
       real::ImpedanceL,ImpedanceR,PAvr,ImpedanceTotalInv
       real,parameter::cTinyFractionOf=1.0e-8
-      !----------------------------------------------------!
+      !------------------------------------------------------------------------
       ImpedanceL = RhoL*CL; ImpedanceR = RhoR*CR
 
       ImpedanceTotalInv=1.0/(ImpedanceL+ImpedanceR)
@@ -165,8 +167,9 @@ contains
       PGuess=max(cTinyFractionOf*PAvr,&
            PAvr+(UnL-UnR)*ImpedanceTotalInv*ImpedanceL*ImpedanceR)
     end subroutine guess_p
+    !==========================================================================
   end subroutine exact_rs_pu_star
-  !==================================================!
+  !============================================================================
   subroutine exact_rs_sample(S, Rho, Un, P, GammaLIn,GammaRIn)
     !
     !     Purpose: to sample the solution throughout the wave
@@ -180,6 +183,7 @@ contains
     real,optional,intent(in)::GammaLIn,GammaRIn
 
     !
+    !--------------------------------------------------------------------------
     IF(S >  WR)THEN
        !
        !              Sampled point is data state
@@ -194,7 +198,7 @@ contains
        Rho = RhoL
        Un = UnL
        P = PL
-    ELSEIF(S.LE.UnStar)THEN
+    ELSEIF(S <= UnStar)THEN
        !
        !        Sampling point lies to the left of the contact
        !        discontinuity
@@ -204,23 +208,25 @@ contains
        !
        !        Sampling point lies to the right of the contact
        !        discontinuity
-       !    
+       !
        call simple_wave(S-UnStar,RhoR,UnR-UnStar,PR,CR, GammaRIn)
        Un = Un+UnStar
     end IF
   contains
+    !==========================================================================
     subroutine simple_wave(SRel,RhoK,UnK,PK,CK, GammaIn)
       real,intent(in)::SRel,RhoK,UnK,PK,CK
       real,optional,intent(in)::GammaIn
       real::Gamma
-      !Misc:
+      ! Misc:
       real::C,G7
+      !------------------------------------------------------------------------
       if(present(GammaIn))then
          Gamma=GammaIn
       else
          Gamma=GammaHere
       end if
-      IF(PStar.LE.PK)THEN
+      IF(PStar <= PK)THEN
          !
          !           rarefaction
          !
@@ -238,7 +244,7 @@ contains
 
             G7 = (Gamma - 1.0)/2.0
 
-            !Solve the system of equations:
+            ! Solve the system of equations:
             !
             ! CK - G7 * UnK = C - G7* Un
             ! SRel = C + Un
@@ -251,7 +257,7 @@ contains
       ELSE
          !
          !          Shock
-         ! 
+         !
          !
          !              Sampled point is Star state
          !
@@ -261,5 +267,8 @@ contains
          P = PStar
       ENDIF
     end  subroutine simple_wave
+    !==========================================================================
   end subroutine exact_rs_sample
+  !============================================================================
 end module ModExactRS
+!==============================================================================

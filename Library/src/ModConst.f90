@@ -11,15 +11,12 @@ module ModConst
 
   save
 
-  !\
   ! Physical and solar astronomical constants.
   !
   ! All constants for planets, satellites, comets and
   ! other astronomical bodyies are found in ModPlanetConst
-  !/
-  !\
+
   ! Physical constants
-  !/
 
   ! Time units
   real, parameter:: cSecondPerYear   = 31536000.0
@@ -54,17 +51,17 @@ module ModConst
   ! Fundamental charge [Coulomb]
   real, parameter:: cElectronCharge  = 1.6022E-19
 
-  !Fundamental charge squared in Joule*m, the Coulomb factor.
+  ! Fundamental charge squared in Joule*m, the Coulomb factor.
   real, parameter:: cElectronChargeSquaredJm = &
        cElectronCharge**2/(4.0*cPi*cEps)
-  !Alternative definition, this is charge of electron in CGSE,
-  !4.8e-10, squared and converted from erg*cm to J*m=1E9 erg*cm.
-  !Therefore, cElectronChargeSquaredJm = (4.8e-10)**2/1E9. It is
-  !convenient to use this parameter while evaluating non-electric
-  !quantities, such as opacity, collision rate etc, via formulae 
-  !written in CGSE. By expressing all even powers of the 
-  !elementary charge using this parameter and expressing all the 
-  !other quantities in Si, the result will be in Si.
+  ! Alternative definition, this is charge of electron in CGSE,
+  ! 4.8e-10, squared and converted from erg*cm to J*m=1E9 erg*cm.
+  ! Therefore, cElectronChargeSquaredJm = (4.8e-10)**2/1E9. It is
+  ! convenient to use this parameter while evaluating non-electric
+  ! quantities, such as opacity, collision rate etc, via formulae
+  ! written in CGSE. By expressing all even powers of the
+  ! elementary charge using this parameter and expressing all the
+  ! other quantities in Si, the result will be in Si.
 
   ! Planck constant  [J*s]
   real(Real8_), parameter :: cPlanckH    = 6.626069311E-34
@@ -151,12 +148,11 @@ module ModConst
   real, parameter:: rSun              = 0.696E+9               ! [ m]
   real, parameter:: mSun              = 1.99E+30               ! [kg]
   real, parameter:: RotationPeriodSun = 25.38 * cSecondPerDay  ! [ s]
-  ! Time difference in seconds between 0th Carrington Rotation on 
+  ! Time difference in seconds between 0th Carrington Rotation on
   ! 1853-Oct-13 14:26:17(approx) and the base year 1965-Jan-01
   ! 12:00:00
   real(Real8_), parameter:: tStartCarringtonRotation = -3.5097064D+9 ! [s]
   real, parameter:: CarringtonSynodicPeriod = 27.2753D0 * cSecondPerDay ! [s]
-
 
 contains
   !============================================================================
@@ -167,7 +163,7 @@ contains
     ! in a hydrogen plasma: q=kappa_e_0T^{5/2}\nabla T, the heat flux,q, and
     ! and the electron temperature, T, are both in SI system of units as well as
     ! the scale of length.
-    !\
+
     ! Attention!!! For all applications to solar corona and inner heliosphere
     ! it is expected that Coulomb logarithm equals 20. Therefore, the
     ! only legitimate formula for electron heat conduction coefficient is
@@ -175,7 +171,6 @@ contains
     ! q=kappa_0_e(20.0)*TeSi^2*sqrt(TeSi)
     !
     ! This is the only place in which the use of CoulombLog=20 is documented.
-    !/
     !--------------------------------------------------------------------------
     kappa_0_e=3.2*3.0*cTwoPi/CoulombLog &
          *sqrt(cTwoPi*cBoltzmann/cElectronMass)*cBoltzmann &

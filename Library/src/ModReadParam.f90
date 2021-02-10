@@ -1,11 +1,12 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-!BOP
+! BOP
 !
-!QUOTE: \chapter{Fortran Libraries in share/ and util/}
-!QUOTE: \section{share/Library}
+! QUOTE: \chapter{Fortran Libraries in share/ and util/}
+! QUOTE: \section{share/Library}
 !
-!MODULE: ModReadParam - read, include, broadcast and distribute parameters
+! MODULE: ModReadParam - read, include, broadcast and distribute parameters
 !INTERFACE:
 module ModReadParam
 
@@ -23,7 +24,7 @@ module ModReadParam
   ! \end{verbatim}
   ! command. Include files can be nested up to MaxNestedFile=10 levels.
   !
-  ! The text either ends at the end of the file, or at the 
+  ! The text either ends at the end of the file, or at the
   ! \begin{verbatim}
   ! #END
   ! \end{verbatim}
@@ -38,7 +39,7 @@ module ModReadParam
   ! starting from line iLine+1 to the last line nLine.
   ! It also sets the session number, the name of the component which should
   ! read the selected text, and the output unit used by the compnent
-  ! for echoing the parameters. Normally only the control component 
+  ! for echoing the parameters. Normally only the control component
   ! calls {\bf read\_init}.
   !
   ! {\bf Function read\_line} reads the next line from the selected
@@ -47,15 +48,15 @@ module ModReadParam
   ! are provided in optional output arguments.
   !
   ! \bigskip
-  ! For the control component as well as for many physical components 
-  ! the parameters are given in form of command lines followed by parameter 
-  ! lines. The commands start with a \# character, which is usually 
+  ! For the control component as well as for many physical components
+  ! the parameters are given in form of command lines followed by parameter
+  ! lines. The commands start with a \# character, which is usually
   ! followed by upper case letters and numbers. Anything after a space
-  ! or TAB (char(9)) is ignored. The number of parameter lines is determined 
+  ! or TAB (char(9)) is ignored. The number of parameter lines is determined
   ! by the command.  Each parameter line contains either a logical, an
-  ! integer, a real or a string variable. Comments placed after at least 
-  ! 3 spaces or one TAB character are ignored. The lines which do not contain 
-  ! a command or the corresponding parameters are ignored, and can be used 
+  ! integer, a real or a string variable. Comments placed after at least
+  ! 3 spaces or one TAB character are ignored. The lines which do not contain
+  ! a command or the corresponding parameters are ignored, and can be used
   ! for remarks.  For example
   ! \begin{verbatim}
   ! #COMMAND1
@@ -74,9 +75,9 @@ module ModReadParam
   ! {\bf Subroutine read\_var} reads the parameter from the parameter line.
   ! The name of the parameter is provided as an input argument, the value
   ! is obtained from the output argument.
-  ! 
+  !
   ! {\bf Subroutine read\_echo\_set} can be used to set the logical,
-  ! which determines if the input parameters should be echoed back. 
+  ! which determines if the input parameters should be echoed back.
   ! The default is no echo.
   !
   ! \bigskip
@@ -117,13 +118,13 @@ module ModReadParam
   ! the following methods are available to read the text into a string array:
   !
   ! {\bf Function i\_line\_read()} returns the number of the line
-  ! before the first line. 
+  ! before the first line.
   !
   ! {\bf Function n\_line\_read()} returns the line number of the last line.
   !
-  ! {\bf Subroutine  read\_text} returns the selected part of the 
-  ! text buffer in its output argument. 
-  ! 
+  ! {\bf Subroutine  read\_text} returns the selected part of the
+  ! text buffer in its output argument.
+  !
   ! \bigskip
   ! These methods can be used like this
   ! \begin{verbatim}
@@ -168,11 +169,11 @@ module ModReadParam
 
   !REVISION HISTORY:
   ! 01Sep03 G. Toth - initial implementation based on BATSRUS
-  ! 31Oct04 G. Toth - added fractions 3/5 for reals, 
+  ! 31Oct04 G. Toth - added fractions 3/5 for reals,
   !                   added read_in public method without a Name parameter,
   !                   replaced err=1 with iostat=iReadError.
   ! 27Nov06 G. Toth - added i_line_command function
-  !EOP
+  ! EOP
 
   character(len=*), parameter :: NameMod='ModReadParam'
 
@@ -192,7 +193,7 @@ module ModReadParam
 
   ! Storage for all the commands for all sessions:
   ! the command index is increased from 1 to iCommand in every session
-  ! and the name and line number is stored. The name contains the 
+  ! and the name and line number is stored. The name contains the
   ! component and command name together.
   integer, parameter :: MaxCommand = MaxLine/3, MaxSession = 10
   integer            :: iCommand = 0
@@ -210,9 +211,10 @@ module ModReadParam
   end interface
 
 contains
+  !============================================================================
 
-  !BOP =======================================================================
-  !IROUTINE: read_file - read parameter file
+  ! BOP =======================================================================
+  ! IROUTINE: read_file - read parameter file
   !INTERFACE:
   subroutine read_file(NameFile, iCommIn, NameRestartFile, IsVerbose)
 
@@ -220,7 +222,7 @@ contains
 
     !INPUT ARGUMENTS:
     ! Name of the base param file
-    character (len=*), optional, intent(in):: NameFile 
+    character (len=*), optional, intent(in):: NameFile
     integer, optional, intent(in):: iCommIn  ! MPI communicator for broadcast
 
     ! Name of the restart file to be read if a #RESTART command is found
@@ -228,11 +230,9 @@ contains
 
     ! Do not report number of lines if IsVerbose is present and false
     logical, intent(in), optional:: IsVerbose
-    
-    !EOP
-    integer, parameter :: MaxNestedFile = 10
 
-    character(len=*), parameter :: NameSub=NameMod//'::read_file'
+    ! EOP
+    integer, parameter :: MaxNestedFile = 10
 
     character (len=lStringLine) :: NameCommand
 
@@ -244,9 +244,10 @@ contains
 
     ! If true, then read for stdin.
     logical:: DoReadStdin
-    
+
     logical :: DoInclude
-    !-----------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'read_file'
+    !--------------------------------------------------------------------------
     if(present(iCommIn))then
        iComm = iCommIn
     else
@@ -255,7 +256,7 @@ contains
 
     ! If no file name is given, read from STDIN
     DoReadStdIn = .not. present(NameFile)
-    
+
     ! Get processor rank and number of processors
     if(iComm == MPI_COMM_SELF)then
        iProc = 0
@@ -272,7 +273,7 @@ contains
        nLine = 0
        if(DoReadStdin) then
           iUnit_I(iFile) = StdIn_
-       else 
+       else
           inquire(file=NameFile,EXIST=IsFound)
           if(.not.IsFound)call CON_stop(NameSub//' SWMF_ERROR: '//&
                trim(NameFile)//" cannot be found")
@@ -282,9 +283,9 @@ contains
        do
           read(iUnit_I(iFile),'(a)', ERR=100, END=100) StringLine
           NameCommand=StringLine
-          i=index(NameCommand,' '); 
+          i=index(NameCommand,' ');
           if(i>0)NameCommand(i:len(NameCommand))=' '
-          i=index(NameCommand,char(9)); 
+          i=index(NameCommand,char(9));
           if(i>0)NameCommand(i:len(NameCommand))=' '
           if(NameCommand=='#INCLUDE')then
              ! Include text from file following the #INCLUDE command
@@ -351,7 +352,7 @@ contains
        if(nLine==0)call CON_stop(NameSub// &
             " SWMF_ERROR: no lines of input read")
     end if
-    
+
     if(nProc > 1)then
        ! Broadcast the number of lines and the text itself to all processors
        call MPI_Bcast(nLine,1,MPI_INTEGER,0,iComm,iError)
@@ -374,8 +375,7 @@ contains
          ': read and broadcast nLine=',nLine,' lines of text'
 
   end subroutine read_file
-
-  !===========================================================================
+  !============================================================================
 
   subroutine read_init(NameCompIn, iSessionIn, iLineIn, nLineIn, iIoUnitIn)
 
@@ -387,8 +387,8 @@ contains
 
     integer:: iSessionNew
 
-    character(len=*), parameter :: NameSub=NameMod//'::read_init'
-    !------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'read_init'
+    !--------------------------------------------------------------------------
     if(present(iSessionIn))then
        iSessionNew = iSessionIn
     else
@@ -428,21 +428,22 @@ contains
     else
        StringPrefix = ''
     end if
-    
-  end subroutine read_init
 
-  !===========================================================================
+  end subroutine read_init
+  !============================================================================
 
   subroutine read_echo_set(DoEchoIn)
 
     logical, intent(in) :: DoEchoIn
 
+    !--------------------------------------------------------------------------
     DoEcho = DoEchoIn
 
   end subroutine read_echo_set
+  !============================================================================
 
-  !BOP =======================================================================
-  !IROUTINE: read_line - read the next line from the text buffer
+  ! BOP =======================================================================
+  ! IROUTINE: read_line - read the next line from the text buffer
   !INTERFACE:
   logical function read_line(StringLineOut, iLineOut)
 
@@ -456,8 +457,9 @@ contains
     ! Return .true. if successful, otherwise (if there are
     ! no more lines in the selected part of the text buffer)
     ! return .false. and an empty string in StringLineOut if present.
-    !EOP
+    ! EOP
 
+    !--------------------------------------------------------------------------
     iLine=iLine+1
     if(present(iLineOut)) iLineOut = iLine
     if(iLine <= nLine)then
@@ -470,9 +472,10 @@ contains
     endif
 
   end function read_line
+  !============================================================================
 
-  !BOP =======================================================================
-  !IROUTINE: read_command - read the name of the command from the current line
+  ! BOP =======================================================================
+  ! IROUTINE: read_command - read the name of the command from the current line
   !INTERFACE:
   logical function read_command(NameCommand)
 
@@ -481,13 +484,13 @@ contains
 
     !DESCRIPTION:
     ! If the current line contains a command name (starting with \#),
-    ! return true, and put the name of the command into the 
+    ! return true, and put the name of the command into the
     ! output argument. Otherwise return .false. and an empty string.
-    !EOP
+    ! EOP
 
     integer :: i
 
-    !------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     if(StringLine(1:1)=="#")then
 
        if(DoEcho)then
@@ -513,8 +516,7 @@ contains
     endif
 
   end function read_command
-
-  !===========================================================================
+  !============================================================================
 
   subroutine read_line_param(Type, Name, iError, DoReadWholeLine)
 
@@ -525,7 +527,7 @@ contains
     logical, optional, intent(in) :: DoReadWholeLine
 
     integer :: i, j
-    !------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
 
     if(present(iError))iError=0
     iLine=iLine+1
@@ -539,7 +541,7 @@ contains
     end if
     StringLine=StringLine_I(iLine)
 
-    ! Get rid of leading spaces 
+    ! Get rid of leading spaces
     StringParam = adjustl(StringLine)
 
     if(.not.present(DoReadWholeLine))then
@@ -557,21 +559,20 @@ contains
     if(len_trim(StringParam)==0)call read_error('missing',Name,iError)
 
   end subroutine read_line_param
-
-  !===========================================================================
+  !============================================================================
 
   subroutine read_echo(Name)
 
     character (len=*), intent(in)    :: Name
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     if(index(StringLine, Name) < 1) &
          StringLine=trim(StringLine)//char(9)//char(9)//Name
 
     write(iIoUnit,'(a)') trim(StringPrefix)//trim(StringLine)
 
   end subroutine read_echo
+  !============================================================================
 
-  !===========================================================================
   subroutine read_error(Type, Name, iError)
 
     ! Print error message for reading error of variable named Name of type Type
@@ -579,8 +580,7 @@ contains
     character (len=*), intent(in) :: Type, Name
     integer, optional, intent(out):: iError
 
-    !------------------------------------------------------------------------
-
+    !--------------------------------------------------------------------------
     if(present(iError))then
        select case(Type)
        case('missing')
@@ -603,8 +603,7 @@ contains
     end if
 
   end subroutine read_error
-
-  !===========================================================================
+  !============================================================================
 
   subroutine read_string(StringVar, iError, IsUpperCase, IsLowerCase, &
        DoReadWholeLine)
@@ -615,13 +614,12 @@ contains
     character (len=*), intent(out):: StringVar
     integer, optional, intent(out):: iError
     logical, optional, intent(in) :: IsUpperCase, IsLowerCase, DoReadWholeLine
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     call read_var_c(' ', StringVar, iError, IsLowerCase, IsUpperCase, &
          DoReadWholeLine)
 
   end subroutine read_string
-
-  !===========================================================================
+  !============================================================================
 
   subroutine read_var_c(Name, StringVar, iError, &
        IsUpperCase, IsLowerCase, DoReadWholeLine)
@@ -635,7 +633,7 @@ contains
     character (len=*), intent(out):: StringVar
     integer, optional, intent(out):: iError
     logical, optional, intent(in) :: IsUpperCase, IsLowerCase, DoReadWholeLine
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
 
     call read_line_param('character', Name, iError, DoReadWholeLine)
 
@@ -651,19 +649,20 @@ contains
     endif
 
   end subroutine read_var_c
+  !============================================================================
 
-  !===========================================================================
- 
   subroutine read_integer(IntVar, iError)
     !OUTPUT ARGUMENTS:
     integer,           intent(out):: IntVar
     integer, optional, intent(out):: iError
-    !-------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
     call read_var_i(' ', IntVar, iError)
   end subroutine read_integer
+  !============================================================================
 
-  !BOP ========================================================================
-  !IROUTINE: read_var - read a variable following the command.
+  ! BOP ========================================================================
+  ! IROUTINE: read_var - read a variable following the command.
   !INTERFACE:
   subroutine read_var_i(Name, IntVar, iError)
 
@@ -676,19 +675,19 @@ contains
     !DESCRIPTION:
     ! Read a variable from the next line in the buffer.
     ! The variable name is given by the string Name, which is used in the
-    ! echoing of the parameters as well as in error messages. 
-    ! The value is returned in the non-optional output argument. 
+    ! echoing of the parameters as well as in error messages.
+    ! The value is returned in the non-optional output argument.
     ! If the optional argument iError is present, it returns a non-zero
     ! value in case an error occurs. If iError is not present, all errors
     ! result in an error message and an abort of the run.
     ! There are four variants of this subroutine: for integer, real,
     ! character string and logical variable types.
-    !EOP
+    ! EOP
 
     ! Local variable
     integer :: IntTmp, iReadError
 
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     call read_line_param('integer', Name, iError)
 
     read(StringParam,*,iostat=iReadError) IntTmp
@@ -697,8 +696,7 @@ contains
     IntVar=IntTmp
 
   end subroutine read_var_i
-
-  !===========================================================================
+  !============================================================================
 
   subroutine read_real(RealVar,iError,StartTimeIn)
     ! Read a real variable
@@ -706,11 +704,10 @@ contains
     real, intent(out)             :: RealVar
     integer, optional, intent(out):: iError
     real, optional, intent(in)    :: StartTimeIn
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     call read_var_r(' ', RealVar, iError, StartTimeIn)
   end subroutine read_real
-
-  !===========================================================================
+  !============================================================================
 
   subroutine read_var_r(Name, RealVar, iError, StartTimeIn)
 
@@ -728,7 +725,7 @@ contains
     integer :: iTime_I(7)
     integer :: i, iReadError
     character(len=50) :: NameEcho
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     call read_line_param('real', Name, iError)
 
     NameEcho = Name
@@ -795,7 +792,7 @@ contains
        RealTmp = RealTmp*60
        write(NameEcho, '(a,1x,es15.8)' ) Name, RealTmp
     elseif (index(StringParam,' s') > 0) then
-       ! second       
+       ! second
        i = index(StringParam,' s')
        read(StringParam(1:i-1), *, iostat=iReadError) RealTmp
        if(iReadError/=0)      call read_error('second',Name,iError)
@@ -811,19 +808,18 @@ contains
     if(DoEcho)call read_echo(trim(NameEcho))
 
   end subroutine read_var_r
-
-  !===========================================================================
+  !============================================================================
 
   subroutine read_logical(IsLogicVar, iError)
     ! Read a logical variable
     ! Arguments
     logical, intent(out)          :: IsLogicVar
     integer, optional, intent(out):: iError
-    !-------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
     call read_var_l(' ',IsLogicVar, iError)
   end subroutine read_logical
-
-  !===========================================================================
+  !============================================================================
 
   subroutine read_var_l(Name, IsLogicVar, iError)
 
@@ -838,7 +834,7 @@ contains
     logical :: IsLogicTmp
     integer :: iReadError
 
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     call read_line_param('logical', Name, iError)
 
     read(StringParam,*,iostat=iReadError) IsLogicTmp
@@ -847,31 +843,30 @@ contains
     IsLogicVar=IsLogicTmp
 
   end subroutine read_var_l
-
-  !===========================================================================
+  !============================================================================
 
   integer function i_line_read()
+    !--------------------------------------------------------------------------
     i_line_read = iLine
   end function i_line_read
-
-  !===========================================================================
+  !============================================================================
 
   integer function n_line_read()
+    !--------------------------------------------------------------------------
     n_line_read = nLine
   end function n_line_read
-
-  !===========================================================================
+  !============================================================================
 
   integer function i_session_read()
+    !--------------------------------------------------------------------------
     i_session_read = iSession
   end function i_session_read
-
-  !===========================================================================
+  !============================================================================
 
   integer function i_line_command(NameCommandIn, iSessionIn)
 
     ! Search the command name for the current component.
-    ! If iSessionIn is present, search for session iSessionIn, 
+    ! If iSessionIn is present, search for session iSessionIn,
     ! otherwise search the currenst session. If the command is found
     ! return the line number in the input file, otherwise return -1.
 
@@ -880,7 +875,7 @@ contains
 
     integer :: i, j
     character(len=lStringLine) :: NameCommand
-    !------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     NameCommand = NameComp // trim(NameCommandIn)
 
     j = iSession
@@ -896,21 +891,23 @@ contains
 
     ! Could not find command, return -1
     i_line_command = -1
-    
-  end function i_line_command
 
-  !BOP =======================================================================
-  !IROUTINE: read_text - obtain selected text buffer 
+  end function i_line_command
+  !============================================================================
+
+  ! BOP =======================================================================
+  ! IROUTINE: read_text - obtain selected text buffer
   !INTERFACE:
   subroutine read_text(String_I)
     !OUTPUT ARGUMENTS:
     character(len=lStringLine), intent(out):: String_I(iLine+1:nLine)
-    !EOP
-    !BOC
+    ! EOP
+    ! BOC
+    !--------------------------------------------------------------------------
     String_I = StringLine_I(iLine+1:nLine)
-    !EOC
+    ! EOC
   end subroutine read_text
-
-  !===========================================================================
+  !============================================================================
 
 end module ModReadParam
+!==============================================================================

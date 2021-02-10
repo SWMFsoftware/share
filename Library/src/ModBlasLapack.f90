@@ -1,12 +1,13 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-!BOP -------------------------------------------------------------------
+! BOP -------------------------------------------------------------------
 !
-!MODULE: ModBlasLapack - F90 interfaces for the BLAS and LAPACK methods
+! MODULE: ModBlasLapack - F90 interfaces for the BLAS and LAPACK methods
 !
 !DESCRIPTION:
 !
-! These interfaces allow the use of single or double precision 
+! These interfaces allow the use of single or double precision
 ! BLAS and LAPACK subroutines depending on the default real precision.
 !
 !INTERFACE:
@@ -25,7 +26,7 @@ module ModBlasLapack
 
   !REVISION HISTORY:
   ! 08Dec06 - Gabor Toth - initial prototype/prolog/code based on BATSRUS code
-  !EOP ___________________________________________________________________
+  ! EOP ___________________________________________________________________
 
   interface blas_copy
 
@@ -116,3 +117,4 @@ module ModBlasLapack
   end interface
 
 end module ModBlasLapack
+!==============================================================================

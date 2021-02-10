@@ -14,7 +14,7 @@ module ModSpice
 
   public:: spice_init            ! read in SPICE "kernels", define start time
   public:: spice_rot_matrix      ! return 3x3 rotation matrix
-  public:: spice_rot_vel_matrix  ! return 6x6 matrix for position and 
+  public:: spice_rot_vel_matrix  ! return 6x6 matrix for position and
   !                              !    velocity transform
   public:: spice_get_distance    ! return the distance between two bodies
 
@@ -23,7 +23,7 @@ module ModSpice
   ! SPICE: 2000-01-01T00:00:00
   ! SpiceTime = SwmfTime + DtSpiceSwmf
   ! spice includes leap second correction
-  real, parameter,  public::   DtSpiceSwmf = -1104494336.0 
+  real, parameter,  public::   DtSpiceSwmf = -1104494336.0
 
   ! Local variables
   logical     :: DoInitialize = .true.
@@ -61,7 +61,7 @@ contains
   end subroutine spice_init
   !============================================================================
   subroutine spice_rot_matrix(tSimulation, NameCoord1, NameCoord2, Rot_DD)
-    ! Return rotation matrix from coordinate system NamCoord1 to NameCoord2 at 
+    ! Return rotation matrix from coordinate system NamCoord1 to NameCoord2 at
     ! simulation time tSimulation
 
     real,             intent(in) :: tSimulation
@@ -80,7 +80,7 @@ contains
   end subroutine spice_rot_matrix
   !============================================================================
   subroutine spice_rot_vel_matrix(tSimulation, NameCoord1, NameCoord2, Rot_II)
-    ! Return rotation for position AND velocity matrix 
+    ! Return rotation for position AND velocity matrix
     ! from coordinate system NamCoord1 to NameCoord2
     ! at simulation time tSimulation
 
@@ -98,7 +98,7 @@ contains
     call SXFORM(NameCoord1, NameCoord2, tSpice, Rot_II)
 
   end subroutine spice_rot_vel_matrix
-  !=============================================================================
+  !============================================================================
   subroutine spice_get_distance(tSimulation, NameBody1, NameBody2, Distance)
 
     ! Return the Distance in meters between two solar system bodies named
@@ -113,7 +113,7 @@ contains
     real(Real8_):: Distance_D(3)  ! Vector between the two
     real(Real8_):: LightTime      ! One way light time between two objects
 
-    character(len=*), parameter:: NameSub = 'spice_get_two_body_distance'
+    character(len=*), parameter:: NameSub = 'spice_get_distance'
     !--------------------------------------------------------------------------
     if(DoInitialize)call CON_stop(NameSub//': ModSpice was not initialized')
     tSpice = tStartSpice + tSimulation
@@ -123,5 +123,7 @@ contains
     Distance = 1000*sqrt(sum(Distance_D**2))
 
   end subroutine spice_get_distance
+  !============================================================================
 
 end module ModSpice
+!==============================================================================

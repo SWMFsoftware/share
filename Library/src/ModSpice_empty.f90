@@ -11,12 +11,12 @@ module ModSpice
 
   public:: spice_init            ! read in SPICE "kernels", define start time
   public:: spice_rot_matrix      ! return 3x3 rotation matrix
-  public:: spice_rot_vel_matrix  ! return 6x6 matrix for position and 
+  public:: spice_rot_vel_matrix  ! return 6x6 matrix for position and
   !                              !      velocity transform
   public:: spice_get_distance    ! return the distance between two bodies
 
   ! Number of seconds between SWMF and SPICE base times:
-  real, parameter,  public::   DtSpiceSwmf = -1104494336.0 
+  real, parameter,  public::   DtSpiceSwmf = -1104494336.0
 
 contains
   !============================================================================
@@ -77,4 +77,6 @@ contains
     call CON_stop(NameSub//': SPICE is not swithed on!')
 
   end subroutine spice_get_distance
+  !============================================================================
 end module ModSpice
+!==============================================================================

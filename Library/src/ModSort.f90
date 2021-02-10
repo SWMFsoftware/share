@@ -1,4 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 module ModSort
 
@@ -12,7 +13,7 @@ module ModSort
   public :: sort_test  ! unit test
 
 contains
-  !===========================================================================
+  !============================================================================
   subroutine sort_quick(n, arr, indx)
 
     ! Quick sort algorithm: sorts indx array according to 'arr'
@@ -29,7 +30,7 @@ contains
     integer :: i,indxt,ir,itemp,j,jstack,k,l, iStack(NSTACK)
     real    :: a
 
-    !-------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     do j=1,n
        indx(j)=j
     end do
@@ -41,13 +42,13 @@ contains
           indxt=indx(j)
           a=arr(indxt)
           do i=j-1,1,-1
-             if(arr(indx(i)).le.a)goto 2
+             if(arr(indx(i)) <= a)GOTO 2
              indx(i+1)=indx(i)
           end do
           i=0
 2         indx(i+1)=indxt
        end do
-       if(jstack.eq.0)return
+       if(jstack == 0)RETURN
        ir=istack(jstack)
        l=istack(jstack-1)
        jstack=jstack-2
@@ -77,19 +78,19 @@ contains
        a=arr(indxt)
 3      continue
        i=i+1
-       if(arr(indx(i)) < a)goto 3
+       if(arr(indx(i)) < a)GOTO 3
 4      continue
        j=j-1
-       if(arr(indx(j)) > a)goto 4
-       if(j < i)goto 5
+       if(arr(indx(j)) > a)GOTO 4
+       if(j < i)GOTO 5
        itemp=indx(i)
        indx(i)=indx(j)
        indx(j)=itemp
-       goto 3
+       GOTO 3
 5      indx(l)=indx(j)
        indx(j)=indxt
        jstack=jstack+2
-       if(ir-i+1.ge.j-l)then
+       if(ir-i+1 >= j-l)then
           istack(jstack)=ir
           istack(jstack-1)=i
           ir=j-1
@@ -99,10 +100,9 @@ contains
           l=i
        endif
     endif
-    goto 1
+    GOTO 1
 
   end subroutine sort_quick
-
   !============================================================================
 
   subroutine sort_quick_func(n, is_larger, a_I, iSort_I)
@@ -126,7 +126,7 @@ contains
 
     integer :: i,indxt,ir,itemp,j,jstack,k,l, iStack(NSTACK)
 
-    !-------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     do j=1,n
        iSort_I(j)=j
     end do
@@ -137,13 +137,13 @@ contains
        do j=l+1,ir
           indxt=iSort_I(j)
           do i=j-1,1,-1
-             if(.not.is_larger(a_I,iSort_I(i), indxt)) goto 2
+             if(.not.is_larger(a_I,iSort_I(i), indxt)) GOTO 2
              iSort_I(i+1)=iSort_I(i)
           end do
           i=0
 2         iSort_I(i+1)=indxt
        end do
-       if(jstack.eq.0)return
+       if(jstack == 0)RETURN
        ir=istack(jstack)
        l=istack(jstack-1)
        jstack=jstack-2
@@ -172,19 +172,19 @@ contains
        indxt=iSort_I(l)
 3      continue
        i=i+1
-       if(is_larger(a_I,indxt, iSort_I(i))) goto 3
+       if(is_larger(a_I,indxt, iSort_I(i))) GOTO 3
 4      continue
        j=j-1
-       if(is_larger(a_I,iSort_I(j), indxt)) goto 4
-       if(j < i)goto 5
+       if(is_larger(a_I,iSort_I(j), indxt)) GOTO 4
+       if(j < i)GOTO 5
        itemp=iSort_I(i)
        iSort_I(i)=iSort_I(j)
        iSort_I(j)=itemp
-       goto 3
+       GOTO 3
 5      iSort_I(l)=iSort_I(j)
        iSort_I(j)=indxt
        jstack=jstack+2
-       if(ir-i+1.ge.j-l)then
+       if(ir-i+1 >= j-l)then
           istack(jstack)=ir
           istack(jstack-1)=i
           ir=j-1
@@ -194,10 +194,9 @@ contains
           l=i
        endif
     endif
-    goto 1
+    GOTO 1
 
   end subroutine sort_quick_func
-
   !============================================================================
 
   real function sort_sum(a_I)
@@ -209,7 +208,7 @@ contains
     real :: SortSum
     integer :: i, n
     integer, allocatable:: i_I(:)
-    !-----------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     n = size(a_I)
     allocate(i_I(n))
     call sort_quick(n, abs(a_I), i_I)
@@ -222,16 +221,17 @@ contains
     deallocate(i_I)
 
   end function sort_sum
+  !============================================================================
 
-  !======================================================================
   logical function is_larger_test(a_I, i, j)
     real, intent(in):: a_I(:)
     integer, intent(in):: i, j
 
+    !--------------------------------------------------------------------------
     is_larger_test = a_I(i) > a_I(j)
 
   end function is_larger_test
-  !======================================================================
+  !============================================================================
   subroutine sort_test
 
     ! Local variables for the unit test
@@ -240,7 +240,8 @@ contains
     real    :: b_I(n), SortSum
     integer :: i_I(n), i, iTest
     logical :: IsError
-    !------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
     a_I = [0.0, 2.0, 1.0, 4.0, 0.0]
 
     do iTest = 1, 2
@@ -277,5 +278,7 @@ contains
          write(*,*)'Error: SortSum should be 1.1e-6, but it is ',SortSum
 
   end subroutine sort_test
+  !============================================================================
 
 end module ModSort
+!==============================================================================

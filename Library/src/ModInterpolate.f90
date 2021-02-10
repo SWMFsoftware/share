@@ -2,7 +2,6 @@
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 
-
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
@@ -169,7 +168,6 @@ contains
 
   end function interpolate_scalar4
   !============================================================================
-
 
   real function linear_scalar_real(a_I, iMin, iMax, x, x_I, DoExtrapolate, &
        iCell, Dist)
@@ -709,8 +707,6 @@ contains
   end function quadlinear_scalar
   !============================================================================
 
-  !============================================================================
-
   real function pentalinear_scalar_real( &
        a_I5, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, mMin, mMax, &
        x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
@@ -979,6 +975,7 @@ contains
     end select
 
   end function pentalinear_scalar
+  !============================================================================
 
 end module ModInterpolateScalar
 !==============================================================================
@@ -2048,8 +2045,8 @@ contains
     end select
 
   end function pentalinear_vector
-
   !============================================================================
+
   subroutine fit_parabola(x_I, y_I, &
        xExtremumOut, yExtremumOut, Weight2Out_I, Weight3Out_I)
 

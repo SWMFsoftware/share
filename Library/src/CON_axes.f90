@@ -1,15 +1,15 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, 
-!  portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-!BOP
-!MODULE: CON_axes - coordinate system initialization and setting
+! BOP
+! MODULE: CON_axes - coordinate system initialization and setting
 !INTERFACE:
 module CON_axes
 
   !DESCRIPTION:
-  ! CON uses GSE coordinates for planetary data, because it is convenient 
+  ! CON uses GSE coordinates for planetary data, because it is convenient
   !     as well as it is inertial except for orbital motion. It connects
-  !     the planet and the Sun with the X axis, which makes it the 
+  !     the planet and the Sun with the X axis, which makes it the
   !     ideal choice for describing the whole space weather simulation.
   !
   ! \bigskip
@@ -27,11 +27,11 @@ module CON_axes
   !   X points towards the vernal equinox.
   !   Y completes the right handed coordinate system.
   !   GEI orbits around the Sun.
-  !   GEI does not rotate except for the precession and nutation of the 
+  !   GEI does not rotate except for the precession and nutation of the
   !       rotation axis of the Earth.
   !   Inertial forces are negligible.
   !
-  ! GSE (Geocentric Solar Ecliptic) 
+  ! GSE (Geocentric Solar Ecliptic)
   ! PSO (Planetocentric Solar Orbital)
   !
   !   X towards the Sun (S)
@@ -39,10 +39,10 @@ module CON_axes
   !   Y opposite of orbital velocity
   !
   !   GSE is rotating around the Z axis with the orbital angular speed.
-  !   GSE orbits around the Sun. 
+  !   GSE orbits around the Sun.
   !   The inertial forces can be neglected.
 
-  ! GSM (Geocentric Solar Magnetic) 
+  ! GSM (Geocentric Solar Magnetic)
   ! PSM (Planetocentric Solar Magnetic)
   !
   !   X axis points towards the Sun (as GSE)
@@ -62,7 +62,7 @@ module CON_axes
   !
   !   Z is the magnetic axis pointing "North".
   !   Y is orthogonal to the direction to the Sun.
-  !   X completes the right handed cooridinate system with X 
+  !   X completes the right handed cooridinate system with X
   !     pointing "towards" the Sun.
   !
   !   SMG wobbles around due to the rotation of the magnetic axis.
@@ -73,7 +73,7 @@ module CON_axes
   !   (almost) aligned and/or the rotation speed is slow relative to dynamical
   !   time scales.
 
-  ! GEO (GEOgraphic) 
+  ! GEO (GEOgraphic)
   ! PGR (PlanetoGRaphic)
   !
   !   Z is the rotation axis pointing "North".
@@ -81,10 +81,10 @@ module CON_axes
   !   Y completes the right handed coordinate system.
   !
   !   GEO is a corotating coordinate system.
-  !   GEO rotates around the Z axis with the inertial angular speed 
+  !   GEO rotates around the Z axis with the inertial angular speed
   !       of the planet (which is NOT 2*Pi/(24*3600.0) for the Earth).
   !       For the Earth the 0 meridian goes through Greenich. For other planets
-  !       the 0 meridian is defined as the half plane which is AngleEquinox 
+  !       the 0 meridian is defined as the half plane which is AngleEquinox
   !       away from the direction of equinox at the time of equinox.
   !   GEO orbits around the Sun.
   !   Inertial forces may or may not be negligible.
@@ -95,7 +95,7 @@ module CON_axes
   !   Y axis is orthogonal to rotational axis pointing towards Omega x Z
   !   X completes the right handed coordinate system.
   !
-  !   MAG rotates around the rotational axis which does not coincide with 
+  !   MAG rotates around the rotational axis which does not coincide with
   !       any of the principal axes.
   !   MAG orbits around the Sun.
   !
@@ -115,30 +115,30 @@ module CON_axes
   !
   !   Z is the rotation axis of the Sun pointing "North".
   !   X axis rotates with the Carrington rotation with a 25.38 day period
-  !     with respect to an inertial frame. 
+  !     with respect to an inertial frame.
   !     The X axis coincides with the X axis of the HGI system at the
   !     initial time of the simulation.
   !   Y axis completes the right handed coordinate system.
   !
-  !   Inertial forces should be taken into account. 
+  !   Inertial forces should be taken into account.
 
   ! HGR (HelioGraphic Rotating coordinates)
-  !   
+  !
   !   Z is the rotation axis of the Sun pointing "North".
   !   X axis rotates with the Carrington rotation with a 25.38 day period
   !     with respect to an inertial frame (and around 27.3 day period
   !     with respect to the direction towards the Earth).
-  !     The X axis coincided with the X axis of the HGI system on 
+  !     The X axis coincided with the X axis of the HGI system on
   !     January 1 1854 12:00:00, but we allow a rotation by dLongitudeHgr
   !     around the Z axis.
   !   Y axis completes the right handed coordinate system.
   !
-  !   Inertial forces should be taken into account. 
+  !   Inertial forces should be taken into account.
   !
-  !\end{verbatim}
+  ! \end{verbatim}
   !TODO:
-  ! Generalize transformations to and from heliocentric coordinate systems 
-  ! for non-Earth planets. 
+  ! Generalize transformations to and from heliocentric coordinate systems
+  ! for non-Earth planets.
   ! Take ellipticity of the planet orbit into account.
   ! Possibly recalculate the GSE-GEI matrix all the time.
 
@@ -166,11 +166,11 @@ module CON_axes
   !REVISION HISTORY:
   ! 01Aug03 - Gabor Toth and Aaron Ridley  - initial version
   ! 14Aug03 - Gabor Toth <gtoth@umich.edu> - major revision and extension
-  ! 23Mar04 - Gabor Toth eliminated the use of CON_time to make 
+  ! 23Mar04 - Gabor Toth eliminated the use of CON_time to make
   !                      CON_axes more indepenedent
   ! 17Jan05 - Ofer Cohen and G. Toth merged in GEOPACK and added functions
   !                      angular_velocity and transform_velocity
-  !EOP
+  ! EOP
 
   implicit none
 
@@ -225,9 +225,10 @@ module CON_axes
        SmgGse_DD, GeoGse_DD, MagGse_DD, GseGeo_DD, GseSmg_DD, GeoSmg_DD
 
 contains
+  !============================================================================
 
-  !BOP ========================================================================
-  !IROUTINE: init_axes - initialize the axes
+  ! BOP ========================================================================
+  ! IROUTINE: init_axes - initialize the axes
   !INTERFACE:
   subroutine init_axes(tStartIn)
 
@@ -236,24 +237,22 @@ contains
 
     !DESCRIPTION:
     ! Set the direction and position of the rotation axis in GSE
-    ! Set the initial direction and position of the magnetic axis in 
+    ! Set the initial direction and position of the magnetic axis in
     ! GSE, GSM, GEI and GEO systems.
     !
     ! Calculate conversion matrices between MAG-GEO-GEI-GSE systems.
-    !EOP
-
-    character(len=*), parameter :: NameSub=NameMod//'::init_axes'
+    ! EOP
 
     real :: XyzPlanetHgr_D(3)
 
     integer :: iTime_I(1:7)
 
-    logical :: DoTestMe
-    !-------------------------------------------------------------------------
-
+    logical:: DoTest
+    character(len=*), parameter:: NameSub = 'init_axes'
+    !--------------------------------------------------------------------------
     if (.not.DoInitializeAxes) RETURN
 
-    call CON_set_do_test(NameSub, DoTestMe)
+    call CON_set_do_test(NameSub, DoTest)
 
     tStart = tStartIn
 
@@ -273,7 +272,7 @@ contains
        ! Copy dipole strength if it is the default
        if(DipoleStrength == DipoleStrengthPlanet_I(Earth_)) &
             DipoleStrength = DipoleStrengthGeopack
-       if(DoTestMe)then
+       if(DoTest)then
           write(*,*)'RotAxisThetaGeopack, RotAxisPhiGeopack=', &
                RotAxisThetaGeopack*cRadToDeg, RotAxisPhiGeopack*cRadToDeg
           write(*,*)'MagAxisThetaGeopack, MagAxisPhiGeopack=', &
@@ -292,7 +291,7 @@ contains
              RotAxisPhi   = modulo( &
                   cHalfPi - OmegaOrbit*(tStart - TimeEquinox % Time), cTwoPi8)
           end if
-          if(DoTestMe)write(*,*)NameSub, &
+          if(DoTest)write(*,*)NameSub, &
                ': UseRealRotAxis, UseRealMagAxis, TiltRotation, OmegaOrbit, tStart, tEquinox=',&
                 UseRealRotAxis, UseRealMagAxis, TiltRotation*cRadToDeg, OmegaOrbit, tStart, &
                 TimeEquinox % Time
@@ -301,7 +300,7 @@ contains
           if(UseSetMagAxis)then
              RotAxisTheta = MagAxisTheta
              RotAxisPhi   = MagAxisPhi
-             if(DoTestMe)write(*,*)NameSub,': MagAxisTheta, MagAxisPhi=', &
+             if(DoTest)write(*,*)NameSub,': MagAxisTheta, MagAxisPhi=', &
                   MagAxisTheta*cRadToDeg, MagAxisPhi*cRadToDeg
           else
              call CON_stop(NameSub// &
@@ -311,13 +310,13 @@ contains
        end if
     end if
 
-    if(DoTestMe)then
+    if(DoTest)then
        write(*,*)'tStart,TimeEquinox=',tStart,TimeEquinox
        write(*,*)'RotAxisTheta,RotAxisPhi=',&
             RotAxisTheta*cRadToDeg, RotAxisPhi*cRadToDeg
     end if
 
-    ! Using the RotAxisTheta and RotAxisPhi 
+    ! Using the RotAxisTheta and RotAxisPhi
     ! set the GseGei matrix to convert between GSE and  GEI systems
     call set_gse_gei_matrix
 
@@ -326,7 +325,7 @@ contains
        ! Cartesian coordinates of the magnetic axis unit vector in GEO
        call dir_to_xyz(MagAxisThetaGeo,MagAxisPhiGeo,MagAxis_D)
 
-       if(DoTestMe)then
+       if(DoTest)then
           write(*,*)'MagAxisThetaGeo,MagAxisPhiGeo=',&
                MagAxisThetaGeo*cRadToDeg,MagAxisPhiGeo*cRadToDeg
           write(*,*)'MagAxisGeo_D=',MagAxis_D
@@ -342,7 +341,7 @@ contains
        ! Cartesian vector to spherical direction
        call xyz_to_dir(MagAxis_D,MagAxisTheta,MagAxisPhi)
 
-       if(DoTestMe)then
+       if(DoTest)then
           write(*,*)'UseRealMagAxis:'
           write(*,*)'MagAxisGei_D=',MagAxis0Gei_D
           write(*,*)'GseGei_DD='
@@ -361,12 +360,12 @@ contains
        ! Convert direction to Cartesian coordinates in GSE
        call dir_to_xyz(MagAxisTheta,MagAxisPhi,MagAxis_D)
 
-       ! Calculate the GEI position too 
+       ! Calculate the GEI position too
        ! (in case mag axis is not aligned and rotates)
        call set_gei_geo_matrix(0.0)
        MagAxis0Gei_D = matmul(MagAxis_D,GseGei_DD)
 
-       if(DoTestMe)then
+       if(DoTest)then
           write(*,*)'Aligned=',.not.UseSetMagAxis,' Set=',UseSetMagAxis
           write(*,*)'MagAxisGei_D=',MagAxis0Gei_D
           write(*,*)'MagAxisGse_D=',MagAxis_D
@@ -378,7 +377,7 @@ contains
 
     if(.not.(UseRealRotAxis .or. UseSetRotAxis) .and. UseRealMagAxis)then
        ! Rotation axis is aligned.
-       ! The angles are reset now because we needed the real rotational axis 
+       ! The angles are reset now because we needed the real rotational axis
        ! to find the real magnetic axis. We do not need that anymore.
        RotAxisTheta = MagAxisTheta
        RotAxisPhi   = MagAxisPhi
@@ -397,7 +396,7 @@ contains
 
        call xyz_to_dir(MagAxisGeo_D, MagAxisThetaGeo, MagAxisPhiGeo)
 
-       if(DoTestMe)write(*,*)'Final MagAxisThetaGeo, MagAxisPhiGeo=',&
+       if(DoTest)write(*,*)'Final MagAxisThetaGeo, MagAxisPhiGeo=',&
             MagAxisThetaGeo*cRadToDeg, MagAxisPhiGeo*cRadToDeg
     else
        ! Set the magnetic direction in Cartesian GEO coordinates
@@ -408,7 +407,7 @@ contains
     ! This matrix does not change with simulation time.
     call set_mag_geo_matrix
 
-    ! Calculate HgiGse matrix for the first time. 
+    ! Calculate HgiGse matrix for the first time.
     ! This should be done for t=0.0 so that the HgiGse can be shifted
     ! to be aligned with the planet if this is required by a negative
     ! value of dLongitudeHgi. Also calculates the planet distance.
@@ -416,7 +415,7 @@ contains
 
     ! Calculate the planet position in HGI
     ! In GSE shifted to the center of the Sun the planet is at (-d,0,0)
-    XyzPlanetHgi_D = matmul(HgiGse_DD, (/-cAU*SunEMBDistance, 0.0, 0.0/))
+    XyzPlanetHgi_D = matmul(HgiGse_DD, [-cAU*SunEMBDistance, 0.0, 0.0])
 
     ! Calculate the planet velocity in HGI
     call set_v_planet
@@ -424,7 +423,7 @@ contains
     ! Set the time dependent axes for the initial time
     call set_axes(0.0,.true.)
 
-    if(DoTestMe)then
+    if(DoTest)then
        write(*,*)'Final rotation axis:'
        write(*,*)'RotAxisTheta,RotAxisPhi=',&
             RotAxisTheta*cRadToDeg, RotAxisPhi*cRadToDeg
@@ -446,8 +445,7 @@ contains
     DoInitializeAxes=.false.
 
   contains
-
-    !=========================================================================
+    !==========================================================================
 
     subroutine set_gse_gei_matrix
 
@@ -459,7 +457,7 @@ contains
       ! The GseGei_DD matrix changes at the order of TimeSimulation/TimeOrbit.
       ! For usual simulations that change can be safely neglected.
 
-      !-----------------------------------------------------------------------
+      !------------------------------------------------------------------------
 
       GseGei_DD = matmul(&
            rot_matrix_z(RotAxisPhi + cHalfPi), &
@@ -467,8 +465,7 @@ contains
            )
 
     end subroutine set_gse_gei_matrix
-
-    !=========================================================================
+    !==========================================================================
 
     subroutine set_mag_geo_matrix
 
@@ -480,13 +477,13 @@ contains
       ! This matrix only changes with the slow motion of the magnetix axis
       ! relative to the Earth.
 
+      !------------------------------------------------------------------------
       MagGeo_DD = matmul( &
            rot_matrix_y(-MagAxisThetaGeo), &
            rot_matrix_z(-MagAxisPhiGeo))
 
     end subroutine set_mag_geo_matrix
-
-    !=========================================================================
+    !==========================================================================
 
     subroutine set_hgi_gse_d_planet(tSimulation)
 
@@ -495,7 +492,8 @@ contains
       real, intent(in) :: tSimulation
 
       integer :: iTime_I(1:7)
-      !-----------------------------------------------------------------------
+
+      !------------------------------------------------------------------------
       call time_real_to_int(tStart + tSimulation, iTime_I)
       call geopack_recalc(iTime_I)
 
@@ -519,7 +517,7 @@ contains
 
       end if
 
-      ! A negative dLongitudeHgr means that the planet should be in 
+      ! A negative dLongitudeHgr means that the planet should be in
       ! in the -X,Z plane of the rotated HGR system.
       if(dLongitudeHgr < 0.0)then
 
@@ -536,21 +534,21 @@ contains
       endif
 
     end subroutine set_hgi_gse_d_planet
-
-    !=========================================================================
+    !==========================================================================
 
     subroutine set_v_planet
 
       ! Caculate vPlanet in HGI system
       real, dimension(3) :: XyzPlus_D, XyzMinus_D
       real, parameter :: Delta = 600.0
-      !----------------------------------------------------------------------
+
       ! Calculate planet position for TimeSim-dt and TimeSim+dt
+      !------------------------------------------------------------------------
       call set_hgi_gse_d_planet(-Delta)
-      XyzMinus_D = matmul(HgiGse_DD, (/-cAU*SunEMBDistance, 0.0, 0.0/))
+      XyzMinus_D = matmul(HgiGse_DD, [-cAU*SunEMBDistance, 0.0, 0.0])
 
       call set_hgi_gse_d_planet(Delta)
-      XyzPlus_D = matmul(HgiGse_DD, (/-cAU*SunEMBDistance, 0.0, 0.0/))
+      XyzPlus_D = matmul(HgiGse_DD, [-cAU*SunEMBDistance, 0.0, 0.0])
 
       ! Finite difference velocity with the Delta second time perturbations
       vPlanetHgi_D = (XyzPlus_D - XyzMinus_D)/(2*Delta)
@@ -559,11 +557,9 @@ contains
       call set_hgi_gse_d_planet(0.0)
 
     end subroutine set_v_planet
-
-    !=========================================================================
+    !==========================================================================
 
   end subroutine init_axes
-
   !============================================================================
 
   subroutine set_gei_geo_matrix(TimeSim)
@@ -576,7 +572,7 @@ contains
 
     real :: AlphaEquinox
 
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     if(.not.UseRotation)then
        ! If the planet does not rotate we may take GEI=GEO
        GeiGeo_DD = cUnit_DD
@@ -589,9 +585,10 @@ contains
     GeiGeo_DD = rot_matrix_z(AlphaEquinox)
 
   end subroutine set_gei_geo_matrix
+  !============================================================================
 
-  !BOP ========================================================================
-  !IROUTINE: set_axes - set time dependent axes and transformation matrices
+  ! BOP ========================================================================
+  ! IROUTINE: set_axes - set time dependent axes and transformation matrices
   !INTERFACE:
   subroutine set_axes(TimeSim,DoSetAxes)
 
@@ -601,21 +598,21 @@ contains
 
     !DESCRIPTION:
     ! The magnetic axis as well as the corotating GEO and MAG frames
-    ! are rotating around the rotational axis with OmegaPlanet 
+    ! are rotating around the rotational axis with OmegaPlanet
     ! angular speed. Calculate the position of the axes and the
     ! transformation matrices for the given simulation time TimeSim.
     !
-    ! When the optional DoSetAxes argument is present (its value is ignored), 
-    ! the magnetic axis and the related variables are always set. 
+    ! When the optional DoSetAxes argument is present (its value is ignored),
+    ! the magnetic axis and the related variables are always set.
     ! This is needed for the initial setting.
     !
     ! Otherwise the update is based on a number of parameters.
     !
-    ! If the planet does not rotate, or the magnetic axis is aligned with 
+    ! If the planet does not rotate, or the magnetic axis is aligned with
     ! the rotation axis, no calculation is performed.
     !
     ! The last simulation time with which an update was done
-    ! is stored into TimeSimLast. 
+    ! is stored into TimeSimLast.
     !
     ! If DoUpdateB0 == .false. the magnetic axis is taken to be fixed.
     ! If DtUpdateB0 <= 0.001 (sec) the magnetic axis is updated
@@ -623,24 +620,23 @@ contains
     ! If DtUpdateB0 >  0.001 (sec) then the magnetic axis is updated
     !      if int(TimeSim/DtUpdateB0) differs from int(TimeSimLast/DtUpdateB0)
     !
-    !EOP
+    ! EOP
 
     real :: MagAxisGei_D(3)
-
-    character(len=*), parameter :: NameSub=NameMod//'::set_axes'
 
     real :: TimeSimLast = -1000.0  ! Last simulation time for magnetic fields
     real :: TimeSimHgr  = -1000.0  ! Last simulation time for HGR update
     real :: Angle
-    logical :: DoTestMe
-    !-------------------------------------------------------------------------
 
     ! Reset the helio-centered coordinate transformations if time changed
+    logical:: DoTest
+    character(len=*), parameter:: NameSub = 'set_axes'
+    !--------------------------------------------------------------------------
     if(TimeSimHgr /= TimeSim)then
 
        ! Recalculate the HgrHgi_DD matrix
-       ! The negative sign in front of OmegaCarrington comes from that 
-       ! this matrix transforms from HGI to HGR, so a point at rest 
+       ! The negative sign in front of OmegaCarrington comes from that
+       ! this matrix transforms from HGI to HGR, so a point at rest
        ! in HGI rotates BACKWARDS in HGR
 
        Angle = modulo(-OmegaCarrington*(TimeSim + tStart - tStartCarringtonCoord), &
@@ -663,7 +659,7 @@ contains
        TimeSimHgr = TimeSim
     end if
 
-    ! Check if there is a need to update the magnetic axis 
+    ! Check if there is a need to update the magnetic axis
     ! and related transformations
     if(.not.present(DoSetAxes))then
        ! If magnetic axis does not move, no need to update
@@ -679,9 +675,9 @@ contains
 
     end if
 
-    call CON_set_do_test(NameSub, DoTestMe)
+    call CON_set_do_test(NameSub, DoTest)
 
-    if(DoTestMe)then
+    if(DoTest)then
        write(*,*) NameSub,'UseAlignedAxes,UseRotation,DoUpdateB0=',&
             UseAlignedAxes,UseRotation,DoUpdateB0
        write(*,*) NameSub,'DtUpdateB0,TimeSim,TimeSimLast=',&
@@ -691,7 +687,7 @@ contains
     ! Remember the simulation time
     TimeSimLast = TimeSim
 
-    ! Rotate MagAxis0Gei around Z axis to get current position in GEI 
+    ! Rotate MagAxis0Gei around Z axis to get current position in GEI
     MagAxisGei_D = matmul(rot_matrix_z(OmegaPlanet*TimeSim),MagAxis0Gei_D)
 
     ! Transform from GEI to GSE
@@ -706,7 +702,7 @@ contains
     ! This is a rotation around the shared X axis with the angle between the
     ! Z_GSE axis and the magnetic axis projected onto the Y-Z plane.
     !
-    ! This matrix changes with simulation time unless 
+    ! This matrix changes with simulation time unless
     !    UseRotation=.false. or UseAlignedAxes=.true.
 
     GsmGse_DD = rot_matrix_x( atan2(MagAxis_D(y_),MagAxis_D(z_)) )
@@ -715,7 +711,7 @@ contains
     ! This is a rotation around the Y axis with the magnetic tilt_GSM,
     ! which is -asin(MagAxis_D(x_)
     !
-    ! This matrix changes with simulation time unless 
+    ! This matrix changes with simulation time unless
     !    UseRotation=.false. or UseAlignedAxes=.true.
 
     MagAxisTiltGsm   = -asin(MagAxis_D(x_))
@@ -735,22 +731,23 @@ contains
 
     ! Now calculate the transformation matrices for the rotating systems
     call set_gei_geo_matrix(TimeSim)
-    
+
     GseGeo_DD = matmul(GseGei_DD, GeiGeo_DD)
     GeoGse_DD = transpose(GseGeo_DD)
     MagGse_DD = matmul(MagGeo_DD,GeoGse_DD)
     GeoSmg_DD = matmul(GeoGse_DD, GseSmg_DD)
 
-    if(DoTestMe)then
+    if(DoTest)then
        write(*,*)NameSub,' new MagAxis_D     =',MagAxis_D
        write(*,*)NameSub,' new MagAxisTiltGsm=',MagAxisTiltGsm*cRadToDeg
        write(*,*)NameSub,' new RotAxisGsm_D  =',RotAxisGsm_D
     end if
 
   end subroutine set_axes
+  !============================================================================
 
-  !BOP ========================================================================
-  !IROUTINE: get_axes - get parameters of axes at a given time
+  ! BOP ========================================================================
+  ! IROUTINE: get_axes - get parameters of axes at a given time
   !INTERFACE:
   subroutine get_axes(TimeSim, &
        MagAxisTiltGsmOut, RotAxisGsmOut_D, RotAxisGseOut_D)
@@ -764,8 +761,8 @@ contains
     !DESCRIPTION:
     ! Provides various information about the rotation and magnetic axes
     ! through the optional output arguments.
-    !EOP
-    character(len=*), parameter :: NameSub=NameMod//'::get_axes'
+    ! EOP
+    character(len=*), parameter:: NameSub = 'get_axes'
     !--------------------------------------------------------------------------
     ! Set time independent information
     if(DoInitializeAxes)&
@@ -779,9 +776,10 @@ contains
     if (present(RotAxisGseOut_D))   RotAxisGseOut_D   = RotAxis_D
 
   end subroutine get_axes
+  !============================================================================
 
-  !BOP ========================================================================
-  !IROUTINE: transform_matrix - return transform matrix between 2 coord systems
+  ! BOP ========================================================================
+  ! IROUTINE: transform_matrix - return transform matrix between 2 coord systems
   !INTERFACE:
   function transform_matrix(TimeSim,TypeCoordIn,TypeCoordOut) result(Rot_DD)
 
@@ -805,11 +803,11 @@ contains
     ! VecIe_D = matmul(IeUa_DD,VecUa_D)
     ! ...
     ! \end{verbatim}
-    !EOP
-    character(len=*), parameter :: NameSub=NameMod//'::transform_matrix'
+    ! EOP
 
     real :: InGse_DD(3,3), OutGse_DD(3,3)
-    !------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'transform_matrix'
+    !--------------------------------------------------------------------------
     if(TypeCoordIn == TypeCoordOut)then
        Rot_DD = cUnit_DD
        RETURN
@@ -853,7 +851,7 @@ contains
     case('GEO')
        OutGse_DD = GeoGse_DD
     case('GEI')
-       OutGse_DD = transpose(GseGei_DD)  
+       OutGse_DD = transpose(GseGei_DD)
     case('HGI')
        OutGse_DD = HgiGse_DD
     case('HGC')
@@ -865,11 +863,12 @@ contains
     end select
 
     Rot_DD = matmul(OutGse_DD,transpose(InGse_DD))
-    
-  end function transform_matrix
 
-  !BOP ========================================================================
-  !IROUTINE: angular_velocity - get angular velocity between two coord systems
+  end function transform_matrix
+  !============================================================================
+
+  ! BOP ========================================================================
+  ! IROUTINE: angular_velocity - get angular velocity between two coord systems
   !INTERFACE:
 
   function angular_velocity(TimeSim, NameCoord1, NameCoord2In, iFrame) &
@@ -880,10 +879,10 @@ contains
     character(len=*),           intent(in) :: NameCoord1   ! 1st coord. system
     character(len=*), optional, intent(in) :: NameCoord2In ! 2nd coord. system
     integer, optional,intent(in) :: iFrame                 ! Frame for result
-    
+
     !RETURN VALUE:
     real :: Omega_D(3) ! Angular velocity components
-    
+
     !DESCRIPTION:
     ! This subroutine calculates the angular velocity vector between
     ! two coordinate systems from the transformation matrix between them.
@@ -891,26 +890,26 @@ contains
     ! the angular velocity of the first frame relative to an inertial frame.
     ! The angular velocity is given in the moving frame.
     ! When both frames are given, the relative angular rotation is returned.
-    ! If iFrame is presemt it defines whether the output angular velocity 
+    ! If iFrame is presemt it defines whether the output angular velocity
     ! is with respect to the first (iFrame=1) or second (iFrame=2) system.
     ! If the iFrame argument is not present, the result is in the first frame.
-    ! This means that for example angular\_velocity(t,'GEO') is the same as 
+    ! This means that for example angular\_velocity(t,'GEO') is the same as
     ! angular\_velocity(t,'GEI','GEO',2) which gives the rotation of the
     ! Earth relative to an inertial frame expressed in GEO coordinates.
     ! On the other hand angular\_velocity(t,'GEI','GEO') is the same
     ! as angular\_velocity(t,'GEI','GEO',1) which gives the opposite
     ! (negative) sign for the angular velocity.
-    !EOP
-    
+    ! EOP
+
     ! Local variables
     character (len=3) :: NameCoord2
     integer ::  iFrameOut
     real    ::  dTimeSim
     real, dimension(3,3) :: Rot_DD, RotMid_DD, RotPlus_DD, RotMinus_DD, dRot_DD
-    
-    character (len=*), parameter :: NameSub = NameMod // '::angular_velocity'
-    !--------------------------------------------------------------------------
+
     ! Check optional arguments and set defaults
+    character(len=*), parameter:: NameSub = 'angular_velocity'
+    !--------------------------------------------------------------------------
     if(present(NameCoord2In))then
        NameCoord2 = NameCoord2In
        if(present(iFrame))then
@@ -921,14 +920,14 @@ contains
           iFrameOut = iFrame
        else
           ! Default is to provide Omega_D in the output coord. system
-          iFrameOut = 1 
+          iFrameOut = 1
        end if
     else
        if(NameCoord1(1:1) == 'H')then
           ! For heliocentric coordinate systems set the inertial frame to HGI
           NameCoord2 = 'HGI'
        else
-          ! For geocentric systems GSE is assumed to be inertial 
+          ! For geocentric systems GSE is assumed to be inertial
           ! Otherwise better use GEI !!!
           NameCoord2 = 'GSE'
        end if
@@ -936,18 +935,18 @@ contains
     end if
 
     ! Determine the perturbation of time
-    if(precision(TimeSim) >= 12) then 
+    if(precision(TimeSim) >= 12) then
        dTimeSim = max(1.0, 1e-10*TimeSim)
     else
        dTimeSim = max(1000.0, 1e-4*TimeSim)
     end if
-    
+
     if(NameCoord1 == NameCoord2)then
        ! Nothing to do
        Omega_D = 0.0
        RETURN
     end if
-       
+
     RotMinus_DD = transform_matrix(TimeSim-dTimeSim,NameCoord1,NameCoord2)
     RotPlus_DD  = transform_matrix(TimeSim+dTimeSim,NameCoord1,NameCoord2)
     dRot_DD = (RotPlus_DD-RotMinus_DD)/(2*dTimeSim)
@@ -955,8 +954,8 @@ contains
     RotMid_DD = transform_matrix(TimeSim,NameCoord1,NameCoord2)
     Rot_DD  = matmul(transpose(RotMid_DD), dRot_DD)
 
-    Omega_D = (/ Rot_DD(2,3), Rot_DD(3,1), Rot_DD(1,2) /)
-    
+    Omega_D = [ Rot_DD(2,3), Rot_DD(3,1), Rot_DD(1,2) ]
+
 !    write(*,*)'NameCoord1,2=',NameCoord1,NameCoord2
 !    write(*,*)'RotPlus ='; call show_rot_matrix(RotPlus_DD)
 !    write(*,*)'RotMinus='; call show_rot_matrix(RotMinus_DD)
@@ -971,13 +970,14 @@ contains
     if(iFrameOut == 2) Omega_D = matmul(RotMid_DD, Omega_D)
 
     where(abs(Omega_D) < 1e-12) Omega_D = 0.00
-    
-  end function angular_velocity
 
-  !BOP ========================================================================
-  !IROUTINE: transform_velocity - transforms velocity between two coord systems
+  end function angular_velocity
+  !============================================================================
+
+  ! BOP ========================================================================
+  ! IROUTINE: transform_velocity - transforms velocity between two coord systems
   !INTERFACE:
-  
+
   function transform_velocity(TimeSim, v1_D, Xyz1_D, &
        NameCoord1, NameCoord2) result(v2_D)
 
@@ -992,15 +992,15 @@ contains
     real :: v2_D(3)                                        ! v2 components
 
     !DESCRIPTION:
-    ! This function transforms the velocity vector from one coordinate system 
-    ! to another. The input position and velocity should be in SI units and 
+    ! This function transforms the velocity vector from one coordinate system
+    ! to another. The input position and velocity should be in SI units and
     ! the output velocity vector is also in SI units.
-    ! If the two systems have the same name, then the input and output 
+    ! If the two systems have the same name, then the input and output
     ! velocity vectors are the same.
-    !EOP
+    ! EOP
 
     ! Local variables
-    character (len=3) :: NameCoord1Last = 'XXX', NameCoord2Last = 'XXX' 
+    character (len=3) :: NameCoord1Last = 'XXX', NameCoord2Last = 'XXX'
     real :: TimeSimLast = -1.0
 
     real, dimension(3)   :: v1Total_D, Omega12_D
@@ -1009,10 +1009,10 @@ contains
          Omega1_D, Omega2_D
     logical :: IsHelioGeo = .false.
 
-    character (len=*), parameter :: NameSub = NameMod // '::transform_velocity'
+    character(len=*), parameter:: NameSub = 'transform_velocity'
     !--------------------------------------------------------------------------
 
-    !If NameCoord1 is the same as NameCoord2 there is no transformation.
+    ! If NameCoord1 is the same as NameCoord2 there is no transformation.
     if(NameCoord1 == NameCoord2)then
        v2_D = v1_D
        RETURN
@@ -1029,12 +1029,12 @@ contains
        ! Get transformation matrix and angular velocity between frames
        Transform21_DD = transform_matrix(TimeSim, NameCoord1, NameCoord2)
 
-       if(NameCoord1(1:1) == 'H' .eqv. NameCoord2(1:1) == 'H')then 
+       if(NameCoord1(1:1) == 'H' .eqv. NameCoord2(1:1) == 'H')then
           ! Both helio-centric or both planet-centric, no planet speed added
           IsHelioGeo = .false.
           Omega12_D  = angular_velocity(TimeSim, NameCoord1, NameCoord2)
 
-       else 
+       else
           IsHelioGeo = .true.
           Omega1_D   = angular_velocity(TimeSim, NameCoord1)
           Omega2_D   = angular_velocity(TimeSim, NameCoord2)
@@ -1066,12 +1066,12 @@ contains
        ! Position relative to Frame2
        Xyz2_D = matmul( Transform21_DD, (Xyz1_D - XyzPlanet1_D) )
 
-       ! Transform into Frame2 and subtract rotation speed of 
-       ! Frame2 with respect to the inertial frame, and add 
+       ! Transform into Frame2 and subtract rotation speed of
+       ! Frame2 with respect to the inertial frame, and add
        ! relative velocity of Frame2 with respect to Frame1 (vPlanet1)
 
        v2_D = matmul(Transform21_DD, v1Total_D - vPlanet1_D) &
-            - cross_product(Omega2_D, Xyz2_D) 
+            - cross_product(Omega2_D, Xyz2_D)
 
     else
        ! Omega12_D defines the rotation of Frame2 with respect to Frame1,
@@ -1085,21 +1085,22 @@ contains
     end if
 
   end function transform_velocity
+  !============================================================================
 
-  !BOP ========================================================================
-  !IROUTINE: test_axes - test the CON_axes class
+  ! BOP ========================================================================
+  ! IROUTINE: test_axes - test the CON_axes class
   !INTERFACE:
   subroutine test_axes
 
     !DESCRIPTION:
     ! Do some self consistency checks. Stop with an error message if
     ! test fails. Otherwise write out success.
-    !EOP
+    ! EOP
     real :: MagAxisTilt
     real :: RotAxisGsm_D(3), RotAxisGeo_D(3), Rot_DD(3,3), Result_DD(3,3)
     real :: Omega_D(3), v2_D(3), Result_D(3), Position_D(3)
     real :: Epsilon1, Epsilon2, Epsilon3
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
 
     if(precision(1.0) >= 12)then
        Epsilon1 = 1e-10
@@ -1139,7 +1140,7 @@ contains
          'test get_axes failed: MagAxisTilt =',MagAxisTilt*cRadToDeg,&
          ' should be 7.7223745616548189 degrees within round off error'
 
-    Result_D = (/4.017959626728e-5, 0.122841278089, 0.9924263291464/)
+    Result_D = [4.017959626728e-5, 0.122841278089, 0.9924263291464]
     if(maxval(abs(RotAxisGsm_D - Result_D)) > 0.00001) &
          write(*,*) 'test get_axes failed: RotAxisGsm_D =',&
          RotAxisGsm_D,' should be equal to ',Result_D, &
@@ -1150,7 +1151,7 @@ contains
     Rot_DD = transform_matrix(0.0,'GSM','GEO')
     RotAxisGeo_D = matmul(Rot_DD,RotAxisGsm_D)
 
-    Result_D = (/0.0, 0.0, 1.0/)
+    Result_D = [0.0, 0.0, 1.0]
     if(maxval(abs(RotAxisGeo_D - Result_D)) > 0.0001) &
          write(*,*)'test transform_matrix failed: RotAxisGeo_D=',&
          RotAxisGeo_D,' should be be equal to ',Result_D,&
@@ -1172,72 +1173,72 @@ contains
 
     ! HGI is an inertial system
     Omega_D  = angular_velocity(0.0,'HGI')
-    Result_D = (/0., 0., 0./)
+    Result_D = [0., 0., 0.]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: HGI Omega_D = ',Omega_D,&
-         ' should be equal to ',Result_D,' within round off errors'   
+         ' should be equal to ',Result_D,' within round off errors'
 
     ! HGR rotates around its Z axis with the OmegaCarrington
     Omega_D  = angular_velocity(0.0,'HGR')
-    Result_D = (/0., 0., OmegaCarrington/)
+    Result_D = [0., 0., OmegaCarrington]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: HGR Omega_D = ',Omega_D,&
-         ' should be equal to ',Result_D,' within round off errors'   
+         ' should be equal to ',Result_D,' within round off errors'
 
     ! HGC rotates around its Z axis with the OmegaCarrington
     Omega_D  = angular_velocity(0.0,'HGC')
-    Result_D = (/0., 0., OmegaCarrington/)
+    Result_D = [0., 0., OmegaCarrington]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: HGC Omega_D = ',Omega_D,&
-         ' should be equal to ',Result_D,' within round off errors'   
+         ' should be equal to ',Result_D,' within round off errors'
 
     ! GEI is an inertial system
     Omega_D  = angular_velocity(0.0,'GEI')
-    Result_D = (/0., 0., 0./)
+    Result_D = [0., 0., 0.]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: GEI Omega_D = ',Omega_D, &
-         ' should be equal to ',Result_D,' within round off errors'   
+         ' should be equal to ',Result_D,' within round off errors'
 
     ! In the current approximation GSE is an inertial system
     Omega_D  = angular_velocity(0.0,'GSE')
-    Result_D = (/0., 0., 0./)
+    Result_D = [0., 0., 0.]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: GSE Omega_D = ',Omega_D,&
-         ' should be equal to ',Result_D,' within round off errors'   
+         ' should be equal to ',Result_D,' within round off errors'
 
     ! GEO rotates with OmegaPlanet around the Z axis with respect to inertial
     Omega_D  = angular_velocity(0.0,'GEO')
-    Result_D = (/0., 0., OmegaPlanet/)
+    Result_D = [0., 0., OmegaPlanet]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: GEO Omega_D = ',Omega_D,&
-         ' should be equal to ',Result_D,' within round off errors'   
+         ' should be equal to ',Result_D,' within round off errors'
 
     ! GEO rotates with OmegaPlanet around the Z axis with respect to GSE
     Omega_D  = angular_velocity(0.0,'GSE','GEO',iFrame=2)
-    Result_D = (/0., 0., OmegaPlanet/)
+    Result_D = [0., 0., OmegaPlanet]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: GSE,GEO Omega_D = ',Omega_D,&
-         ' should be equal to ',Result_D,' within round off errors'   
+         ' should be equal to ',Result_D,' within round off errors'
 
-    ! The GSM rotates around the X axis. At 07:35 UT in the morning 
-    ! the Northern magnetic pole is on the night side, 
+    ! The GSM rotates around the X axis. At 07:35 UT in the morning
+    ! the Northern magnetic pole is on the night side,
     ! so the northern magnetic pole moves towards -Y in GSE,
-    ! so GSM rotates with a positive sign around the X axis. 
+    ! so GSM rotates with a positive sign around the X axis.
     ! The sign is right, the amplitude is reasonable.
 
     Omega_D  = angular_velocity(0.0,'GSM')
-    Result_D = (/9.8163649853322886E-06, 0., 0./)
+    Result_D = [9.8163649853322886E-06, 0., 0.]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: GSM Omega_D = ',Omega_D,&
-         ' should be equal to ',Result_D,' within round off errors'   
+         ' should be equal to ',Result_D,' within round off errors'
 
     ! This is a general case, we believe the numbers
     Omega_D  = angular_velocity(0.0,'GSE','SMG',iFrame=2)
-    Result_D = (/9.7273384193693053E-06, 8.9577283077318018E-06, &
-         -1.3190560195532345E-06/)    
+    Result_D = [9.7273384193693053E-06, 8.9577283077318018E-06, &
+         -1.3190560195532345E-06]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: GSE-SMG Omega_D in SMG= ',&
-         Omega_D,' should be equal to ',Result_D,' within round off errors'   
+         Omega_D,' should be equal to ',Result_D,' within round off errors'
 
     write(*,'(a)')'Testing transform_velocity'
 
@@ -1245,10 +1246,10 @@ contains
     ! This will correspond to the point matmul((/cAU,0.,0./),HgrHgi_DD) in HGI
     ! and it should rotate with (/0.,0.,OmegaCarrington/) in HGI.
 
-    Position_D = (/cAU,0.,0./)
-    v2_D = transform_velocity(0., (/0.,0.,0./), Position_D, 'HGR', 'HGI')
+    Position_D = [cAU,0.,0.]
+    v2_D = transform_velocity(0., [0.,0.,0.], Position_D, 'HGR', 'HGI')
     Position_D = matmul(Position_D, HgrHgi_DD)
-    Result_D = cross_product( (/0.,0.,OmegaCarrington/), Position_D)
+    Result_D = cross_product( [0.,0.,OmegaCarrington], Position_D)
 
     if(maxval(abs(v2_D - Result_D)) > Epsilon2) &
          write(*,*)'test angular_velocity failed: HGI-HGR v2_D = ',v2_D, &
@@ -1256,7 +1257,7 @@ contains
 
     ! Let's transform back, the result should be 0
     v2_D = transform_velocity(0., Result_D, Position_D, 'HGI', 'HGR')
-    Result_D = (/ 0., 0., 0./)
+    Result_D = [ 0., 0., 0.]
     if(maxval(abs(v2_D - Result_D)) > Epsilon2) &
          write(*,*)'test angular_velocity failed: HGR-HGI v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
@@ -1264,40 +1265,40 @@ contains
     ! Let's check vPlanet. A point at rest in HGI should move towards the
     ! +Y axis in GSE (opposite of the motion of the planet)
     ! with roughly 30 km/s for Earth. In March the Earth
-    ! is getting farther away from the Sun, so the X component of the 
+    ! is getting farther away from the Sun, so the X component of the
     ! velocity should be a small positive number.
-    v2_D = transform_velocity(0., (/0., 0., 0./), (/0., 0., 0./), 'HGI', 'GSE')
-    Result_D = (/ 4.8531599940505521E+02, 2.9901632640648619E+04, 0./)
+    v2_D = transform_velocity(0., [0., 0., 0.], [0., 0., 0.], 'HGI', 'GSE')
+    Result_D = [ 4.8531599940505521E+02, 2.9901632640648619E+04, 0.]
     if(maxval(abs(v2_D - Result_D)) > Epsilon2) &
          write(*,*)'test angular_velocity failed: HGI-GSE v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
 
     ! Let's transform back, the result should be 0
-    v2_D = transform_velocity(0., v2_D, (/0., 0., 0./), 'GSE', 'HGI')
-    Result_D = (/ 0., 0., 0./)
+    v2_D = transform_velocity(0., v2_D, [0., 0., 0.], 'GSE', 'HGI')
+    Result_D = [ 0., 0., 0.]
     if(maxval(abs(v2_D - Result_D)) > Epsilon3) &
          write(*,*)'test angular_velocity failed: GSE-HGI back v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
 
     ! Velocity of Earth in GEO should be zero
     v2_D = transform_velocity(0., vPlanetHgi_D, XyzPlanetHgi_D, 'HGI', 'GEO')
-    Result_D = (/ 0., 0., 0./)
+    Result_D = [ 0., 0., 0.]
     if(maxval(abs(v2_D - Result_D)) > Epsilon3) &
          write(*,*)'test angular_velocity failed: HGI-GEO v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
 
     ! Velocity of Earth in HGI should be vPlanetHgi_D
-    v2_D = transform_velocity(0., (/0., 0., 0./), (/0., 0., 0./), 'GEO', 'HGI')
+    v2_D = transform_velocity(0., [0., 0., 0.], [0., 0., 0.], 'GEO', 'HGI')
     Result_D = vPlanetHgi_D
     if(maxval(abs(v2_D - Result_D)) > Epsilon3) &
          write(*,*)'test angular_velocity failed: GEO-HGI v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
 
-    ! Velocity of Earth in HGR should be 
+    ! Velocity of Earth in HGR should be
     ! HgrHgi_DD.(vPlanetHgi_D - OmegaCarrington x XyzPlanetHgi_D)
-    v2_D = transform_velocity(0., (/0., 0., 0./), (/0., 0., 0./), 'GEO', 'HGR')
+    v2_D = transform_velocity(0., [0., 0., 0.], [0., 0., 0.], 'GEO', 'HGR')
     Result_D = matmul(HgrHgi_DD, vPlanetHgi_D &
-         - cross_product((/0.,0.,OmegaCarrington/), XyzPlanetHgi_D))
+         - cross_product([0.,0.,OmegaCarrington], XyzPlanetHgi_D))
     if(maxval(abs(v2_D - Result_D)) > Epsilon2) &
          write(*,*)'test angular_velocity failed: GEO-HGR v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
@@ -1305,14 +1306,14 @@ contains
     ! Go back
     Position_D = matmul(HgrHgi_DD,XyzPlanetHgi_D)
     v2_D = transform_velocity(0., Result_D, Position_D, 'HGR', 'GEO')
-    Result_D = (/0., 0., 0./)
+    Result_D = [0., 0., 0.]
     if(maxval(abs(v2_D - Result_D)) > Epsilon2) &
          write(*,*)'test angular_velocity failed: HGR-GEO v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
 
-    ! The center of the Earth is at 0,0,0 and at rest in GSE, 
+    ! The center of the Earth is at 0,0,0 and at rest in GSE,
     ! and relative to HGI it moves with the planet speed
-    v2_D = transform_velocity(0., (/0., 0., 0./), (/0., 0., 0./), 'GSE', 'HGI')
+    v2_D = transform_velocity(0., [0., 0., 0.], [0., 0., 0.], 'GSE', 'HGI')
     Result_D = vPlanetHgi_D
     if(maxval(abs(v2_D - Result_D)) > Epsilon3) &
          write(*,*)'test angular_velocity failed: GSE-HGI v2_D = ',v2_D, &
@@ -1323,19 +1324,21 @@ contains
     ! with respect to GSE. It should rotate with OmegaPlanet around the
     ! rotation axis (in GSE) of the Earth.
 
-    Position_D = matmul(GeoGse_DD, (/RadiusPlanet, 0., 0./))
-    v2_D = transform_velocity(0., (/0., 0., 0./), Position_D, 'GEO', 'GSE')
-    Result_D = OmegaPlanet*cross_product(RotAxis_D, (/RadiusPlanet, 0., 0./))
+    Position_D = matmul(GeoGse_DD, [RadiusPlanet, 0., 0.])
+    v2_D = transform_velocity(0., [0., 0., 0.], Position_D, 'GEO', 'GSE')
+    Result_D = OmegaPlanet*cross_product(RotAxis_D, [RadiusPlanet, 0., 0.])
     if(maxval(abs(v2_D - Result_D)) > Epsilon3) &
          write(*,*)'test angular_velocity failed: GEO-GSE v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
 
     ! Do it again to check cashing
-    v2_D = transform_velocity(0., (/0., 0., 0./), Position_D, 'GEO', 'GSE')
+    v2_D = transform_velocity(0., [0., 0., 0.], Position_D, 'GEO', 'GSE')
     if(maxval(abs(v2_D - Result_D)) > Epsilon3) &
          write(*,*)'test angular_velocity failed: GEO-GSE2 v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
 
   end subroutine test_axes
+  !============================================================================
 
 end module CON_axes
+!==============================================================================

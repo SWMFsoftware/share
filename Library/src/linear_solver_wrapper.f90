@@ -1,9 +1,8 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, 
-!  portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 !
 
-!============================================================================
 module ModLinearSolverWrapper
 
   use ModLinearSolver, only: LinearSolverParamType
@@ -17,17 +16,15 @@ module ModLinearSolverWrapper
   real, pointer,   public :: PrecondMatrix_II(:,:)
 
   contains
+  !============================================================================
     subroutine linear_solver_matvec(x_I, y_I, n)
 
       ! Fortran subroutine calling C matvec routine
       use iso_c_binding
       use ModLinearSolver, ONLY: multiply_left_precond
 
-
-      implicit none
-
       interface
-         subroutine linear_wrapper_matvec_c(x_I, y_I, n)  bind(C) 
+         subroutine linear_wrapper_matvec_c(x_I, y_I, n)  bind(C)
            integer, VALUE:: n
            real          :: x_I(n)
            real          :: y_I(n)
@@ -35,11 +32,11 @@ module ModLinearSolverWrapper
       end interface
 
       integer, intent(in) :: n
-      real,    intent(in) :: x_I(n) 
+      real,    intent(in) :: x_I(n)
       real,    intent(out):: y_I(n)
 
       integer :: iStart
-      !-----------------------------------------------------------------------
+    !--------------------------------------------------------------------------
 
       call linear_wrapper_matvec_c(x_I, y_I, n)
 
@@ -56,10 +53,10 @@ module ModLinearSolverWrapper
       end if
 
     end subroutine linear_solver_matvec
-    !=========================================================================
+  !============================================================================
 
   end module ModLinearSolverWrapper
-!============================================================================
+!==============================================================================
 subroutine linear_solver_wrapper(TypeSolver, Tolerance, nIteration, &
      nVarIn, nDimIn, nIIn, nJIn, nKIn, nBlockIn, iComm, Rhs_I, x_I, &
      PrecondParam, PrecondMatrixIn_II, lTest) bind(C)
@@ -71,10 +68,10 @@ subroutine linear_solver_wrapper(TypeSolver, Tolerance, nIteration, &
   use ModLinearSolver, ONLY: get_precond_matrix, multiply_left_precond,&
        multiply_initial_guess, bicgstab,gmres,cg,LinearSolverParamType
   use ModUtilities, ONLY: char_array_to_string, CON_stop
- 
+
   implicit none
 
-  character(c_char), intent(in) :: TypeSolver(*) 
+  character(c_char), intent(in) :: TypeSolver(*)
   real,    intent(in):: Tolerance  ! tolerance for the solver
   integer, intent(in):: nIteration ! max iteration number
   integer, intent(in):: nVarIn       ! Number of impl. variables/cell
@@ -85,23 +82,22 @@ subroutine linear_solver_wrapper(TypeSolver, Tolerance, nIteration, &
   real,    intent(in):: PrecondParam ! Parameter for the preconditioner
   integer, intent(in):: lTest      ! if lTest==1 DoTest=.true.
   real, target, intent(inout):: PrecondMatrixIn_II(nVarIn*nVarIn*nIIn*nJIn*nKIn,2*nDimIn+1)
-  !precond_matrix contains diagonal and super/sub diagonal elements from
-  !the matrix A, which is in the equation Ax = b 
+  ! precond_matrix contains diagonal and super/sub diagonal elements from
+  ! the matrix A, which is in the equation Ax = b
 
   real, intent(inout):: Rhs_I(nVarIn*nIIn*nJIn*nKIn*nBlockIn) ! RHS vector
   real, intent(inout):: x_I(nVarIn*nIIn*nJIn*nKIn*nBlockIn)   ! Initial guess/solution
-
-  logical :: DoTest     ! show Krylov iterations and convergence
 
   ! Local variables
   integer:: n, i, j, k, iVar
   integer:: nImpl
 
   logical:: DoDebug = .false.
-  character(len=*), parameter:: NameSub = 'linear_solver_wrapper'
 
-  !---------------------------------------------------------------------------
-  
+  logical :: DoTest     ! show Krylov iterations and convergence
+
+  character(len=*), parameter:: NameSub = 'linear_solver_wrapper'
+  !----------------------------------------------------------------------------
   nBlock = nBlockIn
   nVar   = nVarIn
   nDim   = nDimIn
@@ -142,7 +138,7 @@ subroutine linear_solver_wrapper(TypeSolver, Tolerance, nIteration, &
   Param%ErrorMax      = Tolerance
   Param%MaxMatvec     = nIteration
   Param%nKrylovVector = nIteration
-  Param%UseInitialGuess = .false. 
+  Param%UseInitialGuess = .false.
 
   ! Number of variables per block
   nVarIjk = nVar*nI*nJ*nK
@@ -150,7 +146,7 @@ subroutine linear_solver_wrapper(TypeSolver, Tolerance, nIteration, &
   ! Number of variables per processor
   nImpl   = nVarIjk*nBlock
 
-  DoTest = lTest==1 
+  DoTest = lTest==1
 
   ! Make sure that left preconditioning is used when necessary
   Param%TypePrecondSide = 'left'
@@ -158,7 +154,7 @@ subroutine linear_solver_wrapper(TypeSolver, Tolerance, nIteration, &
   ! Initialize solution vector to zero
   x_I = 0.0
 
-  ! Get preconditioning matrix if required. 
+  ! Get preconditioning matrix if required.
   ! Precondition RHS and initial guess (for symmetric prec only)
   if(Param%DoPrecond)then
      ! Preconditioning  matrix
@@ -186,7 +182,7 @@ subroutine linear_solver_wrapper(TypeSolver, Tolerance, nIteration, &
        ' nMatVec, Error:', Param%nMatVec, Param%Error
 
   ! Solve linear problem
-  !call timing_start('krylov solver')
+  ! call timing_start('krylov solver')
   select case(Param%TypeKrylov)
   case('BICGSTAB')
      call bicgstab(linear_solver_matvec, Rhs_I, x_I, Param%UseInitialGuess, nImpl, &
@@ -201,12 +197,12 @@ subroutine linear_solver_wrapper(TypeSolver, Tolerance, nIteration, &
      if(.not. Param%DoPrecond)then
         call cg(linear_solver_matvec, Rhs_I, x_I, Param%UseInitialGuess, nImpl, &
              Param%Error, Param%TypeStop, Param%nMatvec, &
-             Param%iError, DoTest, iComm)      
+             Param%iError, DoTest, iComm)
      end if
   case default
      call CON_stop(NameSub//': Unknown TypeKrylov='//Param%TypeKrylov)
   end select
-  !call timing_stop('krylov solver')
+  ! call timing_stop('krylov solver')
 
   if(DoTest)write(*,*)NameSub,&
        ': After nMatVec, Error, iError=',&
@@ -216,4 +212,4 @@ subroutine linear_solver_wrapper(TypeSolver, Tolerance, nIteration, &
   if(Param%iError==3) Param%iError=0
 
 end subroutine linear_solver_wrapper
-!=========================================================================
+!==============================================================================

@@ -1,9 +1,10 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 !
-!BOP
+! BOP
 !
-!MODULE: CON_planet - planet parameters shared by components
+! MODULE: CON_planet - planet parameters shared by components
 !INTERFACE:
 module CON_planet
 
@@ -29,7 +30,7 @@ module CON_planet
   ! 23Mar03 - added get_planet subroutine for OO type access
   ! 06May04 - K.C. Hansen and G. Toth added Saturn
   !           G.Toth fixed bugs in degree to radian conversions
-  !EOP
+  ! EOP
 
   implicit none
 
@@ -65,7 +66,7 @@ module CON_planet
   real    :: MagAxisPhi        ! Current   phi   angla in GSE
 
   ! Offset of the magnetic field center
-  real    :: MagCenter_D(3) = (/ 0.0, 0.0, 0.0/)
+  real    :: MagCenter_D(3) = [ 0.0, 0.0, 0.0]
 
   ! Optional changes relative to the "real" planet
   logical :: UseRotation     = .true.
@@ -94,19 +95,20 @@ module CON_planet
   real, allocatable :: g_Planet(:, :), h_Planet(:, :)
 
 contains
+  !============================================================================
 
-  !BOP ========================================================================
-  !IROUTINE: set_planet_defaults - set Earth to be defaults
+  ! BOP ========================================================================
+  ! IROUTINE: set_planet_defaults - set Earth to be defaults
   !INTERFACE:
   subroutine set_planet_defaults
 
     !DESCRIPTION:
     ! Initialize parameters for Earth as the default planet.  This is in case
     ! there is no \#PLANET command.
-    !EOP
-    character (len=*), parameter :: NameSub = NameMod//'::set_planet_defaults'
+    ! EOP
 
-    !-------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'set_planet_defaults'
+    !--------------------------------------------------------------------------
     Planet_          = Earth_
     NamePlanet       = NamePlanet_I(Earth_)
     RadiusPlanet     = rPlanet_I(Earth_)
@@ -137,11 +139,11 @@ contains
     MagAxisThetaGeo  = bAxisThetaPlanet_I(Earth_)
     MagAxisPhiGeo    = bAxisPhiPlanet_I(Earth_)
 
-
   end subroutine set_planet_defaults
+  !============================================================================
 
-  !BOP ========================================================================
-  !IROUTINE: is_planet_init - initialize parameters if planet is known
+  ! BOP ========================================================================
+  ! IROUTINE: is_planet_init - initialize parameters if planet is known
   !INTERFACE:
   function is_planet_init(NamePlanetIn) result(IsKnown)
 
@@ -156,13 +158,13 @@ contains
     ! return true if the planet is known. If it is not known return false.
     ! Store the name in either case. The planet data can be initialized at most
     ! once.
-    !EOP
-    character (len=*), parameter :: NameSub = NameMod//'::is_planet_init'
+    ! EOP
     integer :: i
 
     logical :: IsInitialized = .false.
-    !-------------------------------------------------------------------------
 
+    character(len=*), parameter:: NameSub = 'is_planet_init'
+    !--------------------------------------------------------------------------
     IsKnown = .true.
     if(IsInitialized)then
        if(NamePlanet == NamePlanetIn) RETURN
@@ -228,8 +230,7 @@ contains
     if(Planet_==Enceladus_) MagCenter_D(2)    = 944.23
 
   end function is_planet_init
-
-  !===========================================================================
+  !============================================================================
 
   subroutine read_planet_var(NameCommand)
 
@@ -239,8 +240,6 @@ contains
 
     character (len=*), intent(in) :: NameCommand
 
-    character (len=*), parameter :: NameSub = NameMod//'::read_planet_var'
-
     ! Planet related temporary variables
     character (len=lNamePlanet) :: NamePlanetIn
     character (len=lStringLine) :: NamePlanetCommands=''
@@ -249,7 +248,8 @@ contains
     integer :: m, n, m_loop, n_loop
     character(len=100) :: headerline
 
-    !-------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'read_planet_var'
+    !--------------------------------------------------------------------------
 
     select case(NameCommand)
     case("#PLANET", "#MOON", "#COMET")
@@ -427,12 +427,12 @@ contains
        call read_var('DtUpdateB0',DtUpdateB0)
 
     case('#MULTIPOLEB0')
-       
+
        call read_var('UseMultipoleB0', UseMultipoleB0)
        if(UseMultipoleB0) then
 
           ! If multipole is used, the magnetic axis is aligned
-          ! with the rotation axis. Rotation axis may be real or 
+          ! with the rotation axis. Rotation axis may be real or
           ! user-specified using #ROTATIONAXIS command.
           IsPlanetModified = .true.
           UseRealRotAxis   = .true.
@@ -440,7 +440,7 @@ contains
           UseRealMagAxis   = .false.
           IsMagAxisPrimary = .false.
           UseSetMagAxis    = .false.
-          
+
           ! Set multipole properties
           TypeBField="MULTIPOLE"
           call read_var('MaxHarmonicDegree', MaxHarmonicDegree)
@@ -464,21 +464,20 @@ contains
 
           call normalize_schmidt_coefficients
        end if
-       
+
     end select
 
   end subroutine read_planet_var
-
-  !==========================================================================
+  !============================================================================
 
   subroutine check_planet_var(IsProc0, DoTimeAccurate)
 
     logical, intent(in) :: IsProc0, DoTimeAccurate
 
-    character (len=*), parameter :: NameSub=NameMod//'::check_planet_var'
-
     ! The rotation and magnetic axes are aligned if any of them is not a
-    ! primary axis or if multipoleB0 is used (implicitly). 
+    ! primary axis or if multipoleB0 is used (implicitly).
+    character(len=*), parameter:: NameSub = 'check_planet_var'
+    !--------------------------------------------------------------------------
     UseAlignedAxes = (.not. IsRotAxisPrimary) .or. (.not. IsMagAxisPrimary)
 
     ! Warn if setting is unphysical
@@ -490,13 +489,12 @@ contains
     DoUpdateB0 = DtUpdateB0 > 0.0 .and. DoTimeAccurate .and. UseRotation &
          .and. .not.(UseAlignedAxes .and. .not.UseMultipoleB0)
 
-    ! Multipole B0 uses IdealAxes to set the proxy mag-rot axes, 
-    ! so it needs DoUpdateB0 to be True even when IdealAxes is used. 
-    ! If dipole is used with IdealAxes, no update is needed. 
+    ! Multipole B0 uses IdealAxes to set the proxy mag-rot axes,
+    ! so it needs DoUpdateB0 to be True even when IdealAxes is used.
+    ! If dipole is used with IdealAxes, no update is needed.
 
   end subroutine check_planet_var
-
-  !==========================================================================
+  !============================================================================
 
   subroutine get_planet( &
        NamePlanetOut, RadiusPlanetOut, MassPlanetOut, OmegaPlanetOut, &
@@ -513,7 +511,7 @@ contains
     real,             optional, intent(out) :: DipoleStrengthOut
     logical,          optional, intent(out) :: DoUpdateB0Out
     real,             optional, intent(out) :: DtUpdateB0Out
-    !-----------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     if(present(NamePlanetOut))      NamePlanetOut       = NamePlanet
     if(present(RadiusPlanetOut))    RadiusPlanetOut     = RadiusPlanet
     if(present(MassPlanetOut))      MassPlanetOut       = MassPlanet
@@ -526,6 +524,7 @@ contains
     if(present(DtUpdateB0Out))      DtUpdateB0Out       = DtUpdateB0
 
   end subroutine get_planet
+  !============================================================================
 
   ! ===========================================================================
   subroutine normalize_schmidt_coefficients
@@ -537,6 +536,7 @@ contains
     real, allocatable :: S(:,:)
 
     ! --------------------------------------------
+    !--------------------------------------------------------------------------
     if(.not.allocated(S)) then
       allocate(S(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
     end if
@@ -560,5 +560,7 @@ contains
     deallocate(S)
 
   end subroutine normalize_schmidt_coefficients
+  !============================================================================
 
 end module CON_planet
+!==============================================================================

@@ -1,14 +1,15 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-!BOP
-!MODULE: CON_line_extract - extract field and stream lines in parallel
+! BOP
+! MODULE: CON_line_extract - extract field and stream lines in parallel
 !INTERFACE:
 module CON_line_extract
 
   !DESCRIPTION:
-  ! The ray position and the MHD state along the rays (ray line) 
-  ! can be collected into an array and sorted by the length coordinate. 
-  ! This class provides the infrastructure for collecting, 
+  ! The ray position and the MHD state along the rays (ray line)
+  ! can be collected into an array and sorted by the length coordinate.
+  ! This class provides the infrastructure for collecting,
   ! sorting and providing the data extracted along multiple ray lines.
 
   !USES:
@@ -32,7 +33,7 @@ module CON_line_extract
 
   !REVISION HISTORY:
   ! 09May04 - Gabor Toth <gtoth@umich.edu> - initial prototype/prolog/code
-  !EOP
+  ! EOP
 
   ! Private constants
   character(len=*),  parameter :: NameMod='CON_line_extract'
@@ -43,9 +44,10 @@ module CON_line_extract
   real, pointer :: State_VI(:,:) ! State at each point along all rays
 
 contains
+  !============================================================================
 
-  !BOP ========================================================================
-  !IROUTINE: line_init - initialize storage for ray lines
+  ! BOP ========================================================================
+  ! IROUTINE: line_init - initialize storage for ray lines
   !INTERFACE:
   subroutine line_init(nVarIn)
 
@@ -54,11 +56,10 @@ contains
 
     !DESCRIPTION:
     ! Initialize the ray line storage.
-    !EOP
+    ! EOP
 
-    character (len=*), parameter :: NameSub = NameMod//'::line_init'
-    !-------------------------------------------------------------------------
-    
+    character(len=*), parameter:: NameSub = 'line_init'
+    !--------------------------------------------------------------------------
     if(nVar >  0     ) call line_clean ! clean up previous allocation
 
     ! Set number of variables for each point
@@ -67,19 +68,20 @@ contains
     nullify(State_VI)
 
   end subroutine line_init
+  !============================================================================
 
-  !BOP ========================================================================
-  !IROUTINE: line_clean - clean storage for line data
+  ! BOP ========================================================================
+  ! IROUTINE: line_clean - clean storage for line data
   !INTERFACE:
   subroutine line_clean
 
     !DESCRIPTION:
     ! Clean the ray line storage.
-    !EOP
+    ! EOP
 
-    character (len=*), parameter :: NameSub = NameMod//'::line_clean'
-    !-------------------------------------------------------------------------
-    
+    character(len=*), parameter:: NameSub = 'line_clean'
+    !--------------------------------------------------------------------------
+
     if(nVar == 0) RETURN  ! nothing to do, already clean
 
     nVar     = 0
@@ -88,16 +90,18 @@ contains
     if(associated(State_VI)) deallocate(State_VI)
 
   end subroutine line_clean
+  !============================================================================
 
-  !BOP ========================================================================
-  !IROUTINE: line_extend - allocate or extend storage for line data
+  ! BOP ========================================================================
+  ! IROUTINE: line_extend - allocate or extend storage for line data
   !INTERFACE:
   subroutine line_extend(MaxPointIn)
 
     integer, intent(in) :: MaxPointIn
 
     real, pointer :: OldState_VI(:,:)
-    !------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
     if(.not.associated(State_VI))then
        allocate(State_VI(0:nVar, MaxPointIn)) ! allocate storage
        MaxPoint = MaxPointIn                  ! set buffer size
@@ -109,11 +113,12 @@ contains
        deallocate(OldState_VI)                ! free old storage
        MaxPoint = MaxPointIn                  ! change buffer size
     end if
-       
-  end subroutine line_extend
 
-  !BOP ========================================================================
-  !IROUTINE: line_put - store state for a point along a ray line
+  end subroutine line_extend
+  !============================================================================
+
+  ! BOP ========================================================================
+  ! IROUTINE: line_put - store state for a point along a ray line
   !INTERFACE:
   subroutine line_put(iLine, nVarIn, Line_V)
 
@@ -123,12 +128,12 @@ contains
     real,    intent(in) :: Line_V(nVarIn)
 
     !DESCRIPTION:
-    ! Store the ray index iLine and the state Line_V(1:nVarIn) 
+    ! Store the ray index iLine and the state Line_V(1:nVarIn)
     ! for the line iLine.
-    !EOP
+    ! EOP
 
-    character (len=*), parameter :: NameSub = NameMod//'line_put'
-    !------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'line_put'
+    !--------------------------------------------------------------------------
     if(nVarIn /= nVar)then
        write(*,*) NameSub,' ERROR: nVarIn, nVar=',nVarIn, nVar
        call CON_stop(NameSub//' ERROR: incorrect number of variables!')
@@ -140,9 +145,10 @@ contains
     State_VI(1:nVarIn, nPoint) = Line_V
 
   end subroutine line_put
+  !============================================================================
 
-  !BOP ========================================================================
-  !IROUTINE: line_collect - collect ray line data onto 1 processor
+  ! BOP ========================================================================
+  ! IROUTINE: line_collect - collect ray line data onto 1 processor
   !INTERFACE:
   subroutine line_collect(iComm, iProcTo)
 
@@ -154,22 +160,22 @@ contains
     ! Collect line data from the sending processors to the receiving processor.
     ! The sending arrays are emptied, the receiving array is extended.
     ! The receiving PE may or may not contain data prior to the collect.
-    !EOP
+    ! EOP
 
     integer, allocatable :: nPoint_P(:)
 
     integer, parameter :: iTag = 1
-    character(len=*), parameter :: NameSub = NameMod//'line_collect'
 
     integer :: iProc, nProc, iProcFrom, Status_I(MPI_STATUS_SIZE), iError
-    !-------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'line_collect'
+    !--------------------------------------------------------------------------
 
     ! Set processor rank
     call MPI_COMM_RANK(iComm, iProc, iError)
     call MPI_COMM_SIZE(iComm, nProc, iError)
 
     ! Collect number of points onto the receiving processors
-    
+
     allocate(nPoint_P(0:nProc-1))
     do iProcFrom = 0, nProc-1
 
@@ -214,9 +220,10 @@ contains
     deallocate(nPoint_P)
 
   end subroutine line_collect
+  !============================================================================
 
-  !BOP ========================================================================
-  !IROUTINE: line_get - obtain all the ray states
+  ! BOP ========================================================================
+  ! IROUTINE: line_get - obtain all the ray states
   !INTERFACE:
   subroutine line_get(nVarOut, nPointOut, Line_VI, DoSort)
 
@@ -231,28 +238,27 @@ contains
     logical, intent(in), optional  :: DoSort
 
     !DESCRIPTION:
-    ! Obtain all the ray states stored. 
-    !\begin{verbatim}
+    ! Obtain all the ray states stored.
+    ! begin{verbatim}
     ! First get the number of variables and points:
     !
     !     call line_get(nVarOut, nPointOut)
     !
-    ! (Line_VI should not be present!), then 
+    ! (Line_VI should not be present!), then
     !
     !    allocate(Line_VI(0:nVarOut, nPointOut)
-    ! 
+    !
     ! (the 0 index is needed for the line index) and then obtain the state
     !
     !    call line_get(nVarOut, nPointOut, Line_VI, DoSort = .true.)
     !
-    !\end{verbatim}
-    !EOP
-
-    character (len=*), parameter :: NameSub = NameMod//'::line_get'
+    ! end{verbatim}
+    ! EOP
 
     integer, allocatable :: iSorted_I(:)
     real :: Factor
-    !------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'line_get'
+    !--------------------------------------------------------------------------
     if(.not. present(Line_VI))then
        ! Provide size
        nVarOut   = nVar
@@ -288,18 +294,19 @@ contains
     end if
 
     nPoint = 0
-       
-  end subroutine line_get
 
-  !BOP ========================================================================
-  !IROUTINE: line_test - unit tester
+  end subroutine line_get
+  !============================================================================
+
+  ! BOP ========================================================================
+  ! IROUTINE: line_test - unit tester
   !INTERFACE:
   subroutine line_test
 
     !DESCRIPTION:
     ! Test the CON_line_extract module. This subroutine should be called from
     ! a small stand alone program.
-    !EOP
+    ! EOP
 
     integer, parameter :: nVarTest = 4
     integer :: iProc, nProc, iError
@@ -307,8 +314,8 @@ contains
     real    :: Length, Index, State_V(2:nVarTest)
     real, allocatable :: Result_VI(:,:)
 
-    character(len=*), parameter :: NameSub=NameMod//'::line_test'
-    !------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'line_test'
+    !--------------------------------------------------------------------------
 
     call MPI_COMM_SIZE(MPI_COMM_WORLD, nProc, iError)
     call MPI_COMM_RANK(MPI_COMM_WORLD, iProc, iError)
@@ -321,9 +328,9 @@ contains
 
     if(iProc==0)write(*,'(a)')'Testing line_put'
 
-    call line_put(1, 4, (/2.0*iProc,   10.0+iProc, 20.0+iProc, 30.0+iProc/) )
-    call line_put(1, 4, (/2.0*iProc+1, 40.0+iProc, 50.0+iProc, 60.0+iProc/) )
-    call line_put(2, 4, (/2.0*iProc,   70.0+iProc, 80.0+iProc, 90.0+iProc/) )
+    call line_put(1, 4, [2.0*iProc,   10.0+iProc, 20.0+iProc, 30.0+iProc] )
+    call line_put(1, 4, [2.0*iProc+1, 40.0+iProc, 50.0+iProc, 60.0+iProc] )
+    call line_put(2, 4, [2.0*iProc,   70.0+iProc, 80.0+iProc, 90.0+iProc] )
 
     if(nPoint /= 3)write(*,*)NameSub,' line_put failed, iProc=',iProc, &
          ' nPoint =',nPoint,' should be 3'
@@ -331,12 +338,12 @@ contains
          ' MaxPoint =',MaxPoint,' should be 100'
 
     do iPoint = 1, nPoint
-       if(any(State_VI(:,iPoint) /= (/ &
+       if(any(State_VI(:,iPoint) /= [ &
             (iPoint+1)/2 +0.0, &
             2.0*iProc + mod(iPoint+1,2), &
             30.0*iPoint-20.0+iProc, &
             30.0*iPoint-10.0+iProc, &
-            30.0*iPoint+iProc/)) ) &
+            30.0*iPoint+iProc]) ) &
             write(*,*)NameSub,' line_put failed, iProc=',iProc, &
             ' iPoint=',iPoint,' State_VI=',State_VI(:,iPoint)
     end do
@@ -399,13 +406,13 @@ contains
           if(Index == 1.0)then
              iProcFrom = (iPoint - 1)/2
              if(mod(iPoint,2)==1)then
-                State_V = (/10.0+iProcFrom, 20.0+iProcFrom, 30.0+iProcFrom/)
+                State_V = [10.0+iProcFrom, 20.0+iProcFrom, 30.0+iProcFrom]
              else
-                State_V = (/40.0+iProcFrom, 50.0+iProcFrom, 60.0+iProcFrom/)
+                State_V = [40.0+iProcFrom, 50.0+iProcFrom, 60.0+iProcFrom]
              end if
           else
              iProcFrom = nint(Length / 2.0)
-             State_V =    (/70.0+iProcFrom, 80.0+iProcFrom, 90.0+iProcFrom/)
+             State_V =    [70.0+iProcFrom, 80.0+iProcFrom, 90.0+iProcFrom]
           end if
           if(any(Result_VI(2:nVar,iPoint) /= State_V)) &
                write(*,*)NameSub,' line_get failed at iPoint=',iPoint, &
@@ -421,9 +428,9 @@ contains
          write(*,*) NameSub,' line_clean failed, iProc=',iProc, &
          ' nPoint =',nPoint,' and Maxpoint =',MaxPoint,' should be 0', &
          ' associated(State_VI)=',associated(State_VI),' should be False!'
-    
-  end subroutine line_test
 
-  !===========================================================================
+  end subroutine line_test
+  !============================================================================
 
 end module CON_line_extract
+!==============================================================================

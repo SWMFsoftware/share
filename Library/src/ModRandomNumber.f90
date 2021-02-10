@@ -24,8 +24,8 @@ contains
     random_real = iSeed/2147483647.0
 
   end function random_real
-
   !============================================================================
+
   integer function random_integer(n, iSeed1, iSeed2, iSeed3)
 
     integer, intent(in)   :: n                 ! maximum value to be returned
@@ -33,9 +33,9 @@ contains
 
     ! Returns a random integer between 1 and N.
     ! The maximum N is 2147483647 for a default-sized 4-byte integer.
-    ! The three integer seeds should be initialized to 
-    ! values in the range 1 to 30,000 before the first call and 
-    ! not altered between subsequent calls (unless a sequence of random 
+    ! The three integer seeds should be initialized to
+    ! values in the range 1 to 30,000 before the first call and
+    ! not altered between subsequent calls (unless a sequence of random
     ! numbers is to be repeated by reinitializing the seeds).
     !
     !  Author:
@@ -45,11 +45,11 @@ contains
     !    University of North Texas,
     !    renka@cs.unt.edu
     !
-    !  Reference:  
+    !  Reference:
     !
-    !    B. A. Wichmann and I. D. Hill, 
+    !    B. A. Wichmann and I. D. Hill,
     !    An Efficient and Portable Pseudo-random Number Generator,
-    !    Applied Statistics, 
+    !    Applied Statistics,
     !    Volume 31, Number 2, 1982, pages 188-190.
 
     real:: x ! Pseudo-random number in the range 0 to 3
@@ -86,7 +86,7 @@ contains
     StdDev   = sqrt((Average2 - Average**2))
 
     AverageGood = (1+6)/2.0
-    StdDevGood  = sqrt(sum( (/1,2,3,4,5,6/)**2 )/6.0 - AverageGood**2)
+    StdDevGood  = sqrt(sum( [1,2,3,4,5,6]**2 )/6.0 - AverageGood**2)
 
     if(abs(Average - AverageGood) > 0.01) &
          write(*,*)'Test failed: Average       = ', Average, &
@@ -118,5 +118,7 @@ contains
          ' should be about', StdDevGood
 
   end subroutine test_random_number
-  
+  !============================================================================
+
 end module ModRandomNumber
+!==============================================================================

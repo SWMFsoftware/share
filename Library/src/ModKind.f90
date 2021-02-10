@@ -1,7 +1,8 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-!BOP
-!MODULE: ModKind - define various precisions in a machine independent way
+! BOP
+! MODULE: ModKind - define various precisions in a machine independent way
 
 !DESCRIPTION:
 ! The Fortran 77 style real*4 and real*8 declarations are obsolete,
@@ -9,10 +10,10 @@
 ! types are machine and compiler flag dependent.
 ! The Fortran 90 way is to define the {\bf kind} parameter.
 ! Typical usage:
-!\begin{verbatim}
+! begin{verbatim}
 ! real(Real8_) :: CpuTime  ! variable declaration
 ! CpuTime = 0.0_Real8_     ! 8 byte real constant
-!\end{verbatim}
+! end{verbatim}
 
 !INTERFACE:
 module ModKind
@@ -26,5 +27,6 @@ module ModKind
   ! This is standard F90 initialization expression but may give warnings:
   integer, parameter :: nByteReal = 4 + (1.00000000041 - 1.0)*10000000000.0
 
-  !EOP
+  ! EOP
 end module ModKind
+!==============================================================================

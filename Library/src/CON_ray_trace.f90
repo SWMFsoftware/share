@@ -1,8 +1,8 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, 
-!  portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-!BOP
-!MODULE: CON_ray_trace - trace field and stream lines in parallel
+! BOP
+! MODULE: CON_ray_trace - trace field and stream lines in parallel
 !INTERFACE:
 module CON_ray_trace
 
@@ -12,9 +12,9 @@ module CON_ray_trace
   ! in general rays.
   !
   ! Each processor is working on the ray segments inside their subdomain.
-  ! The processors periodically exchange ray information with the other 
+  ! The processors periodically exchange ray information with the other
   ! processors. The ray information contains the starting position,
-  ! the rank of the starting processor, the current position, 
+  ! the rank of the starting processor, the current position,
   ! the direction of the ray relative to the vector field (parallel or
   ! antiparallel), the status of the ray tracing (done or in progress).
 
@@ -41,7 +41,7 @@ module CON_ray_trace
   ! 26Mar04 - Gabor Toth added the passing of nValue real values
   ! 31Mar04 - Gabor Toth removed the passing of nValue real values
   !                      changed XyzStart_D(3) into iStart_D(4)
-  !EOP
+  ! EOP
 
   ! Private constants
   character(len=*),  parameter :: NameMod='CON_ray_trace'
@@ -66,15 +66,15 @@ module CON_ray_trace
   ! Private variables
 
   ! Ray buffers for neighboring communication
-  type(RayPtr), pointer :: SendNei_P(:)     ! Buffer for sending rays to start PE-s     
-  type(RayPtr), target  :: RecvNei          ! Rays received from end PE-s    
+  type(RayPtr), pointer :: SendNei_P(:)     ! Buffer for sending rays to start PE-s
+  type(RayPtr), target  :: RecvNei          ! Rays received from end PE-s
   integer, pointer      :: nRayRecvNei_P(:) ! Number of rays recv from end PE-s
-  
+
   ! Ray buffers for end communication
-  type(RayPtr), pointer :: SendEnd_P(:)     ! Buffer for sending rays to start PE-s     
-  type(RayPtr), target  :: RecvEnd          ! Rays received from end PE-s    
-  integer, pointer      :: nRayRecvEnd_P(:) ! Number of rays recv from end PE-s 
-  
+  type(RayPtr), pointer :: SendEnd_P(:)     ! Buffer for sending rays to start PE-s
+  type(RayPtr), target  :: RecvEnd          ! Rays received from end PE-s
+  integer, pointer      :: nRayRecvEnd_P(:) ! Number of rays recv from end PE-s
+
   ! MPI variables
   integer               :: iComm=MPI_COMM_NULL, nProc, iProc ! MPI group info
   integer               :: nRequest
@@ -83,9 +83,10 @@ module CON_ray_trace
   integer               :: iError              ! generic MPI error value
 
 contains
+  !============================================================================
 
-  !BOP =======================================================================
-  !IROUTINE: ray_init - (re)initialize CON_ray_trace
+  ! BOP =======================================================================
+  ! IROUTINE: ray_init - (re)initialize CON_ray_trace
   !INTERFACE:
   subroutine ray_init(iCommIn)
 
@@ -97,11 +98,11 @@ contains
     ! If called multiple times, it checks if iCommIn is different from the
     ! current communicator. If the same, nothing is done, if different,
     ! the current storage is removed and new storage is allocated.
-    !EOP
+    ! EOP
 
-    character (len=*), parameter :: NameSub = NameMod//'::ray_init'
     integer :: jProc
-    !------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'ray_init'
+    !--------------------------------------------------------------------------
 
     if(iComm == iCommIn) RETURN               ! nothing to do if the same comm
 
@@ -145,21 +146,22 @@ contains
     nullify(RecvEnd % Ray_VI)
 
   end subroutine ray_init
+  !============================================================================
 
-  !BOP ========================================================================
-  !IROUTINE: ray_clean - clean up storage for CON_ray_trace
+  ! BOP ========================================================================
+  ! IROUTINE: ray_clean - clean up storage for CON_ray_trace
   !INTERFACE:
   subroutine ray_clean
 
     !DESCRIPTION:
     ! Remove storage allocated in CON\_ray\_trace.
-    !EOP
+    ! EOP
 
-    character (len=*), parameter :: NameSub = NameMod//'::ray_clean'
     integer :: jProc
-    !------------------------------------------------------------------------
 
     ! Deallocate MPI variables
+    character(len=*), parameter:: NameSub = 'ray_clean'
+    !--------------------------------------------------------------------------
     deallocate(iRequest_I, iStatus_II)
 
     ! Deallocate general send buffers
@@ -195,9 +197,10 @@ contains
     iComm = MPI_COMM_NULL
 
   end subroutine ray_clean
+  !============================================================================
 
-  !BOP =======================================================================
-  !IROUTINE: ray_put - put ray information into send buffer
+  ! BOP =======================================================================
+  ! IROUTINE: ray_put - put ray information into send buffer
   !INTERFACE:
   subroutine ray_put(&
        iProcStart,iStart_D,iProcEnd,XyzEnd_D,Length,IsParallel,DoneRay)
@@ -208,18 +211,18 @@ contains
     real,    intent(in) :: XyzEnd_D(3)         ! End posistion
     real,    intent(in) :: Length              ! Length of the ray so far
     logical, intent(in) :: IsParallel,DoneRay  ! Direction and status of trace
-    
+
     !DESCRIPTION:
     ! Put ray information into send buffer. If DoneRay is true, the
     ! information will be sent ot iProcStart, otherwise it will be
-    ! sent to iProcEnd. 
-    !EOP
-
-    character (len=*), parameter :: NameSub = NameMod//'::ray_put'
+    ! sent to iProcEnd.
+    ! EOP
 
     integer :: iProcTo
-    !-------------------------------------------------------------------------
+
     ! Where should we send the ray
+    character(len=*), parameter:: NameSub = 'ray_put'
+    !--------------------------------------------------------------------------
     if(DoneRay)then
        iProcTo = iProcStart  ! Send back result to the PE that started tracing
        ! put ray info into the send to start buffer
@@ -233,15 +236,16 @@ contains
          call CON_stop(NameSub//' SWMF_error: PE lookup to be implemented')
 
   contains
+    !==========================================================================
 
-    !========================================================================
     subroutine append_ray(Send)
 
       ! Append a new element to the Send buffer
 
       type(RayPtr) :: Send
       integer      :: iRay
-      !---------------------------------------------------------------------
+
+      !------------------------------------------------------------------------
       iRay = Send % nRay + 1
       if(iRay > Send % MaxRay) call extend_buffer(Send, iRay+100)
 
@@ -265,18 +269,20 @@ contains
       Send % nRay = iRay
 
     end subroutine append_ray
+    !==========================================================================
 
   end subroutine ray_put
+  !============================================================================
 
-  !BOP =======================================================================
-  !IROUTINE: ray_get - get ray information from the receive buffer
+  ! BOP =======================================================================
+  ! IROUTINE: ray_get - get ray information from the receive buffer
   !INTERFACE:
   subroutine ray_get(&
        IsFound,iProcStart,iStart_D,XyzEnd_D,Length,IsParallel,DoneRay,IsEnd)
 
     !INPUT ARGUMENTS:
     logical, optional, intent(in) :: IsEnd ! if get ray from end proc
-    
+
     !OUTPUT ARGUMENTS:
     logical, intent(out) :: IsFound            ! true if there are still rays
     integer, intent(out) :: iProcStart         ! PE-s for start and end pos.
@@ -284,22 +290,21 @@ contains
     real,    intent(out) :: XyzEnd_D(3)        ! End position
     real,    intent(out) :: Length             ! Length of the current ray
     logical, intent(out) :: IsParallel,DoneRay ! Direction and status of trace
-    
+
     !DESCRIPTION:
     ! Provide the last ray for the component to store or to work on.
     ! If no ray is found in the receive buffer, IsFound=.false. is returned.
-    !EOP
+    ! EOP
 
     ! local variables
     ! Pointers for choosing the buffer
     type(RayPtr), pointer :: SendPtr_P(:)
     type(RayPtr), pointer :: RecvPtr
     integer, pointer      :: nRayRecvPtr_P(:)
-    
-    character (len=*), parameter :: NameSub = NameMod//'::ray_get'
 
     integer :: iRay
-    !-------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'ray_get'
+    !--------------------------------------------------------------------------
 
     SendPtr_P     => SendNei_P
     RecvPtr       => RecvNei
@@ -311,8 +316,8 @@ contains
           nRayRecvPtr_P => nRayRecvEnd_P
        end if
     end if
-    
-    iRay    = RecvPtr%nRay 
+
+    iRay    = RecvPtr%nRay
     IsFound = iRay > 0
 
     if(.not.IsFound) RETURN  ! No more rays in the buffer
@@ -329,9 +334,10 @@ contains
     RecvPtr % nRay = iRay - 1
 
   end subroutine ray_get
+  !============================================================================
 
-  !BOP =======================================================================
-  !IROUTINE: ray_exchange - send information from send to receive buffers
+  ! BOP =======================================================================
+  ! IROUTINE: ray_exchange - send information from send to receive buffers
   !INTERFACE:
 
   subroutine ray_exchange(DoneMe, DoneAll, IsNeiProcIn_P)
@@ -347,15 +353,15 @@ contains
 
     !DESCRIPTION:
     ! Send the Send\_P buffers to Recv buffers, empty the Send\_P buffers.
-    ! Also check if there is more work to do. If the input argument DoneMe 
-    ! is false on any PE-s (i.e. it has more rays to do), 
-    ! or if there are any rays passed, the output argument DoneAll is 
-    ! set to .false. for all PE-s. 
+    ! Also check if there is more work to do. If the input argument DoneMe
+    ! is false on any PE-s (i.e. it has more rays to do),
+    ! or if there are any rays passed, the output argument DoneAll is
+    ! set to .false. for all PE-s.
     ! If all PE-s have DoneMe true and all send buffers are
     ! empty then DoneAll is set to .true.
     ! The optional argument IsNeiProc\_P array stores the neighboring processor
     ! information to avoid unnecessary communication.
-    !EOP
+    ! EOP
 
     integer, parameter :: iTag = 1
     integer :: jProc, iRay, nRayRecv
@@ -364,10 +370,9 @@ contains
     type(RayPtr), pointer :: SendPtr_P(:)
     type(RayPtr), pointer :: RecvPtr
     integer, pointer      :: nRayRecvPtr_P(:)
-    
-    character (len=*), parameter :: NameSub = NameMod//'::ray_exchange'
 
-    !-------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'ray_exchange'
+    !--------------------------------------------------------------------------
     ! Exchange number of rays in the send buffer
 
     if (present(IsNeiProcIn_P)) then
@@ -383,7 +388,7 @@ contains
     ! Local copy (in case ray remains on the same PE)
     nRayRecvPtr_P = 0
     nRayRecvPtr_P(iProc)=SendPtr_P(iProc) % nRay
-    
+
     nRequest = 0
     iRequest_I = MPI_REQUEST_NULL
     do jProc = 0, nProc-1
@@ -438,7 +443,7 @@ contains
                MPI_REAL,jProc,iTag,iComm,iRequest_I(nRequest),iError)
        iRay = iRay + nRayRecvPtr_P(jProc)
     end do
-    
+
     call MPI_barrier(iComm, iError)
 
     ! Wait for all receive commands to be posted for all processors
@@ -451,10 +456,10 @@ contains
        call MPI_rsend(SendPtr_P(jProc) % Ray_VI(1,1),&
             SendPtr_P(jProc) % nRay*nRayInfo,MPI_REAL,jProc,iTag,iComm,iError)
     enddo
-    
+
     ! Wait for all messages to be received
     if(nRequest > 0)call MPI_waitall(nRequest,iRequest_I,iStatus_II,iError)
-    
+
     ! Update number of received rays
     RecvPtr % nRay = nRayRecv
 
@@ -470,8 +475,7 @@ contains
          iComm, iError)
 
   end subroutine ray_exchange
-
-  !===========================================================================
+  !============================================================================
 
   subroutine extend_buffer(Buffer, nRayNew)
 
@@ -481,7 +485,7 @@ contains
     integer, intent(in) :: nRayNew
 
     real, pointer :: OldRay_VI(:,:)
-    !------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     if(.not.associated(Buffer % Ray_VI))then
        allocate(Buffer % Ray_VI(nRayInfo,nRayNew))    ! allocatenew buffer
        Buffer % nRay   = 0                            ! buffer is empty
@@ -496,16 +500,17 @@ contains
     end if
 
   end subroutine extend_buffer
+  !============================================================================
 
-  !BOP ========================================================================
-  !IROUTINE: ray_test - unit tester
+  ! BOP ========================================================================
+  ! IROUTINE: ray_test - unit tester
   !INTERFACE:
   subroutine ray_test
 
     !DESCRIPTION:
     ! Test the CON\_ray\_trace module. This subroutine should be called from
     ! a small stand alone program.
-    !EOP
+    ! EOP
 
     logical :: IsFound
     integer :: iProcStart
@@ -514,7 +519,7 @@ contains
     logical :: IsParallel,DoneRay, DoneAll
     logical, allocatable :: IsNeiProc_P(:)
     integer :: jProc
-    !------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
 
     call ray_init(MPI_COMM_WORLD)
 
@@ -528,27 +533,27 @@ contains
 
     write(*,"(a,i2,a,4i4,a,i2,a,3f5.0,a,f5.0,a,2l2)") &
          " Sending from iProc=",iProc,&
-         " iStart=",(/110+iProc,120+iProc,130+iProc,140+iProc/),&
+         " iStart=",[110+iProc,120+iProc,130+iProc,140+iProc],&
          " to jProc=",mod(iProc+1,nProc),&
-         " XyzEnd=",(/210.+iProc,220.+iProc,230.+iProc/), &
+         " XyzEnd=",[210.+iProc,220.+iProc,230.+iProc], &
          " Length=",10.0*iProc, &
          " IsParallel, DoneRay=",.true.,.false.
 
-    call ray_put(iProc, (/110+iProc,120+iProc,130+iProc,140+iProc/), &
-         mod(iProc+1,nProc), (/210.+iProc,220.+iProc,230.+iProc/), &
+    call ray_put(iProc, [110+iProc,120+iProc,130+iProc,140+iProc], &
+         mod(iProc+1,nProc), [210.+iProc,220.+iProc,230.+iProc], &
          10.0*iProc, .true.,.false.)
 
     if(iProc==0) write(*,"(a,i2,a,4i4,a,i2,a,3f5.0,a,f5.0,a,2l2)") &
          " Sending from iProc=",iProc,&
-         " iStart=",(/110+iProc,120+iProc,130+iProc,140+iProc/),&
+         " iStart=",[110+iProc,120+iProc,130+iProc,140+iProc],&
          " to jProc=",mod(nProc+iProc-1,nProc),&
-         " XyzEnd=",(/210.+iProc,220.+iProc,230.+iProc/), &
+         " XyzEnd=",[210.+iProc,220.+iProc,230.+iProc], &
          " Length=",10.0*iProc+1.0, &
          " IsParallel, DoneRay=",.false.,.false.
 
     ! pass rays to the left neighbor iProc-1
-    call ray_put(iProc, (/110+iProc,120+iProc,130+iProc,140+iProc/), &
-         mod(nProc+iProc-1,nProc), (/210.+iProc,220.+iProc,230.+iProc/), &
+    call ray_put(iProc, [110+iProc,120+iProc,130+iProc,140+iProc], &
+         mod(nProc+iProc-1,nProc), [210.+iProc,220.+iProc,230.+iProc], &
          10.0*iProc+1.0,.false.,.false.)
 
     do jProc = 0, nProc-1
@@ -585,7 +590,7 @@ contains
     if(iProc==0) write(*,'(a)')'ray_clean done'
 
   end subroutine ray_test
-
-  !===========================================================================
+  !============================================================================
 
 end module CON_ray_trace
+!==============================================================================

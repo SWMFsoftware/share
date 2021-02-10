@@ -1,4 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 module ModInitialState
 
@@ -6,15 +7,15 @@ module ModInitialState
   ! An arbitrary subset of the state variables can be set for each state.
   ! The rest of the variables are set to zero.
   !
-  ! The material states are separated with an arbitrary number of 
+  ! The material states are separated with an arbitrary number of
   ! straight segments. For each segment the name of the material
   ! state is given for both sides.
-  ! 
+  !
   ! The code can calculate the state for an arbitrary location.
   ! It can also set the levelset functions based on the distance
   ! to the closest material interface. Note that interfaces
   ! between different states but identical material have no effect
-  ! on the levelset function. 
+  ! on the levelset function.
 
   use ModUtilities, ONLY: CON_stop
 
@@ -27,7 +28,7 @@ module ModInitialState
   public:: init_initial_state        ! allocate arrays
   public:: clean_initial_state       ! deallocate arrays
   public:: read_initial_state_param  ! read parameters
-  public:: get_initial_state         ! set initial state at a point 
+  public:: get_initial_state         ! set initial state at a point
   public:: test_initial_state        ! unit test
 
   ! Local variables
@@ -49,8 +50,7 @@ module ModInitialState
   real, allocatable:: MaterialState_VI(:,:)  ! state values
 
 contains
-
-  !===========================================================================
+  !============================================================================
 
   subroutine init_initial_state(NameVarState, iVarMaterial1In, nMaterialIn)
 
@@ -65,9 +65,9 @@ contains
     integer, parameter:: MaxVar = 100
     character(len=20), allocatable:: String_I(:)
 
-    character(len=*), parameter:: NameSub='init_initial_state'
-    !-------------------------------------------------------------------------
     ! Check if the module has been initialized already
+    character(len=*), parameter:: NameSub = 'init_initial_state'
+    !--------------------------------------------------------------------------
     if(nVar > 0) RETURN
 
     allocate(String_I(MaxVar))
@@ -94,11 +94,11 @@ contains
          call CON_stop(NameSub//': iVarMaterial0 has impossible value')
 
   end subroutine init_initial_state
-
-  !===========================================================================
+  !============================================================================
 
   subroutine clean_initial_state
 
+    !--------------------------------------------------------------------------
     if(allocated(NameVar_V)) deallocate( &
          NameVar_V)
 
@@ -122,8 +122,7 @@ contains
     nMaterialState = 0
 
   end subroutine clean_initial_state
-
-  !===========================================================================
+  !============================================================================
 
   subroutine read_initial_state_param(NameCommand)
 
@@ -141,8 +140,8 @@ contains
 
     integer:: i, iVar, nStateVar, iError
 
-    character(len=*), parameter:: NameSub='read_initial_state_param'
-    !------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'read_initial_state_param'
+    !--------------------------------------------------------------------------
     select case(NameCommand)
     case("#STATEDEFINITION")
        allocate(NameStateVar_I(nVar))
@@ -170,7 +169,7 @@ contains
        end do LOOPSTATE
 
        ! Number of different states in the initial condition
-       call read_var('nMaterialState', nMaterialState) 
+       call read_var('nMaterialState', nMaterialState)
 
        ! Read the values for each material state
        allocate(NameMaterialState_I(nMaterialState))
@@ -222,12 +221,13 @@ contains
     end select
 
   contains
-    !=========================================================================
+    !==========================================================================
     integer function i_level(NameMaterial)
 
       character(len=2), intent(in):: NameMaterial
       integer:: iMaterial, iVar
-      !-----------------------------------------------------------------------
+
+      !------------------------------------------------------------------------
       do iMaterial = 1, nMaterial
          iVar = iVarMaterial0 + iMaterial
          if(NameMaterial == NameVar_V(iVar)) then
@@ -240,13 +240,14 @@ contains
            ' could not match material name='//NameMaterial)
 
     end function i_level
+    !==========================================================================
 
-    !=========================================================================
     integer function i_state(NameMaterial)
 
       character(len=*), intent(in):: NameMaterial
       integer:: i
-      !-----------------------------------------------------------------------
+
+      !------------------------------------------------------------------------
       if(nMaterialState == 0) call CON_stop(NameSub// &
            ' material states are not defined')
 
@@ -264,10 +265,10 @@ contains
            ' could not match material state name='//NameMaterial)
 
     end function i_state
+    !==========================================================================
 
   end subroutine read_initial_state_param
-
-  !===========================================================================
+  !============================================================================
 
   subroutine get_initial_state(CoordIn_D, State_V, DoTest)
 
@@ -292,7 +293,7 @@ contains
     real, allocatable:: dMin_I(:) ! Distance to materials
 
     character(len=*), parameter:: NameSub = 'get_initial_state'
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
 
     ! Initialize state
     iState = 1
@@ -375,8 +376,7 @@ contains
     end if
 
   end subroutine get_initial_state
-
-  !=========================================================================
+  !============================================================================
 
   subroutine test_initial_state
 
@@ -400,7 +400,7 @@ contains
     integer, parameter:: iMaterialLast = iMaterial1-1+nMaterialTest
 
     character(len=*), parameter:: NameSub = 'test_initial_state'
-    !----------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     call MPI_COMM_RANK(MPI_COMM_WORLD, iProc, iError)
 
     call init_initial_state(NameVar, iMaterial1, nMaterialTest)
@@ -426,7 +426,7 @@ contains
     ! Set the levelset values for all cell centers
     do j = 1, nJ; do i = 1, nI
        ! Take a simple uniform grid (does not matter really)
-       Coord_D = (/ i-0.5, j-0.5 /)
+       Coord_D = [ i-0.5, j-0.5 ]
 
        call get_initial_state(Coord_D, State_VC(:,i,j))
 
@@ -444,13 +444,15 @@ contains
 
     if(iProc==0) call save_plot_file('test_initial_state.out', &
          NameVarIn = "x y "//NameVar//" level nSegment", &
-         ParamIn_I = (/ nSegment+0.0 /), &
-         CoordMinIn_D = (/ 0.5, 0.5 /), &
-         CoordMaxIn_D = (/ nI-0.5, nJ-0.5 /), &
+         ParamIn_I = [ nSegment+0.0 ], &
+         CoordMinIn_D = [ 0.5, 0.5 ], &
+         CoordMaxIn_D = [ nI-0.5, nJ-0.5 ], &
          VarIn_VII    = State_VC)
 
     deallocate(State_VC)
 
   end subroutine test_initial_state
+  !============================================================================
 
 end module ModInitialState
+!==============================================================================

@@ -1,17 +1,18 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-!BOP -------------------------------------------------------------------
+! BOP -------------------------------------------------------------------
 !
-!MODULE: ModIoUnit - general utilities for Fortran I/O units.
+! MODULE: ModIoUnit - general utilities for Fortran I/O units.
 !
 !DESCRIPTION:
 !
 ! This module provides various utilities related to Fortran I/O units.
-! In particular independently developped components can use the 
+! In particular independently developped components can use the
 ! io\_unit\_new() function to obtain an unused IO unit for extended use.
-! 
-! The unit number in UnitTmp\_ and UnitTmp2\_ are safe unit numbers 
-! to open and close one or two files if no other file is opened between 
+!
+! The unit number in UnitTmp\_ and UnitTmp2\_ are safe unit numbers
+! to open and close one or two files if no other file is opened between
 ! the open and close and all programs use ModIoUnit to obtain unit numbers.
 !
 ! Standard output has unit number StdIn\_=5. This constant is easier to read.
@@ -20,7 +21,7 @@
 ! The io\_unit\_clean subroutine closes all open IO units and deletes the
 ! empty files.
 !
-! The methods in this module can be tested by running the 
+! The methods in this module can be tested by running the
 ! io\_unit\_test subroutine.
 !
 !INTERFACE:
@@ -56,11 +57,12 @@ module ModIoUnit
   !REVISION HISTORY:
   ! 01Aug03  Gabor Toth <gtoth@umich.edu> - initial prototype/prolog/code
   ! 20Aug04  Gabor Toth                     added debugging for io_unit_new
-  !EOP ___________________________________________________________________
+  ! EOP ___________________________________________________________________
 
   character (len=*), parameter :: NameMod = 'ModIoUnit'
 
 contains
+  !============================================================================
 
   function io_unit_new()  result(iUnit)
 
@@ -69,8 +71,8 @@ contains
     logical :: IsExisting, IsOpened
     integer :: iError
 
-    character (len=*), parameter :: NameSub = NameMod//'::io_unit_new'
-    !--------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'io_unit_new'
+    !--------------------------------------------------------------------------
 
     do iUnit = MinUnitNumber, MaxUnitNumber
        inquire (&
@@ -80,14 +82,14 @@ contains
             iostat = iError)
        if (IsExisting .and. .not. IsOpened .and. iError == 0) then
           iUnitMax = max(iUnitMax, iUnit)
-          return
+          RETURN
        end if
     end do
 
     iUnit = -1
 
   end function io_unit_new
-  !===========================================================================
+  !============================================================================
   subroutine io_unit_clean
 
     ! Close all open units for this processor
@@ -95,7 +97,7 @@ contains
     logical :: IsOpen
     character(len=100) :: Name
     character :: String
-    !------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     do iUnit = UNITTMP_,iUnitMax
 
        inquire(iUnit,OPENED=IsOpen,NAME=Name)
@@ -117,13 +119,13 @@ contains
     end do
 
   end subroutine io_unit_clean
-  !==========================================================================
+  !============================================================================
   subroutine io_unit_test
 
     integer :: iUnit1, iUnit2, iUnit3, iUnit4
     logical :: IsExisting
-    !---------------------------------------------------------------------
 
+    !--------------------------------------------------------------------------
     write(*,'(a)')'Testing io_unit_new()'
     iUnit1 = io_unit_new()
     if(iUnit1/=MinUnitNumber)write(*,*)'test io_unit_new() failed: ',&
@@ -193,5 +195,7 @@ contains
     end if
 
   end subroutine io_unit_test
+  !============================================================================
 
 end module ModIoUnit
+!==============================================================================

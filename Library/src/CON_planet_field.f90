@@ -1,8 +1,8 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-!BOP
-!MODULE: CON_planet_field - provide value and mapping of magnetic field
+! BOP
+! MODULE: CON_planet_field - provide value and mapping of magnetic field
 !INTERFACE:
 module CON_planet_field
 
@@ -25,7 +25,7 @@ module CON_planet_field
 
   private ! except
 
-  !PUBLIC MEMBER FUNCTIONS
+  ! PUBLIC MEMBER FUNCTIONS
   public :: get_planet_field  ! Get planet field at some time and place
   public :: map_planet_field  ! Map planet field from a point to a radius
   public :: test_planet_field ! Test the methods in this module
@@ -34,7 +34,7 @@ module CON_planet_field
   ! 11Aug03 - Gabor Toth <gtoth@umich.edu> - initial prototype/prolog/code
   ! 28Nov04 - Gabor Toth - added optional arguments DoNotConvertBack and
   !                        Jacobian matrix to the map_planet_field
-  !EOP -------------------------------------------------------------------
+  ! EOP -------------------------------------------------------------------
 
   interface get_planet_field
      module procedure &
@@ -54,10 +54,10 @@ module CON_planet_field
 
   character(len=*), parameter :: NameMod = 'CON_planet_field'
 
-
 contains
+  !============================================================================
 
-  !IROUTINE: get_planet_field - get planet field at some time and position
+  ! IROUTINE: get_planet_field - get planet field at some time and position
   !INTERFACE:
   subroutine get_planet_field11(TimeSim, XyzIn_D, TypeCoord, b_D)
 
@@ -81,8 +81,7 @@ contains
     ! This may be followed (after some spaces) by the characters "NORM"
     ! in all capitals. For example "MAG", "GSM NORM", "GSE NORMALIZED" etc.
 
-    !EOP
-    character(len=*), parameter :: NameSub=NameMod//'::get_planet_field'
+    ! EOP
 
     real :: Xyz_D(3)     ! Normalized (and rotated) position
     real :: Dipole_D(3)  ! Dipole moment
@@ -90,7 +89,8 @@ contains
     character (len=3) :: NameCoordSystem
 
 !!! logical :: DoTest, DoTestMe
-    !------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'get_planet_field11'
+    !--------------------------------------------------------------------------
 
 !!! call CON_set_do_test(NameSub,DoTest,DoTestMe)
 
@@ -165,7 +165,7 @@ contains
     case("MULTIPOLE")
        ! As of now the multipole option is only implemented for a GSE/GEO type
        ! coordinate system.
-   
+
        ! radial distance squared
        r2 = sum(Xyz_D**2)
        if(r2 < 1E-12) then
@@ -179,7 +179,7 @@ contains
        call calculate_multipole_field(Xyz_D, b_D)
 
        ! -------- Old piece of code -----------------------------------------
-       !case('QUADRUPOLE','OCTUPOLE')
+       ! case('QUADRUPOLE','OCTUPOLE')
        !   ! Transform to MAG system
        !   Xyz_D = coord_transform(TimeSim,Xyz_D,NameCoordSystem,'MAG')
        !
@@ -204,7 +204,6 @@ contains
     end select
 
   end subroutine get_planet_field11
-
   !============================================================================
 
   subroutine get_planet_field13(TimeSim, XyzIn_D, TypeCoord, Bx, By, Bz)
@@ -216,6 +215,7 @@ contains
 
     real :: b_D(3)
 
+    !--------------------------------------------------------------------------
     call get_planet_field(TimeSim, XyzIn_D, TypeCoord, b_D)
 
     Bx = b_D(x_)
@@ -223,7 +223,6 @@ contains
     Bz = b_D(z_)
 
   end subroutine get_planet_field13
-
   !============================================================================
 
   subroutine get_planet_field31(TimeSim, x, y, z, TypeCoord, b_D)
@@ -233,10 +232,10 @@ contains
     character(len=*),  intent(in) :: TypeCoord    ! type of coordinates
     real,              intent(out):: b_D(3)       ! magnetic field
 
-    call get_planet_field(TimeSim, (/x, y, z/), TypeCoord, b_D)
+    !--------------------------------------------------------------------------
+    call get_planet_field(TimeSim, [x, y, z], TypeCoord, b_D)
 
   end subroutine get_planet_field31
-
   !============================================================================
 
   subroutine get_planet_field33(TimeSim, x, y, z, TypeCoord, Bx, By, Bz)
@@ -248,13 +247,15 @@ contains
 
     real :: b_D(3)
 
-    call get_planet_field(TimeSim, (/x, y, z/), TypeCoord, b_D)
+    !--------------------------------------------------------------------------
+    call get_planet_field(TimeSim, [x, y, z], TypeCoord, b_D)
 
     Bx = b_D(x_)
     By = b_D(y_)
     Bz = b_D(z_)
 
   end subroutine get_planet_field33
+  !============================================================================
 
   ! ===========================================================================
   subroutine calculate_multipole_field(XyzIn_D, b_D)
@@ -271,12 +272,12 @@ contains
 
     real :: sinmphi, cosmphi, sintheta, costheta, sinphi, cosphi
     real :: a_r, inv_sintheta, sinphi_prev, cosphi_prev
-    
+
     ! ------------------------------------------------------------------
     ! Convert input location to GEO coordinate system
-    ! We assume input coordinate system is GSE since 
+    ! We assume input coordinate system is GSE since
     ! mag-rot axes are aligned anyway.
-    ! If you want to be proper and use multipole in another 
+    ! If you want to be proper and use multipole in another
     ! coordinate system you could use transform_matrix
     ! to find the appropriate transformation.
     ! That may be unnecessarily slow.
@@ -285,35 +286,36 @@ contains
     !    XyzGeo_D = matmul(GsmGeo_DD, XyzIn_D)
     !
     ! (also do this while re-converting to input coordsystem)
-    ! 
+    !
     !   b_D = matmul(GeoGsm_DD, b_D)
-    !  
+    !
     ! (GSM here is just an example. If mag axis is aligned with
     !  rotation axis then GSE == GSM)
-    ! 
+    !
     ! The purpose of this is to always calculate the multipole field
     ! in the coordinate system it was originally designed in i.e. GEO
-    ! 
-    ! Reference for spherical harmonics - 
-    ! Wertz, J. R. (Ed.). (2012). Spacecraft attitude determination and 
+    !
+    ! Reference for spherical harmonics -
+    ! Wertz, J. R. (Ed.). (2012). Spacecraft attitude determination and
     !    control (Vol. 73). Springer Science & Business Media.
     !    (Appendices G & H)
     ! -----------------------------------------------------------------
-    
+
+    !--------------------------------------------------------------------------
     XyzGeo_D = matmul(GeoGse_DD, XyzIn_D)
-    
+
     ! Assuming a=1.0 (planetary normalization done in get_planet_field)
     a_r = 1.0/sqrt(XyzGeo_D(1)**2 + XyzGeo_D(2)**2 + XyzGeo_D(3)**2)
     theta = atan2(sqrt(XyzGeo_D(1)**2 + XyzGeo_D(2)**2), XyzGeo_D(3))
     phi = atan2(XyzGeo_D(2), XyzGeo_D(1))
     if(phi < 0.0) phi = phi + cTwoPi
-    
+
     ! Additional variables to improve speed of calculation
     sintheta = sin(theta)
     costheta = cos(theta)
     sinphi = sin(phi)
     cosphi = cos(phi)
-    
+
     inv_sintheta = 0.0
     if(abs(sintheta) > 1.0e-3) inv_sintheta = 1./sintheta
 
@@ -335,8 +337,8 @@ contains
       cosphi_prev = 1.0
       Br = Br + (a_r)**(n+2) * (n+1) * P_II(n,m) * g_Planet(n,m)
       Btheta = Btheta - (a_r)**(n+2) * diffP_II(n,m) * g_Planet(n,m)
-      ! Bphi contribution is 0 for m=0. 
-      
+      ! Bphi contribution is 0 for m=0.
+
       do m=1,n
 
         sinmphi = sinphi_prev * cosphi + cosphi_prev * sinphi
@@ -368,8 +370,8 @@ contains
         ! Reconvert to input coordinate system.
 
   end subroutine calculate_multipole_field
-
   !============================================================================
+
   subroutine calculate_legendre_polynomials(theta, P_II, diffP_II)
     ! Subroutine to calculate the Schmidt normalized associated Legendre
     ! polynomials P(n,m) and their derivatives wrt theta diffP(n,m) to be
@@ -393,6 +395,7 @@ contains
 
     real :: sintheta, costheta
     ! --------------------------------------------
+    !--------------------------------------------------------------------------
     if(.not.allocated(K_II)) then
       allocate(K_II(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
     end if
@@ -429,9 +432,10 @@ contains
     ! deallocate(S)
 
   end subroutine calculate_legendre_polynomials
+  !============================================================================
 
-  !BOP ========================================================================
-  !IROUTINE: map_planet_field - map planet field from a position to some radius
+  ! BOP ========================================================================
+  ! IROUTINE: map_planet_field - map planet field from a position to some radius
   !INTERFACE:
   subroutine map_planet_field11(TimeSim, XyzIn_D, TypeCoord, &
        rMapIn, XyzMap_D, iHemisphere, DoNotConvertBack, DdirDxyz_DD)
@@ -483,9 +487,8 @@ contains
     ! is less than DrNormLimit a trivial mapping is done
     real, parameter :: DrNormLimit = 0.0001
 
-    !EOP
+    ! EOP
 
-    character(len=*), parameter :: NameSub=NameMod//'::map_planet_field'
     real             :: Xyz_D(3)        ! Normalized and rotated position
     character(len=3) :: NameCoordSystem ! Input/Output coordinate system
 
@@ -495,10 +498,11 @@ contains
     real    :: Convert_DD(3,3)
 
 !!! logical :: DoTest, DoTestMe
-    !------------------------------------------------------------------------
 
 !!! call CON_set_do_test(NameSub,DoTest,DoTestMe)
 
+    character(len=*), parameter:: NameSub = 'map_planet_field11'
+    !--------------------------------------------------------------------------
     if(TypeBField == 'NONE') call CON_stop(NameSub// &
          ' SWMF_ERROR: the planet has no magnetic field')
 
@@ -656,9 +660,10 @@ contains
     end if
 
   end subroutine map_planet_field11
+  !============================================================================
 
-  !BOP ========================================================================
-  !IROUTINE: map_planet_field33 - map planet field from a position to a radius
+  ! BOP ========================================================================
+  ! IROUTINE: map_planet_field33 - map planet field from a position to a radius
   !INTERFACE:
   subroutine map_planet_field33(TimeSim, xIn, yIn, zIn, TypeCoord, &
        rMap, xMap, yMap, zMap, iHemisphere, DoNotConvertBack, DdirDxyz_DD)
@@ -681,31 +686,32 @@ contains
 
     !LOCAL VARIABLES:
     real :: XyzIn_D(3), XyzMap_D(3)
-    !EOP
-    !-------------------------------------------------------------------------
-    !BOC
+    ! EOP
+    !--------------------------------------------------------------------------
+    ! BOC
     XyzIn_D(1)=xIn; XyzIn_D(2)=yIn; XyzIn_D(3)=zIn
 
     call map_planet_field(TimeSim, XyzIn_D, TypeCoord, rMap, &
          XyzMap_D, iHemisphere, DoNotConvertBack, DdirDxyz_DD)
 
     xMap=XyzMap_D(1); yMap=XyzMap_D(2); zMap=XyzMap_D(3)
-    !EOC
+    ! EOC
   end subroutine map_planet_field33
+  !============================================================================
 
-  !BOP =======================================================================
-  !IROUTINE: test_planet_field - test methods in CON_planet_field
+  ! BOP =======================================================================
+  ! IROUTINE: test_planet_field - test methods in CON_planet_field
   !INTERFACE:
   subroutine test_planet_field
     !DESCRIPTION:
     ! Test the methods in this class.
-    !EOP
+    ! EOP
 
     real :: TimeSim
     real :: xSmg_D(3), xGsm_D(3), xGse_D(3), bSmg_D(3), bGsm_D(3), bGse_D(3)
     real :: x_D(3), rMap, xMap_D(3)
     integer :: iHemisphere
-    !------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
 
     write(*,*)
     write(*,'(a)')'TEST GET_PLANET_FIELD'
@@ -714,7 +720,7 @@ contains
     write(*,*) 'TimeEquinox=', TimeEquinox
     call init_axes(TimeEquinox % Time)
 
-    xSmg_D = (/1.0, 1.0, 0.1/)
+    xSmg_D = [1.0, 1.0, 0.1]
     write(*,'(a,3f5.0)')'Location xSmg_D = ',xSmg_D
     call get_planet_field(0.0,xSmg_D,'SMG NORM',bSmg_D)
     write(*,'(a,3es14.6)')'Field    bSmg_D = ',bSmg_D
@@ -745,12 +751,14 @@ contains
     write(*,*)
     write(*,'(a)')'TEST MAP_PLANET_FIELD'
     write(*,*)
-    X_D=(/6.0, -8.0, -0.0001/)
+    X_D=[6.0, -8.0, -0.0001]
     rMap  = 1.0
     write(*,'(a,4es14.6)')'x_D,rMap=',x_D,rMap
     call map_planet_field(0.0,x_D,'SMG NORM',rMap,xMap_D,iHemisphere)
     write(*,'(a,3es14.6,i3)')'xMap_D,iHemisphere=',xMap_D,iHemisphere
 
   end subroutine test_planet_field
+  !============================================================================
 
 end module CON_planet_field
+!==============================================================================

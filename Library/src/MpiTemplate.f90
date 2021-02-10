@@ -1,4 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 # This file is based on the interfaces of the MPI_CHECK library, see
 #
@@ -7,7 +8,7 @@
 # The interfaces are slightly modified and simplified. Dimensions for the
 # two variable routines are not independent any longer (DIM2 = DIM1 + 1).
 
-module ModMpiTemplate  ! These two lines are here so that 
+module ModMpiTemplate  ! These two lines are here so that
   interface            ! EMACS can indent the code properly
 
      subroutine mpi_cancel(request, ierror)
@@ -41,7 +42,7 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_iprobe
 
-     subroutine mpi_pack_size(incount, datatype, comm, size, ierror) 
+     subroutine mpi_pack_size(incount, datatype, comm, size, ierror)
        integer, intent(in) :: incount
        integer, intent(in) :: datatype
        integer, intent(in) :: comm
@@ -83,7 +84,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_test
 
      subroutine mpi_testall(count, array_of_requests, flag, &
-          array_of_statuses, ierror) 
+          array_of_statuses, ierror)
        use ModMpiOrig, only: mpi_status_size
        logical, intent(out) :: flag
        integer, intent(in) :: count
@@ -93,7 +94,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_testall
 
      subroutine mpi_testany(count, array_of_requests, index, flag,  &
-          status, ierror) 
+          status, ierror)
        use ModMpiOrig, only: mpi_status_size
        logical flag
        integer, intent(in) :: count
@@ -104,7 +105,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_testany
 
      subroutine mpi_testsome(incount, array_of_requests, outcount,  &
-          array_of_indices, array_of_statuses, ierror) 
+          array_of_indices, array_of_statuses, ierror)
        use ModMpiOrig, only: mpi_status_size
        integer, intent(in) :: incount
        integer, intent(inout) :: array_of_requests(*)
@@ -126,7 +127,7 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_type_commit
 
-     subroutine mpi_type_contiguous(count, oldtype, newtype, ierror) 
+     subroutine mpi_type_contiguous(count, oldtype, newtype, ierror)
        integer, intent(in) :: count
        integer, intent(in) :: oldtype
        integer, intent(out) :: newtype
@@ -145,7 +146,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_type_free
 
      subroutine mpi_type_hindexed(count, array_of_blocklengths, &
-          array_of_displacements, oldtype, newtype, ierror) 
+          array_of_displacements, oldtype, newtype, ierror)
        integer, intent(in) :: count
        integer, intent(in) :: array_of_blocklengths(*)
        integer, intent(in) :: array_of_displacements(*)
@@ -155,7 +156,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_type_hindexed
 
      subroutine mpi_type_hvector(count, blocklength, stride, &
-          oldtype, newtype, ierror) 
+          oldtype, newtype, ierror)
        integer, intent(in) :: count
        integer, intent(in) :: blocklength
        integer, intent(in) :: stride
@@ -165,7 +166,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_type_hvector
 
      subroutine mpi_type_indexed(count, array_of_blocklengths, &
-          array_of_displacements, oldtype, newtype, ierror) 
+          array_of_displacements, oldtype, newtype, ierror)
        integer, intent(in) :: count
        integer, intent(in) :: array_of_blocklengths(*)
        integer, intent(in) :: array_of_displacements(*)
@@ -187,7 +188,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_type_size
 
      subroutine mpi_type_struct(count, array_of_blocklengths, &
-          array_of_displacements, array_of_types, newtype, ierror) 
+          array_of_displacements, array_of_types, newtype, ierror)
        integer, intent(in) :: count
        integer array_of_blocklengths(*)
        integer, intent(in) :: array_of_displacements(*)
@@ -203,7 +204,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_type_ub
 
      subroutine mpi_type_vector(count, blocklength, stride, &
-          oldtype, newtype, ierror) 
+          oldtype, newtype, ierror)
        integer, intent(in) :: count
        integer, intent(in) :: blocklength
        integer, intent(in) :: stride
@@ -220,7 +221,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_wait
 
      subroutine mpi_waitall(count, array_of_requests, &
-          array_of_statuses, ierror) 
+          array_of_statuses, ierror)
        use ModMpiOrig, only: mpi_status_size
        integer, intent(in) :: count
        integer, intent(inout) :: array_of_requests(*)
@@ -228,7 +229,7 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_waitall
 
-     subroutine mpi_waitany(count, array_of_requests, index, status, ierror) 
+     subroutine mpi_waitany(count, array_of_requests, index, status, ierror)
        use ModMpiOrig, only: mpi_status_size
        integer, intent(in) :: count
        integer, intent(inout) :: array_of_requests(*)
@@ -238,7 +239,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_waitany
 
      subroutine mpi_waitsome(incount, array_of_requests, outcount,  &
-          array_of_indices, array_of_statuses, ierror) 
+          array_of_indices, array_of_statuses, ierror)
        use ModMpiOrig, only: mpi_status_size
        integer, intent(in) :: incount
        integer, intent(inout) :: array_of_requests(*)
@@ -250,19 +251,19 @@ module ModMpiTemplate  ! These two lines are here so that
 
      llective communication
 
-     subroutine mpi_barrier(comm, ierror) 
+     subroutine mpi_barrier(comm, ierror)
        integer, intent(in) :: comm
        integer, intent(out) :: ierror
      end subroutine mpi_barrier
 
-     subroutine mpi_op_create( function, commute, op, ierror) 
-       external function 
+     subroutine mpi_op_create( function, commute, op, ierror)
+       external function
        logical, intent(in) :: commute
        integer, intent(out) :: op
        integer, intent(out) :: ierror
      end subroutine mpi_op_create
 
-     subroutine mpi_op_free( op, ierror) 
+     subroutine mpi_op_free( op, ierror)
        integer, intent(in) :: op
        integer, intent(out) :: ierror
      end subroutine mpi_op_free
@@ -275,7 +276,7 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_attr_delete
 
-     subroutine mpi_attr_get(comm, keyval, attribute_val, flag, ierror) 
+     subroutine mpi_attr_get(comm, keyval, attribute_val, flag, ierror)
        integer, intent(in) :: comm
        integer, intent(in) :: keyval
        integer, intent(out) :: attribute_val
@@ -366,7 +367,7 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_group_compare
 
-     subroutine mpi_group_difference(group1, group2, newgroup, ierror) 
+     subroutine mpi_group_difference(group1, group2, newgroup, ierror)
        integer, intent(in) :: group1
        integer, intent(in) :: group2
        integer, intent(out) :: newgroup
@@ -394,14 +395,14 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_group_incl
 
-     subroutine mpi_group_intersection(group1, group2, newgroup, ierror) 
+     subroutine mpi_group_intersection(group1, group2, newgroup, ierror)
        integer, intent(in) :: group1
        integer, intent(in) :: group2
        integer, intent(out) :: newgroup
        integer, intent(out) :: ierror
      end subroutine mpi_group_intersection
 
-     subroutine mpi_group_range_excl(group, n, ranges, newgroup, ierror) 
+     subroutine mpi_group_range_excl(group, n, ranges, newgroup, ierror)
        integer, intent(in) :: group
        integer, intent(in) :: n
        integer, intent(in) :: ranges(3,*)
@@ -409,7 +410,7 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_group_range_excl
 
-     subroutine mpi_group_range_incl(group, n, ranges, newgroup, ierror) 
+     subroutine mpi_group_range_incl(group, n, ranges, newgroup, ierror)
        integer, intent(in) :: group
        integer, intent(in) :: n
        integer, intent(in) :: ranges(3,*)
@@ -430,7 +431,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_group_size
 
      subroutine mpi_group_translate_ranks(group1, n, ranks1, &
-          group2, ranks2, ierror) 
+          group2, ranks2, ierror)
        integer, intent(in) :: group1
        integer, intent(in) :: n
        integer, intent(in) :: ranks1(*)
@@ -447,7 +448,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_group_union
 
      subroutine mpi_intercomm_create(local_comm, local_leader,      &
-          peer_comm, remote_leader, tag, newintercomm, ierror) 
+          peer_comm, remote_leader, tag, newintercomm, ierror)
        integer, intent(in) :: local_comm
        integer, intent(in) :: local_leader
        integer, intent(in) :: peer_comm
@@ -457,7 +458,7 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_intercomm_create
 
-     subroutine mpi_intercomm_merge(intercomm, high, intracomm, ierror) 
+     subroutine mpi_intercomm_merge(intercomm, high, intracomm, ierror)
        integer, intent(in) :: intercomm
        integer, intent(out) :: intracomm
        integer, intent(out) :: ierror
@@ -465,8 +466,8 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_intercomm_merge
 
      subroutine mpi_keyval_create(copy_fn, delete_fn, keyval, &
-          extra_state, ierror) 
-       external copy_fn, delete_fn 
+          extra_state, ierror)
+       external copy_fn, delete_fn
        integer, intent(out) :: keyval
        integer, intent(in) :: extra_state
        integer, intent(out) :: ierror
@@ -485,7 +486,7 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_cartdim_get
 
-     subroutine mpi_cart_coords(comm, rank, maxdims, coords, ierror) 
+     subroutine mpi_cart_coords(comm, rank, maxdims, coords, ierror)
        integer, intent(in) :: comm
        integer, intent(in) :: rank
        integer, intent(in) :: maxdims
@@ -494,7 +495,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_cart_coords
 
      subroutine mpi_cart_create(comm_old, ndims, dims, periods,     &
-          reorder, comm_cart, ierror) 
+          reorder, comm_cart, ierror)
        integer, intent(in) :: comm_old
        integer, intent(in) :: ndims
        integer, intent(in) :: dims(*)
@@ -504,7 +505,7 @@ module ModMpiTemplate  ! These two lines are here so that
        logical, intent(in) :: reorder
      end subroutine mpi_cart_create
 
-     subroutine mpi_cart_get(comm, maxdims, dims, periods, coords, ierror) 
+     subroutine mpi_cart_get(comm, maxdims, dims, periods, coords, ierror)
        integer, intent(in) :: comm
        integer, intent(in) :: maxdims
        integer, intent(in) :: dims(*)
@@ -513,7 +514,7 @@ module ModMpiTemplate  ! These two lines are here so that
        logical, intent(out) :: periods(*)
      end subroutine mpi_cart_get
 
-     subroutine mpi_cart_map(comm, ndims, dims, periods, newrank, ierror) 
+     subroutine mpi_cart_map(comm, ndims, dims, periods, newrank, ierror)
        integer, intent(in) :: comm
        integer, intent(in) :: ndims
        integer, intent(in) :: dims(*)
@@ -530,7 +531,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_cart_rank
 
      subroutine mpi_cart_shift(comm, direction, disp, rank_source,  &
-          rank_dest, ierror) 
+          rank_dest, ierror)
        integer, intent(in) :: comm
        integer, intent(in) :: direction
        integer, intent(in) :: disp
@@ -561,7 +562,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_graphdims_get
 
      subroutine mpi_graph_create(comm_old, nnodes, index, edges,    &
-          reorder, comm_graph, ierror) 
+          reorder, comm_graph, ierror)
        integer, intent(in) :: comm_old
        integer, intent(in) :: nnodes
        integer, intent(in) :: index(*)
@@ -571,7 +572,7 @@ module ModMpiTemplate  ! These two lines are here so that
        logical, intent(in) :: reorder
      end subroutine mpi_graph_create
 
-     subroutine mpi_graph_get(comm, maxindex, maxedges, index, edges, ierror) 
+     subroutine mpi_graph_get(comm, maxindex, maxedges, index, edges, ierror)
        integer, intent(in) :: comm
        integer, intent(in) :: maxindex
        integer, intent(in) :: maxedges
@@ -580,7 +581,7 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_graph_get
 
-     subroutine mpi_graph_map(comm, nnodes, index, edges, newrank, ierror) 
+     subroutine mpi_graph_map(comm, nnodes, index, edges, newrank, ierror)
        integer, intent(in) :: comm
        integer, intent(in) :: nnodes
        integer, intent(in) :: index(*)
@@ -590,7 +591,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_graph_map
 
      subroutine mpi_graph_neighbors(comm, rank, maxneighbors, neighbors, &
-          ierror) 
+          ierror)
        integer, intent(in) :: comm
        integer, intent(in) :: rank
        integer maxneighbors
@@ -598,7 +599,7 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_graph_neighbors
 
-     subroutine mpi_graph_neighbors_count(comm, rank, nneighbors, ierror) 
+     subroutine mpi_graph_neighbors_count(comm, rank, nneighbors, ierror)
        integer, intent(in) :: comm
        integer, intent(in) :: rank
        integer, intent(out) :: nneighbors
@@ -620,7 +621,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_abort
 
      subroutine mpi_errhandler_create(function, errhandler, ierror)
-       external function 
+       external function
        integer, intent(out) :: errhandler
        integer, intent(out) :: ierror
      end subroutine mpi_errhandler_create
@@ -648,7 +649,7 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_error_class
 
-     subroutine mpi_error_string(errorcode, string, resultlen, ierror) 
+     subroutine mpi_error_string(errorcode, string, resultlen, ierror)
        integer, intent(in) :: errorcode
        integer, intent(out) :: resultlen
        integer, intent(out) :: ierror
@@ -688,7 +689,7 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_address
 
-     subroutine mpi_bsend(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_bsend(buf, count, datatype, dest, tag, comm, ierror)
        <type>, intent(in) :: buf(dim1)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -699,7 +700,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_bsend
 
      subroutine mpi_bsend_init(buf, count, datatype, dest, tag,   &
-          comm, request, ierror) 
+          comm, request, ierror)
        <type>, intent(in) :: buf(dim1)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -723,7 +724,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_buffer_detach
 
      subroutine mpi_ibsend(buf, count, datatype, dest, tag, comm, &
-          request, ierror) 
+          request, ierror)
        <type>, intent(in) :: buf(dim1)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -735,7 +736,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_ibsend
 
      subroutine mpi_irecv(buf, count, datatype, source, tag,      &
-          comm, request, ierror) 
+          comm, request, ierror)
        <type>, intent(out) :: buf(dim1)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -747,7 +748,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_irecv
 
      subroutine mpi_irsend(buf, count, datatype, dest, tag, comm, &
-          request, ierror) 
+          request, ierror)
        <type>, intent(in) :: buf(dim1)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -759,7 +760,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_irsend
 
      subroutine mpi_isend(buf, count, datatype, dest, tag, comm,  &
-          request, ierror) 
+          request, ierror)
        <type>, intent(in) :: buf(dim1)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -771,7 +772,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_isend
 
      subroutine mpi_issend(buf, count, datatype, dest, tag, comm, &
-          request, ierror) 
+          request, ierror)
        <type>, intent(in) :: buf(dim1)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -783,7 +784,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_issend
 
      subroutine mpi_recv(buf, count, datatype, source, tag, comm, &
-          status, ierror) 
+          status, ierror)
        use ModMpiOrig, only: mpi_status_size
        <type>, intent(out) :: buf(dim1)
        integer, intent(in) :: count
@@ -796,7 +797,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_recv
 
      subroutine mpi_recv_init(buf, count, datatype, source, tag,  &
-          comm, request, ierror) 
+          comm, request, ierror)
        <type>, intent(out) :: buf(dim1)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -807,7 +808,7 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_recv_init
 
-     subroutine mpi_rsend(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_rsend(buf, count, datatype, dest, tag, comm, ierror)
        <type>, intent(in) :: buf(dim1)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -818,7 +819,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_rsend
 
      subroutine mpi_rsend_init(buf, count, datatype, dest, tag,   &
-          comm, request, ierror) 
+          comm, request, ierror)
        <type>, intent(in) :: buf(dim1)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -829,7 +830,7 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_rsend_init
 
-     subroutine mpi_send(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_send(buf, count, datatype, dest, tag, comm, ierror)
        <type>, intent(in) :: buf(dim1)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -839,9 +840,8 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_send
 
-
      subroutine mpi_sendrecv_replace(buf, count, datatype, dest,  &
-          sendtag, source, recvtag, comm, status, ierror) 
+          sendtag, source, recvtag, comm, status, ierror)
        use ModMpiOrig, only: mpi_status_size
        <type>, intent(inout) :: buf(dim1)
        integer, intent(in) :: count
@@ -856,7 +856,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_sendrecv_replace
 
      subroutine mpi_send_init(buf, count, datatype, dest, tag,    &
-          comm, request, ierror) 
+          comm, request, ierror)
        <type>, intent(in) :: buf(dim1)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -867,7 +867,7 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_send_init
 
-     subroutine mpi_ssend(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_ssend(buf, count, datatype, dest, tag, comm, ierror)
        <type>, intent(in) :: buf(dim1)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -878,7 +878,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_ssend
 
      subroutine mpi_ssend_init(buf, count, datatype, dest, tag,   &
-          comm, request, ierror) 
+          comm, request, ierror)
        <type>, intent(in) :: buf(dim1)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -889,7 +889,7 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_ssend_init
 
-     subroutine mpi_bcast(buffer, count, datatype, root, comm, ierror) 
+     subroutine mpi_bcast(buffer, count, datatype, root, comm, ierror)
        <type>, intent(inout) :: buffer(dim1)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -900,7 +900,7 @@ module ModMpiTemplate  ! These two lines are here so that
 
      subroutine mpi_sendrecv(sendbuf, sendcount, sendtype, dest,  &
           sendtag, recvbuf, recvcount, recvtype, source, recvtag, &
-          comm, status, ierror) 
+          comm, status, ierror)
        use ModMpiOrig, only: mpi_status_size
        <type>, intent(in) :: sendbuf(dim1)
        <type>, intent(out) :: recvbuf(dim1)
@@ -918,7 +918,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_sendrecv
 
      subroutine mpi_allgather(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        <type>, intent(in) :: sendbuf(dim1)
        <type>, intent(out) :: recvbuf(dim2)
        integer, intent(in) :: sendcount
@@ -930,7 +930,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_allgather
 
      subroutine mpi_allgatherv(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        <type>, intent(in) :: sendbuf(dim1)
        <type>, intent(out) :: recvbuf(dim1)
        integer, intent(in) :: sendcount
@@ -943,7 +943,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_allgatherv
 
      subroutine mpi_allreduce(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        <type>, intent(in) :: sendbuf(dim1)
        <type>, intent(out) :: recvbuf(dim1)
        integer, intent(in) :: count
@@ -954,7 +954,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_allreduce
 
      subroutine mpi_alltoall(sendbuf, sendcount, sendtype,        &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        <type>, intent(in) :: sendbuf(dim1)
        <type>, intent(out) :: recvbuf(dim2)
        integer, intent(in) :: sendcount
@@ -967,7 +967,7 @@ module ModMpiTemplate  ! These two lines are here so that
 
      subroutine mpi_alltoallv(sendbuf, sendcounts, sdispls,       &
           sendtype, recvbuf, recvcounts, rdispls, recvtype, comm, &
-          ierror) 
+          ierror)
        <type>, intent(in) :: sendbuf(dim1)
        <type>, intent(out) :: recvbuf(dim1)
        integer, intent(in) :: sendcounts(:)
@@ -981,7 +981,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_alltoallv
 
      subroutine mpi_gather(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        <type>, intent(in) :: sendbuf(dim1)
        <type>, intent(out) :: recvbuf(dim2)
        integer, intent(in) :: sendcount
@@ -994,7 +994,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_gather
 
      subroutine mpi_gatherv(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        <type>, intent(in) :: sendbuf(dim1)
        <type>, intent(out) :: recvbuf(dim1)
        integer, intent(in) :: sendcount
@@ -1008,7 +1008,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_gatherv
 
      subroutine mpi_reduce(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        <type>, intent(in) :: sendbuf(dim1)
        <type>, intent(inout) :: recvbuf(dim1)
        integer, intent(in) :: count
@@ -1020,7 +1020,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_reduce
 
      subroutine mpi_reduce_scatter(sendbuf, recvbuf, recvcounts,  &
-          datatype, op, comm, ierror) 
+          datatype, op, comm, ierror)
        <type>, intent(in) :: sendbuf(dim1)
        <type>, intent(out) :: recvbuf(dim1)
        integer, intent(in) :: recvcounts(:)
@@ -1031,7 +1031,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_reduce_scatter
 
      subroutine mpi_scan(sendbuf, recvbuf, count, datatype, op,   &
-          comm, ierror) 
+          comm, ierror)
        <type>, intent(in) :: sendbuf(dim1)
        <type>, intent(out) :: recvbuf(dim2)
        integer, intent(in) :: count
@@ -1042,7 +1042,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_scan
 
      subroutine mpi_scatter(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcount, recvtype, root, comm, ierror) 
+          recvbuf, recvcount, recvtype, root, comm, ierror)
        <type>, intent(in)  :: sendbuf(dim2)
        <type>, intent(out) :: recvbuf(dim1)
        integer, intent(in) :: sendcount
@@ -1055,7 +1055,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_scatter
 
      subroutine mpi_scatterv(sendbuf, sendcounts, displs,         &
-          sendtype, recvbuf, recvcount, recvtype, root, comm, ierror) 
+          sendtype, recvbuf, recvcount, recvtype, root, comm, ierror)
        <type>, intent(in)  :: sendbuf(dim1)
        <type>, intent(out) :: recvbuf(dim1)
        integer, intent(in) :: sendcounts(:)
@@ -1112,5 +1112,6 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_file_write
 
-  end interface            ! These two lines are here so that 
+  end interface            ! These two lines are here so that
 end module ModMpiTemplate  ! EMACS can indent the code properly
+!==============================================================================

@@ -1,5 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, 
-!  portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 module ModTriangulate
 
@@ -15,8 +15,8 @@ module ModTriangulate
   public test_triangulation  ! Unit test
 
 contains
-
   !============================================================================
+
   subroutine mesh_triangulation(n1, n2, CoordXy_DI, &
        iNodeTriangle_II, nTriangle)
 
@@ -32,7 +32,7 @@ contains
     ! the distorted mesh is based on a right handed coordinate system.
 
     integer:: i1, i2, iCell, jCell, kCell, lCell
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     iCell = 0
     nTriangle = 0
     do i2 = 1, n2-1; do i1 = 1, n1
@@ -50,12 +50,12 @@ contains
             sum((CoordXy_DI(:,jCell) - CoordXy_DI(:,kCell))**2))then
 
           ! Split along iCell--lCell diagonal
-          iNodeTriangle_II(:,nTriangle+1) = (/iCell, jCell, lCell/)
-          iNodeTriangle_II(:,nTriangle+2) = (/iCell, lCell, kCell/)
+          iNodeTriangle_II(:,nTriangle+1) = [iCell, jCell, lCell]
+          iNodeTriangle_II(:,nTriangle+2) = [iCell, lCell, kCell]
        else
           ! Split along jCell--kCell diagonal
-          iNodeTriangle_II(:,nTriangle+1) = (/jCell, kCell, iCell/)
-          iNodeTriangle_II(:,nTriangle+2) = (/jCell, lCell, kCell/)
+          iNodeTriangle_II(:,nTriangle+1) = [jCell, kCell, iCell]
+          iNodeTriangle_II(:,nTriangle+2) = [jCell, lCell, kCell]
        end if
        nTriangle = nTriangle + 2
 
@@ -73,11 +73,9 @@ contains
     !    Delaunay triangulation. The Delaunay triangulation is an organization
     !    of the data into triples, forming a triangulation of the data, with
     !    the property that the circumcircle of each triangle never contains
-    !    another data point.  
+    !    another data point.
     !
     !  Author: John Burkardt, Modified by Alex Glocer:2/2007
-
-    implicit none
 
     integer, intent(in) :: nPoint
     real, intent(in)    :: CoordXy_DI(2,nPoint)
@@ -89,11 +87,10 @@ contains
     allocate(WorkArray_II(3,3*nPoint))
 
     call dtris2(nPoint, CoordXy_DI, nTriangle, iNodeTriangle_II, WorkArray_II)
-    
+
     deallocate(WorkArray_II)
 
   end subroutine calc_triangulation
-
   !============================================================================
 
   subroutine find_triangle(&
@@ -119,7 +116,7 @@ contains
 
     real,    optional, intent(out):: Weight1, Weight2, Weight3
     logical, optional, intent(out):: IsTriangleFound
-    
+
     ! Number and indexes of triangles intersecting cells in a uniform mesh
     integer, optional, intent(inout):: nTriangle_C(:,:)
     integer, optional, pointer      :: iTriangle_IC(:,:,:)
@@ -166,7 +163,7 @@ contains
                      nTriangle_C(iMin:iMax,jMin:jMax) + 1
 
                 if(iLoop == 1)CYCLE
-                
+
                 do j = jMin, jMax; do i = iMin, iMax
                    n = nTriangle_C(i,j)
                    iTriangle_IC(n,i,j) = iTriangle
@@ -188,7 +185,7 @@ contains
        end do
 
     else
-       do iTriangle = 1, nTriangle 
+       do iTriangle = 1, nTriangle
           if(is_inside_triangle()) RETURN
        end do
     end if
@@ -218,12 +215,13 @@ contains
     end if
 
   contains
-    !=======================================================================
+    !==========================================================================
     logical function is_inside_triangle()
 
       real    :: x1, x2, x3, y1, y2, y3
       real    :: Area1, Area2, Area3, AreaSum
-      
+
+      !------------------------------------------------------------------------
       iNode1 = iNodeTriangle_II(1,iTriangle)
       iNode2 = iNodeTriangle_II(2,iTriangle)
       iNode3 = iNodeTriangle_II(3,iTriangle)
@@ -239,7 +237,7 @@ contains
       y3 = XyNode_DI(2,iNode3)
 
       ! Check if triangle contains point or if point lies on edge.
-      ! Area1 is twice the area of the triangle formed by Node2, Node3 
+      ! Area1 is twice the area of the triangle formed by Node2, Node3
       ! and the point. Area1 is zero if the point lies on the Node2-Node3
       ! edge and positive if point lies to the left of the Node2-Node3 vector.
 
@@ -251,7 +249,7 @@ contains
       if (Area1 >= 0.0 .and. Area2 >= 0.0 .and. Area3 >=0.0) then
          if(present(IsTriangleFound)) IsTriangleFound = .true.
          if(present(Weight1)) then
-            ! The node weights are proportional to the area of 
+            ! The node weights are proportional to the area of
             ! the opposite triangle.
             AreaSum = max(Area1 + Area2 + Area3, tiny(1.0))
             Weight1 = Area1/AreaSum
@@ -264,22 +262,22 @@ contains
        end if
 
      end function is_inside_triangle
+    !==========================================================================
 
   end subroutine find_triangle
-
   !============================================================================
 
   real function triangle_area(Node_DI)
 
     real,intent(in)       :: Node_DI(2,3)
     real :: a_D(2), b_D(2)
-    !-------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
     a_D = Node_DI(:,1)-Node_DI(:,2)
     b_D = Node_DI(:,1)-Node_DI(:,3)
     triangle_area = 0.5*abs(a_D(1)*b_D(2)-a_D(2)*b_D(1))
 
   end function triangle_area
-
   !============================================================================
 
   integer function diaedg ( x0, y0, x1, y1, x2, y2, x3, y3 )
@@ -310,7 +308,7 @@ contains
     !
     !    Barry Joe,
     !    GEOMPACK - a software package for the generation of meshes
-    !      using geometric algorithms, 
+    !      using geometric algorithms,
     !    Advances in Engineering Software,
     !    Volume 13, pages 325-331, 1991.
     !
@@ -325,8 +323,8 @@ contains
     !    -1, if diagonal edge 13 is chosen;
     !     0, if the four vertices are cocircular.
     !
-    implicit none
 
+    !--------------------------------------------------------------------------
     real  ca
     real  cb
     real  dx10
@@ -390,8 +388,9 @@ contains
 
     end if
 
-    return
+    RETURN
   end function diaedg
+  !============================================================================
 
   subroutine dtris2 ( point_num, point_xy, tri_num, tri_vert, tri_nabe )
 
@@ -421,7 +420,7 @@ contains
     !
     !    Barry Joe,
     !    GEOMPACK - a software package for the generation of meshes
-    !      using geometric algorithms, 
+    !      using geometric algorithms,
     !    Advances in Engineering Software,
     !    Volume 13, pages 325-331, 1991.
     !
@@ -429,26 +428,26 @@ contains
     !
     !    Input, integer POINT_NUM, the number of vertices.
     !
-    !    Input/output, real  POINT_XY(2,POINT_NUM), the coordinates 
-    !    of the vertices.  On output, the vertices have been sorted into 
+    !    Input/output, real  POINT_XY(2,POINT_NUM), the coordinates
+    !    of the vertices.  On output, the vertices have been sorted into
     !    dictionary order.
     !
     !    Output, integer TRI_NUM, the number of triangles in the triangulation;
     !    TRI_NUM is equal to 2*POINT_NUM - NB - 2, where NB is the number
     !    of boundary vertices.
     !
-    !Output, integer TRI_VERT(3,TRI_NUM), the nodes that make up each triangle.
-    !The elements are indices of POINT_XY.  The vertices of the triangles are
-    !in counter clockwise order.
+    ! Output, integer TRI_VERT(3,TRI_NUM), the nodes that make up each triangle.
+    ! The elements are indices of POINT_XY.  The vertices of the triangles are
+    ! in counter clockwise order.
     !
-    !Output, integer TRI_NABE(3,TRI_NUM), the triangle neighbor list.
-    !Positive elements are indices of TIL; negative elements are used for links
-    !of a counter clockwise linked list of boundary edges; LINK = -(3*I + J-1)
-    !where I, J = triangle, edge index; TRI_NABE(J,I) refers to
-    !the neighbor along edge from vertex J to J+1 (mod 3).
+    ! Output, integer TRI_NABE(3,TRI_NUM), the triangle neighbor list.
+    ! Positive elements are indices of TIL; negative elements are used for links
+    ! of a counter clockwise linked list of boundary edges; LINK = -(3*I + J-1)
+    ! where I, J = triangle, edge index; TRI_NABE(J,I) refers to
+    ! the neighbor along edge from vertex J to J+1 (mod 3).
     !
-    implicit none
 
+    !--------------------------------------------------------------------------
     integer point_num
 
     real  cmax
@@ -505,7 +504,7 @@ contains
           if ( tol * ( cmax + 1.0 ) &
                < abs ( point_xy(j,m) - point_xy(j,m1) ) ) then
              k = j
-             exit
+             EXIT
           end if
 
        end do
@@ -519,7 +518,7 @@ contains
           write ( *, '(a,2g14.6)' ) '  X,Y(M)  = ', point_xy(1,m), point_xy(2,m)
           write ( *, '(a,2g14.6)' ) '  X,Y(M1) = ', point_xy(1,m1), point_xy(2,m1)
           ierr = 224
-          return
+          RETURN
        end if
 
     end do
@@ -537,7 +536,7 @@ contains
           write ( *, '(a)' ) ' '
           write ( *, '(a)' ) 'DTRIS2 - Fatal error!'
           ierr = 225
-          return
+          RETURN
        end if
 
        m = j
@@ -546,7 +545,7 @@ contains
             point_xy(2,m1), point_xy(1,m2), point_xy(2,m2), 0.0 )
 
        if ( lr /= 0 ) then
-          exit
+          EXIT
        end if
 
        j = j + 1
@@ -672,13 +671,13 @@ contains
              write ( *, '(a)' ) ' '
              write ( *, '(a)' ) 'DTRIS2 - Fatal error!'
              write ( *, '(a)' ) '  Stack overflow.'
-             return
+             RETURN
           end if
 
           stack(top) = tri_num
 
           if ( t == rtri .and. e == redg ) then
-             exit
+             EXIT
           end if
 
        end do
@@ -695,8 +694,8 @@ contains
        if ( ierr /= 0 ) then
           write ( *, '(a)' ) ' '
           write ( *, '(a)' ) 'DTRIS2 - Fatal error!'
-          write ( *, '(a)' ) '  Error return from SWAPEC.'
-          return
+          write ( *, '(a)' ) '  Error RETURN from SWAPEC.'
+          RETURN
        end if
 
     end do
@@ -713,12 +712,9 @@ contains
 
     call r82vec_permute ( point_num, point_xy, indx )
 
-    return
+    RETURN
   end subroutine dtris2
-
-
-
-
+  !============================================================================
 
   integer function i4_modp ( i, j )
 
@@ -771,8 +767,8 @@ contains
     !    Output, integer I4_MODP, the nonnegative remainder when I is
     !    divided by J.
     !
-    implicit none
 
+    !--------------------------------------------------------------------------
     integer i
     integer j
 
@@ -789,8 +785,9 @@ contains
        i4_modp = i4_modp + abs ( j )
     end if
 
-    return
+    RETURN
   end function i4_modp
+  !============================================================================
   integer function i4_wrap ( ival, ilo, ihi )
 
     !*******************************************************************************
@@ -837,8 +834,8 @@ contains
     !
     !    Output, integer I4_WRAP, a "wrapped" version of IVAL.
     !
-    implicit none
 
+    !--------------------------------------------------------------------------
     integer ihi
     integer ilo
     integer ival
@@ -857,10 +854,9 @@ contains
        i4_wrap = jlo + i4_modp ( ival - jlo, wide )
     end if
 
-    return
+    RETURN
   end function i4_wrap
-
-
+  !============================================================================
 
   subroutine i4vec_indicator ( n, a )
 
@@ -882,8 +878,8 @@ contains
     !
     !    Output, integer A(N), the array to be initialized.
     !
-    implicit none
 
+    !--------------------------------------------------------------------------
     integer n
 
     integer a(n)
@@ -893,8 +889,9 @@ contains
        a(i) = i
     end do
 
-    return
+    RETURN
   end subroutine i4vec_indicator
+  !============================================================================
   subroutine i4vec_sort_heap_index_a ( n, a, indx )
 
     !*******************************************************************************
@@ -936,8 +933,8 @@ contains
     !    Output, integer INDX(N), the sort index.  The
     !    I-th element of the sorted array is A(INDX(I)).
     !
-    implicit none
 
+    !--------------------------------------------------------------------------
     integer n
 
     integer a(n)
@@ -950,7 +947,7 @@ contains
     integer l
 
     if ( n <= 1 ) then
-       return
+       RETURN
     end if
 
     do i = 1, n
@@ -977,7 +974,7 @@ contains
 
           if ( ir == 1 ) then
              indx(1) = indxt
-             exit
+             EXIT
           end if
 
        end if
@@ -1007,8 +1004,9 @@ contains
 
     end do
 
-    return
+    RETURN
   end subroutine i4vec_sort_heap_index_a
+  !============================================================================
   integer function lrline ( xu, yu, xv1, yv1, xv2, yv2, dv )
 
     !*******************************************************************************
@@ -1056,8 +1054,8 @@ contains
     !     0, the point is on the directed line;
     !    -1, the point is to the left of the directed line.
     !
-    implicit none
 
+    !--------------------------------------------------------------------------
     real  dv
     real  dx
     real  dxu
@@ -1093,8 +1091,9 @@ contains
        lrline = -1
     end if
 
-    return
+    RETURN
   end function lrline
+  !============================================================================
   subroutine perm_inv ( n, p )
 
     !*******************************************************************************
@@ -1112,8 +1111,8 @@ contains
     !    Input/output, integer P(N), the permutation, in standard index form.
     !    On output, P describes the inverse permutation
     !
-    implicit none
 
+    !--------------------------------------------------------------------------
     integer n
 
     integer i
@@ -1161,7 +1160,7 @@ contains
              p(i1) = i0
 
              if ( i2 < 0 ) then
-                exit
+                EXIT
              end if
 
              i0 = i1
@@ -1173,8 +1172,9 @@ contains
 
     end do
 
-    return
+    RETURN
   end subroutine perm_inv
+  !============================================================================
   subroutine r82vec_permute ( n, a, p )
 
     !*******************************************************************************
@@ -1224,8 +1224,8 @@ contains
     !    of the integers from 1 to N, otherwise the algorithm will
     !    fail catastrophically.
     !
-    implicit none
 
+    !--------------------------------------------------------------------------
     integer n
 
     real  a(2,n)
@@ -1241,12 +1241,12 @@ contains
 
        if ( p(istart) < 0 ) then
 
-          cycle
+          CYCLE
 
        else if ( p(istart) == istart ) then
 
           p(istart) = - p(istart)
-          cycle
+          CYCLE
 
        else
 
@@ -1270,7 +1270,7 @@ contains
 
              if ( iget == istart ) then
                 a(1:2,iput) = a_temp(1:2)
-                exit
+                EXIT
              end if
 
              a(1:2,iput) = a(1:2,iget)
@@ -1285,8 +1285,9 @@ contains
     !
     p(1:n) = -p(1:n)
 
-    return
+    RETURN
   end subroutine r82vec_permute
+  !============================================================================
   subroutine r82vec_sort_heap_index_a ( n, a, indx )
 
     !*******************************************************************************
@@ -1328,8 +1329,8 @@ contains
     !    Output, integer INDX(N), the sort index.  The
     !    I-th element of the sorted array is A(1:2,INDX(I)).
     !
-    implicit none
 
+    !--------------------------------------------------------------------------
     integer n
 
     real  a(2,n)
@@ -1342,12 +1343,12 @@ contains
     integer l
 
     if ( n < 1 ) then
-       return
+       RETURN
     end if
 
     if ( n == 1 ) then
        indx(1) = 1
-       return
+       RETURN
     end if
 
     call i4vec_indicator ( n, indx )
@@ -1372,7 +1373,7 @@ contains
 
           if ( ir == 1 ) then
              indx(1) = indxt
-             exit
+             EXIT
           end if
 
        end if
@@ -1406,10 +1407,9 @@ contains
 
     end do
 
-    return
+    RETURN
   end subroutine r82vec_sort_heap_index_a
-
-
+  !============================================================================
 
   subroutine swapec ( i, top, btri, bedg, point_num, point_xy, tri_num, &
        tri_vert, tri_nabe, stack, ierr )
@@ -1439,7 +1439,7 @@ contains
     !
     !    Barry Joe,
     !    GEOMPACK - a software package for the generation of meshes
-    !      using geometric algorithms, 
+    !      using geometric algorithms,
     !    Advances in Engineering Software,
     !    Volume 13, pages 325-331, 1991.
     !
@@ -1477,8 +1477,8 @@ contains
     !
     !    Output, integer IERR is set to 8 for abnormal return.
     !
-    implicit none
 
+    !--------------------------------------------------------------------------
     integer point_num
     integer tri_num
 
@@ -1520,7 +1520,7 @@ contains
     do
 
        if ( top <= 0 ) then
-          exit
+          EXIT
        end if
 
        t = stack(top)
@@ -1589,7 +1589,7 @@ contains
 
              if ( point_num < top ) then
                 ierr = 8
-                return
+                RETURN
              end if
 
              stack(top) = t
@@ -1666,9 +1666,9 @@ contains
 
     end do
 
-    return
+    RETURN
   end subroutine swapec
-
+  !============================================================================
 
   subroutine vbedg ( x, y, point_num, point_xy, tri_num, tri_vert, tri_nabe, &
        ltri, ledg, rtri, redg )
@@ -1697,7 +1697,7 @@ contains
     !
     !    Barry Joe,
     !    GEOMPACK - a software package for the generation of meshes
-    !      using geometric algorithms, 
+    !      using geometric algorithms,
     !    Advances in Engineering Software,
     !    Volume 13, pages 325-331, 1991.
     !
@@ -1708,7 +1708,7 @@ contains
     !
     !    Input, integer POINT_NUM, the number of points.
     !
-    !    Input, real  POINT_XY(2,POINT_NUM), the coordinates 
+    !    Input, real  POINT_XY(2,POINT_NUM), the coordinates
     !    of the vertices.
     !
     !    Input, integer TRI_NUM, the number of triangles.
@@ -1734,8 +1734,8 @@ contains
     !    Input/output, integer REDG, the edge of triangle RTRI that is visible
     !    from (X,Y).  1 <= REDG <= 3.
     !
-    implicit none
 
+    !--------------------------------------------------------------------------
     integer point_num
     integer tri_num
 
@@ -1784,7 +1784,7 @@ contains
             point_xy(2,b), 0.0 )
 
        if ( lr <= 0 ) then
-          exit
+          EXIT
        end if
 
        rtri = t
@@ -1793,7 +1793,7 @@ contains
     end do
 
     if ( ldone ) then
-       return
+       RETURN
     end if
 
     t = ltri
@@ -1824,7 +1824,7 @@ contains
             point_xy(2,b), 0.0 )
 
        if ( lr <= 0 ) then
-          exit
+          EXIT
        end if
 
     end do
@@ -1833,11 +1833,9 @@ contains
     ledg = e
 
   end subroutine vbedg
-
   !============================================================================
-  subroutine test_triangulation
 
-    character(len=*), parameter:: NameSub = 'test_triangulation'
+  subroutine test_triangulation
 
     integer, parameter:: n1 = 5, n2 = 3, nPoint = n1*n2
     real   :: CoordXy_DI(2,n1*n2)
@@ -1849,14 +1847,15 @@ contains
     integer, parameter:: nX=100, nY=100
     integer:: nTriangle_C(nX,nY)
     integer, pointer, save:: iTriangle_IC(:,:,:)
-    !------------------------------------------------------------------------
-    
+
     ! Create a slanted mesh
+    character(len=*), parameter:: NameSub = 'test_triangulation'
+    !--------------------------------------------------------------------------
     n = 0
     do i2 = 1, n2
        do i1 = 1, n1
           n = n + 1
-          CoordXy_DI(:,n) = (/ 10.0*i1 + i2, 3.0*i2 /)
+          CoordXy_DI(:,n) = [ 10.0*i1 + i2, 3.0*i2 ]
        end do
     end do
 
@@ -1867,28 +1866,28 @@ contains
     if(nTriangle /= 2*(n1-1)*(n2-1))write(*,*) NameSub, &
          ' error: nTriangle=', nTriangle, ' should be', 2*(n1-1)*(n2-1)
 
-    if(any( iNodeTriangle_II(:,1) /= (/ 2, n1+1, 1 /))) write(*,*) NameSub, &
+    if(any( iNodeTriangle_II(:,1) /= [ 2, n1+1, 1 ])) write(*,*) NameSub, &
          ' error: iNodeTriangle_II(:,1) =', iNodeTriangle_II(:,1) , &
          ' should be ', 2, n1+1, 1
 
-    if(any( iNodeTriangle_II(:,nTriangle) /= (/ n1*(n2-1), n1*n2, n1*n2-1 /)))&
+    if(any( iNodeTriangle_II(:,nTriangle) /= [ n1*(n2-1), n1*n2, n1*n2-1 ]))&
          write(*,*) NameSub, &
          ' error: iNodeTriangle_II(:,1) =', iNodeTriangle_II(:,nTriangle) , &
          ' should be ', n1*(n2-1), n1*n2, n1*n2-1
- 
+
     write(*,'(a)')'Testing calc_triangulation'
-    
+
     call calc_triangulation(nPoint, CoordXy_DI, &
          iNodeTriangle_II, nTriangle)
 
     if(nTriangle /= 2*(n1-1)*(n2-1))write(*,*) NameSub, &
          ' error: nTriangle=', nTriangle, ' should be', 2*(n1-1)*(n2-1)
 
-    if(any( iNodeTriangle_II(:,1) /= (/ n1+1, 1, 2 /))) write(*,*) NameSub, &
+    if(any( iNodeTriangle_II(:,1) /= [ n1+1, 1, 2 ])) write(*,*) NameSub, &
          ' error: iNodeTriangle_II(:,1) =', iNodeTriangle_II(:,1) , &
          ' should be ', n1+1, 1, 2
 
-    if(any( iNodeTriangle_II(:,nTriangle) /= (/ n1*n2-1, n1*(n2-1), n1*n2 /)))&
+    if(any( iNodeTriangle_II(:,nTriangle) /= [ n1*n2-1, n1*(n2-1), n1*n2 ]))&
          write(*,*) NameSub, &
          ' error: iNodeTriangle_II(:,1) =', iNodeTriangle_II(:,nTriangle) , &
          ' should be ', n1*n2-1, n1*(n2-1), n1*n2
@@ -1898,11 +1897,11 @@ contains
     Area = triangle_area(CoordXy_DI(:,iNodeTriangle_II(:,1)))
     if(abs(Area - 15.0) > 1e-6) write(*,*) NameSub, &
          ' error: Area = ', Area, ' should be 15'
- 
+
     write(*,'(a)')'Testing find_triangle'
     ! test point outside of region with IsTriangleFound logical
     call find_triangle(&
-         nPoint, nTriangle, (/10.9, 2.9/), CoordXy_DI, iNodeTriangle_II,&
+         nPoint, nTriangle, [10.9, 2.9], CoordXy_DI, iNodeTriangle_II,&
          iNode1, iNode2, iNode3, IsTriangleFound=IsTriangleFound)
 
     if(IsTriangleFound) write(*,*) NameSub, &
@@ -1910,39 +1909,39 @@ contains
 
     ! test point outside of region without IsTriangleFound logical
     call find_triangle(&
-         nPoint, nTriangle, (/10.9, 2.9/), CoordXy_DI, iNodeTriangle_II,&
+         nPoint, nTriangle, [10.9, 2.9], CoordXy_DI, iNodeTriangle_II,&
          iNode1, iNode2, iNode3, Weight1, Weight2, Weight3)
 
-    if(any( (/iNode1, iNode2, iNode3/) /= (/ 1, 1, 1 /))) write(*,*) NameSub, &
+    if(any( [iNode1, iNode2, iNode3] /= [ 1, 1, 1 ])) write(*,*) NameSub, &
           ' error: iNode1..3=', iNode1, iNode2, iNode3, &
           ' should be ', 1, 1, 1
 
-    if(maxval( abs( (/ Weight1 - 1.0, Weight2, Weight3 /)) ) > 1e-6) &
+    if(maxval( abs( [ Weight1 - 1.0, Weight2, Weight3 ]) ) > 1e-6) &
          write(*,*) NameSub, &
          ' error: Weight1..3=, ', Weight1, Weight2, Weight3, &
          ' should be 1, 0, 0'
-    
+
     ! test point inside the first triangle
     call find_triangle(&
-         nPoint, nTriangle, (/11.1, 3.1/), CoordXy_DI, iNodeTriangle_II,&
+         nPoint, nTriangle, [11.1, 3.1], CoordXy_DI, iNodeTriangle_II,&
          iNode1, iNode2, iNode3, Weight1, Weight2, Weight3, IsTriangleFound)
 
     if(.not. IsTriangleFound) write(*,*) NameSub, &
          ' error: IsTriangleFound 1st should be true'
 
-    if(any( (/iNode1, iNode2, iNode3/) /= iNodeTriangle_II(:,1) )) &
+    if(any( [iNode1, iNode2, iNode3] /= iNodeTriangle_II(:,1) )) &
           write(*,*) NameSub, 'error: iNode1..3=', iNode1, iNode2, iNode3, &
           ' should be ', iNodeTriangle_II(:,1)
 
     if( 1e-6 < maxval(abs( &
-         (/Weight1-0.5/Area, Weight2-(Area-0.6)/Area, Weight3-0.1/Area/)))) &
+         [Weight1-0.5/Area, Weight2-(Area-0.6)/Area, Weight3-0.1/Area]))) &
          write(*,*) NameSub, &
          ' error: Weight1..3=, ', Weight1, Weight2, Weight3, &
          ' should be ', 0.5/Area, (Area-0.6)/Area, 0.1/Area
 
     nTriangle_C(1,1) = -1
     call find_triangle(                                                     &
-         nPoint, nTriangle, (/11.1, 3.1/), CoordXy_DI, iNodeTriangle_II,    &
+         nPoint, nTriangle, [11.1, 3.1], CoordXy_DI, iNodeTriangle_II,    &
          iNode1, iNode2, iNode3, Weight1, Weight2, Weight3, IsTriangleFound,&
          nTriangle_C, iTriangle_IC)
 
@@ -1962,35 +1961,36 @@ contains
          'error iTriangle_IC(1,nX,nY)=',iTriangle_IC(1,nX,nY),&
          ' should be ', nTriangle
 
-    if(any( (/iNode1, iNode2, iNode3/) /= iNodeTriangle_II(:,1) )) &
+    if(any( [iNode1, iNode2, iNode3] /= iNodeTriangle_II(:,1) )) &
           write(*,*) NameSub, 'error: iNode1..3=', iNode1, iNode2, iNode3, &
           ' should be ', iNodeTriangle_II(:,1)
 
     if( 1e-6 < maxval(abs( &
-         (/Weight1-0.5/Area, Weight2-(Area-0.6)/Area, Weight3-0.1/Area/)))) &
+         [Weight1-0.5/Area, Weight2-(Area-0.6)/Area, Weight3-0.1/Area]))) &
          write(*,*) NameSub, &
          ' error: Weight1..3=, ', Weight1, Weight2, Weight3, &
          ' should be ', 0.5/Area, (Area-0.6)/Area, 0.1/Area
 
     call find_triangle(                                                     &
-         nPoint, nTriangle, (/53.0, 9.0/), CoordXy_DI, iNodeTriangle_II,    &
+         nPoint, nTriangle, [53.0, 9.0], CoordXy_DI, iNodeTriangle_II,    &
          iNode1, iNode2, iNode3, Weight1, Weight2, Weight3, IsTriangleFound,&
          nTriangle_C, iTriangle_IC)
 
     if(.not. IsTriangleFound) write(*,*) NameSub, &
          ' error: IsTriangleFound 3rd should be true'
 
-    if(any( (/iNode1, iNode2, iNode3/) /= iNodeTriangle_II(:,nTriangle) )) &
+    if(any( [iNode1, iNode2, iNode3] /= iNodeTriangle_II(:,nTriangle) )) &
           write(*,*) NameSub, 'error: iNode1..3=', iNode1, iNode2, iNode3, &
           ' should be ', iNodeTriangle_II(:,nTriangle)
 
     if( 1e-6 < maxval(abs( &
-         (/Weight1, Weight2, Weight3-1.0/)))) &
+         [Weight1, Weight2, Weight3-1.0]))) &
          write(*,*) NameSub, &
          ' error: Weight1..3=, ', Weight1, Weight2, Weight3, &
          ' should be 0, 0, 1'
 
-
   end subroutine test_triangulation
+  !============================================================================
 
 end module ModTriangulate
+!==============================================================================

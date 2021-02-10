@@ -385,6 +385,7 @@ contains
     ! the weights for the upper face should be multiplied by
     ! AlphaDown/(AlphaUp+AlphaDown)
     ! for the down face - by AlphaUp/(AlphaUp+AlphaDown)
+
     !--------------------------------------------------------------------------
     nGridOut = -1; nGridOutUp= -1; nGridOutDown = -1
     Weight_I = -1; iOrder_I = 0
@@ -936,7 +937,7 @@ module ModCubeGeometry
        6, 8, 2, 4,   6, 2, 5, 1,   6, 5, 8, 7,      &
        7, 5, 3, 1,   7, 3, 8, 4,   7, 8, 5, 6,      &
        8, 6, 4, 2,   8, 4, 7, 3,   8, 7, 6, 5       ], [4,3,8])
-       ! yz face       xz face       xy face 
+       ! yz face       xz face       xy face
 
   ! Vertexes (enumerated by the first undex), which form
   ! the face of direction iDir (second index) and does not
@@ -1069,7 +1070,7 @@ contains
     !--------------------------------------------------------------------------
     nDim = 3; nGrid = 8;  iSortStencil3_II = 0
     DoInit = .false. ! Do this only once
-    ! Zero and 255 cases are both uniform. !2 cases, 2 totally, 254 left
+    ! Zero and 255 cases are both uniform. ! 2 cases, 2 totally, 254 left
     iSortStencil3_II(Grid_:Dir_,0:255:255) = 1
     iSortStencil3_II(Case_,0:255:255) = Uniform_
     CASE:do iCase = 1, 254
@@ -1248,7 +1249,7 @@ contains
          [Transition2Edge_, Transition2Corner_, TransitionJunction_]
     !=================2 dimensional case=======
     nDim = 2; nGrid = 4
-    ! Zero and 15 cases are both uniform. !2 cases, 2 totally, 14 left
+    ! Zero and 15 cases are both uniform. ! 2 cases, 2 totally, 14 left
     iSortStencil2_II(Grid_:Dir_,0:15:15) = 1
     iSortStencil2_II(Case_,0:15:15) = Uniform_
     CASE2:do iCase = 1, 14
@@ -1335,7 +1336,7 @@ contains
     ! Input parameters
     ! The location at which to interpolate the data
     real   , intent(in) :: Xyz_D(nDim)
-    ! Grid point coordinates !3 coordinate, 8 points
+    ! Grid point coordinates ! 3 coordinate, 8 points
     real  ,   intent(in) :: XyzGridIn_DI(nDim,nGrid)
     ! The same, but may be reordered, if needed
     real:: XyzGrid_DI(nDim,nGrid)
@@ -1937,14 +1938,14 @@ contains
     integer, parameter, dimension(2,-1:1,-1:1):: &
          iGridDir_III = reshape([&
          1,0,     1,2,  2,0,  1,1,  0,0, 2,1,  3,0,   3,2, 4,0],[2,3,3])
-    ! x=0,y=0!y=0 !x=1,y=0!x=0 !    !x=1 !x=0,y=1!y=1 !x=1,y=1!
+    ! x=0,y=0! y=0 !x=1,y=0!x=0 !    !x=1 !x=0,y=1!y=1 !x=1,y=1!
     ! Average coordinates for the center of the resolution corner,
     ! for centers of faces or edges and distance from them to Xyz
     real   :: XyzAvr_D(nDim), XyzAvr_DD(nDim, nDim), Distance_D(nDim)
     !--------------------------------------------------------------------------
     XyzStencil_D = Xyz_D
     iCase = i_case(iLevel_I)
-    !\                                    F F
+    !                                     F F
     ! We do not care about trapezoids like  C   C
     if(iSortStencil3_II(Case_,iCase) <= Face_)RETURN
     Dimless_D = (Xyz_D - XyzGrid_DI(:,1))*DxyzInv_D
@@ -1991,7 +1992,7 @@ contains
     ! The location at which to interpolate the data
     real, intent(in):: Xyz_D(nDim)
 
-    ! Grid point coordinates !2 coordinate, 4 points
+    ! Grid point coordinates ! 2 coordinate, 4 points
     real  ,   intent(in) :: XyzGridIn_DI(nDim,nGrid)
     ! The same, but reordered
     real                 :: XyzGrid_DI(nDim,nGrid)
@@ -2025,6 +2026,7 @@ contains
     real:: Aux
 
     ! For input iLevel_I find a type of a stencil
+
     character(len=*), parameter:: NameSub = 'interpolate_amr2'
     !--------------------------------------------------------------------------
     iCase = i_case(iLevel_I)
@@ -2039,9 +2041,9 @@ contains
     XyzGrid_DI = XyzGridIn_DI(:,iOrder_I)
     select case(iCase)
     case(Face_)
-       !\                                        C   C
+       !                                         C   C
        ! Resolution line going along iDir-axis    F F  or  F F   ---> iDir
-       !/                                                C  C
+       !                                                 C  C
        ! Interpolate along edge X1X2 (iGrid = 1) and X3X4 (iGrid = 3)
        do iGrid = 1,3,2
           ! Check if the grid points are out of the grid boundary
@@ -2162,7 +2164,7 @@ contains
          1,-3,    1, 2,  2,-3, 1, 1,0,0,2, 1,  3,-3, 3, 2, 4,-3,   &!   !
          5, 0,    5,-1,  6, 0, 5,-2,5,3,6,-2,  7, 0, 7,-1, 8, 0 ],&! z=1!
          [2,3,3,3])
-    ! x=0,y=0!y=0 !x=1,y=0!x=0 !    !x=1 !x=0,y=1!y=1 !x=1,y=1!
+    ! x=0,y=0! y=0 !x=1,y=0!x=0 !    !x=1 !x=0,y=1!y=1 !x=1,y=1!
     ! Transitions junction's signatures
     real:: XyMin, z
     ! Average coordinates for the center of the resolution corner,
@@ -2362,7 +2364,7 @@ contains
     real   , intent(in) :: XyzIn_D(nDim)
     ! Same, but reordered
     real                :: Xyz_D(nDim)
-    ! Grid point coordinates !3 coordinate, 8 points
+    ! Grid point coordinates ! 3 coordinate, 8 points
     real  ,   intent(in) :: XyzGridIn_DI(nDim,nGrid)
     real :: XyzGrid_DI(nDim,nGrid) ! The same with changed order
     ! The refinement level at each grid point. By one higher level
@@ -2591,13 +2593,13 @@ contains
        ! takes place forresolution edges) parallel edges in the stencil..
        if(UseEdgeInsideCorner.and.&
             nCoarse==1.and.iLevel_I(iOrder_I(nFine+5))==Coarse_)then
-          !\                            View along iDir:
+          !                             View along iDir:
           !     F-----F                    F        Both up from C point
           !    /|    /|                   /  \      and to the right from
           !   C-----C | ---->iDir         |    \    it there are junctions
           !    \|    \|                  /  ---F    treated as 'edges':
           !     F-----F                 C---    there is a ray from C point
-          !/                            and one more ray from fine neighbor
+          !                             and one more ray from fine neighbor
           AuxCoarse = (XyzGrid_DI(z_,nFine + 5) - Xyz_D(z_))/&
                (XyzGrid_DI(z_,nFine + 5) - XyzGrid_DI(z_,nFine +1))
           AuxFine = (XyzGrid_DI(z_,5) - Xyz_D(z_))/&
@@ -2620,7 +2622,7 @@ contains
           ! rays interpolation, because the adjacent 'transition junction' was
           ! treated as the resolution interface, so that with the 'natural'
           ! choice the continuity would break.
-          !/                    View along iDir (point order is set in amr2):
+          !                     View along iDir (point order is set in amr2):
           !     C---C           C4         C2  Points more F, F1, C3, C2 and
           !    /|\  |                     /|   their 'out-of-plane' neighbors
           !   F---F |-->iDir            /  |   form a resolution interface.
@@ -2628,7 +2630,7 @@ contains
           !     C---C               F1--\  |   on parallel rays, the direction
           !                              --C3  of rays being perpendicular to
           !                    more F          that of fake resolution
-          !/                                   interface nearby
+          !                                    interface nearby
           call interpolate_on_parallel_rays(Dir_D = &
                XyzGrid_DI(:,4)-XyzGrid_DI(:,2),&
                iDRectangle1_I = [2,3,6,7],&
@@ -3443,7 +3445,6 @@ contains
          3, 4, 1, 2, 7, 8, 5, 6,        &    ! iDir=2 is flipped
          5, 6, 7, 8, 1, 2, 3, 4],[8,4])   ! iDir=3 is flipped
 
-
     logical, parameter:: DoDebug = .false.
     character(len=*), parameter:: NameSub = 'interpolate_amr'
     !--------------------------------------------------------------------------
@@ -3466,7 +3467,7 @@ contains
     if(present(IsSecondOrder))IsSecondOrder = .false.
 
     if(DoDebug) write(*,*) NameSub,':: find starting'
-    
+
     ! Find block to which the point belong
     call find(nDim, Xyz_D, iProc, iBlock, &
          XyzStartBasic_D, DXyzGrid_D, IsOutOfDomain)
@@ -3721,7 +3722,7 @@ contains
                iDirFlipBlock = 0
             end if
             iLevel = 1 - floor(Dxyz_D(1)*DXyzInv_D(1)+ cTol)
-            !\                     ^
+            !                      ^
             ! For expression above | equal to 2 , 1, 0.5 correspondingly
             ! iLevel = -1, 0, Fine_, meaning that the neighboring block
             ! is coarser, at the same resolution or finer than the basic
@@ -3767,6 +3768,7 @@ contains
       ! Calculate cell indexes as we did before. Use nint
       ! instead of int as long as XyzGrid_D is very close to
       ! the grid point
+
       !------------------------------------------------------------------------
       iCellIndexes_D = nint(XyzGrid_D*DxyzInv_D + 0.50)
 

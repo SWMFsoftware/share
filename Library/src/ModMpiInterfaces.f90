@@ -151,7 +151,7 @@ module ModMPiInterfaces
   end interface
 
   interface
-     subroutine mpi_barrier(comm, ierror) 
+     subroutine mpi_barrier(comm, ierror)
        integer, intent(in) :: comm
        integer, intent(out) :: ierror
      end subroutine mpi_barrier
@@ -329,7 +329,7 @@ module ModMPiInterfaces
   end interface
 
   interface
-     subroutine mpi_group_range_incl(group, n, ranges, newgroup, ierror) 
+     subroutine mpi_group_range_incl(group, n, ranges, newgroup, ierror)
        integer, intent(in) :: group
        integer, intent(in) :: n
        integer, intent(in) :: ranges(3,*)
@@ -356,7 +356,7 @@ module ModMPiInterfaces
 
   interface
      subroutine mpi_group_translate_ranks(group1, n, ranks1, &
-          group2, ranks2, ierror) 
+          group2, ranks2, ierror)
        integer, intent(in) :: group1
        integer, intent(in) :: n
        integer, intent(in) :: ranks1(*)
@@ -534,7 +534,7 @@ module ModMPiInterfaces
 
   interface
      subroutine mpi_waitall(count, array_of_requests, &
-          array_of_statuses, ierror) 
+          array_of_statuses, ierror)
        use ModMpiOrig, only: mpi_status_size
        integer, intent(in) :: count
        integer, intent(inout) :: array_of_requests(*)
@@ -548,7 +548,7 @@ module ModMPiInterfaces
 contains
 
      subroutine mpi_allgather_i2(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(:,:)
        integer, intent(out) :: recvbuf(:,:,:)
        integer, intent(in) :: sendcount
@@ -565,7 +565,7 @@ contains
 
 
      subroutine mpi_allgather_i0_in_place(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        integer, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -582,7 +582,7 @@ contains
 
 
      subroutine mpi_allgather_i1_in_place(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        integer, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -599,7 +599,7 @@ contains
 
 
      subroutine mpi_allgather_i2_in_place(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        integer, intent(inout) :: recvbuf(:,:,:)
        integer, intent(in) :: sendcount
@@ -616,7 +616,7 @@ contains
 
 
      subroutine mpi_allgather_i0_in_place_array(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        integer, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -633,7 +633,7 @@ contains
 
 
      subroutine mpi_allgather_i1_in_place_array(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        integer, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -650,7 +650,7 @@ contains
 
 
      subroutine mpi_allgather_i2_in_place_array(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        integer, intent(inout) :: recvbuf(:,:,:)
        integer, intent(in) :: sendcount
@@ -667,7 +667,7 @@ contains
 
 
      subroutine mpi_allgather_r0(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        real, intent(in) :: sendbuf
        real, intent(out) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -684,7 +684,7 @@ contains
 
 
      subroutine mpi_allgather_r1(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        real, intent(in) :: sendbuf(:)
        real, intent(out) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -701,7 +701,7 @@ contains
 
 
      subroutine mpi_allgather_r2(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        real, intent(in) :: sendbuf(:,:)
        real, intent(out) :: recvbuf(:,:,:)
        integer, intent(in) :: sendcount
@@ -718,7 +718,7 @@ contains
 
 
      subroutine mpi_allgather_r3(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        real, intent(in) :: sendbuf(:,:,:)
        real, intent(out) :: recvbuf(:,:,:,:)
        integer, intent(in) :: sendcount
@@ -735,7 +735,7 @@ contains
 
 
      subroutine mpi_allgather_r4(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        real, intent(in) :: sendbuf(:,:,:,:)
        real, intent(out) :: recvbuf(:,:,:,:,:)
        integer, intent(in) :: sendcount
@@ -752,7 +752,7 @@ contains
 
 
      subroutine mpi_allgather_r0_in_place(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -769,7 +769,7 @@ contains
 
 
      subroutine mpi_allgather_r1_in_place(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -786,7 +786,7 @@ contains
 
 
      subroutine mpi_allgather_r2_in_place(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:,:)
        integer, intent(in) :: sendcount
@@ -803,7 +803,7 @@ contains
 
 
      subroutine mpi_allgather_r3_in_place(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:,:,:)
        integer, intent(in) :: sendcount
@@ -820,7 +820,7 @@ contains
 
 
      subroutine mpi_allgather_r4_in_place(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:,:,:,:)
        integer, intent(in) :: sendcount
@@ -837,7 +837,7 @@ contains
 
 
      subroutine mpi_allgather_r0_in_place_array(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -854,7 +854,7 @@ contains
 
 
      subroutine mpi_allgather_r1_in_place_array(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -871,7 +871,7 @@ contains
 
 
      subroutine mpi_allgather_r2_in_place_array(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:,:)
        integer, intent(in) :: sendcount
@@ -888,7 +888,7 @@ contains
 
 
      subroutine mpi_allgather_r3_in_place_array(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:,:,:)
        integer, intent(in) :: sendcount
@@ -905,7 +905,7 @@ contains
 
 
      subroutine mpi_allgather_r4_in_place_array(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:,:,:,:)
        integer, intent(in) :: sendcount
@@ -922,7 +922,7 @@ contains
 
 
      subroutine mpi_allgather_l0(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        logical, intent(in) :: sendbuf
        logical, intent(out) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -939,7 +939,7 @@ contains
 
 
      subroutine mpi_allgather_l1(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        logical, intent(in) :: sendbuf(:)
        logical, intent(out) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -956,7 +956,7 @@ contains
 
 
      subroutine mpi_allgather_l0_in_place(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        logical, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -973,7 +973,7 @@ contains
 
 
      subroutine mpi_allgather_l1_in_place(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        logical, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -990,7 +990,7 @@ contains
 
 
      subroutine mpi_allgather_l0_in_place_array(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        logical, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -1007,7 +1007,7 @@ contains
 
 
      subroutine mpi_allgather_l1_in_place_array(sendbuf, sendcount, sendtype,       &
-          recvbuf, recvcount, recvtype, comm, ierror) 
+          recvbuf, recvcount, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        logical, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -1024,7 +1024,7 @@ contains
 
 
      subroutine mpi_allgatherv_i2(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(:,:)
        integer, intent(out) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -1042,7 +1042,7 @@ contains
 
 
      subroutine mpi_allgatherv_i0_in_place(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        integer, intent(inout) :: recvbuf
        integer, intent(in) :: sendcount
@@ -1060,7 +1060,7 @@ contains
 
 
      subroutine mpi_allgatherv_i1_in_place(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        integer, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -1078,7 +1078,7 @@ contains
 
 
      subroutine mpi_allgatherv_i2_in_place(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        integer, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -1096,7 +1096,7 @@ contains
 
 
      subroutine mpi_allgatherv_i0_in_place_array(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        integer, intent(inout) :: recvbuf
        integer, intent(in) :: sendcount
@@ -1114,7 +1114,7 @@ contains
 
 
      subroutine mpi_allgatherv_i1_in_place_array(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        integer, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -1132,7 +1132,7 @@ contains
 
 
      subroutine mpi_allgatherv_i2_in_place_array(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        integer, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -1150,7 +1150,7 @@ contains
 
 
      subroutine mpi_allgatherv_r0(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        real, intent(in) :: sendbuf
        real, intent(out) :: recvbuf
        integer, intent(in) :: sendcount
@@ -1168,7 +1168,7 @@ contains
 
 
      subroutine mpi_allgatherv_r1(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        real, intent(in) :: sendbuf(:)
        real, intent(out) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -1186,7 +1186,7 @@ contains
 
 
      subroutine mpi_allgatherv_r2(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        real, intent(in) :: sendbuf(:,:)
        real, intent(out) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -1204,7 +1204,7 @@ contains
 
 
      subroutine mpi_allgatherv_r3(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        real, intent(in) :: sendbuf(:,:,:)
        real, intent(out) :: recvbuf(:,:,:)
        integer, intent(in) :: sendcount
@@ -1222,7 +1222,7 @@ contains
 
 
      subroutine mpi_allgatherv_r4(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        real, intent(in) :: sendbuf(:,:,:,:)
        real, intent(out) :: recvbuf(:,:,:,:)
        integer, intent(in) :: sendcount
@@ -1240,7 +1240,7 @@ contains
 
 
      subroutine mpi_allgatherv_r0_in_place(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf
        integer, intent(in) :: sendcount
@@ -1258,7 +1258,7 @@ contains
 
 
      subroutine mpi_allgatherv_r1_in_place(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -1276,7 +1276,7 @@ contains
 
 
      subroutine mpi_allgatherv_r2_in_place(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -1294,7 +1294,7 @@ contains
 
 
      subroutine mpi_allgatherv_r3_in_place(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:,:)
        integer, intent(in) :: sendcount
@@ -1312,7 +1312,7 @@ contains
 
 
      subroutine mpi_allgatherv_r4_in_place(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:,:,:)
        integer, intent(in) :: sendcount
@@ -1330,7 +1330,7 @@ contains
 
 
      subroutine mpi_allgatherv_r0_in_place_array(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf
        integer, intent(in) :: sendcount
@@ -1348,7 +1348,7 @@ contains
 
 
      subroutine mpi_allgatherv_r1_in_place_array(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -1366,7 +1366,7 @@ contains
 
 
      subroutine mpi_allgatherv_r2_in_place_array(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -1384,7 +1384,7 @@ contains
 
 
      subroutine mpi_allgatherv_r3_in_place_array(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:,:)
        integer, intent(in) :: sendcount
@@ -1402,7 +1402,7 @@ contains
 
 
      subroutine mpi_allgatherv_r4_in_place_array(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:,:,:)
        integer, intent(in) :: sendcount
@@ -1420,7 +1420,7 @@ contains
 
 
      subroutine mpi_allgatherv_l0(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        logical, intent(in) :: sendbuf
        logical, intent(out) :: recvbuf
        integer, intent(in) :: sendcount
@@ -1438,7 +1438,7 @@ contains
 
 
      subroutine mpi_allgatherv_l1(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        logical, intent(in) :: sendbuf(:)
        logical, intent(out) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -1456,7 +1456,7 @@ contains
 
 
      subroutine mpi_allgatherv_l2(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        logical, intent(in) :: sendbuf(:,:)
        logical, intent(out) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -1474,7 +1474,7 @@ contains
 
 
      subroutine mpi_allgatherv_l0_in_place(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        logical, intent(inout) :: recvbuf
        integer, intent(in) :: sendcount
@@ -1492,7 +1492,7 @@ contains
 
 
      subroutine mpi_allgatherv_l1_in_place(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        logical, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -1510,7 +1510,7 @@ contains
 
 
      subroutine mpi_allgatherv_l2_in_place(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf
        logical, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -1528,7 +1528,7 @@ contains
 
 
      subroutine mpi_allgatherv_l0_in_place_array(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        logical, intent(inout) :: recvbuf
        integer, intent(in) :: sendcount
@@ -1546,7 +1546,7 @@ contains
 
 
      subroutine mpi_allgatherv_l1_in_place_array(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        logical, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -1564,7 +1564,7 @@ contains
 
 
      subroutine mpi_allgatherv_l2_in_place_array(sendbuf, sendcount, sendtype,      &
-          recvbuf, recvcounts, displs, recvtype, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        logical, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -1582,7 +1582,7 @@ contains
 
 
      subroutine mpi_allreduce_i2(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf(:,:)
        integer, intent(out) :: recvbuf(:,:)
        integer, intent(in) :: count
@@ -1598,7 +1598,7 @@ contains
 
 
      subroutine mpi_allreduce_i0_in_place(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf
        integer, intent(inout) :: recvbuf
        integer, intent(in) :: count
@@ -1614,7 +1614,7 @@ contains
 
 
      subroutine mpi_allreduce_i1_in_place(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf
        integer, intent(inout) :: recvbuf(:)
        integer, intent(in) :: count
@@ -1630,7 +1630,7 @@ contains
 
 
      subroutine mpi_allreduce_i2_in_place(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf
        integer, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: count
@@ -1646,7 +1646,7 @@ contains
 
 
      subroutine mpi_allreduce_i0_in_place_array(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        integer, intent(inout) :: recvbuf
        integer, intent(in) :: count
@@ -1662,7 +1662,7 @@ contains
 
 
      subroutine mpi_allreduce_i1_in_place_array(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        integer, intent(inout) :: recvbuf(:)
        integer, intent(in) :: count
@@ -1678,7 +1678,7 @@ contains
 
 
      subroutine mpi_allreduce_i2_in_place_array(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        integer, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: count
@@ -1694,7 +1694,7 @@ contains
 
 
      subroutine mpi_allreduce_r0(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        real, intent(in) :: sendbuf
        real, intent(out) :: recvbuf
        integer, intent(in) :: count
@@ -1710,7 +1710,7 @@ contains
 
 
      subroutine mpi_allreduce_r1(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        real, intent(in) :: sendbuf(:)
        real, intent(out) :: recvbuf(:)
        integer, intent(in) :: count
@@ -1726,7 +1726,7 @@ contains
 
 
      subroutine mpi_allreduce_r2(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        real, intent(in) :: sendbuf(:,:)
        real, intent(out) :: recvbuf(:,:)
        integer, intent(in) :: count
@@ -1742,7 +1742,7 @@ contains
 
 
      subroutine mpi_allreduce_r3(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        real, intent(in) :: sendbuf(:,:,:)
        real, intent(out) :: recvbuf(:,:,:)
        integer, intent(in) :: count
@@ -1758,7 +1758,7 @@ contains
 
 
      subroutine mpi_allreduce_r4(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        real, intent(in) :: sendbuf(:,:,:,:)
        real, intent(out) :: recvbuf(:,:,:,:)
        integer, intent(in) :: count
@@ -1774,7 +1774,7 @@ contains
 
 
      subroutine mpi_allreduce_r0_in_place(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf
        integer, intent(in) :: count
@@ -1790,7 +1790,7 @@ contains
 
 
      subroutine mpi_allreduce_r1_in_place(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:)
        integer, intent(in) :: count
@@ -1806,7 +1806,7 @@ contains
 
 
      subroutine mpi_allreduce_r2_in_place(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: count
@@ -1822,7 +1822,7 @@ contains
 
 
      subroutine mpi_allreduce_r3_in_place(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:,:)
        integer, intent(in) :: count
@@ -1838,7 +1838,7 @@ contains
 
 
      subroutine mpi_allreduce_r4_in_place(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:,:,:)
        integer, intent(in) :: count
@@ -1854,7 +1854,7 @@ contains
 
 
      subroutine mpi_allreduce_r0_in_place_array(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf
        integer, intent(in) :: count
@@ -1870,7 +1870,7 @@ contains
 
 
      subroutine mpi_allreduce_r1_in_place_array(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:)
        integer, intent(in) :: count
@@ -1886,7 +1886,7 @@ contains
 
 
      subroutine mpi_allreduce_r2_in_place_array(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: count
@@ -1902,7 +1902,7 @@ contains
 
 
      subroutine mpi_allreduce_r3_in_place_array(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:,:)
        integer, intent(in) :: count
@@ -1918,7 +1918,7 @@ contains
 
 
      subroutine mpi_allreduce_r4_in_place_array(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:,:,:)
        integer, intent(in) :: count
@@ -1934,7 +1934,7 @@ contains
 
 
      subroutine mpi_allreduce_l0(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        logical, intent(in) :: sendbuf
        logical, intent(out) :: recvbuf
        integer, intent(in) :: count
@@ -1950,7 +1950,7 @@ contains
 
 
      subroutine mpi_allreduce_l1(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        logical, intent(in) :: sendbuf(:)
        logical, intent(out) :: recvbuf(:)
        integer, intent(in) :: count
@@ -1966,7 +1966,7 @@ contains
 
 
      subroutine mpi_allreduce_l0_in_place(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf
        logical, intent(inout) :: recvbuf
        integer, intent(in) :: count
@@ -1982,7 +1982,7 @@ contains
 
 
      subroutine mpi_allreduce_l1_in_place(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf
        logical, intent(inout) :: recvbuf(:)
        integer, intent(in) :: count
@@ -1998,7 +1998,7 @@ contains
 
 
      subroutine mpi_allreduce_l0_in_place_array(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        logical, intent(inout) :: recvbuf
        integer, intent(in) :: count
@@ -2014,7 +2014,7 @@ contains
 
 
      subroutine mpi_allreduce_l1_in_place_array(sendbuf, recvbuf, count, datatype,  &
-          op, comm, ierror) 
+          op, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        logical, intent(inout) :: recvbuf(:)
        integer, intent(in) :: count
@@ -2029,7 +2029,7 @@ contains
      end subroutine mpi_allreduce_l1_in_place_array
 
 
-     subroutine mpi_bcast_i0(buffer, count, datatype, root, comm, ierror) 
+     subroutine mpi_bcast_i0(buffer, count, datatype, root, comm, ierror)
        integer, intent(inout) :: buffer
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -2042,7 +2042,7 @@ contains
      end subroutine mpi_bcast_i0
 
 
-     subroutine mpi_bcast_i1(buffer, count, datatype, root, comm, ierror) 
+     subroutine mpi_bcast_i1(buffer, count, datatype, root, comm, ierror)
        integer, intent(inout) :: buffer(:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -2055,7 +2055,7 @@ contains
      end subroutine mpi_bcast_i1
 
 
-     subroutine mpi_bcast_i2(buffer, count, datatype, root, comm, ierror) 
+     subroutine mpi_bcast_i2(buffer, count, datatype, root, comm, ierror)
        integer, intent(inout) :: buffer(:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -2068,7 +2068,7 @@ contains
      end subroutine mpi_bcast_i2
 
 
-     subroutine mpi_bcast_r0(buffer, count, datatype, root, comm, ierror) 
+     subroutine mpi_bcast_r0(buffer, count, datatype, root, comm, ierror)
        real, intent(inout) :: buffer
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -2081,7 +2081,7 @@ contains
      end subroutine mpi_bcast_r0
 
 
-     subroutine mpi_bcast_r1(buffer, count, datatype, root, comm, ierror) 
+     subroutine mpi_bcast_r1(buffer, count, datatype, root, comm, ierror)
        real, intent(inout) :: buffer(:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -2094,7 +2094,7 @@ contains
      end subroutine mpi_bcast_r1
 
 
-     subroutine mpi_bcast_r2(buffer, count, datatype, root, comm, ierror) 
+     subroutine mpi_bcast_r2(buffer, count, datatype, root, comm, ierror)
        real, intent(inout) :: buffer(:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -2107,7 +2107,7 @@ contains
      end subroutine mpi_bcast_r2
 
 
-     subroutine mpi_bcast_r3(buffer, count, datatype, root, comm, ierror) 
+     subroutine mpi_bcast_r3(buffer, count, datatype, root, comm, ierror)
        real, intent(inout) :: buffer(:,:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -2120,7 +2120,7 @@ contains
      end subroutine mpi_bcast_r3
 
 
-     subroutine mpi_bcast_r4(buffer, count, datatype, root, comm, ierror) 
+     subroutine mpi_bcast_r4(buffer, count, datatype, root, comm, ierror)
        real, intent(inout) :: buffer(:,:,:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -2133,7 +2133,7 @@ contains
      end subroutine mpi_bcast_r4
 
 
-     subroutine mpi_bcast_r5(buffer, count, datatype, root, comm, ierror) 
+     subroutine mpi_bcast_r5(buffer, count, datatype, root, comm, ierror)
        real, intent(inout) :: buffer(:,:,:,:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -2146,7 +2146,7 @@ contains
      end subroutine mpi_bcast_r5
 
 
-     subroutine mpi_bcast_s0(buffer, count, datatype, root, comm, ierror) 
+     subroutine mpi_bcast_s0(buffer, count, datatype, root, comm, ierror)
        character(len=*), intent(inout) :: buffer
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -2159,7 +2159,7 @@ contains
      end subroutine mpi_bcast_s0
 
 
-     subroutine mpi_bcast_s1(buffer, count, datatype, root, comm, ierror) 
+     subroutine mpi_bcast_s1(buffer, count, datatype, root, comm, ierror)
        character(len=*), intent(inout) :: buffer(:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -2172,7 +2172,7 @@ contains
      end subroutine mpi_bcast_s1
 
 
-     subroutine mpi_bcast_l0(buffer, count, datatype, root, comm, ierror) 
+     subroutine mpi_bcast_l0(buffer, count, datatype, root, comm, ierror)
        logical, intent(inout) :: buffer
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -2185,7 +2185,7 @@ contains
      end subroutine mpi_bcast_l0
 
 
-     subroutine mpi_bcast_l1(buffer, count, datatype, root, comm, ierror) 
+     subroutine mpi_bcast_l1(buffer, count, datatype, root, comm, ierror)
        logical, intent(inout) :: buffer(:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -2198,7 +2198,7 @@ contains
      end subroutine mpi_bcast_l1
 
 
-     subroutine mpi_bsend_r0(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_bsend_r0(buf, count, datatype, dest, tag, comm, ierror)
        real, intent(in) :: buf
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -2325,7 +2325,7 @@ contains
 
 
      subroutine mpi_gather_i2(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(:,:)
        integer, intent(out) :: recvbuf(:,:,:)
        integer, intent(in) :: sendcount
@@ -2343,7 +2343,7 @@ contains
 
 
      subroutine mpi_gather_i0_in_place(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        integer, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -2361,7 +2361,7 @@ contains
 
 
      subroutine mpi_gather_i1_in_place(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        integer, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -2379,7 +2379,7 @@ contains
 
 
      subroutine mpi_gather_i2_in_place(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        integer, intent(inout) :: recvbuf(:,:,:)
        integer, intent(in) :: sendcount
@@ -2397,7 +2397,7 @@ contains
 
 
      subroutine mpi_gather_i0_in_place_array(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        integer, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -2415,7 +2415,7 @@ contains
 
 
      subroutine mpi_gather_i1_in_place_array(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        integer, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -2433,7 +2433,7 @@ contains
 
 
      subroutine mpi_gather_i2_in_place_array(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        integer, intent(inout) :: recvbuf(:,:,:)
        integer, intent(in) :: sendcount
@@ -2451,7 +2451,7 @@ contains
 
 
      subroutine mpi_gather_r0(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        real, intent(in) :: sendbuf
        real, intent(out) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -2469,7 +2469,7 @@ contains
 
 
      subroutine mpi_gather_r1(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        real, intent(in) :: sendbuf(:)
        real, intent(out) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -2487,7 +2487,7 @@ contains
 
 
      subroutine mpi_gather_r2(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        real, intent(in) :: sendbuf(:,:)
        real, intent(out) :: recvbuf(:,:,:)
        integer, intent(in) :: sendcount
@@ -2505,7 +2505,7 @@ contains
 
 
      subroutine mpi_gather_r3(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        real, intent(in) :: sendbuf(:,:,:)
        real, intent(out) :: recvbuf(:,:,:,:)
        integer, intent(in) :: sendcount
@@ -2523,7 +2523,7 @@ contains
 
 
      subroutine mpi_gather_r4(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        real, intent(in) :: sendbuf(:,:,:,:)
        real, intent(out) :: recvbuf(:,:,:,:,:)
        integer, intent(in) :: sendcount
@@ -2541,7 +2541,7 @@ contains
 
 
      subroutine mpi_gather_r0_in_place(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -2559,7 +2559,7 @@ contains
 
 
      subroutine mpi_gather_r1_in_place(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -2577,7 +2577,7 @@ contains
 
 
      subroutine mpi_gather_r2_in_place(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:,:)
        integer, intent(in) :: sendcount
@@ -2595,7 +2595,7 @@ contains
 
 
      subroutine mpi_gather_r3_in_place(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:,:,:)
        integer, intent(in) :: sendcount
@@ -2613,7 +2613,7 @@ contains
 
 
      subroutine mpi_gather_r4_in_place(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:,:,:,:)
        integer, intent(in) :: sendcount
@@ -2631,7 +2631,7 @@ contains
 
 
      subroutine mpi_gather_r0_in_place_array(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -2649,7 +2649,7 @@ contains
 
 
      subroutine mpi_gather_r1_in_place_array(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -2667,7 +2667,7 @@ contains
 
 
      subroutine mpi_gather_r2_in_place_array(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:,:)
        integer, intent(in) :: sendcount
@@ -2685,7 +2685,7 @@ contains
 
 
      subroutine mpi_gather_r3_in_place_array(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:,:,:)
        integer, intent(in) :: sendcount
@@ -2703,7 +2703,7 @@ contains
 
 
      subroutine mpi_gather_r4_in_place_array(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:,:,:,:)
        integer, intent(in) :: sendcount
@@ -2721,7 +2721,7 @@ contains
 
 
      subroutine mpi_gather_l0(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        logical, intent(in) :: sendbuf
        logical, intent(out) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -2739,7 +2739,7 @@ contains
 
 
      subroutine mpi_gather_l1(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        logical, intent(in) :: sendbuf(:)
        logical, intent(out) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -2757,7 +2757,7 @@ contains
 
 
      subroutine mpi_gather_l0_in_place(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        logical, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -2775,7 +2775,7 @@ contains
 
 
      subroutine mpi_gather_l1_in_place(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        logical, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -2793,7 +2793,7 @@ contains
 
 
      subroutine mpi_gather_l0_in_place_array(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        logical, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -2811,7 +2811,7 @@ contains
 
 
      subroutine mpi_gather_l1_in_place_array(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        logical, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -2829,7 +2829,7 @@ contains
 
 
      subroutine mpi_gather_s0(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        character(len=*), intent(in) :: sendbuf
        character(len=*), intent(out) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -2847,7 +2847,7 @@ contains
 
 
      subroutine mpi_gather_s1(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        character(len=*), intent(in) :: sendbuf(:)
        character(len=*), intent(out) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -2865,7 +2865,7 @@ contains
 
 
      subroutine mpi_gather_s0_in_place(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        character(len=*), intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -2883,7 +2883,7 @@ contains
 
 
      subroutine mpi_gather_s1_in_place(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        character(len=*), intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -2901,7 +2901,7 @@ contains
 
 
      subroutine mpi_gather_s0_in_place_array(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        character(len=*), intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -2919,7 +2919,7 @@ contains
 
 
      subroutine mpi_gather_s1_in_place_array(sendbuf, sendcount, sendtype, recvbuf, &
-          recvcount, recvtype, root, comm, ierror) 
+          recvcount, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        character(len=*), intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -2937,7 +2937,7 @@ contains
 
 
      subroutine mpi_gatherv_i2(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(:,:)
        integer, intent(out) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -2956,7 +2956,7 @@ contains
 
 
      subroutine mpi_gatherv_i0_in_place(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        integer, intent(inout) :: recvbuf
        integer, intent(in) :: sendcount
@@ -2975,7 +2975,7 @@ contains
 
 
      subroutine mpi_gatherv_i1_in_place(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        integer, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -2994,7 +2994,7 @@ contains
 
 
      subroutine mpi_gatherv_i2_in_place(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        integer, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -3013,7 +3013,7 @@ contains
 
 
      subroutine mpi_gatherv_i0_in_place_array(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        integer, intent(inout) :: recvbuf
        integer, intent(in) :: sendcount
@@ -3032,7 +3032,7 @@ contains
 
 
      subroutine mpi_gatherv_i1_in_place_array(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        integer, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -3051,7 +3051,7 @@ contains
 
 
      subroutine mpi_gatherv_i2_in_place_array(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        integer, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -3070,7 +3070,7 @@ contains
 
 
      subroutine mpi_gatherv_r0(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        real, intent(in) :: sendbuf
        real, intent(out) :: recvbuf
        integer, intent(in) :: sendcount
@@ -3089,7 +3089,7 @@ contains
 
 
      subroutine mpi_gatherv_r1(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        real, intent(in) :: sendbuf(:)
        real, intent(out) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -3108,7 +3108,7 @@ contains
 
 
      subroutine mpi_gatherv_r2(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        real, intent(in) :: sendbuf(:,:)
        real, intent(out) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -3127,7 +3127,7 @@ contains
 
 
      subroutine mpi_gatherv_r3(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        real, intent(in) :: sendbuf(:,:,:)
        real, intent(out) :: recvbuf(:,:,:)
        integer, intent(in) :: sendcount
@@ -3146,7 +3146,7 @@ contains
 
 
      subroutine mpi_gatherv_r4(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        real, intent(in) :: sendbuf(:,:,:,:)
        real, intent(out) :: recvbuf(:,:,:,:)
        integer, intent(in) :: sendcount
@@ -3165,7 +3165,7 @@ contains
 
 
      subroutine mpi_gatherv_r0_in_place(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf
        integer, intent(in) :: sendcount
@@ -3184,7 +3184,7 @@ contains
 
 
      subroutine mpi_gatherv_r1_in_place(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -3203,7 +3203,7 @@ contains
 
 
      subroutine mpi_gatherv_r2_in_place(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -3222,7 +3222,7 @@ contains
 
 
      subroutine mpi_gatherv_r3_in_place(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:,:)
        integer, intent(in) :: sendcount
@@ -3241,7 +3241,7 @@ contains
 
 
      subroutine mpi_gatherv_r4_in_place(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:,:,:)
        integer, intent(in) :: sendcount
@@ -3260,7 +3260,7 @@ contains
 
 
      subroutine mpi_gatherv_r0_in_place_array(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf
        integer, intent(in) :: sendcount
@@ -3279,7 +3279,7 @@ contains
 
 
      subroutine mpi_gatherv_r1_in_place_array(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -3298,7 +3298,7 @@ contains
 
 
      subroutine mpi_gatherv_r2_in_place_array(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: sendcount
@@ -3317,7 +3317,7 @@ contains
 
 
      subroutine mpi_gatherv_r3_in_place_array(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:,:)
        integer, intent(in) :: sendcount
@@ -3336,7 +3336,7 @@ contains
 
 
      subroutine mpi_gatherv_r4_in_place_array(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:,:,:)
        integer, intent(in) :: sendcount
@@ -3355,7 +3355,7 @@ contains
 
 
      subroutine mpi_gatherv_l0(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        logical, intent(in) :: sendbuf
        logical, intent(out) :: recvbuf
        integer, intent(in) :: sendcount
@@ -3374,7 +3374,7 @@ contains
 
 
      subroutine mpi_gatherv_l1(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        logical, intent(in) :: sendbuf(:)
        logical, intent(out) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -3393,7 +3393,7 @@ contains
 
 
      subroutine mpi_gatherv_l0_in_place(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        logical, intent(inout) :: recvbuf
        integer, intent(in) :: sendcount
@@ -3412,7 +3412,7 @@ contains
 
 
      subroutine mpi_gatherv_l1_in_place(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf
        logical, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -3431,7 +3431,7 @@ contains
 
 
      subroutine mpi_gatherv_l0_in_place_array(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        logical, intent(inout) :: recvbuf
        integer, intent(in) :: sendcount
@@ -3450,7 +3450,7 @@ contains
 
 
      subroutine mpi_gatherv_l1_in_place_array(sendbuf, sendcount, sendtype,         &
-          recvbuf, recvcounts, displs, recvtype, root, comm, ierror) 
+          recvbuf, recvcounts, displs, recvtype, root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        logical, intent(inout) :: recvbuf(:)
        integer, intent(in) :: sendcount
@@ -3469,7 +3469,7 @@ contains
 
 
      subroutine mpi_ibsend_r0(buf, count, datatype, dest, tag, comm, &
-          request, ierror) 
+          request, ierror)
        real, intent(in) :: buf
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3486,7 +3486,7 @@ contains
 
 
      subroutine mpi_irecv_i0(buf, count, datatype, source, tag,      &
-          comm, request, ierror) 
+          comm, request, ierror)
        integer, intent(out) :: buf
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3503,7 +3503,7 @@ contains
 
 
      subroutine mpi_irecv_i1(buf, count, datatype, source, tag,      &
-          comm, request, ierror) 
+          comm, request, ierror)
        integer, intent(out) :: buf(:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3520,7 +3520,7 @@ contains
 
 
      subroutine mpi_irecv_i2(buf, count, datatype, source, tag,      &
-          comm, request, ierror) 
+          comm, request, ierror)
        integer, intent(out) :: buf(:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3537,7 +3537,7 @@ contains
 
 
      subroutine mpi_irecv_r0(buf, count, datatype, source, tag,      &
-          comm, request, ierror) 
+          comm, request, ierror)
        real, intent(out) :: buf
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3554,7 +3554,7 @@ contains
 
 
      subroutine mpi_irecv_r1(buf, count, datatype, source, tag,      &
-          comm, request, ierror) 
+          comm, request, ierror)
        real, intent(out) :: buf(:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3571,7 +3571,7 @@ contains
 
 
      subroutine mpi_irecv_r2(buf, count, datatype, source, tag,      &
-          comm, request, ierror) 
+          comm, request, ierror)
        real, intent(out) :: buf(:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3588,7 +3588,7 @@ contains
 
 
      subroutine mpi_irecv_r3(buf, count, datatype, source, tag,      &
-          comm, request, ierror) 
+          comm, request, ierror)
        real, intent(out) :: buf(:,:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3605,7 +3605,7 @@ contains
 
 
      subroutine mpi_irecv_r4(buf, count, datatype, source, tag,      &
-          comm, request, ierror) 
+          comm, request, ierror)
        real, intent(out) :: buf(:,:,:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3622,7 +3622,7 @@ contains
 
 
      subroutine mpi_irecv_l0(buf, count, datatype, source, tag,      &
-          comm, request, ierror) 
+          comm, request, ierror)
        logical, intent(out) :: buf
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3639,7 +3639,7 @@ contains
 
 
      subroutine mpi_irecv_l1(buf, count, datatype, source, tag,      &
-          comm, request, ierror) 
+          comm, request, ierror)
        logical, intent(out) :: buf(:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3656,7 +3656,7 @@ contains
 
 
      subroutine mpi_irecv_l2(buf, count, datatype, source, tag,      &
-          comm, request, ierror) 
+          comm, request, ierror)
        logical, intent(out) :: buf(:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3673,7 +3673,7 @@ contains
 
 
      subroutine mpi_irsend_r0(buf, count, datatype, dest, tag, comm, &
-          request, ierror) 
+          request, ierror)
        real, intent(in) :: buf
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3690,7 +3690,7 @@ contains
 
 
      subroutine mpi_isend_i0(buf, count, datatype, dest, tag, comm,  &
-          request, ierror) 
+          request, ierror)
        integer, intent(in) :: buf
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3707,7 +3707,7 @@ contains
 
 
      subroutine mpi_isend_i1(buf, count, datatype, dest, tag, comm,  &
-          request, ierror) 
+          request, ierror)
        integer, intent(in) :: buf(:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3724,7 +3724,7 @@ contains
 
 
      subroutine mpi_isend_i2(buf, count, datatype, dest, tag, comm,  &
-          request, ierror) 
+          request, ierror)
        integer, intent(in) :: buf(:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3741,7 +3741,7 @@ contains
 
 
      subroutine mpi_isend_r0(buf, count, datatype, dest, tag, comm,  &
-          request, ierror) 
+          request, ierror)
        real, intent(in) :: buf
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3758,7 +3758,7 @@ contains
 
 
      subroutine mpi_isend_r1(buf, count, datatype, dest, tag, comm,  &
-          request, ierror) 
+          request, ierror)
        real, intent(in) :: buf(:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3775,7 +3775,7 @@ contains
 
 
      subroutine mpi_isend_r2(buf, count, datatype, dest, tag, comm,  &
-          request, ierror) 
+          request, ierror)
        real, intent(in) :: buf(:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3792,7 +3792,7 @@ contains
 
 
      subroutine mpi_isend_r3(buf, count, datatype, dest, tag, comm,  &
-          request, ierror) 
+          request, ierror)
        real, intent(in) :: buf(:,:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3809,7 +3809,7 @@ contains
 
 
      subroutine mpi_isend_r4(buf, count, datatype, dest, tag, comm,  &
-          request, ierror) 
+          request, ierror)
        real, intent(in) :: buf(:,:,:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3826,7 +3826,7 @@ contains
 
 
      subroutine mpi_isend_l0(buf, count, datatype, dest, tag, comm,  &
-          request, ierror) 
+          request, ierror)
        logical, intent(in) :: buf
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3843,7 +3843,7 @@ contains
 
 
      subroutine mpi_isend_l1(buf, count, datatype, dest, tag, comm,  &
-          request, ierror) 
+          request, ierror)
        logical, intent(in) :: buf(:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3860,7 +3860,7 @@ contains
 
 
      subroutine mpi_isend_l2(buf, count, datatype, dest, tag, comm,  &
-          request, ierror) 
+          request, ierror)
        logical, intent(in) :: buf(:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3877,7 +3877,7 @@ contains
 
 
      subroutine mpi_issend_r0(buf, count, datatype, dest, tag, comm, &
-          request, ierror) 
+          request, ierror)
        real, intent(in) :: buf
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -3894,7 +3894,7 @@ contains
 
 
      subroutine mpi_recv_i0(buf, count, datatype, source, tag, comm, &
-          status, ierror) 
+          status, ierror)
        use ModMpiOrig, only: mpi_status_size
        integer, intent(out) :: buf
        integer, intent(in) :: count
@@ -3912,7 +3912,7 @@ contains
 
 
      subroutine mpi_recv_i1(buf, count, datatype, source, tag, comm, &
-          status, ierror) 
+          status, ierror)
        use ModMpiOrig, only: mpi_status_size
        integer, intent(out) :: buf(:)
        integer, intent(in) :: count
@@ -3930,7 +3930,7 @@ contains
 
 
      subroutine mpi_recv_i2(buf, count, datatype, source, tag, comm, &
-          status, ierror) 
+          status, ierror)
        use ModMpiOrig, only: mpi_status_size
        integer, intent(out) :: buf(:,:)
        integer, intent(in) :: count
@@ -3948,7 +3948,7 @@ contains
 
 
      subroutine mpi_recv_r0(buf, count, datatype, source, tag, comm, &
-          status, ierror) 
+          status, ierror)
        use ModMpiOrig, only: mpi_status_size
        real, intent(out) :: buf
        integer, intent(in) :: count
@@ -3966,7 +3966,7 @@ contains
 
 
      subroutine mpi_recv_r1(buf, count, datatype, source, tag, comm, &
-          status, ierror) 
+          status, ierror)
        use ModMpiOrig, only: mpi_status_size
        real, intent(out) :: buf(:)
        integer, intent(in) :: count
@@ -3984,7 +3984,7 @@ contains
 
 
      subroutine mpi_recv_r2(buf, count, datatype, source, tag, comm, &
-          status, ierror) 
+          status, ierror)
        use ModMpiOrig, only: mpi_status_size
        real, intent(out) :: buf(:,:)
        integer, intent(in) :: count
@@ -4002,7 +4002,7 @@ contains
 
 
      subroutine mpi_recv_r3(buf, count, datatype, source, tag, comm, &
-          status, ierror) 
+          status, ierror)
        use ModMpiOrig, only: mpi_status_size
        real, intent(out) :: buf(:,:,:)
        integer, intent(in) :: count
@@ -4020,7 +4020,7 @@ contains
 
 
      subroutine mpi_recv_r4(buf, count, datatype, source, tag, comm, &
-          status, ierror) 
+          status, ierror)
        use ModMpiOrig, only: mpi_status_size
        real, intent(out) :: buf(:,:,:,:)
        integer, intent(in) :: count
@@ -4038,7 +4038,7 @@ contains
 
 
      subroutine mpi_recv_l0(buf, count, datatype, source, tag, comm, &
-          status, ierror) 
+          status, ierror)
        use ModMpiOrig, only: mpi_status_size
        logical, intent(out) :: buf
        integer, intent(in) :: count
@@ -4056,7 +4056,7 @@ contains
 
 
      subroutine mpi_recv_l1(buf, count, datatype, source, tag, comm, &
-          status, ierror) 
+          status, ierror)
        use ModMpiOrig, only: mpi_status_size
        logical, intent(out) :: buf(:)
        integer, intent(in) :: count
@@ -4074,7 +4074,7 @@ contains
 
 
      subroutine mpi_recv_s0(buf, count, datatype, source, tag, comm, &
-          status, ierror) 
+          status, ierror)
        use ModMpiOrig, only: mpi_status_size
        character(len=*), intent(out) :: buf
        integer, intent(in) :: count
@@ -4092,7 +4092,7 @@ contains
 
 
      subroutine mpi_recv_s1(buf, count, datatype, source, tag, comm, &
-          status, ierror) 
+          status, ierror)
        use ModMpiOrig, only: mpi_status_size
        character(len=*), intent(out) :: buf(:)
        integer, intent(in) :: count
@@ -4110,7 +4110,7 @@ contains
 
 
      subroutine mpi_reduce_i2(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf(:,:)
        integer, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: count
@@ -4127,7 +4127,7 @@ contains
 
 
      subroutine mpi_reduce_i0_in_place(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf
        integer, intent(inout) :: recvbuf
        integer, intent(in) :: count
@@ -4144,7 +4144,7 @@ contains
 
 
      subroutine mpi_reduce_i1_in_place(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf
        integer, intent(inout) :: recvbuf(:)
        integer, intent(in) :: count
@@ -4161,7 +4161,7 @@ contains
 
 
      subroutine mpi_reduce_i2_in_place(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf
        integer, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: count
@@ -4178,7 +4178,7 @@ contains
 
 
      subroutine mpi_reduce_i0_in_place_array(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        integer, intent(inout) :: recvbuf
        integer, intent(in) :: count
@@ -4195,7 +4195,7 @@ contains
 
 
      subroutine mpi_reduce_i1_in_place_array(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        integer, intent(inout) :: recvbuf(:)
        integer, intent(in) :: count
@@ -4212,7 +4212,7 @@ contains
 
 
      subroutine mpi_reduce_i2_in_place_array(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        integer, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: count
@@ -4229,7 +4229,7 @@ contains
 
 
      subroutine mpi_reduce_r0(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        real, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf
        integer, intent(in) :: count
@@ -4246,7 +4246,7 @@ contains
 
 
      subroutine mpi_reduce_r1(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        real, intent(in) :: sendbuf(:)
        real, intent(inout) :: recvbuf(:)
        integer, intent(in) :: count
@@ -4263,7 +4263,7 @@ contains
 
 
      subroutine mpi_reduce_r2(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        real, intent(in) :: sendbuf(:,:)
        real, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: count
@@ -4280,7 +4280,7 @@ contains
 
 
      subroutine mpi_reduce_r3(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        real, intent(in) :: sendbuf(:,:,:)
        real, intent(inout) :: recvbuf(:,:,:)
        integer, intent(in) :: count
@@ -4297,7 +4297,7 @@ contains
 
 
      subroutine mpi_reduce_r4(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        real, intent(in) :: sendbuf(:,:,:,:)
        real, intent(inout) :: recvbuf(:,:,:,:)
        integer, intent(in) :: count
@@ -4314,7 +4314,7 @@ contains
 
 
      subroutine mpi_reduce_r0_in_place(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf
        integer, intent(in) :: count
@@ -4331,7 +4331,7 @@ contains
 
 
      subroutine mpi_reduce_r1_in_place(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:)
        integer, intent(in) :: count
@@ -4348,7 +4348,7 @@ contains
 
 
      subroutine mpi_reduce_r2_in_place(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: count
@@ -4365,7 +4365,7 @@ contains
 
 
      subroutine mpi_reduce_r3_in_place(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:,:)
        integer, intent(in) :: count
@@ -4382,7 +4382,7 @@ contains
 
 
      subroutine mpi_reduce_r4_in_place(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf
        real, intent(inout) :: recvbuf(:,:,:,:)
        integer, intent(in) :: count
@@ -4399,7 +4399,7 @@ contains
 
 
      subroutine mpi_reduce_r0_in_place_array(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf
        integer, intent(in) :: count
@@ -4416,7 +4416,7 @@ contains
 
 
      subroutine mpi_reduce_r1_in_place_array(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:)
        integer, intent(in) :: count
@@ -4433,7 +4433,7 @@ contains
 
 
      subroutine mpi_reduce_r2_in_place_array(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:)
        integer, intent(in) :: count
@@ -4450,7 +4450,7 @@ contains
 
 
      subroutine mpi_reduce_r3_in_place_array(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:,:)
        integer, intent(in) :: count
@@ -4467,7 +4467,7 @@ contains
 
 
      subroutine mpi_reduce_r4_in_place_array(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        real, intent(inout) :: recvbuf(:,:,:,:)
        integer, intent(in) :: count
@@ -4484,7 +4484,7 @@ contains
 
 
      subroutine mpi_reduce_l0(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        logical, intent(in) :: sendbuf
        logical, intent(inout) :: recvbuf
        integer, intent(in) :: count
@@ -4501,7 +4501,7 @@ contains
 
 
      subroutine mpi_reduce_l1(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        logical, intent(in) :: sendbuf(:)
        logical, intent(inout) :: recvbuf(:)
        integer, intent(in) :: count
@@ -4518,7 +4518,7 @@ contains
 
 
      subroutine mpi_reduce_l0_in_place(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf
        logical, intent(inout) :: recvbuf
        integer, intent(in) :: count
@@ -4535,7 +4535,7 @@ contains
 
 
      subroutine mpi_reduce_l1_in_place(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf
        logical, intent(inout) :: recvbuf(:)
        integer, intent(in) :: count
@@ -4552,7 +4552,7 @@ contains
 
 
      subroutine mpi_reduce_l0_in_place_array(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        logical, intent(inout) :: recvbuf
        integer, intent(in) :: count
@@ -4569,7 +4569,7 @@ contains
 
 
      subroutine mpi_reduce_l1_in_place_array(sendbuf, recvbuf, count, datatype, op, &
-          root, comm, ierror) 
+          root, comm, ierror)
        integer, intent(in) :: sendbuf(*)
        logical, intent(inout) :: recvbuf(:)
        integer, intent(in) :: count
@@ -4585,7 +4585,7 @@ contains
      end subroutine mpi_reduce_l1_in_place_array
 
 
-     subroutine mpi_rsend_i0(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_rsend_i0(buf, count, datatype, dest, tag, comm, ierror)
        integer, intent(in) :: buf
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4599,7 +4599,7 @@ contains
      end subroutine mpi_rsend_i0
 
 
-     subroutine mpi_rsend_i1(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_rsend_i1(buf, count, datatype, dest, tag, comm, ierror)
        integer, intent(in) :: buf(:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4613,7 +4613,7 @@ contains
      end subroutine mpi_rsend_i1
 
 
-     subroutine mpi_rsend_i2(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_rsend_i2(buf, count, datatype, dest, tag, comm, ierror)
        integer, intent(in) :: buf(:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4627,7 +4627,7 @@ contains
      end subroutine mpi_rsend_i2
 
 
-     subroutine mpi_rsend_r0(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_rsend_r0(buf, count, datatype, dest, tag, comm, ierror)
        real, intent(in) :: buf
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4641,7 +4641,7 @@ contains
      end subroutine mpi_rsend_r0
 
 
-     subroutine mpi_rsend_r1(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_rsend_r1(buf, count, datatype, dest, tag, comm, ierror)
        real, intent(in) :: buf(:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4655,7 +4655,7 @@ contains
      end subroutine mpi_rsend_r1
 
 
-     subroutine mpi_rsend_r2(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_rsend_r2(buf, count, datatype, dest, tag, comm, ierror)
        real, intent(in) :: buf(:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4669,7 +4669,7 @@ contains
      end subroutine mpi_rsend_r2
 
 
-     subroutine mpi_rsend_r3(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_rsend_r3(buf, count, datatype, dest, tag, comm, ierror)
        real, intent(in) :: buf(:,:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4683,7 +4683,7 @@ contains
      end subroutine mpi_rsend_r3
 
 
-     subroutine mpi_rsend_r4(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_rsend_r4(buf, count, datatype, dest, tag, comm, ierror)
        real, intent(in) :: buf(:,:,:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4697,7 +4697,7 @@ contains
      end subroutine mpi_rsend_r4
 
 
-     subroutine mpi_rsend_r5(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_rsend_r5(buf, count, datatype, dest, tag, comm, ierror)
        real, intent(in) :: buf(:,:,:,:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4711,7 +4711,7 @@ contains
      end subroutine mpi_rsend_r5
 
 
-     subroutine mpi_rsend_l0(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_rsend_l0(buf, count, datatype, dest, tag, comm, ierror)
        logical, intent(in) :: buf
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4725,7 +4725,7 @@ contains
      end subroutine mpi_rsend_l0
 
 
-     subroutine mpi_rsend_l1(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_rsend_l1(buf, count, datatype, dest, tag, comm, ierror)
        logical, intent(in) :: buf(:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4739,7 +4739,7 @@ contains
      end subroutine mpi_rsend_l1
 
 
-     subroutine mpi_rsend_l2(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_rsend_l2(buf, count, datatype, dest, tag, comm, ierror)
        logical, intent(in) :: buf(:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4753,7 +4753,7 @@ contains
      end subroutine mpi_rsend_l2
 
 
-     subroutine mpi_send_i0(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_send_i0(buf, count, datatype, dest, tag, comm, ierror)
        integer, intent(in) :: buf
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4767,7 +4767,7 @@ contains
      end subroutine mpi_send_i0
 
 
-     subroutine mpi_send_i1(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_send_i1(buf, count, datatype, dest, tag, comm, ierror)
        integer, intent(in) :: buf(:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4781,7 +4781,7 @@ contains
      end subroutine mpi_send_i1
 
 
-     subroutine mpi_send_i2(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_send_i2(buf, count, datatype, dest, tag, comm, ierror)
        integer, intent(in) :: buf(:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4795,7 +4795,7 @@ contains
      end subroutine mpi_send_i2
 
 
-     subroutine mpi_send_r0(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_send_r0(buf, count, datatype, dest, tag, comm, ierror)
        real, intent(in) :: buf
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4809,7 +4809,7 @@ contains
      end subroutine mpi_send_r0
 
 
-     subroutine mpi_send_r1(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_send_r1(buf, count, datatype, dest, tag, comm, ierror)
        real, intent(in) :: buf(:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4823,7 +4823,7 @@ contains
      end subroutine mpi_send_r1
 
 
-     subroutine mpi_send_r2(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_send_r2(buf, count, datatype, dest, tag, comm, ierror)
        real, intent(in) :: buf(:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4837,7 +4837,7 @@ contains
      end subroutine mpi_send_r2
 
 
-     subroutine mpi_send_r3(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_send_r3(buf, count, datatype, dest, tag, comm, ierror)
        real, intent(in) :: buf(:,:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4851,7 +4851,7 @@ contains
      end subroutine mpi_send_r3
 
 
-     subroutine mpi_send_r4(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_send_r4(buf, count, datatype, dest, tag, comm, ierror)
        real, intent(in) :: buf(:,:,:,:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4865,7 +4865,7 @@ contains
      end subroutine mpi_send_r4
 
 
-     subroutine mpi_send_s0(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_send_s0(buf, count, datatype, dest, tag, comm, ierror)
        character(len=*), intent(in) :: buf
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4879,7 +4879,7 @@ contains
      end subroutine mpi_send_s0
 
 
-     subroutine mpi_send_s1(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_send_s1(buf, count, datatype, dest, tag, comm, ierror)
        character(len=*), intent(in) :: buf(:)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -4893,7 +4893,7 @@ contains
      end subroutine mpi_send_s1
 
 
-     subroutine mpi_ssend_r0(buf, count, datatype, dest, tag, comm, ierror) 
+     subroutine mpi_ssend_r0(buf, count, datatype, dest, tag, comm, ierror)
        real, intent(in) :: buf
        integer, intent(in) :: count
        integer, intent(in) :: datatype

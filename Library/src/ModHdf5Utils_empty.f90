@@ -1,11 +1,12 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, 
-!  portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 module ModHdf5Utils
 
   implicit none
 
 contains
+  !============================================================================
   subroutine save_hdf5_file(FileName,TypePosition, TypeStatus, StringHeader,&
        nStep, NumberOfBlocksUsed, Time, nDimOut, nParam, nVar,&
        n_D, NameVar, NameUnits, MinimumBlockIjk, XYZMinMax, PlotVarBlk,&
@@ -24,8 +25,10 @@ contains
     integer, optional, intent(in):: iComm
     real,    optional, intent(in):: CoordMin(:), CoordMax(:)
 
+    !--------------------------------------------------------------------------
   end subroutine save_hdf5_file
+  !============================================================================
 
-  !=====================================================================
 end module ModHdf5Utils
+!==============================================================================
 
