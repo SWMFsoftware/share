@@ -8092,19 +8092,11 @@ contains
     ! Unit number of file, open outside of the routine
     integer, intent(in) :: iUnit
     ! Nubmer of nodes involved into triangulation
-<<<<<<< HEAD
-    integer, intent(in) :: nNode  
-    integer, intent(in) :: iList_I(   6*(nNode-2)) !
-    integer, intent(in) :: iPointer_I(6*(nNode-2)) !Created by TRMESH routin
-    integer, intent(in) :: iEnd_I(nNode)           !
-    !\
-=======
     integer, intent(in) :: nNode
     integer, intent(in) :: iList_I(   6*(nNode-2))
     integer, intent(in) :: iPointer_I(6*(nNode-2)) ! Created by TRMESH routin
     integer, intent(in) :: iEnd_I(nNode)
 
->>>>>>> Applied formatting.
     !    Input, integer iList_I, nodal indexes which, along with iPointer_I and
     !    iEnd_I define the triangulation as a set of nNode adjacency lists;
     !    counterclockwise-ordered sequences of neighboring nodes such that the
@@ -8224,20 +8216,13 @@ contains
 
     ! Index of the node to fix:
     integer, intent(in) :: iNodeToFix
+
     ! Nubmer of nodes involved into triangulation
-<<<<<<< HEAD
-    integer, intent(in) :: nNode  
-    integer, intent(in) :: iList_I(   6*(nNode-2)) !
-    integer, intent(in) :: iPointer_I(6*(nNode-2)) !Created by TRMESH routin
-    integer, intent(in) :: iEnd_I(nNode)           !
-    !\
-=======
     integer, intent(in) :: nNode
     integer, intent(in) :: iList_I(   6*(nNode-2))
     integer, intent(in) :: iPointer_I(6*(nNode-2)) ! Created by TRMESH routin
     integer, intent(in) :: iEnd_I(nNode)
 
->>>>>>> Applied formatting.
     !    Input, integer iList_I, nodal indexes which, along with iPointer_I and
     !    iEnd_I define the triangulation as a set of nNode adjacency lists;
     !    counterclockwise-ordered sequences of neighboring nodes such that the
