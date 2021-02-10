@@ -11,7 +11,7 @@ my $Help       = ($h or $help);
 my $Verbose    = ($v or $verbose);
 my $Redo       = ($r or $redo);
 my $Undo       = ($u or $undo);
-my $TestLevel  = ($l or $level or 1);
+my $TestLevel  = ($l or $level or -1);
 my $MethodType = ($m or $method or "none");
 my $MinLength  = ($n or $nline or 10);
 my $Exceptions = ($e or $except or $defaultexception);
@@ -45,7 +45,8 @@ Usage:
 
 -l=LEVEL     Insert call test_start into methods up to a contained
 -level=LEVEL level of LEVEL. Top level is 0. Maximum is 2 in Fortran90.
-             Default value is 1.
+	     Value 1 is recommended for BATSRUS related code.
+             Default value is -1, so no test_start is inserted.
 
 -m=TYPE      Add tests for methods described by TYPE. Possible values
 -method=TYPE are 'subroutine', 'function', 'all' or 'none' 
@@ -218,10 +219,10 @@ foreach $source (@source){
 
 	# Replace !\... and !/... with ! ...
 	# so fpp is not confusing it with continuation line
-	s/(\!)[\\\/](.+)/$1 $2/;
+	s/(\!)[\\\/](.+)/$1 $2/ unless /verbatim/;
 
 	# Replace (/ and /) with [ and ]	
-	s/\(\//\[/g unless /^\s*\!/;
+	s/\(\//\[/g unless /^\s*\!/ or /write\([^,]+,\s*'\(\//;
 	s/\/\)/\]/g unless /^\s*\!/;
 	
 	# Ignore interface .. end interface
@@ -357,7 +358,7 @@ foreach $source (@source){
 	    next if s/(\s*)use\b/$1use/i;
 
 	    # Remove old declarations of DoTest and DoTestMe
-	    if(/^\s+logical\s*::\s*DoTest(Me)?\b/){
+	    if(/^\s+logical\s*::\s*DoTest(Me)?\b/ and $TestLevel >= 0){
 		s/DoTest(Me)?\b\s*(=\s*\.(true|false)\.\s*)?,?\s*//g;
 		$_ = '' if /^\s+logical\s*::\s*$/;
 		$oldtest = 1 unless $unittype eq "module";
@@ -404,7 +405,7 @@ foreach $source (@source){
 	$_ = '' if /^\s+call\s+set_oktest/i;
 
 	# DoTestMe --> DoTest
-	s/\bDoTestMe\b/DoTest/gi;
+	s/\bDoTestMe\b/DoTest/gi if $TestLevel >= 0;
 
 	# Fix some common coding issues
 
@@ -471,7 +472,7 @@ istart=$istart MinLength=$MinLength iseparator=$iseparator
 	    # Add !========= separator line and declare test stuff
 	    if($iLevel >= 0){
 		$_ .= "$indent  !" . ("=" x (76-$nindent)) . "\n";
-	    }else{
+	    }elsif($TestLevel >= 0){
 		$_ .= "!" . ("=" x 78) . "\n";
 		# Add declaration of test variables and methods 
 		# to the beginning of the main unit if not yet done
