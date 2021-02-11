@@ -491,7 +491,7 @@ contains
     !==========================================================================
 
     subroutine calc_hamiltonian_1(DdeltaSOverBDt_C,DeltaHamiltonian1_N,DeltaP3_I,DeltaLnP3,LnP3min,LnP3max)
-      ! calculate the first Hamiltonian function with time: p^3/3*\deltas/B\
+      ! calculate the first Hamiltonian function with time: p^3/3*\deltas/B
       real, intent(out) :: DeltaHamiltonian1_N(0:nQ+1,0:nP+1,-1:nR+1)
       real, intent(in) :: DeltaP3_I(nR), DeltaLnP3, LnP3min, LnP3max
       real, intent(in) :: DDeltaSOverBDt_C(nQ)
@@ -613,7 +613,6 @@ contains
   end subroutine test_multipoisson_bracket
   !============================================================================
 end module ModTestPoissonBracket
-!==============================================================================
 ! Solve energetic particle transport via the new numerical scheme
 ! Dimensionless parameters: Energy: Mev, Speed: c Mass: Mev/c^2 Length: solar radius
 ! In the code, label Q: s_L  P: \mu  R:P^3/3  NLoop: t
@@ -754,7 +753,6 @@ contains
   end subroutine tridiag
   !============================================================================
 end module ModDiffusion
-!==============================================================================
 module ModTestPoissonBracketAndScatter
 
   ! Solve energetic particle transport via the new numerical scheme with multi Poisson bracket
@@ -1189,7 +1187,6 @@ contains
   end subroutine test_scatter
   !============================================================================
 end module ModTestPoissonBracketAndScatter
-!==============================================================================
 
 program test_program
   use ModTestPoissonBracket, ONLY: test_poisson_bracket, test_multipoisson_bracket
@@ -1206,4 +1203,3 @@ program test_program
 
   ! call test_scatter(50.0)
 end program test_program
-!==============================================================================
