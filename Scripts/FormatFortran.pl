@@ -217,9 +217,9 @@ foreach $source (@source){
 	s/\s*\!\s*\\\s*\n/\n/;  # Remove !\ from end of line
 	s/\s*\!\s*\/\s*\n/\n/;  # Remove !/ from end of line
 
-	# Replace !\... and !/... with ! ...
+	# '\' should not be the last character of a comment line,
 	# so fpp is not confusing it with continuation line
-	s/(\!)[\\\/](.+)/$1 $2/ unless /verbatim/;
+	s/(\!.*?)\\\s*\n/$1\n/ unless /verbatim/;
 
 	# Replace (/ and /) with [ and ]	
 	s/\(\//\[/g unless /^\s*\!/ or /write\([^,]+,\s*'\(\//;
