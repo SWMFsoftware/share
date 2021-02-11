@@ -213,9 +213,9 @@ foreach $source (@source){
 	s/(^\s*\!\$) (omp|acc)/$1$2/;
 	
 	# Remove arbitrary decorations !\ and !/
-	s/^\s*\!\/\s*\n//;   # Remove full line with !/ only
-	s/\s*\!\\\s*\n/\n/;  # Remove !\ from end of line
-	s/\s*\!\/\s*\n/\n/;  # Remove !/ from end of line
+	s/^\s*\!\s*\/\s*\n//;   # Remove full line with !/ only
+	s/\s*\!\s*\\\s*\n/\n/;  # Remove !\ from end of line
+	s/\s*\!\s*\/\s*\n/\n/;  # Remove !/ from end of line
 
 	# Replace !\... and !/... with ! ...
 	# so fpp is not confusing it with continuation line
