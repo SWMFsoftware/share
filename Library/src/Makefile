@@ -81,7 +81,7 @@ ${MY_LIB}: ${OBJECTS}
 	${AR} ${MY_LIB} ${OBJECTS}
 
 ${BINDIR}/PostIDL.exe: PostIDL.o ${MY_LIB}
-	${LINK.f90} -o ${BINDIR}/PostIDL.exe PostIDL.o -L${LIBDIR} -lSHARE ${Lflag}
+	${LINK.f90} -o ${BINDIR}/PostIDL.exe PostIDL.o -L${LIBDIR} -lSHARE ${LflagMpi} 
 
 PIDL: DEPEND
 	make ${BINDIR}/PostIDL.exe
