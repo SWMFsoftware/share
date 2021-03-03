@@ -59,19 +59,27 @@ program post_idl
   integer:: IjkMin_D(3), IjkMax_D(3), iMin, iMax, jMin, jMax, kMin, kMax
 
   ! Variables related to sorting and averaging unstructured data
-  logical:: DoSort3D = .false.           ! do sort unstructured 3D files?
-  integer, allocatable :: iSort_I(:)     ! indirect index for sorting
-  real, allocatable :: Sort_I(:)         ! sorting criterion
-  integer:: nSum                         ! number of points averaged
-  real, allocatable :: StateSum_V(:)     ! sum of states
-  real, allocatable :: CellSizeMin_D(:)  ! min distance among different points
+  logical:: DoSort3D = .false.                ! do sort unstructured 3D files?
+  integer, allocatable :: iSort_I(:)          ! indirect index for sorting
+  real, allocatable :: Sort_I(:)              ! sorting criterion
+  integer:: nSum                              ! number of points averaged
+  real, allocatable :: StateSum_V(:)          ! sum of states
+  real, allocatable :: CellSizeMin_D(:)       ! min distance among different points
+  integer, allocatable :: IndCoinside_I(:)    ! indices of coinside coords
+  real, allocatable :: zCoinside_I(:)         ! abs(z) of coinside points
+  integer, allocatable :: iCoinsideSort_I(:)  ! sorted (by abs(z)) coinside indices
+  integer :: MaxCoinside = 20, iCoinSide      ! number of maximum coinside points
+  
+  character(len=10), allocatable:: NameVar_V(:)
+  integer :: IndIsoLeft, IndIsoRight, iBx
+  real :: BxLeft, BxRight, WeightIsoLeft, WeightIsoRight
 
   integer :: iDim, iDimCut_D(3), nDim, nParamExtra, l1, l2, l3, l4
   real    :: ParamExtra_I(3)
   character(len=5):: NameCoord_D(3) = ['x    ','y    ','z    ']
   character(len=5):: NameCoordPlot_D(3)
 
-  logical :: IsStructured, DoReadBinary=.false.
+  logical :: IsStructured, DoReadBinary=.false., IsBx0
   character (len=100) :: NameFile, NameFileHead, NameCoord
   character (len=lStringLine) :: NameVar, NameUnit
   integer :: l, iProc
@@ -166,6 +174,7 @@ program post_idl
         ! Get rid of the directory part
         NameFileHead = NameFileHead( &
              index(NameFileHead,'/',BACK=.true.)+1:len(NameFileHead))
+        IsBx0 = NameFileHead(1:3) == 'bx0'
 
      case('#NDIM')
         call read_var('nDimSim', nDimSim)
@@ -202,7 +211,13 @@ program post_idl
         call read_var('nPlotVar', nPlotVar)
         call read_var('NameVar',  NameVar)
         call read_var('NameUnit', NameUnit)
-
+        allocate(NameVar_V(nPlotVar))
+        call split_string(NameVar, NameVar_V)
+        if(IsBx0) then
+           iBx = findloc(NameVar_V, 'Bx', 1) + 1
+           if(allocated(NameVar_V)) deallocate(NameVar_V)
+        end if
+     
      case('#SCALARPARAM')
         call read_var('nParam', nParamPlot)
         allocate(PlotParam_I(nParamPlot))
@@ -284,23 +299,33 @@ program post_idl
   ! Calculate structured grid size
   nCell_D = max(1, nint((CoordMax_D - CoordMin_D)/dCoordPlot_D))
 
+  ! for bx0 isosurface plot, only one cell in the z direction
+  if(IsBx0) nCell_D(3) = 1
+
   write(*,*)'plot area size=', nCell_D
 
   ! Calculate dimensionality of the cut and add parameters if needed
   nDim=0
   nParamExtra=0
   iDimCut_D=0
-  do iDim = 1, 3
-     if(nCell_D(iDim) > 1)then
-        nDim = nDim + 1
-        iDimCut_D(nDim) = iDim
-     else
-        iDimCut_D(3) = iDim
-        nParamExtra = nParamExtra + 1
-        ParamExtra_I(nParamExtra) = 0.5*(CoordMax_D(iDim) + CoordMin_D(iDim))
-        NameVar=trim(NameVar)//' cut'//trim(NameCoord_D(iDim))
-     end if
-  end do
+  if(IsBx0) then
+     ! bx=0 isosurface is a function of (x, y) at height z
+     nDim = 2
+     iDimCut_D = [1, 2, 3]
+     NameVar='z '//NameVar
+  else
+     do iDim = 1, 3
+        if(nCell_D(iDim) > 1)then
+           nDim = nDim + 1
+           iDimCut_D(nDim) = iDim
+        else
+           iDimCut_D(3) = iDim
+           nParamExtra = nParamExtra + 1
+           ParamExtra_I(nParamExtra) = 0.5*(CoordMax_D(iDim) + CoordMin_D(iDim))
+           NameVar=trim(NameVar)//' cut'//trim(NameCoord_D(iDim))
+        end if
+     end do
+  end if
 
   if(IsVerbose)then
      write(*,*) 'dCoordPlot_D=', dCoordPlot_D
@@ -355,11 +380,23 @@ program post_idl
   n1 = nCell_D(1);   n2 = nCell_D(2);   n3 = nCell_D(3)
 
   ! Allocate PlotVar_VC and Coord_DC, the arrays of variables and coordinates
-  allocate( &
-       PlotVar_V(nPlotVar), &
-       PlotVar_VC(nPlotVar,n1,n2,n3), &
-       Coord_DC(nDim,n1,n2,n3), &
-       STAT=iError)
+  if(IsBx0) then
+     allocate( &
+          PlotVar_V(nPlotVar), &
+          PlotVar_VC(nPlotVar+1,n1,n2,n3), &
+          Coord_DC(nDim,n1,n2,n3), &
+          IndCoinside_I(MaxCoinside), &
+          zCoinside_I(MaxCoinside), &
+          iCoinsideSort_I(MaxCoinside), &
+          STAT=iError)
+     zCoinside_I = 999.9
+  else
+     allocate( &
+          PlotVar_V(nPlotVar), &
+          PlotVar_VC(nPlotVar,n1,n2,n3), &
+          Coord_DC(nDim,n1,n2,n3), &
+          STAT=iError)
+  end if
   if(iError /= 0) stop 'PostIDL.exe ERROR: could not allocate arrays'
 
   if(.not.IsStructured)then
@@ -526,7 +563,15 @@ program post_idl
            ! Sorting and averaging will be done at the end.
 
            iCell = iCell + 1
-           PlotVar_VC(:,iCell,1,1) = PlotVar_V
+
+           if(IsBx0) then
+              ! put the z coordinate into the first plot variable
+              PlotVar_VC(2:nPlotVar+1,iCell,1,1) = PlotVar_V
+              PlotVar_VC(1,iCell,1,1) = Xyz_D(3)
+           else
+              PlotVar_VC(:,iCell,1,1) = PlotVar_V
+           end if
+
            do iDim = 1, nDim
               Coord_DC(iDim,iCell,1,1) = Xyz_D(iDimCut_D(iDim))
               GenCoord_DI(iDim,iCell)  = GenCoord_D(iDimCut_D(iDim))
@@ -689,7 +734,7 @@ program post_idl
         if(IsVerbose)write(*,*)'Averaging coinciding points'
         GenCoord_DI = GenCoord_DI(:,iSort_I)
 
-        allocate(StateSum_V(nPlotVar), CellSizeMin_D(nDim))
+        allocate(StateSum_V(size(PlotVar_VC,1)), CellSizeMin_D(nDim))
         CellSizeMin_D = dCoordMin_D(iDimCut_D(1:nDim))
         i = 1
         k = 1
@@ -697,16 +742,51 @@ program post_idl
            StateSum_V = PlotVar_VC(:,i,1,1)
            nSum       = 1
            j = i + 1
+           IndCoinside_I = -1
+           zCoinside_I = 999.9
            do while( sum(abs(GenCoord_DI(:,j) - GenCoord_DI(:,i)) &
                 /CellSizeMin_D) < 0.01)
-              StateSum_V = StateSum_V + PlotVar_VC(:,j,1,1)
-              nSum = nSum + 1
-              j = j + 1
+              if(.not. IsBx0) then
+                 StateSum_V = StateSum_V + PlotVar_VC(:,j,1,1)
+                 nSum = nSum + 1
+                 j = j + 1
+              else if(IsBx0) then
+                 ! taking the sequence of coinsiding points, find the two points
+                 ! with minimum abs value of z
+                 ! zCoinside is initialized with large value 999.9
+                 IndCoinside_I(j-i) = j
+                 zCoinside_I(j-i) = abs(PlotVar_VC(1,j,1,1))
+                 j = j + 1
+                 if(j - i - 1 > MaxCoinside) EXIT
+              end if
               if(j > n1) EXIT
            end do
            if(j > i+1) then
-              ! Put average value into i-th element
-              PlotVar_VC(:,i,1,1) = StateSum_V/nSum
+              if(.not. IsBx0) then
+                 ! Put average value into i-th element
+                 PlotVar_VC(:,i,1,1) = StateSum_V/nSum
+              else
+                 call sort_quick(MaxCoinside, zCoinside_I, iCoinsideSort_I)
+                 if(j - i > 2) then
+                    IndIsoLeft  = IndCoinside_I(iCoinsideSort_I(1))
+                    IndIsoRight = IndCoinside_I(iCoinsideSort_I(2))
+                    if(iBx > 1) then
+                       BxLeft = abs(PlotVar_VC(iBx,IndisoLeft,1,1))
+                       BxRight = abs(PlotVar_VC(iBx,IndisoRight,1,1))
+                       ! Bx is in the NameVar and using Bx as weighting factor
+                       WeightIsoLeft = BxLeft / (BxLeft + BxRight)
+                       WeightIsoRight = BxRight / (BxLeft + BxRight)
+                    else
+                       WeightIsoLeft = 0.5
+                       WeightIsoRight = 0.5
+                    end if
+                    
+                    if( abs(PlotVar_VC(1,IndIsoLeft,1,1) - PlotVar_VC(1,IndIsoRight,1,1)) < 1.1*CellSize_D(3) )&
+                         ! Put average value into i-th element
+                         PlotVar_VC(:,i,1,1) = WeightIsoLeft * PlotVar_VC(:,IndIsoLeft,1,1)&
+                         + WeightIsoRight * PlotVar_VC(:,IndIsoRight,1,1)
+                 end if
+              end if
            end if
            ! Save the index for the unique coordinates
            iSort_I(k) = i
