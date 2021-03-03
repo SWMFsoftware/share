@@ -776,8 +776,8 @@ program post_idl
                        BxLeft = abs(PlotVar_VC(iBx,IndisoLeft,1,1))
                        BxRight = abs(PlotVar_VC(iBx,IndisoRight,1,1))
                        ! Bx is in the NameVar and using Bx as weighting factor
-                       WeightIsoLeft = BxLeft / (BxLeft + BxRight)
-                       WeightIsoRight = BxRight / (BxLeft + BxRight)
+                       WeightIsoLeft = BxRight / (BxLeft + BxRight)
+                       WeightIsoRight = BxLeft / (BxLeft + BxRight)
                     else
                        WeightIsoLeft = 0.5
                        WeightIsoRight = 0.5
