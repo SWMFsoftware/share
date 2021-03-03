@@ -742,8 +742,10 @@ program post_idl
            StateSum_V = PlotVar_VC(:,i,1,1)
            nSum       = 1
            j = i + 1
-           IndCoinside_I = -1
-           zCoinside_I = 999.9
+           if(IsBx0) then
+              IndCoinside_I = -1
+              zCoinside_I = 999.9
+           end if
            do while( sum(abs(GenCoord_DI(:,j) - GenCoord_DI(:,i)) &
                 /CellSizeMin_D) < 0.01)
               if(.not. IsBx0) then
