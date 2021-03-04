@@ -62,17 +62,19 @@ program post_idl
   logical:: DoSort3D = .false.                ! do sort unstructured 3D files?
   integer, allocatable :: iSort_I(:)          ! indirect index for sorting
   real, allocatable :: Sort_I(:)              ! sorting criterion
-  integer:: nSum                              ! number of points averaged
-  real, allocatable :: StateSum_V(:)          ! sum of states
-  real, allocatable :: CellSizeMin_D(:)       ! min distance among different points
-  integer, allocatable :: IndCoinside_I(:)    ! indices of coinside coords
-  real, allocatable :: zCoinside_I(:)         ! abs(z) of coinside points
-  integer, allocatable :: iCoinsideSort_I(:)  ! sorted (by abs(z)) coinside indices
-  integer :: MaxCoinside = 20, iCoinSide      ! number of maximum coinside points
-  
-  character(len=10), allocatable:: NameVar_V(:)
-  integer :: IndIsoLeft, IndIsoRight, iBx
-  real :: BxLeft, BxRight, WeightIsoLeft, WeightIsoRight
+  integer :: nSum                             ! number of points averaged
+  real, allocatable :: StateSum_V(:)          ! sum of states for averaging
+  real, allocatable :: CellSizeMin_D(:)       ! min cell size
+
+  ! Variables relatex to Bx=0 plots
+  integer :: MaxCoincide = 20                 ! max number of coinciding points
+  integer, allocatable :: iCoincide_I(:)      ! indices of coinciding points
+  real,    allocatable :: zCoincide_I(:)      ! |z| of coinciding points
+  integer, allocatable :: iCoincideSort_I(:)  ! point indices sorted by |z|
+  integer :: iLeft, iRight                    ! index of points next to Bx=0
+  real    :: BxLeft, BxRight                  ! magnetic field on two sides
+  real    :: WeightLeft, WeightRight          ! linear interpolation weights
+  integer :: iBx=0                            ! index of Bx plot variable
 
   integer :: iDim, iDimCut_D(3), nDim, nParamExtra, l1, l2, l3, l4
   real    :: ParamExtra_I(3)
@@ -82,6 +84,7 @@ program post_idl
   logical :: IsStructured, DoReadBinary=.false., IsBx0
   character (len=100) :: NameFile, NameFileHead, NameCoord
   character (len=lStringLine) :: NameVar, NameUnit
+  character(len=10), allocatable:: NameVar_V(:) ! plot var name array
   integer :: l, iProc
 
   ! Variables for the 2D lookup table
@@ -214,10 +217,17 @@ program post_idl
         allocate(NameVar_V(nPlotVar))
         call split_string(NameVar, NameVar_V)
         if(IsBx0) then
-           iBx = findloc(NameVar_V, 'Bx', 1) + 1
-           if(allocated(NameVar_V)) deallocate(NameVar_V)
+           do iVar = 1, nPlotVar
+              if(NameVar_V(iVar) == 'Bx')then
+                 iBx = iVar
+                 EXIT
+              end if
+           end do
+           if(iBx == 0) &
+                write(*,*)'!!! Warning: Bx variable missing from bx0 plot'
+           deallocate(NameVar_V)
         end if
-     
+
      case('#SCALARPARAM')
         call read_var('nParam', nParamPlot)
         allocate(PlotParam_I(nParamPlot))
@@ -321,7 +331,7 @@ program post_idl
         else
            iDimCut_D(3) = iDim
            nParamExtra = nParamExtra + 1
-           ParamExtra_I(nParamExtra) = 0.5*(CoordMax_D(iDim) + CoordMin_D(iDim))
+           ParamExtra_I(nParamExtra) = (CoordMax_D(iDim) + CoordMin_D(iDim))/2
            NameVar=trim(NameVar)//' cut'//trim(NameCoord_D(iDim))
         end if
      end do
@@ -385,11 +395,11 @@ program post_idl
           PlotVar_V(nPlotVar), &
           PlotVar_VC(nPlotVar+1,n1,n2,n3), &
           Coord_DC(nDim,n1,n2,n3), &
-          IndCoinside_I(MaxCoinside), &
-          zCoinside_I(MaxCoinside), &
-          iCoinsideSort_I(MaxCoinside), &
+          iCoincide_I(MaxCoincide), &
+          zCoincide_I(MaxCoincide), &
+          iCoincideSort_I(MaxCoincide), &
           STAT=iError)
-     zCoinside_I = 999.9
+     zCoincide_I = 999.9
   else
      allocate( &
           PlotVar_V(nPlotVar), &
@@ -743,8 +753,8 @@ program post_idl
            nSum       = 1
            j = i + 1
            if(IsBx0) then
-              IndCoinside_I = -1
-              zCoinside_I = 999.9
+              iCoincide_I = -1
+              zCoincide_I = 999.9
            end if
            do while( sum(abs(GenCoord_DI(:,j) - GenCoord_DI(:,i)) &
                 /CellSizeMin_D) < 0.01)
@@ -753,13 +763,13 @@ program post_idl
                  nSum = nSum + 1
                  j = j + 1
               else if(IsBx0) then
-                 ! taking the sequence of coinsiding points, find the two points
-                 ! with minimum abs value of z
-                 ! zCoinside is initialized with large value 999.9
-                 IndCoinside_I(j-i) = j
-                 zCoinside_I(j-i) = abs(PlotVar_VC(1,j,1,1))
+                 ! taking the sequence of coinciding points,
+                 ! find the two points with minimum abs value of z
+                 ! zCoincide is initialized with large value 999.9
+                 iCoincide_I(j-i) = j
+                 zCoincide_I(j-i) = abs(PlotVar_VC(1,j,1,1))
                  j = j + 1
-                 if(j - i - 1 > MaxCoinside) EXIT
+                 if(j - i - 1 > MaxCoincide) EXIT
               end if
               if(j > n1) EXIT
            end do
@@ -768,25 +778,30 @@ program post_idl
                  ! Put average value into i-th element
                  PlotVar_VC(:,i,1,1) = StateSum_V/nSum
               else
-                 call sort_quick(MaxCoinside, zCoinside_I, iCoinsideSort_I)
+                 call sort_quick(MaxCoincide, zCoincide_I, iCoincideSort_I)
                  if(j - i > 2) then
-                    IndIsoLeft  = IndCoinside_I(iCoinsideSort_I(1))
-                    IndIsoRight = IndCoinside_I(iCoinsideSort_I(2))
-                    if(iBx > 1) then
-                       BxLeft = abs(PlotVar_VC(iBx,IndisoLeft,1,1))
-                       BxRight = abs(PlotVar_VC(iBx,IndisoRight,1,1))
-                       ! Bx is in the NameVar and using Bx as weighting factor
-                       WeightIsoLeft = BxRight / (BxLeft + BxRight)
-                       WeightIsoRight = BxLeft / (BxLeft + BxRight)
-                    else
-                       WeightIsoLeft = 0.5
-                       WeightIsoRight = 0.5
+                    iLeft  = iCoincide_I(iCoincideSort_I(1))
+                    iRight = iCoincide_I(iCoincideSort_I(2))
+                    ! The left and right values need to be next to each other
+                    if( abs(PlotVar_VC(1,iLeft,1,1) &
+                         - PlotVar_VC(1,iRight,1,1)) &
+                         < 1.1*CellSize_D(3) ) then
+                       if(iBx > 1) then
+                          ! Interpolate linearly to the Bx=0 point
+                          BxLeft  = abs(PlotVar_VC(iBx,iLeft,1,1))
+                          BxRight = abs(PlotVar_VC(iBx,iRight,1,1))
+                          WeightLeft  = BxRight / (BxLeft + BxRight)
+                          WeightRight = 1 - WeightLeft
+                       else
+                          ! Simple average
+                          WeightLeft  = 0.5
+                          WeightRight = 0.5
+                       end if
+                       ! Put interpolated value into i-th element
+                       PlotVar_VC(:,i,1,1) = &
+                            WeightLeft *PlotVar_VC(:,iLeft, 1,1) + &
+                            WeightRight*PlotVar_VC(:,iRight,1,1)
                     end if
-                    
-                    if( abs(PlotVar_VC(1,IndIsoLeft,1,1) - PlotVar_VC(1,IndIsoRight,1,1)) < 1.1*CellSize_D(3) )&
-                         ! Put average value into i-th element
-                         PlotVar_VC(:,i,1,1) = WeightIsoLeft * PlotVar_VC(:,IndIsoLeft,1,1)&
-                         + WeightIsoRight * PlotVar_VC(:,IndIsoRight,1,1)
                  end if
               end if
            end if
@@ -964,9 +979,6 @@ contains
              iVarVector_I(nVector) = iVar
           end do
           deallocate(NameVar_V)
-
-          ! write(*,*)'nVector, iVarVector_I=', nVector, iVarVector_I(1:nVector)
-
        end if
 
        ! Unrotate the coordinates for comparison with Cartesian runs
@@ -1058,4 +1070,3 @@ contains
   !============================================================================
 
 end program post_idl
-!==============================================================================
