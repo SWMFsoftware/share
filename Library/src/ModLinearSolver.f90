@@ -2290,9 +2290,9 @@ contains
     end do
 
     if(DoTest)then
-       write(*,'(a,/,3(3f5.1,/))') 'Matrix(:,:,2,1)=',Matrix_VVCI(:,:,2,1)
-       write(*,'(a,/,3(3f5.1,/))') 'Matrix(:,:,2,2)=',Matrix_VVCI(:,:,2,2)
-       write(*,'(a,/,3(3f5.1,/))') 'Matrix(:,:,2,3)=',Matrix_VVCI(:,:,2,3)
+       write(*,'(a,/,3( 3f5.1,/ ))') 'Matrix(:,:,2,1)=', Matrix_VVCI(:,:,2,1)
+       write(*,'(a,/,3( 3f5.1,/ ))') 'Matrix(:,:,2,2)=', Matrix_VVCI(:,:,2,2)
+       write(*,'(a,/,3( 3f5.1,/ ))') 'Matrix(:,:,2,3)=', Matrix_VVCI(:,:,2,3)
     end if
 
     ! Add the diagonal part J = I - delta t*dR/dU
