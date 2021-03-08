@@ -312,6 +312,9 @@ foreach $source (@source){
 	    # Skip empty lines and comments and FPP directives
 	    next if /^$/ or s/^\s*\n/\n/ or /^\s*\!/ or /^#/;
 
+	    # Skip external statements
+	    next if /^\s*external\b/;
+	    
 	    if($separatorcheck++ > 1){
                # After iseparator is set, we should only get here once
                # More than once means that the !--- was improperly placed
