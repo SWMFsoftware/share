@@ -1,22 +1,22 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, 
-!  portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 !
-!BOP
+! BOP
 !
-!MODULE: ModUtilities - Simple Methods for CON and Components
+! MODULE: ModUtilities - Simple Methods for CON and Components
 !INTERFACE:
 module ModUtilities
 
   !DESCRIPTION:
-  ! Simple methods which are used by CON and can be used 
-  ! by the components of the SWMF too. 
+  ! Simple methods which are used by CON and can be used
+  ! by the components of the SWMF too.
   !
-  ! This module is almost self contained. 
+  ! This module is almost self contained.
   ! Only ModIoUnit, ModMpi and ModKind are used.
   !
   ! F77 and C++ codes need an F90 interface to access these utilities.
-  !EOP
+  ! EOP
 
   implicit none
 
@@ -55,7 +55,7 @@ module ModUtilities
   integer, public            :: lVerbose = 1
 
   character, public:: cTab = char(9)
-  
+
   interface split_string
      module procedure split_string, split_string_simple
   end interface
@@ -73,8 +73,8 @@ contains
     character(len=*), intent(in):: String, Name
 
     ! Write String and Name with 2 or 3 tabs in between (PARAM.in format)
-    !-------------------------------------------------------------------------
 
+    !--------------------------------------------------------------------------
     if(len_trim(String) < 8)then
        write(UnitTmp_,'(a)') trim(String)//cTab//cTab//cTab//trim(Name)
     else
@@ -86,12 +86,12 @@ contains
   subroutine CON_set_do_test(String, DoTest, DoTestMe)
 
     ! Set DoTest to true if " String " can be found in " StringTest "
-    ! If the optional DoTestMe variable is present, it is set to 
-    ! DoTestMe = DoTest .and. iProc == iProcTest, 
+    ! If the optional DoTestMe variable is present, it is set to
+    ! DoTestMe = DoTest .and. iProc == iProcTest,
     ! where iProcTest is a public variable set to the test processor index.
     ! If only DoTest is present, it behaves like DoTestMe.
     !
-    ! Depending on the value of the public variable lVerbose, 
+    ! Depending on the value of the public variable lVerbose,
     ! different amount of output is printed:
     ! If String matches StringTest or lVerbose==10, the test processor prints
     !    "String CALLED"
@@ -141,14 +141,14 @@ contains
     !
     ! Write out error message with processor rank and String.
     ! Write out optional arguments Value1 ... Value4 of arbitrary type.
-    ! Close open files. 
-    ! If public variable DoCreateCallSequence is true, then make a floating 
+    ! Close open files.
+    ! If public variable DoCreateCallSequence is true, then make a floating
     ! exception to produce call sequence (with NAG compiler in debugging mode).
     ! Abort execution with MPI_abort and stop.
 
     logical:: IsMpiInitialized
     integer:: iProc=0, nError, iError
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     call MPI_initialized(IsMpiInitialized, iError)
 
     if(IsMpiInitialized) call MPI_comm_rank(MPI_COMM_WORLD, iProc, iError)
@@ -190,7 +190,7 @@ contains
     !--------------------------------------------------------------------------
     DoAdvance = .true.
     if(present(Advance)) DoAdvance = Advance /= "NO"
-    
+
     if(present(StringBefore)) write(*,'(a)',ADVANCE="NO") StringBefore
     select type (Value)
     type is (real)
@@ -222,8 +222,8 @@ contains
   end subroutine write_value
   !============================================================================
 
-  !BOP ========================================================================
-  !ROUTINE: make_dir - Create a directory
+  ! BOP ========================================================================
+  ! ROUTINE: make_dir - Create a directory
   !INTERFACE:
   subroutine make_dir(NameDir, iErrorOut)
 
@@ -236,22 +236,22 @@ contains
     !DESCRIPTION:
     ! Create the directory using "mkdir -p NameDir"
     ! If the directory already exists, this function does nothing.
-    ! The permission can be set by including it into 
+    ! The permission can be set by including it into
     ! NameDir, for example NameDir = '-m777 Public'.
     !
-    ! If the optional iErrorOut is present, it is set to the error code, 
-    ! which is 0 if no error occurred. Otherwise the code stops with an 
+    ! If the optional iErrorOut is present, it is set to the error code,
+    ! which is 0 if no error occurred. Otherwise the code stops with an
     ! error message if an error occurs.
     !
-    !EOP
+    ! EOP
 
     integer:: iError = -1             ! Return value as retrieved from shell
 
     character(len=100):: StringCommand
-    character(len=*), parameter:: NameSub = 'make_dir'
-    !------------------------------------------------------------------------
 
     ! Check if directory exists
+    character(len=*), parameter:: NameSub = 'make_dir'
+    !--------------------------------------------------------------------------
     call check_dir(NameDir, iError)
     if(iError == 0)then
        if(present(iErrorOut)) iErrorOut = 0
@@ -271,9 +271,10 @@ contains
     end if
 
   end subroutine make_dir
+  !============================================================================
 
-  !BOP ========================================================================
-  !ROUTINE: check_dir - check if a directory exists
+  ! BOP ========================================================================
+  ! ROUTINE: check_dir - check if a directory exists
   !INTERFACE:
   subroutine check_dir(NameDir, iErrorOut)
 
@@ -292,18 +293,18 @@ contains
     ! Directory names are cached, so multiple calls with the same
     ! name do not repeat the check.
     !
-    ! {\bf This subroutine should be called by the root PE of the component 
+    ! {\bf This subroutine should be called by the root PE of the component
     ! only!}
     ! Calling the subroutine from multiple PE-s may result in a fatal error,
     ! namely one PE may delete the file written by the other PE, so the
     ! other PE thinks that the directory does not exist.
-    !EOP
+    ! EOP
 
     integer:: iError
 
-    character(len=*), parameter :: NameSub='check_dir'
-    !--------------------------------------------------------------------------
     ! Try to open a file in this directory
+    character(len=*), parameter:: NameSub = 'check_dir'
+    !--------------------------------------------------------------------------
     open(UnitTmp_, file=trim(NameDir)//'/.test', status='unknown', &
          iostat = iError)
 
@@ -320,9 +321,10 @@ contains
     endif
 
   end subroutine check_dir
-  
-  !BOP ========================================================================
-  !ROUTINE: fix_dir_name - add a slash to the end of the directory name
+  !============================================================================
+
+  ! BOP ========================================================================
+  ! ROUTINE: fix_dir_name - add a slash to the end of the directory name
   !INTERFACE:
   subroutine fix_dir_name(NameDir)
 
@@ -334,10 +336,10 @@ contains
     ! and the directory name is not zero length (empty string).
     !
     ! {\bf This subroutine should be called by all PE-s of the component!}
-    !EOP
+    ! EOP
 
-    character(len=*), parameter :: NameSub='fix_dir_name'
     integer :: i
+    character(len=*), parameter:: NameSub = 'fix_dir_name'
     !--------------------------------------------------------------------------
     i = len_trim(NameDir)
     if(i == 0) RETURN
@@ -349,8 +351,8 @@ contains
     NameDir(i+1:i+1) = '/'
 
   end subroutine fix_dir_name
-
   !============================================================================
+
   subroutine open_file(iUnitIn, File, Form, Status, Position, Access, Recl, &
        iComm, NameCaller)
 
@@ -358,7 +360,7 @@ contains
 
     ! Interface for the Fortran open statement with error checking.
     ! If an error occurs, the code stops and writes out the unit number,
-    ! the error code and the name of the file. 
+    ! the error code and the name of the file.
     ! If NameCaller is present, it is also shown.
     ! If no unit number is passed, open UnitTmp_.
     ! Default format is 'formatted' as in the open statement.
@@ -387,7 +389,7 @@ contains
     integer:: iError, iProc, nProc
 
     character(len=*), parameter:: NameSub = 'open_file'
-    !----------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     iUnit = UnitTmp_
     if(present(iUnitIn)) iUnit = iUnitIn
 
@@ -443,15 +445,15 @@ contains
     end if
 
   end subroutine open_file
+  !============================================================================
 
-  !========================================================================
   subroutine close_file(iUnitIn, Status, NameCaller)
 
     use ModIoUnit, ONLY: UnitTmp_
 
     ! Interface for the Fortran close statement with error checking
     ! If an error occurs, the code stops and writes out the unit number,
-    ! the error code and the name of the file. 
+    ! the error code and the name of the file.
     ! If NameCaller is present, it is also shown.
     ! If no unit number is passed, close UnitTmp_
 
@@ -463,7 +465,7 @@ contains
     integer:: iError
 
     character(len=*), parameter:: NameSub = 'close_file'
-    !----------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     iUnit = UnitTmp_
     if(present(iUnitIn)) iUnit = iUnitIn
 
@@ -480,19 +482,18 @@ contains
     end if
 
   end subroutine close_file
-
   !============================================================================
+
   subroutine remove_file(NameFile, NameCaller)
 
     ! Remove file NameFile if it exists
     ! Pass NameCaller to open_file and close_file in case of errors
 
-
     character(len=*), intent(in):: NameFile
     character(len=*), optional, intent(in):: NameCaller
 
     logical:: IsFound
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
 
     inquire(FILE=NameFile, EXIST=IsFound)
     if(.not.IsFound) RETURN
@@ -501,25 +502,25 @@ contains
     call close_file(STATUS='DELETE', NameCaller=NameCaller)
 
   end subroutine remove_file
-
   !============================================================================
+
   subroutine touch_file(NameFile, NameCaller)
 
     ! Create file NameFile if it does not exist
     ! Pass NameCaller to open_file and close_file in case of errors
 
-
     character(len=*), intent(in):: NameFile
     character(len=*), optional, intent(in):: NameCaller
-    !-------------------------------------------------------------------------
 
+    !--------------------------------------------------------------------------
     call open_file(FILE=NameFile, NameCaller=NameCaller)
     call close_file(NameCaller=NameCaller)
 
   end subroutine touch_file
+  !============================================================================
 
-  !BOP ========================================================================
-  !ROUTINE: flush_unit - flush output
+  ! BOP ========================================================================
+  ! ROUTINE: flush_unit - flush output
   !INTERFACE:
   subroutine flush_unit(iUnit)
 
@@ -528,15 +529,16 @@ contains
 
     !DESCRIPTION:
     ! Flush the I/O unit iUnit if DoFlush is true
-    !EOP
+    ! EOP
 
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     if(DoFlush) flush(iUnit)
 
   end subroutine flush_unit
+  !============================================================================
 
-  !BOP ========================================================================
-  !ROUTINE: split_string_simple - split string into array of substrings
+  ! BOP ========================================================================
+  ! ROUTINE: split_string_simple - split string into array of substrings
   !INTERFACE:
   subroutine split_string_simple(String, String_I, nStringOut, &
        StringSepIn, UseArraySyntaxIn, DoAddSeparator)
@@ -547,19 +549,21 @@ contains
     !OUTPUT ARGUMENTS:
     character (len=*), intent(out):: String_I(:) ! array of substrings
 
-    !OPTIONAL ARGUMENTS
+    ! OPTIONAL ARGUMENTS
     integer,          optional, intent(out):: nStringOut ! number of substrings
     character(len=*), optional, intent(in):: StringSepIn ! separator string
     logical, optional, intent(in):: UseArraySyntaxIn     ! expand Var(10:20:2)
-    logical, optional, intent(in):: DoAddSeparator !add separator to substrings
+    logical, optional, intent(in):: DoAddSeparator ! add separator to substrings
 
+    !--------------------------------------------------------------------------
     call split_string(String, size(String_I), String_I, nStringOut, &
          StringSepIn, UseArraySyntaxIn, DoAddSeparator)
 
   end subroutine split_string_simple
+  !============================================================================
 
-  !BOP ========================================================================
-  !ROUTINE: split_string - split string into array of substrings
+  ! BOP ========================================================================
+  ! ROUTINE: split_string - split string into array of substrings
   !INTERFACE:
   subroutine split_string(String, MaxString, String_I, nStringOut, &
        StringSepIn, UseArraySyntaxIn, DoAddSeparator)
@@ -571,15 +575,15 @@ contains
     !OUTPUT ARGUMENTS:
     character (len=*), intent(out):: String_I(MaxString) ! array of substrings
 
-    !OPTIONAL ARGUMENTS
+    ! OPTIONAL ARGUMENTS
     integer,          optional, intent(out):: nStringOut ! number of substrings
     character(len=*), optional, intent(in):: StringSepIn ! separator string
     logical, optional, intent(in):: UseArraySyntaxIn     ! expand Var(10:20:2)
-    logical, optional, intent(in):: DoAddSeparator !add separator to substrings
+    logical, optional, intent(in):: DoAddSeparator ! add separator to substrings
 
     !DESCRIPTION:
     ! Cut the input string into an array of substrings. The separator
-    ! string is either StringSepIn or a single space (default). 
+    ! string is either StringSepIn or a single space (default).
     ! Multiple consecutive separator strings are treated as one.
     ! Leading and trailing spaces are ignored. For example
     !\begin{verbatim}
@@ -593,7 +597,7 @@ contains
     ! 'Var(3:5)'    --> nString=3,  String\_I=(/'Var3','Var4','Var5'/)
     ! 'Var(7:11:2)' --> nString=3,  String\_I=(/'Var07','Var09','Var11'/)
     !\end{verbatim}
-    !EOP
+    ! EOP
 
     integer          :: nString
     character(len=10):: StringSep
@@ -604,7 +608,7 @@ contains
 
     integer :: i, l, lSep, lKeep
 
-    character(len=*), parameter :: NameSub = 'split_string'
+    character(len=*), parameter:: NameSub = 'split_string'
     !--------------------------------------------------------------------------
     if(present(StringSepIn))then
        StringSep = StringSepIn
@@ -621,19 +625,19 @@ contains
     if(present(DoAddSeparator))then
        if(DoAddSeparator) lKeep = lSep
     end if
-    
+
     nString   = 0
     StringTmp = String
     l         = len_trim(StringTmp)
     StringTmp = trim(StringTmp) // StringSep(1:lSep) ! Add separator to the end
     do
        StringTmp = adjustl(StringTmp)          ! Remove leading spaces
-       i = index(StringTmp, StringSep(1:lSep)) ! Find end of first part   
+       i = index(StringTmp, StringSep(1:lSep)) ! Find end of first part
        if(i <= 1) EXIT                         ! Nothing before the separator
        nString = nString + 1                   ! Count parts
 
        if(lKeep>0)then                         ! Do not keep added separator
-          if(i+lKeep >= len_trim(StringTmp)) lKeep = 0 
+          if(i+lKeep >= len_trim(StringTmp)) lKeep = 0
        end if
 
        String_I(nString) = StringTmp(1:i-1+lKeep) ! Put part into string array
@@ -648,7 +652,7 @@ contains
     if(present(nStringOut)) nStringOut = nString
 
   contains
-    !========================================================================
+    !==========================================================================
     subroutine expand_array(String1)
 
       ! Expand String1 if it contains array syntax, e.g.
@@ -662,7 +666,7 @@ contains
       character(len=6):: StringFormat
 
       integer:: j, k, l, m, lNum, iFirst, iLast, Di, iNum, iError
-      !---------------------------------------------------------------------
+      !------------------------------------------------------------------------
       ! Find the opening paren if any
       j = index(String1,'(')
       if(j < 1) RETURN
@@ -674,7 +678,7 @@ contains
       ! Check for colon
       l = index(String1,':')
       if(l > j)then
-         ! read initial index value before the first colon        
+         ! read initial index value before the first colon
          read(String1(j+1:l-1),*,IOSTAT=iError) iFirst
          if(iError /= 0 .or. iFirst < 1) call CON_stop(NameSub// &
               ' invalid initial index value in String='//String)
@@ -682,11 +686,11 @@ contains
          iFirst = 1
          l = j
       end if
-      
+
       ! Check for a second colon
       m = index(String1,':',back=.true.)
       if(m > l)then
-         ! read index stride value after the seecond colon        
+         ! read index stride value after the seecond colon
          read(String1(m+1:k-1),*,IOSTAT=iError) Di
          if(iError /= 0 .or. Di < 1) call CON_stop(NameSub// &
               ' invalid index stride value in String='//String)
@@ -711,20 +715,22 @@ contains
       ! Expand variable names by repating name and adding numerical value
       nString = nString - 1
       do iNum = iFirst, iLast, Di
- 
+
          write(String2(j:j+lNum),StringFormat) iNum
          nString = nString + 1
          String_I(nString) = String2
 
          if(nString == MaxString) RETURN
-         
+
       end do
     end subroutine expand_array
+    !==========================================================================
 
   end subroutine split_string
+  !============================================================================
 
-  !BOP ========================================================================
-  !ROUTINE: join_string_simple - join string array into a single string
+  ! BOP ========================================================================
+  ! ROUTINE: join_string_simple - join string array into a single string
   !INTERFACE:
 
   subroutine join_string_simple(String_I, String, StringSepIn)
@@ -738,12 +744,14 @@ contains
     !OPTIONAL ARGUMENTS:
     character(len=*), optional, intent(in):: StringSepIn
 
+    !--------------------------------------------------------------------------
     call join_string(size(String_I), String_I, String, StringSepIn)
 
   end subroutine join_string_simple
+  !============================================================================
 
-  !BOP ========================================================================
-  !ROUTINE: join_string - join string array into a single string
+  ! BOP ========================================================================
+  ! ROUTINE: join_string - join string array into a single string
   !INTERFACE:
 
   subroutine join_string(nString, String_I, String, StringSepIn)
@@ -761,13 +769,13 @@ contains
     !DESCRIPTION:
     ! Join the input string array into one string. The parts are joined
     ! with spaces or the optional StringSepIn string (up to 10 characters).
-    !EOP
+    ! EOP
 
     character(len=10):: StringSep
 
     integer :: i, l
 
-    character(len=*), parameter :: NameSub = 'join_string'
+    character(len=*), parameter:: NameSub = 'join_string'
     !--------------------------------------------------------------------------
     if(present(StringSepIn))then
        StringSep = StringSepIn
@@ -783,9 +791,10 @@ contains
     end do
 
   end subroutine join_string
+  !============================================================================
 
-  !BOP ========================================================================
-  !ROUTINE: upper_case - convert string to all upper case
+  ! BOP ========================================================================
+  ! ROUTINE: upper_case - convert string to all upper case
   !INTERFACE:
   subroutine upper_case(String)
 
@@ -794,7 +803,7 @@ contains
 
     !DESCRIPTION:
     ! Change characters to upper case in String
-    !EOP
+    ! EOP
 
     integer, parameter :: iA=ichar('a'), iZ=ichar('z'), Di=ichar('A')-iA
     integer :: i, iC
@@ -805,9 +814,10 @@ contains
     end do
 
   end subroutine upper_case
+  !============================================================================
 
-  !BOP ========================================================================
-  !ROUTINE: lower_case - convert string to all lower case
+  ! BOP ========================================================================
+  ! ROUTINE: lower_case - convert string to all lower case
   !INTERFACE:
   subroutine lower_case(String)
 
@@ -816,7 +826,7 @@ contains
 
     !DESCRIPTION:
     ! Change characters to lower case in String
-    !EOP
+    ! EOP
 
     integer, parameter :: iA=ichar('A'), iZ=ichar('Z'), Di=ichar('a')-iA
     integer :: i, iC
@@ -827,9 +837,10 @@ contains
     end do
 
   end subroutine lower_case
+  !============================================================================
 
-  !BOP ========================================================================
-  !ROUTINE:  string_to_char_array - convert string to C-style char array
+  ! BOP ========================================================================
+  ! ROUTINE:  string_to_char_array - convert string to C-style char array
   !INTERFACE:
   subroutine string_to_char_array(String, String_I)
 
@@ -839,13 +850,13 @@ contains
     ! Convert Fortran string into a C-style character array
     ! Ignore trailing spaces.
     ! Add null character to the end. Return length if needed.
-    !EOP
+    ! EOP
 
     character(len=*),  intent(in) :: String
     character,         intent(out):: String_I(*)
 
     integer:: i, n
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     n = len_trim(String)
     do i = 1, n
        String_I(i) = String(i:i)
@@ -853,9 +864,10 @@ contains
     String_I(n+1) = c_null_char
 
   end subroutine string_to_char_array
+  !============================================================================
 
-  !BOP ========================================================================
-  !ROUTINE:  char_array_to_string - convert C-style char array into a string
+  ! BOP ========================================================================
+  ! ROUTINE:  char_array_to_string - convert C-style char array into a string
   !INTERFACE:
   subroutine char_array_to_string(String_I, String)
 
@@ -863,26 +875,27 @@ contains
 
     !DESCRIPTION:
     ! Convert C-style character array into a Fortran string.
-    !EOP
+    ! EOP
 
     character,         intent(in) :: String_I(*)
     character(len=*),  intent(out):: String
 
     integer:: i
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     String = ' '
     do i = 1, len(String)
        if(String_I(i) == c_null_char) EXIT
        String(i:i) = String_I(i)
     end do
-    
-  end subroutine char_array_to_string
 
-  !BOP ========================================================================
-  !ROUTINE: sleep - sleep a given number of seconds
+  end subroutine char_array_to_string
+  !============================================================================
+
+  ! BOP ========================================================================
+  ! ROUTINE: sleep - sleep a given number of seconds
   !INTERFACE:
   subroutine sleep(DtCpu)
-    !USES
+    ! USES
     use ModMpi, ONLY : MPI_wtime
     use ModKind
 
@@ -893,38 +906,41 @@ contains
     !DESCRIPTION:
     ! This subroutine returns after the number of seconds
     ! given in its argument.
-    !EOP
-    !BOC
+    ! EOP
+    ! BOC
+    !--------------------------------------------------------------------------
     tCpu0 = MPI_WTIME()
     do
        if(MPI_WTIME() > tCpu0 + DtCpu) RETURN
     end do
-    !EOC
+    ! EOC
   end subroutine sleep
+  !============================================================================
 
-  !BOP ========================================================================
-  !ROUTINE: check_allocate - check and stop for allocation errors
+  ! BOP ========================================================================
+  ! ROUTINE: check_allocate - check and stop for allocation errors
   !INTERFACE:
   subroutine check_allocate(iError, NameArray)
 
     !INPUT ARGUMENTS:
     integer,intent(in)::iError
     character(LEN=*),intent(in)::NameArray
-    !EOP
-    !BOC
+    ! EOP
+    ! BOC
+    !--------------------------------------------------------------------------
     if (iError > 0) call CON_stop('check_allocate F90_ERROR '// &
          'Could not allocate array '//NameArray)
-    !EOC
+    ! EOC
   end subroutine check_allocate
-
   !============================================================================
+
   recursive function greatest_common_divisor(i, j) result(kGCD)
     ! Calculate the greatest common divisor of i and j
     ! with Euclid's algorithm
 
     integer, intent(in):: i, j
     integer:: kGCD
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     if(j == 0)then
        kGCD = i
     else
@@ -938,10 +954,10 @@ contains
     use ModIoUnit, ONLY: UnitTmp_
     use iso_c_binding, ONLY: c_null_char
 
-    ! Test split_string, read a string containing separators 
+    ! Test split_string, read a string containing separators
     ! then print substrings
     ! Do this multiple times with various settings
-   
+
     character(len=500):: String
     character:: StringC_I(501)
     integer, parameter :: MaxString = 20
@@ -950,8 +966,8 @@ contains
     integer :: iString, l
     integer:: iError
 
-    character(len=*), parameter :: NameSub = 'test_mod_utility'
-    !-----------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'test_mod_utility'
+    !--------------------------------------------------------------------------
     write(*,'(a)') 'testing check_dir'
     write(*,'(a)') 'check directory "."'
     call check_dir('.')
@@ -976,7 +992,7 @@ contains
     call close_file
     ! Create an error message by passing incorrect filename
     ! Since the error code varies by compiler, this is commented out
-    !call open_file(FILE='xxx/testfile.bad', STATUS='old', &
+    ! call open_file(FILE='xxx/testfile.bad', STATUS='old', &
     !     NameCaller=NameSub)
 
     ! Use all arguments
@@ -1052,7 +1068,7 @@ contains
     write(*,'(a,100a1)')'C character array: ', StringC_I(1:l)
     if(StringC_I(l+1) /= c_null_char) &
          write(*,*)'Error: null terminator is missing'
-    
+
     write(*,'(/,a)') 'testing char_array_to_string'
     call char_array_to_string(StringC_I, String)
     write(*,'(a,a)')    'Fortran string   : ', trim(String)
@@ -1077,22 +1093,20 @@ contains
          write(*,*)'Error: greatest_common_divisor(12,36)=', l,' should be 12'
 
   end subroutine test_mod_utility
-  !=========================================================================== 
+  !============================================================================
   function norm2(x_I) result(norm)
     !$acc routine seq
 
     ! Does the same as the intrinsic norm2 function in Fortran 2008
-    ! The reason for this implementation is that pgf90 does not have norm2
+    ! It is needed because nvfortran+ACC does not have norm2 implemented
 
     real, intent(in) :: x_I(:)
     real:: norm
-    !-------------------------------------------------------------------------
-
-    ! norm = norm2(x_I)
+    !--------------------------------------------------------------------------
     norm = sqrt(sum(x_I**2))
 
   end function norm2
-  !=========================================================================== 
+  !============================================================================
   subroutine find_cell(MinCoord, MaxCoord, Coord, iCoord, dCoord, &
        Coord_I, DoExtrapolate, StringError, IsInside)
 
@@ -1326,5 +1340,7 @@ contains
     end if
 
   end subroutine find_cell
+  !============================================================================
 
 end module ModUtilities
+!==============================================================================

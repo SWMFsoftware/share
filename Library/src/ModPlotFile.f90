@@ -78,7 +78,7 @@ contains
     use ModUtilities, ONLY: split_string, join_string, open_file, close_file
 
     character(len=*),           intent(in):: NameFile       ! name of plot file
-    character(len=*), optional, intent(in):: TypePositionIn !asis/rewind/append
+    character(len=*), optional, intent(in):: TypePositionIn ! asis/rewind/append
     character(len=*), optional, intent(in):: TypeFileIn     ! ascii/real8/real4
     character(len=*), optional, intent(in):: StringHeaderIn ! header line
     character(len=*), optional, intent(in):: StringFormatIn ! ascii data format
@@ -121,7 +121,7 @@ contains
 
     ! True if Var4In* is present (single precision)
     logical:: UseReal4
-    
+
     character(len=10)  :: TypePosition
     character(len=10)  :: TypeStatus
     character(len=20), allocatable  :: NameVar_I(:)
@@ -181,7 +181,7 @@ contains
     UseReal4 = present(Var4In_I) .or. present(Var4In_II) .or. present(Var4In_III)  &
          .or.  present(Var4In_VI).or. present(Var4In_VII).or. present(Var4In_VIII) &
          .or.  present(Var4In_IV).or. present(Var4In_IIV).or. present(Var4In_IIIV)
-    
+
     ! Figure out grid dimensions and number of variables. Default is 1.
     n_D = 1
     if(present(VarIn_I))then
@@ -649,7 +649,7 @@ contains
     if(allocated(Coord_ID))  deallocate(Coord_ID)
     if(allocated(Var_IV))    deallocate(Var_IV)
     if(allocated(Var4_IV))   deallocate(Var4_IV)
-    
+
   end subroutine save_plot_file
   !============================================================================
 
