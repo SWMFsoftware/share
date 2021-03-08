@@ -1102,7 +1102,7 @@ contains
     real, intent(in) :: Matrix_DD(3,3)
 
     !--------------------------------------------------------------------------
-    write(*,'(3(3f14.10,/))') transpose(Matrix_DD)
+    write(*,'(3( 3f14.10,/ ))') transpose(Matrix_DD)
 
   end subroutine show_rot_matrix
   !============================================================================
@@ -1113,7 +1113,7 @@ contains
     character (len=15) :: NameFormat
 
     !--------------------------------------------------------------------------
-    write(NameFormat,'(a,i1,a,i1,a)')'(',n,'(',n,'f14.10,/))'
+    write(NameFormat,'(a,i1,a,i1,a)')'(',n,'(',n,'f14.10,/ ))'
     write(*,NameFormat)transpose(Matrix_II)
 
   end subroutine show_nbyn_matrix
@@ -1174,7 +1174,7 @@ contains
     if(maxval(abs(Xyz_D-Xyz2_D)) > cTiny) &
          write(*,'(a)')'Error transforming xyz->rlonlat->xyz'
 
-    write(*,'(a,/,3(3f14.10,/))') 'rot_matrix_z(-Phi)='
+    write(*,'(a,/,3( 3f14.10,/ ))') 'rot_matrix_z(-Phi)='
     call show_rot_matrix(rot_matrix_z(-Sph_D(3)))
 
     Xyz_D = matmul(rot_matrix_z(-Sph_D(3)),Xyz_D)
@@ -1205,9 +1205,6 @@ contains
          write(*,'(a)')'Error rotating back and forth'
 
     write(*,*)
-!    Xyz_D = (/1.0, 0.0, 0.0/)
-!    Xyz_D = (/8.0, 6.0, 0.0/)
-!    Xyz_D = (/8.0, 0.0, 6.0/)
     Xyz_D = [8.0, 0.1, 6.0]
     write(*,'(a,3es16.8)')'Cartesian position=',Xyz_D
     XyzSph_DD = rot_xyz_sph(Xyz_D)
