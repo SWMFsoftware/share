@@ -398,7 +398,8 @@ foreach $source (@source){
 
 	# Remove "if(iProc==iProcTest .and. iBlock==iBlockTest)...endif"
 	$removeoktest = 1
-	    if /^\s+if.*then$/ and /\biProcTest\b/ and /\biBlockTest\b/;
+	    if /^\s+if.*then$/ and /\biProcTest\b/ and /\biBlockTest\b/
+	    and $unitname !~ /test_stop|test_start/;
 
 	if($removeoktest){
 	    $removeoktest = 0 if /^\s+end\s?if/i;
@@ -433,7 +434,7 @@ foreach $source (@source){
 	# Obsolete named constants
 	s/\bcZero\b/0.0/ig;
 	s/\bcHalf\b/0.5/ig;
-	s/\bcOne\b/1.0/ig;
+	s/\bcOne\b/1.0/g;   # check case so not to change "cone"
 
 	# put in call test_stop() and separator line at the end of methods
 	if(/^(\s*)(contains|end\s+(program|module|subroutine|function))\b/){
