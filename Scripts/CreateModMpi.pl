@@ -14,6 +14,9 @@ use strict;
 my $InFile  = "MpiTemplate.f90";
 my $OutFile = "ModMpiInterfaces.f90";
 
+my $SubSep = (" "x2)."!".("=" x 76);
+my $DecSep = (" "x4)."!".("-" x 74);
+
 my %TypeName = (i => "integer", 
 		r => "real", 
 		l => "logical", 
@@ -111,8 +114,8 @@ foreach $Routine ( sort keys %Sub ) {
     # Construct call of the original MPI subroutine
     $Template =~ /\)\s*\n/m;
     my $Call = "$`\)";
-    $Call =~ s/subroutine/external $Routine\n\n       call/;
-	    
+    $Call =~ s/   subroutine/external $Routine\n$DecSep\n    call/;
+
     $Procedure .= "  interface $Routine\n    module procedure \&\n";
 
     my @Modes = ('');
@@ -165,15 +168,17 @@ foreach $Routine ( sort keys %Sub ) {
 		print "RoutineTypeDim=$RoutineTypeDim\n" if $Verbose;
 		
 		my $TemplateTypeDim = $TemplateType;
+		$TemplateTypeDim =~ s/^   //;
+		$TemplateTypeDim =~ s/\n   /\n/g;
 		$TemplateTypeDim =~ s/($DoInPlace.*)\(dim\d\)/$1/i if $Mode;
 		$TemplateTypeDim =~ s/\(dim1\)/$Dim1/ig;
 		$TemplateTypeDim =~ s/\(dim2\)/$Dim2/ig;
 		$TemplateTypeDim =~ s/$RoutineType/$RoutineTypeDim/g;
 		
-		$TemplateTypeDim =~ s/(end subroutine)/$Call\n     $1/;
+		$TemplateTypeDim =~ s/(end subroutine)/$Call\n  $1/;
 		
 		$Procedure .= "    $RoutineTypeDim, \&\n";
-		$Interface .= "$TemplateTypeDim\n\n";
+		$Interface .= "$TemplateTypeDim$SubSep\n\n";
 	    }
 	}
     }
@@ -191,9 +196,10 @@ $Public
 $Procedure
 
 contains
-
+  !============================================================================
 $Interface
 
 end module ModMpiInterfaces
+!==============================================================================
 ";
 close OUT;
