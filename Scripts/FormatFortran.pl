@@ -115,10 +115,11 @@ my $AnyType = "($SimpleType|$ObsoleteType|$DerivedType)";
 my $source;
 if($Undo or $Redo){
     foreach $source (@source){
-	if(-f $source."_orig_"){
-	    rename $source."_orig_", $source;
+	my $orig = $source."_orig_";
+	if(-f $orig){
+	    rename $orig, $source;
 	}else{
-	    print "$WARNING missing file $source"."_orig_\n";
+	    print "$WARNING missing file $orig\n";
 	}
     }
 }
@@ -507,10 +508,17 @@ istart=$istart MinLength=$MinLength iseparator=$iseparator
     $text =~ s/\n\n\n+/\n\n/g; 
 
     # Save copy of original
-    rename $source, $source."_orig_";
+    my $orig = $source."_orig_";
+    rename $source, $orig;
 
     # write new file
     open(FILE, ">$source");
     print FILE $text;
     close FILE;
+
+    if(`diff $source $orig`){
+	print "FormatFortran.pl changed $source\n";
+    }else{
+	unlink $orig;
+    }
 }
