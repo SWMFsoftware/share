@@ -296,6 +296,9 @@ foreach $source (@source){
 
 	    next;
 	}
+	# Check if test_start or lVerbose is already imported at the top level
+	$useteststart = 1 if /\btest_start|lVerbose\b/ and $iLevel == 0;
+	
 	if($declaration){
 	    if(/^\s+implicit\s+none/i){
 		$implicitnone = 1 if $iLevel == 0;
@@ -304,10 +307,10 @@ foreach $source (@source){
 	    }
 
 	    # check if there is a !---------- separator line
-	    $iseparator = $i if s/^\s+\!\-\-\-\-+\!?$//;
+	    $iseparator = $i if s/^\s+\!\-\-\-\-+\!?\n//;
 	    
-	    # Skip empty lines and comments
-	    next if /^$/ or s/^\s*\n/\n/ or /^\s*\!/;
+	    # Skip empty lines and comments and FPP directives
+	    next if /^$/ or s/^\s*\n/\n/ or /^\s*\!/ or /^#/;
 
 	    if($separatorcheck++ > 1){
                # After iseparator is set, we should only get here once
@@ -335,8 +338,6 @@ foreach $source (@source){
 		$lines[$i-1] =~ s/,\s*\&$// if s/^\s*$//;
 		next;
 	    }
-
-	    $useteststart = 1 if /\btest_start\b/ and $iLevel == 0;
 
 	    # Remove original NameSub declarations for sake of uniformity
 	    if(/^\s+character.*parameter\s*::\s*NameSub\s*=/){
@@ -473,11 +474,11 @@ istart=$istart MinLength=$MinLength iseparator=$iseparator
 	    # Add !========= separator line and declare test stuff
 	    if($iLevel >= 0){
 		$_ .= "$indent  !" . ("=" x (76-$nindent)) . "\n";
-	    }elsif($TestLevel >= 0){
+	    }else{
 		$_ .= "!" . ("=" x 78) . "\n";
 		# Add declaration of test variables and methods 
 		# to the beginning of the main unit if not yet done
-		if(not $useteststart){
+		if(not $useteststart and $TestLevel >= 0){
 		    my $usetest;
 		    my $text = join('', @lines[$istart0..$i]);
 		    my $testvar;
@@ -516,7 +517,7 @@ istart=$istart MinLength=$MinLength iseparator=$iseparator
     print FILE $text;
     close FILE;
 
-    if(`diff $source $orig`){
+    if(`diff -w -I \'\^ \*\$\' $source $orig`){
 	print "FormatFortran.pl changed $source\n";
     }else{
 	unlink $orig;
