@@ -60,11 +60,10 @@ contains
     integer, intent(in):: iComm
     integer, intent(out):: iError
 
-    !--------------------------------------------------------------------------
     external MPI_reduce
     integer:: iRank
     real:: Recv_I(1)
-    !------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     call MPI_comm_rank(iComm, iRank, iError)
 
     if(iRoot == iRank)then
@@ -85,11 +84,10 @@ contains
     integer, intent(in):: iComm
     integer, intent(out):: iError
 
-    !--------------------------------------------------------------------------
     external MPI_reduce
     integer:: iRank
     real :: Recv
-    !------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     call MPI_comm_rank(iComm, iRank, iError)
 
     if(iRoot == iRank)then
@@ -112,10 +110,9 @@ contains
     integer, intent(in):: iComm
     integer, intent(out):: iError
 
-    !--------------------------------------------------------------------------
     external MPI_reduce
     integer:: iRank, iRecv_I(1)
-    !------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     call MPI_comm_rank(iComm, iRank, iError)
 
     if(iRoot == iRank)then
@@ -136,10 +133,9 @@ contains
     integer, intent(in):: iComm
     integer, intent(out):: iError
 
-    !--------------------------------------------------------------------------
     external MPI_reduce
     integer:: iRank, iRecv
-    !------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     call MPI_comm_rank(iComm, iRank, iError)
 
     if(iRoot == iRank)then
