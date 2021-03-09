@@ -15,47 +15,47 @@ module ModLinearSolverWrapper
   integer, public :: nBlock     ! Number of impl. blocks on current proc
   real, pointer,   public :: PrecondMatrix_II(:,:)
 
-  contains
+contains
   !============================================================================
-    subroutine linear_solver_matvec(x_I, y_I, n)
+  subroutine linear_solver_matvec(x_I, y_I, n)
 
-      ! Fortran subroutine calling C matvec routine
-      use iso_c_binding
-      use ModLinearSolver, ONLY: multiply_left_precond
+    ! Fortran subroutine calling C matvec routine
+    use iso_c_binding
+    use ModLinearSolver, ONLY: multiply_left_precond
 
-      interface
-         subroutine linear_wrapper_matvec_c(x_I, y_I, n)  bind(C)
-           integer, VALUE:: n
-           real          :: x_I(n)
-           real          :: y_I(n)
-         end subroutine linear_wrapper_matvec_c
-      end interface
+    interface
+       subroutine linear_wrapper_matvec_c(x_I, y_I, n)  bind(C)
+         integer, VALUE:: n
+         real          :: x_I(n)
+         real          :: y_I(n)
+       end subroutine linear_wrapper_matvec_c
+    end interface
 
-      integer, intent(in) :: n
-      real,    intent(in) :: x_I(n)
-      real,    intent(out):: y_I(n)
+    integer, intent(in) :: n
+    real,    intent(in) :: x_I(n)
+    real,    intent(out):: y_I(n)
 
-      integer :: iStart
+    integer :: iStart
     !--------------------------------------------------------------------------
 
-      call linear_wrapper_matvec_c(x_I, y_I, n)
+    call linear_wrapper_matvec_c(x_I, y_I, n)
 
-      if(Param%DoPrecond) then
-         do iBlock = 1, nBlock
+    if(Param%DoPrecond) then
+       do iBlock = 1, nBlock
 
-            ! Starting index in the linear arrays
-            iStart = nVarIjk*(iBlock-1)+1
-            call multiply_left_precond(&
-                 Param%TypePrecond, Param%TypePrecondSide, &
-                 nVar, nDim, nI, nJ, nK, PrecondMatrix_II, &
-                 y_I(iStart))
-         end do
-      end if
+          ! Starting index in the linear arrays
+          iStart = nVarIjk*(iBlock-1)+1
+          call multiply_left_precond(&
+               Param%TypePrecond, Param%TypePrecondSide, &
+               nVar, nDim, nI, nJ, nK, PrecondMatrix_II, &
+               y_I(iStart))
+       end do
+    end if
 
-    end subroutine linear_solver_matvec
+  end subroutine linear_solver_matvec
   !============================================================================
 
-  end module ModLinearSolverWrapper
+end module ModLinearSolverWrapper
 !==============================================================================
 subroutine linear_solver_wrapper(TypeSolver, Tolerance, nIteration, &
      nVarIn, nDimIn, nIIn, nJIn, nKIn, nBlockIn, iComm, Rhs_I, x_I, &
@@ -81,12 +81,13 @@ subroutine linear_solver_wrapper(TypeSolver, Tolerance, nIteration, &
   integer, intent(in):: iComm      ! MPI communicator for processors
   real,    intent(in):: PrecondParam ! Parameter for the preconditioner
   integer, intent(in):: lTest      ! if lTest==1 DoTest=.true.
-  real, target, intent(inout):: PrecondMatrixIn_II(nVarIn*nVarIn*nIIn*nJIn*nKIn,2*nDimIn+1)
+  real, target, intent(inout):: &
+       PrecondMatrixIn_II(nVarIn*nVarIn*nIIn*nJIn*nKIn,2*nDimIn+1)
   ! precond_matrix contains diagonal and super/sub diagonal elements from
   ! the matrix A, which is in the equation Ax = b
 
   real, intent(inout):: Rhs_I(nVarIn*nIIn*nJIn*nKIn*nBlockIn) ! RHS vector
-  real, intent(inout):: x_I(nVarIn*nIIn*nJIn*nKIn*nBlockIn)   ! Initial guess/solution
+  real, intent(inout):: x_I(nVarIn*nIIn*nJIn*nKIn*nBlockIn) ! Init.guess/result
 
   ! Local variables
   integer:: n, i, j, k, iVar
@@ -185,18 +186,18 @@ subroutine linear_solver_wrapper(TypeSolver, Tolerance, nIteration, &
   ! call timing_start('krylov solver')
   select case(Param%TypeKrylov)
   case('BICGSTAB')
-     call bicgstab(linear_solver_matvec, Rhs_I, x_I, Param%UseInitialGuess, nImpl, &
-          Param%Error, Param%TypeStop, Param%nMatvec, &
+     call bicgstab(linear_solver_matvec, Rhs_I, x_I, Param%UseInitialGuess, &
+          nImpl, Param%Error, Param%TypeStop, Param%nMatvec, &
           Param%iError, DoTest, iComm)
   case('GMRES')
-     call  gmres(linear_solver_matvec, Rhs_I, x_I, Param%UseInitialGuess, nImpl, &
-          Param%nKrylovVector, &
+     call  gmres(linear_solver_matvec, Rhs_I, x_I, Param%UseInitialGuess, &
+          nImpl, Param%nKrylovVector, &
           Param%Error, Param%TypeStop, Param%nMatvec, &
           Param%iError, DoTest, iComm)
   case('CG')
      if(.not. Param%DoPrecond)then
-        call cg(linear_solver_matvec, Rhs_I, x_I, Param%UseInitialGuess, nImpl, &
-             Param%Error, Param%TypeStop, Param%nMatvec, &
+        call cg(linear_solver_matvec, Rhs_I, x_I, Param%UseInitialGuess, &
+             nImpl, Param%Error, Param%TypeStop, Param%nMatvec, &
              Param%iError, DoTest, iComm)
      end if
   case default
