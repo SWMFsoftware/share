@@ -195,7 +195,7 @@ module ModReadParam
   ! the command index is increased from 1 to iCommand in every session
   ! and the name and line number is stored. The name contains the
   ! component and command name together.
-  integer, parameter :: MaxCommand = MaxLine/3, MaxSession = 10
+  integer, parameter :: MaxCommand = MaxLine/3, MaxSession = 20
   integer            :: iCommand = 0
   integer            :: iLineCommand_II(MaxCommand, MaxSession) = -1
   character(len=lStringLine) :: NameCommand_II(MaxCommand, MaxSession)
