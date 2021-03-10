@@ -241,7 +241,7 @@ foreach $source (@source){
 	    $unitname = $+;
 
 	    # Ignore "recursive" and type before functions and subroutines
-	    $unittype =~ s/.*(function|subroutine)$/$1/;
+	    $unittype =~ s/.*(function|subroutine)$/$1/i;
 
 	    # Increase level, set and check indentation
 	    $iLevel++;
@@ -437,7 +437,7 @@ foreach $source (@source){
 	s/\bcOne\b/1.0/g;   # check case so not to change "cone"
 
 	# put in call test_stop() and separator line at the end of methods
-	if(/^(\s*)(contains|end\s+(program|module|subroutine|function))\b/){
+	if(/^(\s*)(contains|end\s+(program|module|subroutine|function))\b/i){
 
 	    my $addtest = ($oldtest or ($newtest and $i >= $istart+$MinLength));
 
