@@ -101,7 +101,7 @@ my @testvar =
      "iDimTest", "xTest", "yTest", "zTest"), 
 
 # Simple Fortran types with possible (len=..) and (kind=..) attributes:
-my $SimpleType = '(real|integer|logical|character)(\s*\([^\)]+\))?\b';
+my $SimpleType = '(double +precision|real|integer|logical|character)(\s*\([^\)]+\))?\b';
 
 # Obsolete Fortran types with *NUMBER, e.g. real*8 character*10
 my $ObsoleteType = '(real|integer|logical|character)\s*\*\s*\d+';
@@ -215,8 +215,8 @@ foreach $source (@source){
 	
 	# Remove arbitrary decorations !\ and !/
 	s/^\s*\!\s*\/\s*\n//;   # Remove full line with !/ only
-	s/\s*\!\s*\\\s*\n/\n/;  # Remove !\ from end of line
-	s/\s*\!\s*\/\s*\n/\n/;  # Remove !/ from end of line
+	s/\s*\!\s*\\+\s*\n/\n/;  # Remove !\[\..] from end of line
+	s/\s*\!\s*\/+\s*\n/\n/;  # Remove !/[/..] from end of line
 
 	# '\' should not be the last character of a comment line,
 	# so fpp is not confusing it with continuation line
