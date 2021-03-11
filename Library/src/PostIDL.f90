@@ -226,6 +226,8 @@ program post_idl
            if(iBx == 0) &
                 write(*,*)'!!! Warning: Bx variable missing from bx0 plot'
            deallocate(NameVar_V)
+           ! for bx0 plot, z is set to be the first plotvar, so iBx += 1
+           iBx = iBx + 1
         end if
 
      case('#SCALARPARAM')
