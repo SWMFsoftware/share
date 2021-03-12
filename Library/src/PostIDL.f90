@@ -757,6 +757,9 @@ program post_idl
            if(IsBx0) then
               iCoincide_I = -1
               zCoincide_I = 999.9
+              ! record the i-th point for bx0
+              iCoincide_I(j-i) = i
+              zCoincide_I(j-i) = abs(PlotVar_VC(1,i,1,1))
            end if
            do while( sum(abs(GenCoord_DI(:,j) - GenCoord_DI(:,i)) &
                 /CellSizeMin_D) < 0.01)
@@ -768,10 +771,10 @@ program post_idl
                  ! taking the sequence of coinciding points,
                  ! find the two points with minimum abs value of z
                  ! zCoincide is initialized with large value 999.9
-                 iCoincide_I(j-i) = j
-                 zCoincide_I(j-i) = abs(PlotVar_VC(1,j,1,1))
+                 iCoincide_I(j-i+1) = j
+                 zCoincide_I(j-i+1) = abs(PlotVar_VC(1,j,1,1))
                  j = j + 1
-                 if(j - i - 1 > MaxCoincide) EXIT
+                 if(j-i >= MaxCoincide) EXIT
               end if
               if(j > n1) EXIT
            end do
@@ -781,29 +784,29 @@ program post_idl
                  PlotVar_VC(:,i,1,1) = StateSum_V/nSum
               else
                  call sort_quick(MaxCoincide, zCoincide_I, iCoincideSort_I)
-                 if(j - i > 2) then
-                    iLeft  = iCoincide_I(iCoincideSort_I(1))
-                    iRight = iCoincide_I(iCoincideSort_I(2))
-                    ! The left and right values need to be next to each other
-                    if( abs(PlotVar_VC(1,iLeft,1,1) &
-                         - PlotVar_VC(1,iRight,1,1)) &
-                         < 1.1*CellSize_D(3) ) then
-                       if(iBx > 1) then
-                          ! Interpolate linearly to the Bx=0 point
-                          BxLeft  = abs(PlotVar_VC(iBx,iLeft,1,1))
-                          BxRight = abs(PlotVar_VC(iBx,iRight,1,1))
-                          WeightLeft  = BxRight / (BxLeft + BxRight)
-                          WeightRight = 1 - WeightLeft
-                       else
-                          ! Simple average
-                          WeightLeft  = 0.5
-                          WeightRight = 0.5
-                       end if
-                       ! Put interpolated value into i-th element
-                       PlotVar_VC(:,i,1,1) = &
-                            WeightLeft *PlotVar_VC(:,iLeft, 1,1) + &
-                            WeightRight*PlotVar_VC(:,iRight,1,1)
+                 iLeft  = iCoincide_I(iCoincideSort_I(1))
+                 iRight = iCoincide_I(iCoincideSort_I(2))
+                 ! The left and right values need to be next to each other
+                 if( abs(PlotVar_VC(1,iLeft,1,1) &
+                      - PlotVar_VC(1,iRight,1,1)) &
+                      < 1.1*CellSize_D(3) ) then
+                    if(iBx > 1) then
+                       ! Interpolate linearly to the Bx=0 point
+                       BxLeft  = abs(PlotVar_VC(iBx,iLeft,1,1))
+                       BxRight = abs(PlotVar_VC(iBx,iRight,1,1))
+                       WeightLeft  = BxRight / (BxLeft + BxRight)
+                       WeightRight = 1 - WeightLeft
+                    else
+                       ! Simple average
+                       WeightLeft  = 0.5
+                       WeightRight = 0.5
                     end if
+                    ! Put interpolated value into i-th element
+                    PlotVar_VC(:,i,1,1) = &
+                         WeightLeft *PlotVar_VC(:,iLeft, 1,1) + &
+                         WeightRight*PlotVar_VC(:,iRight,1,1)
+                 else
+                    PlotVar_VC(:,i,1,1) = -777 ! current sheet not found
                  end if
               end if
            end if
