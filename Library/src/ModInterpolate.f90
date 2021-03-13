@@ -1068,9 +1068,11 @@ contains
 
   function interpolate_vector( &
        a_VC, nVar, nDim, Min_D, Max_D, x_D, &
-       x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
+       x1_I, x2_I, x3_I, x4_I, x5_I, &
+       x8_D, x8_I, DoExtrapolate, iCell_D, Dist_D)
 
     ! Interpolate default precision real vector array of up to 5 dimensions
+    ! Double precision coordinate x8_D and x8_I can be used in 1D only
     ! Index and distance can be returned in 1D only
 
     real,    intent(in):: a_VC(*)
@@ -1080,6 +1082,8 @@ contains
 
     real,    optional, intent(in):: x_D(nDim)
     real,    optional, intent(in):: x1_I(:), x2_I(:), x3_I(:), x4_I(:), x5_I(:)
+    real(Real8_), optional, intent(in):: x8_D(nDim)
+    real(Real8_), optional, intent(in):: x8_I(:)
     logical, optional, intent(in):: DoExtrapolate
     integer, optional, intent(in):: iCell_D(nDim)
     real,    optional, intent(in):: Dist_D(nDim)
@@ -1094,9 +1098,13 @@ contains
        if(present(iCell_D))then
           interpolate_vector = linear_vector_real( a_VC, nVar, &
                Min_D(1), Max_D(1), iCell=iCell_D(1), Dist=Dist_D(1))
+       elseif(present(x8_D))then
+          interpolate_vector = linear_vector_real( a_VC, nVar, &
+               Min_D(1), Max_D(1), x8=x8_D(1), x8_I=x8_I, &
+               DoExtrapolate=DoExtrapolate)
        else
           interpolate_vector = linear_vector_real( a_VC, nVar, &
-               Min_D(1), Max_D(1), x_D(1), x1_I, DoExtrapolate)
+               Min_D(1), Max_D(1), x_D(1), x1_I, DoExtrapolate=DoExtrapolate)
        end if
     case(2)
        interpolate_vector = bilinear_vector_real( a_VC, nVar, &
@@ -1125,9 +1133,11 @@ contains
 
   function interpolate_vector4( &
        a_VC, nVar, nDim, Min_D, Max_D, x_D, &
-       x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
+       x1_I, x2_I, x3_I, x4_I, x5_I, &
+       x8_D, x8_I, DoExtrapolate, iCell_D, Dist_D)
 
     ! Interpolate single precision real vector array of up to 5 dimensions
+    ! Double precision coordinate x8_D and x8_I can be used in 1D only
     ! Index and distance can be returned in 1D only
 
     real(Real4_), intent(in):: a_VC(*) ! single precision
@@ -1137,6 +1147,8 @@ contains
 
     real,    optional, intent(in):: x_D(nDim)
     real,    optional, intent(in):: x1_I(:), x2_I(:), x3_I(:), x4_I(:), x5_I(:)
+    real(Real8_), optional, intent(in):: x8_D(nDim)
+    real(Real8_), optional, intent(in):: x8_I(:)
     logical, optional, intent(in):: DoExtrapolate
     integer, optional, intent(in):: iCell_D(nDim)
     real,    optional, intent(in):: Dist_D(nDim)
@@ -1151,9 +1163,13 @@ contains
         if(present(iCell_D))then
            interpolate_vector4 = linear_vector_real4( a_VC, nVar, &
                 Min_D(1), Max_D(1), iCell=iCell_D(1), Dist=Dist_D(1))
+        elseif(present(x8_D))then
+           interpolate_vector4 = linear_vector_real4( a_VC, nVar, &
+                Min_D(1), Max_D(1), x8=x8_D(1), x8_I=x8_I, &
+                DoExtrapolate=DoExtrapolate)
         else
            interpolate_vector4 = linear_vector_real4( a_VC, nVar, &
-                Min_D(1), Max_D(1), x_D(1), x1_I, DoExtrapolate)
+                Min_D(1), Max_D(1), x_D(1), x1_I, DoExtrapolate=DoExtrapolate)
         end if
      case(2)
         interpolate_vector4 = bilinear_vector_real4( a_VC, nVar, &
@@ -1180,64 +1196,70 @@ contains
   end function interpolate_vector4
   !============================================================================
 
-  function linear_vector_real(a_VI, nVar, iMin, iMax, x, x_I, DoExtrapolate, &
-       iCell, Dist)
+  function linear_vector_real(a_VI, nVar, iMin, iMax, x, x_I, x8, x8_I, &
+       DoExtrapolate, iCell, Dist)
 
     ! interpolate default precision real a_VI vector array
 
     integer, intent(in):: nVar, iMin, iMax
     real,    intent(in):: a_VI(nVar,iMin:iMax)
 
-    real,    intent(in), optional :: x, x_I(iMin:), Dist
-    logical, intent(in), optional :: DoExtrapolate
-    integer, intent(in), optional :: iCell
+    real,         intent(in), optional :: x, x_I(iMin:), Dist
+    real(Real8_), intent(in), optional :: x8, x8_I(iMin:)
+    logical,      intent(in), optional :: DoExtrapolate
+    integer,      intent(in), optional :: iCell
 
     ! return value
     real                :: linear_vector_real(nVar)
 
     !--------------------------------------------------------------------------
     linear_vector_real = linear_vector( &
-         a_VI, nVar, iMin, iMax, x, x_I, DoExtrapolate, iCell, Dist)
+         a_VI, nVar, iMin, iMax, x, x_I, x8, x8_I, DoExtrapolate, iCell, Dist)
 
   end function linear_vector_real
   !============================================================================
-  function linear_vector_real4(a_VI, nVar, iMin, iMax, x, x_I, DoExtrapolate, &
-       iCell, Dist)
+  function linear_vector_real4(a_VI, nVar, iMin, iMax, x, x_I, x8, x8_I, &
+       DoExtrapolate, iCell, Dist)
 
     ! interpolate single precision real a_VI vector array
 
     integer,      intent(in):: nVar, iMin, iMax
     real(Real4_), intent(in):: a_VI(nVar,iMin:iMax)
 
-    real,    intent(in), optional :: x, x_I(iMin:), Dist
-    logical, intent(in), optional :: DoExtrapolate
-    integer, intent(in), optional :: iCell
+    real,         intent(in), optional :: x, x_I(iMin:), Dist
+    real(Real8_), intent(in), optional :: x8, x8_I(iMin:) 
+    logical,      intent(in), optional :: DoExtrapolate
+    integer,      intent(in), optional :: iCell
 
     ! return value
-    real                :: linear_vector_real4(nVar)
+    real:: linear_vector_real4(nVar)
 
     !--------------------------------------------------------------------------
     linear_vector_real4 = linear_vector( &
-         a_VI, nVar, iMin, iMax, x, x_I, DoExtrapolate, iCell, Dist)
+         a_VI, nVar, iMin, iMax, x, x_I, x8, x8_I, DoExtrapolate, iCell, Dist)
 
   end function linear_vector_real4
   !============================================================================
-  function linear_vector(a_VI, nVar, iMin, iMax, x, x_I, DoExtrapolate, &
-       iCell, Dist)
+  function linear_vector(a_VI, nVar, iMin, iMax, x, x_I, x8, x8_I, &
+       DoExtrapolate, iCell, Dist)
 
     ! Calculate linear interpolation of a_VI(nVar,iMin:iMax) at position x
+    ! or at position x8 (double precision)
     ! or at the position given by iCell + Dist.
-    ! Assume normalized coordinates unless the coordinates x_I is present.
+    ! Assume normalized coordinates unless the coordinates x_I 
+    ! (or the double precision x8_I)  is present.
     ! Extrapolate if DoExtrapolate is present.
 
     integer, intent(in):: nVar, iMin, iMax
     class(*),intent(in):: a_VI(:,iMin:)
 
-    real,    intent(in), optional :: x
-    real,    intent(in), optional :: x_I(iMin:)
-    logical, intent(in), optional :: DoExtrapolate
-    integer, intent(in), optional :: iCell
-    real,    intent(in), optional :: Dist
+    real,         intent(in), optional :: x
+    real,         intent(in), optional :: x_I(iMin:)
+    real(Real8_), intent(in), optional :: x8
+    real(Real8_), intent(in), optional :: x8_I(iMin:)
+    logical,      intent(in), optional :: DoExtrapolate
+    integer,      intent(in), optional :: iCell
+    real,         intent(in), optional :: Dist
 
     ! return value
     real                :: linear_vector(nVar)
@@ -1257,10 +1279,14 @@ contains
        Dx2 = 1.0 - Dx1
 
     else
-
        ! Locate the point Xyz_D on the grid
-       call find_cell(iMin, iMax, x, i1, Dx1, x_I, DoExtrapolate, &
-            "Called from "//NameSub)
+       if(present(x8))then
+          call find_cell(iMin, iMax, x8, i1, Dx1, x8_I, DoExtrapolate, &
+               "Called from "//NameSub)
+       else
+          call find_cell(iMin, iMax, x, i1, Dx1, x_I, DoExtrapolate, &
+               "Called from "//NameSub)
+       end if
 
        ! Calculate the remaining cell indices and interpolation weights
        i2 = i1 + 1; Dx2 = 1.0 - Dx1
