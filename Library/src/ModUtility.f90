@@ -10,7 +10,9 @@ module ModUtilities
   ! F77 and C++ codes need an F90 interface to access these utilities.
 
   ! These are all the dependencies:
-  use ModKind, ONLY: Real4_, Real8_
+  ! nvfortran does not compile ModInterpolateAMR if the ONLY is present below
+  ! use ModKind, ONLY: Real4_, Real8_
+  use ModKind
   use ModMpi,  ONLY: MPI_wtime, MPI_initialized, MPI_abort, &
        MPI_comm_rank, MPI_comm_world
   use ModIoUnit, ONLY: UnitTmp_, io_unit_clean
