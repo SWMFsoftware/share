@@ -141,7 +141,7 @@ module ModReadParam
   use ModMpi
   use ModIoUnit,      ONLY: io_unit_new, StdIn_, StdOut_
   use ModUtilities,   ONLY: CON_stop
-  use ModKind,        ONLY: Real8_
+  use ModKind,        ONLY: Real4_, Real8_
   use ModTimeConvert, ONLY: time_int_to_real
 
   implicit none
@@ -202,12 +202,12 @@ module ModReadParam
 
   interface read_var
      module procedure &
-          read_var_c, read_var_l, read_var_r, read_var_i
+          read_var_c, read_var_l, read_var_i, read_var_r4, read_var_r8
   end interface
 
   interface read_in
      module procedure &
-          read_integer, read_real, read_string, read_logical
+          read_string, read_logical, read_integer, read_real4, read_real8
   end interface
 
 contains
@@ -697,27 +697,52 @@ contains
 
   end subroutine read_var_i
   !============================================================================
-
-  subroutine read_real(RealVar,iError,StartTimeIn)
-    ! Read a real variable
+  subroutine read_real4(Real4Var,iError,StartTimeIn)
+    ! Read a single precision real variable
     ! Arguments
-    real, intent(out)             :: RealVar
-    integer, optional, intent(out):: iError
-    real, optional, intent(in)    :: StartTimeIn
+    real(Real4_),           intent(out):: Real4Var
+    integer, optional,      intent(out):: iError
+    real(Real8_), optional, intent(in) :: StartTimeIn
     !--------------------------------------------------------------------------
-    call read_var_r(' ', RealVar, iError, StartTimeIn)
-  end subroutine read_real
+    call read_var_r4(' ', Real4Var, iError, StartTimeIn)
+  end subroutine read_real4
   !============================================================================
+  subroutine read_real8(RealVar,iError,StartTimeIn)
+    ! Read a double precision real variable
+    ! Arguments
+    real(Real8_),           intent(out):: RealVar
+    integer, optional,      intent(out):: iError
+    real(Real8_), optional, intent(in) :: StartTimeIn
+    !--------------------------------------------------------------------------
+    call read_var_r8(' ', RealVar, iError, StartTimeIn)
+  end subroutine read_real8
+  !============================================================================
+  subroutine read_var_r4(Name, Real4Var, iError, StartTimeIn)
 
-  subroutine read_var_r(Name, RealVar, iError, StartTimeIn)
-
-    ! Read a real variable described by Name
+    ! Read a single precision real variable described by Name
 
     ! Arguments
-    character (len=*), intent(in)   :: Name
-    real, intent(out)               :: RealVar
-    real, optional, intent(in)      :: StartTimeIn
-    integer, optional, intent(out)  :: iError
+    character (len=*),      intent(in) :: Name
+    real(Real4_),           intent(out):: Real4Var
+    real(Real8_), optional, intent(in) :: StartTimeIn
+    integer,      optional, intent(out):: iError
+
+    real(Real8_):: RealVar
+
+    call read_var_r8(Name, RealVar, iError, StartTimeIn)
+    Real4Var = RealVar
+
+  end subroutine read_var_r4
+  !============================================================================
+  subroutine read_var_r8(Name, RealVar, iError, StartTimeIn)
+
+    ! Read a double precision real variable described by Name
+
+    ! Arguments
+    character (len=*),      intent(in) :: Name
+    real(Real8_),           intent(out):: RealVar
+    real(Real8_), optional, intent(in) :: StartTimeIn
+    integer,      optional, intent(out):: iError
 
     ! Local variable
     real :: Real1, Real2, RealTmp
@@ -807,7 +832,7 @@ contains
     RealVar=RealTmp
     if(DoEcho)call read_echo(trim(NameEcho))
 
-  end subroutine read_var_r
+  end subroutine read_var_r8
   !============================================================================
 
   subroutine read_logical(IsLogicVar, iError)
