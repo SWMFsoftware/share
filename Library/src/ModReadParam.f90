@@ -729,6 +729,7 @@ contains
 
     real(Real8_):: RealVar
 
+    !--------------------------------------------------------------------------
     call read_var_r8(Name, RealVar, iError, StartTimeIn)
     Real4Var = RealVar
 
