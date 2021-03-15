@@ -42,7 +42,6 @@ module ModMPiInterfaces
   public:: mpi_wait
   public:: mpi_waitall
 
-
   interface
      subroutine mpi_abort(comm, errorcode, ierror)
        integer, intent(in) :: comm
@@ -542,8 +541,6 @@ module ModMPiInterfaces
        integer, intent(out) :: ierror
      end subroutine mpi_waitall
   end interface
-
-
 
 contains
   !============================================================================
@@ -4906,7 +4903,6 @@ contains
     call mpi_ssend(buf, count, datatype, dest, tag, comm, ierror)
   end subroutine mpi_ssend_r0
   !============================================================================
-
 
 
 end module ModMpiInterfaces
