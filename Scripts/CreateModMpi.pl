@@ -195,8 +195,8 @@ $Public
 $Procedure".
 "contains
   !============================================================================
-$Interface
-end module ModMpiInterfaces
+$Interface".
+"end module ModMpiInterfaces
 !==============================================================================
 ";
 close OUT;
