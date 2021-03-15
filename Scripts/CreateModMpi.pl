@@ -192,13 +192,10 @@ print OUT
   private
 
 $Public
-
-$Procedure
-
-contains
+$Procedure".
+"contains
   !============================================================================
 $Interface
-
 end module ModMpiInterfaces
 !==============================================================================
 ";
