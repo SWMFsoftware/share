@@ -1227,7 +1227,7 @@ contains
     real(Real4_), intent(in):: a_VI(nVar,iMin:iMax)
 
     real,         intent(in), optional :: x, x_I(iMin:), Dist
-    real(Real8_), intent(in), optional :: x8, x8_I(iMin:) 
+    real(Real8_), intent(in), optional :: x8, x8_I(iMin:)
     logical,      intent(in), optional :: DoExtrapolate
     integer,      intent(in), optional :: iCell
 
@@ -1246,7 +1246,7 @@ contains
     ! Calculate linear interpolation of a_VI(nVar,iMin:iMax) at position x
     ! or at position x8 (double precision)
     ! or at the position given by iCell + Dist.
-    ! Assume normalized coordinates unless the coordinates x_I 
+    ! Assume normalized coordinates unless the coordinates x_I
     ! (or the double precision x8_I)  is present.
     ! Extrapolate if DoExtrapolate is present.
 
@@ -1266,9 +1266,9 @@ contains
 
     integer :: i1, i2
     real    :: Dx1, Dx2
+
     character(len=*), parameter:: NameSub = 'linear_vector'
     !--------------------------------------------------------------------------
-
     if ( present(iCell) .and. present(Dist) ) then
 
        ! Calculate the remaining cell indices and interpolation weights
