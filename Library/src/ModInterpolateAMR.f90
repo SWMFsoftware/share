@@ -1938,7 +1938,7 @@ contains
     integer, parameter, dimension(2,-1:1,-1:1):: &
          iGridDir_III = reshape([&
          1,0,     1,2,  2,0,  1,1,  0,0, 2,1,  3,0,   3,2, 4,0],[2,3,3])
-    ! x=0,y=0! y=0 ! x=1,y=0! x=0 !    ! x=1 ! x=0,y=1!y=1 !x=1,y=1!
+    ! x=0,y=0|y=0|x=1,y=0|x=0 |    |x=1 |x=0,y=1|y=1 |x=1,y=1|
     ! Average coordinates for the center of the resolution corner,
     ! for centers of faces or edges and distance from them to Xyz
     real   :: XyzAvr_D(nDim), XyzAvr_DD(nDim, nDim), Distance_D(nDim)
@@ -2164,7 +2164,8 @@ contains
          1,-3,    1, 2,  2,-3, 1, 1,0,0,2, 1,  3,-3, 3, 2, 4,-3,   &!   !
          5, 0,    5,-1,  6, 0, 5,-2,5,3,6,-2,  7, 0, 7,-1, 8, 0 ],&! z=1!
          [2,3,3,3])
-    ! x=0,y=0! y=0 ! x=1,y=0! x=0 !    ! x=1 ! x=0,y=1!y=1 !x=1,y=1!
+    ! x=0,y=0|y=0|x=1,y=0|x=0 |    |x=1 |x=0,y=1|y=1 |x=1,y=1|
+
     ! Transitions junction's signatures
     real:: XyMin, z
     ! Average coordinates for the center of the resolution corner,
