@@ -281,7 +281,8 @@ foreach $source (@source){
 		$testarguments = "NameSub, DoTest";
 	    }
 	    
-	    # Construct lines for declaring DoTest, NameSub, and !----- separator
+	    # Construct lines for declaring DoTest, NameSub,
+	    # and !----- separator
 	    $dotestline    = "$indent  logical:: DoTest\n";
 	    $namesubline   = "$indent  character(len=*), parameter:: ".
 		"NameSub = '$unitname'\n";
