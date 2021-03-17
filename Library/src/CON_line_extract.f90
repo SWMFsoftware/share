@@ -1,18 +1,13 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-! BOP
-! MODULE: CON_line_extract - extract field and stream lines in parallel
-!INTERFACE:
 module CON_line_extract
 
-  !DESCRIPTION:
   ! The ray position and the MHD state along the rays (ray line)
   ! can be collected into an array and sorted by the length coordinate.
   ! This class provides the infrastructure for collecting,
   ! sorting and providing the data extracted along multiple ray lines.
 
-  !USES:
   use ModMpi
   use ModSort
   use ModUtilities, ONLY: CON_stop
@@ -23,7 +18,6 @@ module CON_line_extract
 
   private ! except
 
-  !PUBLIC MEMBER FUNCTIONS:
   public :: line_init         ! Initialize storage for ray lines
   public :: line_clean        ! Clean up storage for ray lines
   public :: line_put          ! Store state of a single point along a ray line
@@ -31,9 +25,8 @@ module CON_line_extract
   public :: line_get          ! Get all (sorted) ray line data from 1 processor
   public :: line_test         ! Unit tester
 
-  !REVISION HISTORY:
+  ! revision history:
   ! 09May04 - Gabor Toth <gtoth@umich.edu> - initial prototype/prolog/code
-  ! EOP
 
   ! Private constants
   character(len=*),  parameter :: NameMod='CON_line_extract'
@@ -46,17 +39,11 @@ module CON_line_extract
 contains
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: line_init - initialize storage for ray lines
-  !INTERFACE:
   subroutine line_init(nVarIn)
 
-    !INPUT ARGUMENTS:
     integer, intent(in) :: nVarIn   ! Number of variables to store
 
-    !DESCRIPTION:
     ! Initialize the ray line storage.
-    ! EOP
 
     character(len=*), parameter:: NameSub = 'line_init'
     !--------------------------------------------------------------------------
@@ -70,14 +57,9 @@ contains
   end subroutine line_init
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: line_clean - clean storage for line data
-  !INTERFACE:
   subroutine line_clean
 
-    !DESCRIPTION:
     ! Clean the ray line storage.
-    ! EOP
 
     character(len=*), parameter:: NameSub = 'line_clean'
     !--------------------------------------------------------------------------
@@ -92,9 +74,6 @@ contains
   end subroutine line_clean
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: line_extend - allocate or extend storage for line data
-  !INTERFACE:
   subroutine line_extend(MaxPointIn)
 
     integer, intent(in) :: MaxPointIn
@@ -117,20 +96,14 @@ contains
   end subroutine line_extend
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: line_put - store state for a point along a ray line
-  !INTERFACE:
   subroutine line_put(iLine, nVarIn, Line_V)
 
-    !INPUT ARGUMENTS:
     integer, intent(in) :: iLine
     integer, intent(in) :: nVarIn
     real,    intent(in) :: Line_V(nVarIn)
 
-    !DESCRIPTION:
     ! Store the ray index iLine and the state Line_V(1:nVarIn)
     ! for the line iLine.
-    ! EOP
 
     character(len=*), parameter:: NameSub = 'line_put'
     !--------------------------------------------------------------------------
@@ -147,20 +120,14 @@ contains
   end subroutine line_put
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: line_collect - collect ray line data onto 1 processor
-  !INTERFACE:
   subroutine line_collect(iComm, iProcTo)
 
-    !INPUT ARGUMENTS:
     integer, intent(in) :: iComm      ! MPI communicator for the involved PE-s
     integer, intent(in) :: iProcTo    ! Rank of the receiving PE
 
-    !DESCRIPTION:
     ! Collect line data from the sending processors to the receiving processor.
     ! The sending arrays are emptied, the receiving array is extended.
     ! The receiving PE may or may not contain data prior to the collect.
-    ! EOP
 
     integer, allocatable :: nPoint_P(:)
 
@@ -222,22 +189,15 @@ contains
   end subroutine line_collect
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: line_get - obtain all the ray states
-  !INTERFACE:
   subroutine line_get(nVarOut, nPointOut, Line_VI, DoSort)
 
-    !INPUT/OUTPUT ARGUMENTS:
     integer, intent(inout)         :: nVarOut
     integer, intent(inout)         :: nPointOut
 
-    !OUTPUT ARGUMENTS:
     real,    intent(out), optional :: Line_VI(0:nVarOut, nPointOut)
 
-    !INPUT ARGUMENTS:
     logical, intent(in), optional  :: DoSort
 
-    !DESCRIPTION:
     ! Obtain all the ray states stored.
     ! begin{verbatim}
     ! First get the number of variables and points:
@@ -253,7 +213,6 @@ contains
     !    call line_get(nVarOut, nPointOut, Line_VI, DoSort = .true.)
     !
     ! end{verbatim}
-    ! EOP
 
     integer, allocatable :: iSorted_I(:)
     real :: Factor
@@ -298,15 +257,10 @@ contains
   end subroutine line_get
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: line_test - unit tester
-  !INTERFACE:
   subroutine line_test
 
-    !DESCRIPTION:
     ! Test the CON_line_extract module. This subroutine should be called from
     ! a small stand alone program.
-    ! EOP
 
     integer, parameter :: nVarTest = 4
     integer :: iProc, nProc, iError

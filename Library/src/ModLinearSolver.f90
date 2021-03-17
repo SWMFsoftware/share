@@ -1,21 +1,16 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-! BOP -------------------------------------------------------------------
 !
-! MODULE: ModLinearSolver - solve a system of linear equations
 !
-!DESCRIPTION:
 !
 ! Contains various methods to solve linear system of equations.
 ! There are both serial and parallel solvers, and direct and
 ! iterative solvers.
 !
-!INTERFACE:
 
 module ModLinearSolver
 
-  !USES:
   use ModMpi
   use ModUtilities, ONLY: CON_stop
   use ModBlasLapack, ONLY: BLAS_gemm, BLAS_copy, BLAS_gemv, &
@@ -46,7 +41,6 @@ module ModLinearSolver
 
   private ! except
 
-  !PUBLIC MEMBER FUNCTIONS:
   public :: gmres           ! GMRES iterative solver
   public :: bicgstab        ! BiCGSTAB iterative solver
   public :: cg              ! CG iterative solver for symmetric positive matrix
@@ -102,10 +96,9 @@ module ModLinearSolver
 
   public:: LinearSolverParamType
 
-  !REVISION HISTORY:
+  ! revision history:
   ! 05Dec06 - Gabor Toth - initial prototype/prolog/code based on BATSRUS code
   ! 20Mar14 - Gabor Toth - lot of new code
-  ! EOP ___________________________________________________________________
 
   ! Used for tests
   integer, parameter :: rho_=1, rhou_=2, p_=3

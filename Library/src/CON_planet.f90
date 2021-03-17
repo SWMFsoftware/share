@@ -2,13 +2,9 @@
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 !
-! BOP
 !
-! MODULE: CON_planet - planet parameters shared by components
-!INTERFACE:
 module CON_planet
 
-  !DESCRIPTION:
   ! Physical information about the planet. The planet is described
   ! with its name. Default values can be set with {\bf planet\_init}.
   ! Simplifying assumptions, such as no rotation, aligned magnetic
@@ -18,19 +14,17 @@ module CON_planet
   ! Components can only access the data through the inquiry methods
   ! via the {\bf CON\_physics} class.
 
-  !USES:
   use ModNumConst, ONLY: cTwoPi
   use ModPlanetConst
   use ModTimeConvert, ONLY: TimeType, time_int_to_real
   use ModUtilities, ONLY: CON_stop
 
-  !REVISION HISTORY:
+  ! revision history:
   ! 01Aug03 - Aaron Ridly <ridley@umich.edu> and
   !           Gabor Toth <gtoth@umich.edu>   - initial prototype/prolog/code
   ! 23Mar03 - added get_planet subroutine for OO type access
   ! 06May04 - K.C. Hansen and G. Toth added Saturn
   !           G.Toth fixed bugs in degree to radian conversions
-  ! EOP
 
   implicit none
 
@@ -97,15 +91,10 @@ module CON_planet
 contains
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: set_planet_defaults - set Earth to be defaults
-  !INTERFACE:
   subroutine set_planet_defaults
 
-    !DESCRIPTION:
     ! Initialize parameters for Earth as the default planet.  This is in case
     ! there is no \#PLANET command.
-    ! EOP
 
     character(len=*), parameter:: NameSub = 'set_planet_defaults'
     !--------------------------------------------------------------------------
@@ -142,23 +131,17 @@ contains
   end subroutine set_planet_defaults
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: is_planet_init - initialize parameters if planet is known
-  !INTERFACE:
   function is_planet_init(NamePlanetIn) result(IsKnown)
 
-    !INPUT ARGUMENTS:
     character(len=*), intent(in) :: NamePlanetIn
 
     !RETURN VALUE:
     logical :: IsKnown
 
-    !DESCRIPTION:
     ! Initialize parameters for the planet identified by its name and
     ! return true if the planet is known. If it is not known return false.
     ! Store the name in either case. The planet data can be initialized at most
     ! once.
-    ! EOP
     integer :: i
 
     logical :: IsInitialized = .false.

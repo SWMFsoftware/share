@@ -2,10 +2,7 @@
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 !
-! BOP
-! MODULE: ModTimeConvert - time conversion related types, variables and methods
 !
-!DESCRIPTION:
 ! The methods in this module can convert between various representations
 ! of time. The date can be defined as year, month, day, hour, minute, second
 ! and a fractional second, which is double precision real.
@@ -26,10 +23,8 @@
 ! of a variable of TimeType, or they can convert between integer arrays
 ! (year...millisecond) and an 8 byte real variable (seconds since base time).
 !
-!INTERFACE:
 module ModTimeConvert
 
-  !USES:
   use ModUtilities, ONLY: CON_stop
   use ModKind
   use ModConst
@@ -54,7 +49,6 @@ module ModTimeConvert
      character(len=14) :: String       ! string with year...second.
   end type TimeType
 
-  !PUBLIC MEMBER FUNCTIONS:
   public :: n_day_of_year    ! day of year
 
   public :: time_int_to_real ! Convert integer time info to real
@@ -79,13 +73,12 @@ module ModTimeConvert
   ! The earliest year which is already correctly handled
   integer, parameter :: iYearMin  = iYearBase
 
-  !REVISION HISTORY:
+  ! revision history:
   ! 01Aug03 Aaron Ridley and G. Toth - initial implementation
   ! 22Aug03 G. Toth - added TypeFreq and is_time_to function
   ! 25Aug03 G. Toth - added adjust_freq subroutine
   ! 23Mar04 G. Toth - splitting CON_time into a smaller CON_time,
   !                             ModTimeConvert, ModTimeFreq
-  ! EOP
 
   ! February will be adjusted.....
   integer, dimension(1:12), private :: nDayInMonth_I = [ &
@@ -96,18 +89,12 @@ module ModTimeConvert
 contains
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: is_valid_int_time - check if the integer time info is valid
-  !INTERFACE:
   logical function is_valid_int_time(Time)
-    !INPUT/OUTPUT ARGUMENTS:
     type(TimeType), intent(inout) :: Time
 
-    !DESCRIPTION:
     ! Check if the integer description of the time is valid.
     ! The year may be corrected, e.g. 66 --> 1966, 03 --> 2003.
     ! Return false if time is not valid.
-    ! EOP
 
     !--------------------------------------------------------------------------
     call fix_year(Time % iYear)
@@ -126,15 +113,9 @@ contains
   end function is_valid_int_time
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: time_int_to_string - write integer info into string
-  !INTERFACE:
   subroutine time_int_to_string(Time)
-    !INPUT/OUTPUT ARGUMENTS:
     type(TimeType), intent(inout) :: Time
-    !DESCRIPTION:
     ! Convert integer time info into the string field of the Time variable
-    ! EOP
 
     character(len=*), parameter:: NameSub = 'time_int_to_string'
     !--------------------------------------------------------------------------
@@ -150,21 +131,14 @@ contains
   end subroutine time_int_to_string
   !============================================================================
 
-  ! BOP =======================================================================
-  ! IROUTINE: time_int_to_real2: integer array into double precision time
-  !INTERFACE:
   subroutine time_int_to_real2(iTime_I,Time)
 
-    !INPUT ARGUMENTS:
     integer, intent(in) :: iTime_I(1:7)
 
-    !OUTPUT ARGUMENTS:
     real(real8_), intent(out) :: Time
-    !DESCRIPTION:
     ! Convert an integer array containing
     ! year, month, day, hour, minute, second, millisecond
     ! into the number of seconds since 00:00 January 1 of the base year.
-    ! EOP
     type(TimeType) :: TimeTmp
     character(len=*), parameter:: NameSub = 'time_int_to_real2'
     !--------------------------------------------------------------------------
@@ -183,20 +157,14 @@ contains
   end subroutine time_int_to_real2
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: time_int_to_real - convert integer time info into real time info
-  !INTERFACE:
   subroutine time_int_to_real1(Time)
 
-    !INPUT/OUTPUT ARGUMENTS:
     type(TimeType), intent(inout) :: Time
 
-    !DESCRIPTION:
     ! Convert the integer fields containing year ... second and the
     ! fractional second into the double precision seconds counted
     ! from the beginning of the base year. Also fill in the string field
     ! of Time.
-    ! EOP
 
     character(len=*), parameter:: NameSub = 'time_int_to_real1'
     !--------------------------------------------------------------------------
@@ -218,18 +186,12 @@ contains
   end subroutine time_int_to_real1
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: time_real_to_int - convert the real field into the integer fields
-  !INTERFACE:
   subroutine time_real_to_int1(Time)
 
-    !INPUT/OUTPUT ARGUMENTS:
     type(TimeType), intent(inout) :: Time
-    !DESCRIPTION:
     ! Convert the number of seconds counted from the beginning of the base year
     ! to the integer fields and the fractional second field. Also fill in
     ! the string field of Time.
-    ! EOP
 
     integer :: iYear, iMonth, iDay, nLeapYear
     real(Real8_) :: TimeRemaining
@@ -280,19 +242,12 @@ contains
   end subroutine time_real_to_int1
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: time_real_to_int2 - double precicion seconds into int array
-  !INTERFACE:
   subroutine time_real_to_int2(Time, iTime_I)
-    !INPUT ARGUMENTS:
     real(real8_), intent(in) :: Time
-    !OUTPUT ARGUMENTS:
     integer, intent(out) :: iTime_I(1:7)
-    !DESCRIPTION:
     ! Convert the double precision number of seconds since the beginning
     ! of the base year into an integer array of year, month, day, hour,
     ! minute, second, millisecond.
-    ! EOP
     type(TimeType) :: TimeTmp
     character(len=*), parameter:: NameSub = 'time_real_to_int2'
     !--------------------------------------------------------------------------
@@ -311,39 +266,26 @@ contains
   end subroutine time_real_to_int2
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: fix_february - fix the length of february for leap years
-  !INTERFACE:
   subroutine fix_february(iYear)
-    !INPUT ARGUMENTS:
     integer, intent(in) :: iYear
-    ! EOP
-    ! BOC
     !--------------------------------------------------------------------------
     if(is_leap_year(iYear))then
        nDayInMonth_I(2) = 29
     else
        nDayInMonth_I(2) = 28
     end if
-    ! EOC
   end subroutine fix_february
   !============================================================================
 
-  ! BOP =======================================================================
-  ! IROUTINE: fix_year - convert 2 digit year into 4 digit year
-  !INTERFACE:
   subroutine fix_year(iYear)
-    !INPUT ARGUMENTS:
     integer, intent(inout) :: iYear
 
-    !DESCRIPTION:
     ! Attempt to fix 2 digit years. Assumption :
     ! begin{verbatim}
     !  0-49 --> 2000-2049
     ! 50-99 --> 1950-1999
     ! end{verbatim}
     ! Using a 4 digit year is safer. You should convert before using.
-    ! EOP
 
     character(len=*), parameter:: NameSub = 'fix_year'
     !--------------------------------------------------------------------------
@@ -357,57 +299,37 @@ contains
   end subroutine fix_year
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: n_leap_day - number of leap days in the years since base year
-  !INTERFACE:
   integer function n_leap_day(iYear)
-    !INPUT ARGUMENTS:
     integer, intent(in) :: iYear
 
-    !LOCAL VARIABLES:
+    ! local variables
+
     integer, parameter :: iYearBase100 = 100*(iYearBase/100) + 1
     integer, parameter :: iYearBase400 = 400*(iYearBase/400) + 1
 
-    !DESCRIPTION:
     ! Return the number of leap days from base year to the year preceeding iYear.
     ! The leap day in iYear itself is not counted!
-    ! EOP
-    ! BOC
     character(len=*), parameter:: NameSub = 'n_leap_day'
     !--------------------------------------------------------------------------
     n_leap_day = &
          (iYear - iYearBase)/4 &
          - (iYear - iYearBase100)/100 &
          + (iYear - iYearBase400)/400
-    ! EOC
   end function n_leap_day
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: is_leap_year - return true if the year is a leap year
-  !INTERFACE:
   logical function is_leap_year(iYear)
-    !INPUT ARGUMENTS:
     integer, intent(in) :: iYear
-    ! EOP
-    ! BOC
     !--------------------------------------------------------------------------
     is_leap_year = mod(iYear,4)   == 0 .and. &
          (mod(iYear,100) /= 0 .or. mod(iYear,400) == 0)
-    ! EOC
   end function is_leap_year
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: n_day_of_year - number of days since the beginning of this year
-  !INTERFACE:
   integer function n_day_of_year(iYear, iMonth, iDay)
-    !INPUT ARGUMENTS:
     integer, intent(in) :: iYear, iMonth, iDay
-    !DESCRIPTION:
     ! Calculate the number of days since the beginning of iYear.
     ! January 1 returns 1. Leap years are taken into account.
-    ! EOP
 
     character(len=*), parameter:: NameSub = 'n_day_of_year'
     !--------------------------------------------------------------------------
@@ -417,17 +339,11 @@ contains
   end function n_day_of_year
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: test_time - test the methods in this module
-  !INTERFACE:
   subroutine test_time
 
     integer, parameter :: iYearMax  = 2499
     type(TimeType) :: TimeConvert, TimeStart
 
-    ! EOP
-
-    ! BOC
     !--------------------------------------------------------------------------
     write(*,*)'Testing time conversion routines'
     TimeStart % FracSecond = 0.0;
@@ -438,8 +354,6 @@ contains
     call check_all_days
     write(*,'(a,i5,a,i5)')'Successfully tested all days from Jan 1',&
          iYearMin,' to Dec 31',iYearMax
-
-    ! EOC
 
   contains
     !==========================================================================

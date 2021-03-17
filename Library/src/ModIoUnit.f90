@@ -1,11 +1,8 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-! BOP -------------------------------------------------------------------
 !
-! MODULE: ModIoUnit - general utilities for Fortran I/O units.
 !
-!DESCRIPTION:
 !
 ! This module provides various utilities related to Fortran I/O units.
 ! In particular independently developped components can use the
@@ -24,15 +21,12 @@
 ! The methods in this module can be tested by running the
 ! io\_unit\_test subroutine.
 !
-!INTERFACE:
 
 module ModIoUnit
 
   implicit none
 
   private ! except
-
-  !PUBLIC MEMBER FUNCTIONS:
 
   public :: io_unit_new    ! Return an unused unit number for extended use
   public :: io_unit_clean  ! Close open units, delete empty files
@@ -47,17 +41,16 @@ module ModIoUnit
   integer, parameter, public :: UnitTmp_  = 9  ! 1st Temporary unit number
   integer, parameter, public :: UnitTmp2_ = 8  ! 2nd Temporary unit number
 
-  !LOCAL VARIABLES:
+  ! local variables
 
   integer, parameter :: MinUnitNumber = 20    ! Smallest allowed unit number
   integer, parameter :: MaxUnitNumber = 1000  ! Largest allowed unit number
 
   integer :: iUnitMax = UnitTmp_              ! The largest unit number used
 
-  !REVISION HISTORY:
+  ! revision history:
   ! 01Aug03  Gabor Toth <gtoth@umich.edu> - initial prototype/prolog/code
   ! 20Aug04  Gabor Toth                     added debugging for io_unit_new
-  ! EOP ___________________________________________________________________
 
   character (len=*), parameter :: NameMod = 'ModIoUnit'
 

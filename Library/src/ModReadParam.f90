@@ -1,16 +1,10 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-! BOP
 !
-! QUOTE: \chapter{Fortran Libraries in share/ and util/}
-! QUOTE: \section{share/Library}
 !
-! MODULE: ModReadParam - read, include, broadcast and distribute parameters
-!INTERFACE:
 module ModReadParam
 
-  !DESCRIPTION:
   ! This is a library for reading parameters and distribute them between
   ! the components. It can also be used by a stand-alone mode.
   ! In the latter case the 'control component' corresponds to the main program
@@ -137,7 +131,6 @@ module ModReadParam
   !     ...
   ! \end{verbatim}
 
-  !USES:
   use ModMpi
   use ModIoUnit,      ONLY: io_unit_new, StdIn_, StdOut_
   use ModUtilities,   ONLY: CON_stop
@@ -153,7 +146,6 @@ module ModReadParam
   !PUBLIC DATA MEMBERS:
   integer, parameter, public :: lStringLine=400 ! Max length of input lines
 
-  !PUBLIC MEMBER FUNCTIONS:
   public :: read_file         ! Read text string from parameter file and bcast
   public :: read_init         ! Select the appropriate section of the text
   public :: read_line         ! Read next line, return false at the end
@@ -167,13 +159,12 @@ module ModReadParam
   public :: i_line_command    ! Returns the line number for a command or -1
   public :: read_text         ! Provide the full text in the output argument
 
-  !REVISION HISTORY:
+  ! revision history:
   ! 01Sep03 G. Toth - initial implementation based on BATSRUS
   ! 31Oct04 G. Toth - added fractions 3/5 for reals,
   !                   added read_in public method without a Name parameter,
   !                   replaced err=1 with iostat=iReadError.
   ! 27Nov06 G. Toth - added i_line_command function
-  ! EOP
 
   character(len=*), parameter :: NameMod='ModReadParam'
 
@@ -213,14 +204,10 @@ module ModReadParam
 contains
   !============================================================================
 
-  ! BOP =======================================================================
-  ! IROUTINE: read_file - read parameter file
-  !INTERFACE:
   subroutine read_file(NameFile, iCommIn, NameRestartFile, IsVerbose)
 
     use ModUtilities, ONLY: open_file, close_file
 
-    !INPUT ARGUMENTS:
     ! Name of the base param file
     character (len=*), optional, intent(in):: NameFile
     integer, optional, intent(in):: iCommIn  ! MPI communicator for broadcast
@@ -231,7 +218,6 @@ contains
     ! Do not report number of lines if IsVerbose is present and false
     logical, intent(in), optional:: IsVerbose
 
-    ! EOP
     integer, parameter :: MaxNestedFile = 10
 
     character (len=lStringLine) :: NameCommand
@@ -442,22 +428,16 @@ contains
   end subroutine read_echo_set
   !============================================================================
 
-  ! BOP =======================================================================
-  ! IROUTINE: read_line - read the next line from the text buffer
-  !INTERFACE:
   logical function read_line(StringLineOut, iLineOut)
 
-    !OUTPUT ARGUMENTS:
     character (len=*), optional, intent(out) :: StringLineOut
     integer, optional, intent(out)           :: iLineOut
 
-    !DESCRIPTION:
     ! Read the current line from StringLine\_I into StringLine,
     ! set the optional StringLineOut and iLineOut arguments.
     ! Return .true. if successful, otherwise (if there are
     ! no more lines in the selected part of the text buffer)
     ! return .false. and an empty string in StringLineOut if present.
-    ! EOP
 
     !--------------------------------------------------------------------------
     iLine=iLine+1
@@ -474,19 +454,13 @@ contains
   end function read_line
   !============================================================================
 
-  ! BOP =======================================================================
-  ! IROUTINE: read_command - read the name of the command from the current line
-  !INTERFACE:
   logical function read_command(NameCommand)
 
-    !OUTPUT ARGUMENTS:
     character (len=*), intent(out) :: NameCommand
 
-    !DESCRIPTION:
     ! If the current line contains a command name (starting with \#),
     ! return true, and put the name of the command into the
     ! output argument. Otherwise return .false. and an empty string.
-    ! EOP
 
     integer :: i
 
@@ -652,7 +626,6 @@ contains
   !============================================================================
 
   subroutine read_integer(IntVar, iError)
-    !OUTPUT ARGUMENTS:
     integer,           intent(out):: IntVar
     integer, optional, intent(out):: iError
 
@@ -661,18 +634,12 @@ contains
   end subroutine read_integer
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: read_var - read a variable following the command.
-  !INTERFACE:
   subroutine read_var_i(Name, IntVar, iError)
 
-    !INPUT ARGUMENTS:
     character (len=*), intent(in) :: Name
-    !OUTPUT ARGUMENTS:
     integer,           intent(out):: IntVar
     integer, optional, intent(out):: iError
 
-    !DESCRIPTION:
     ! Read a variable from the next line in the buffer.
     ! The variable name is given by the string Name, which is used in the
     ! echoing of the parameters as well as in error messages.
@@ -682,7 +649,6 @@ contains
     ! result in an error message and an abort of the run.
     ! There are four variants of this subroutine: for integer, real,
     ! character string and logical variable types.
-    ! EOP
 
     ! Local variable
     integer :: IntTmp, iReadError
@@ -921,17 +887,10 @@ contains
   end function i_line_command
   !============================================================================
 
-  ! BOP =======================================================================
-  ! IROUTINE: read_text - obtain selected text buffer
-  !INTERFACE:
   subroutine read_text(String_I)
-    !OUTPUT ARGUMENTS:
     character(len=lStringLine), intent(out):: String_I(iLine+1:nLine)
-    ! EOP
-    ! BOC
     !--------------------------------------------------------------------------
     String_I = StringLine_I(iLine+1:nLine)
-    ! EOC
   end subroutine read_text
   !============================================================================
 

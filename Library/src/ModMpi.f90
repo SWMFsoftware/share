@@ -1,9 +1,6 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-! BOP
-! MODULE: ModMpiOrig and ModMpi - the MPI variables and functions
-!DESCRIPTION:
 ! In Fortran 90 it is customary to use a module instead of including files.
 ! The ModMpiOrig and ModMpi modules provide interfaces to mpif.h.
 !
@@ -19,18 +16,13 @@
 ! MPI\_reduce with MPI\_IN\_PLACE option for real and integer
 ! scalars and arrays.
 !
-!REVISION HISTORY:
+! revision history:
 ! 07/02/2003 G. Toth <gtoth@umich.edu> - initial version of ModMpi
 ! 07/20/2003 G. Toth - change the MPI_REAL definition
 ! 07/30/2004 G. Toth - updated the description for the modified mpif90.h files.
 ! 05/13/2011 G. Toth - modified to use original mpif.h file
 ! 03/10/2016 G. Toth - added MPI_reduce_* routines for in-place use.
-!INTERFACE:
-! BOP
-!INTERFACE:
 module ModMpi
-  ! EOP
-  ! BOC
   use ModMpiInterfaces
 
   use ModMpiOrig, &
@@ -46,8 +38,6 @@ module ModMpi
 
   integer, parameter :: MPI_COMPLEX = &
        iRealPrec*MPI_DOUBLE_COMPLEX + (1-iRealPrec)*MPI_COMPLEX_ORIG
-
-  ! EOC
 
 contains
   !============================================================================

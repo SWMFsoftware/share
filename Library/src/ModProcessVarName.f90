@@ -237,7 +237,6 @@ contains
     integer,intent(out)               :: nDensity, nSpeed, nP, nPpar
     integer,intent(out)               :: nWave, nMaterial, nChargeStateAll
 
-    ! DESCRIPTION:
     ! ------------
     ! 1. Creates standard names and a dictionary for each standard name.
     !    The dictionary only contains the basic hydro quantities for

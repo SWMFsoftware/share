@@ -1,10 +1,7 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-! BOP
-! MODULE: ModKind - define various precisions in a machine independent way
 
-!DESCRIPTION:
 ! The Fortran 77 style real*4 and real*8 declarations are obsolete,
 ! and compilers often issue warnings. The real and double precision
 ! types are machine and compiler flag dependent.
@@ -15,7 +12,6 @@
 ! CpuTime = 0.0_Real8_     ! 8 byte real constant
 ! end{verbatim}
 
-!INTERFACE:
 module ModKind
 
   !PUBLIC DATA MEMBERS:
@@ -27,6 +23,5 @@ module ModKind
   ! This is standard F90 initialization expression but may give warnings:
   integer, parameter :: nByteReal = 4 + (1.00000000041 - 1.0)*10000000000.0
 
-  ! EOP
 end module ModKind
 !==============================================================================

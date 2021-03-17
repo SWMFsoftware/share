@@ -1,32 +1,26 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-! BOP -------------------------------------------------------------------
 !
-! MODULE: ModBlasLapack - F90 interfaces for the BLAS and LAPACK methods
 !
-!DESCRIPTION:
 !
 ! These interfaces allow the use of single or double precision
 ! BLAS and LAPACK subroutines depending on the default real precision.
 !
-!INTERFACE:
 
 module ModBlasLapack
 
   implicit none
   private ! except
 
-  !PUBLIC MEMBER FUNCTIONS:
   public :: blas_copy       ! interface for BLAS scopy and dcopy
   public :: blas_gemv       ! interface for BLAS sgemv and dgemv
   public :: blas_gemm       ! interface for BLAS sgemm and dgemm
   public :: lapack_getrf    ! interface for LAPACK sgetrf and dgetrf
   public :: lapack_getrs    ! interface for LAPACK sgetrs and dgetrs
 
-  !REVISION HISTORY:
+  ! revision history:
   ! 08Dec06 - Gabor Toth - initial prototype/prolog/code based on BATSRUS code
-  ! EOP ___________________________________________________________________
 
   interface blas_copy
 

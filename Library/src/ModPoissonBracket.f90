@@ -1,12 +1,9 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-! BOP -------------------------------------------------------------------
-!
-! MODULE: ModPoissonBracket - a numerical flux from the Poisson bracket
 !
 !
-!DESCRIPTION:
+!
 !
 ! For a contribution to the Liuville (kinetic) equation:
 !
@@ -18,11 +15,9 @@
 !
 ! See	arXiv:1910.12636 [physics.comp-ph]
 !
-!INTERFACE:
 
 module ModPoissonBracket
 
-  !USES:
   use ModMpi
   use ModUtilities,    ONLY: CON_stop
   implicit none

@@ -1,12 +1,8 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-! BOP
-! MODULE: CON_ray_trace - trace field and stream lines in parallel
-!INTERFACE:
 module CON_ray_trace
 
-  !DESCRIPTION:
   ! Provides the infrastructure for parallel tracing of a vector field:
   ! for velocity field stream lines, for magnetic field the field lines,
   ! in general rays.
@@ -18,7 +14,6 @@ module CON_ray_trace
   ! the direction of the ray relative to the vector field (parallel or
   ! antiparallel), the status of the ray tracing (done or in progress).
 
-  !USES:
   use ModMpi
   use ModUtilities, ONLY: CON_stop
 
@@ -28,7 +23,6 @@ module CON_ray_trace
 
   private ! except
 
-  !PUBLIC MEMBER FUNCTIONS:
   public :: ray_init          ! Initialize module
   public :: ray_clean         ! Clean up storage
   public :: ray_put           ! Put information about a ray to be continued
@@ -36,12 +30,11 @@ module CON_ray_trace
   public :: ray_exchange      ! Exchange ray information with other processors
   public :: ray_test          ! Unit tester
 
-  !REVISION HISTORY:
+  ! revision history:
   ! 31Jan04 - Gabor Toth <gtoth@umich.edu> - initial prototype/prolog/code
   ! 26Mar04 - Gabor Toth added the passing of nValue real values
   ! 31Mar04 - Gabor Toth removed the passing of nValue real values
   !                      changed XyzStart_D(3) into iStart_D(4)
-  ! EOP
 
   ! Private constants
   character(len=*),  parameter :: NameMod='CON_ray_trace'
@@ -85,20 +78,14 @@ module CON_ray_trace
 contains
   !============================================================================
 
-  ! BOP =======================================================================
-  ! IROUTINE: ray_init - (re)initialize CON_ray_trace
-  !INTERFACE:
   subroutine ray_init(iCommIn)
 
-    !INPUT ARGUMENTS:
     integer, intent(in) :: iCommIn  ! MPI communicator for the processors
 
-    !DESCRIPTION:
     ! Initialize the ray tracing for the MPI communicator iCommIn.
     ! If called multiple times, it checks if iCommIn is different from the
     ! current communicator. If the same, nothing is done, if different,
     ! the current storage is removed and new storage is allocated.
-    ! EOP
 
     integer :: jProc
     character(len=*), parameter:: NameSub = 'ray_init'
@@ -148,14 +135,9 @@ contains
   end subroutine ray_init
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: ray_clean - clean up storage for CON_ray_trace
-  !INTERFACE:
   subroutine ray_clean
 
-    !DESCRIPTION:
     ! Remove storage allocated in CON\_ray\_trace.
-    ! EOP
 
     integer :: jProc
 
@@ -199,24 +181,18 @@ contains
   end subroutine ray_clean
   !============================================================================
 
-  ! BOP =======================================================================
-  ! IROUTINE: ray_put - put ray information into send buffer
-  !INTERFACE:
   subroutine ray_put(&
        iProcStart,iStart_D,iProcEnd,XyzEnd_D,Length,IsParallel,DoneRay)
 
-    !INPUT ARGUMENTS:
     integer, intent(in) :: iProcStart,iProcEnd ! PE-s for start and end pos.
     integer, intent(in) :: iStart_D(4)         ! Indexes i,j,k,iBlock for start
     real,    intent(in) :: XyzEnd_D(3)         ! End posistion
     real,    intent(in) :: Length              ! Length of the ray so far
     logical, intent(in) :: IsParallel,DoneRay  ! Direction and status of trace
 
-    !DESCRIPTION:
     ! Put ray information into send buffer. If DoneRay is true, the
     ! information will be sent ot iProcStart, otherwise it will be
     ! sent to iProcEnd.
-    ! EOP
 
     integer :: iProcTo
 
@@ -274,16 +250,11 @@ contains
   end subroutine ray_put
   !============================================================================
 
-  ! BOP =======================================================================
-  ! IROUTINE: ray_get - get ray information from the receive buffer
-  !INTERFACE:
   subroutine ray_get(&
        IsFound,iProcStart,iStart_D,XyzEnd_D,Length,IsParallel,DoneRay,IsEnd)
 
-    !INPUT ARGUMENTS:
     logical, optional, intent(in) :: IsEnd ! if get ray from end proc
 
-    !OUTPUT ARGUMENTS:
     logical, intent(out) :: IsFound            ! true if there are still rays
     integer, intent(out) :: iProcStart         ! PE-s for start and end pos.
     integer, intent(out) :: iStart_D(4)        ! Indexes i,j,k,iBlock for start
@@ -291,10 +262,8 @@ contains
     real,    intent(out) :: Length             ! Length of the current ray
     logical, intent(out) :: IsParallel,DoneRay ! Direction and status of trace
 
-    !DESCRIPTION:
     ! Provide the last ray for the component to store or to work on.
     ! If no ray is found in the receive buffer, IsFound=.false. is returned.
-    ! EOP
 
     ! local variables
     ! Pointers for choosing the buffer
@@ -336,22 +305,15 @@ contains
   end subroutine ray_get
   !============================================================================
 
-  ! BOP =======================================================================
-  ! IROUTINE: ray_exchange - send information from send to receive buffers
-  !INTERFACE:
-
   subroutine ray_exchange(DoneMe, DoneAll, IsNeiProcIn_P)
 
-    !INPUT ARGUMENTS:
     logical, intent(in) :: DoneMe
 
-    !OUTPUT ARGUMENTS:
     logical, intent(out):: DoneAll
 
     !OPTIONAL ARGUMENTS:
     logical, intent(in), optional :: IsNeiProcIn_P(0:nProc-1)
 
-    !DESCRIPTION:
     ! Send the Send\_P buffers to Recv buffers, empty the Send\_P buffers.
     ! Also check if there is more work to do. If the input argument DoneMe
     ! is false on any PE-s (i.e. it has more rays to do),
@@ -361,7 +323,6 @@ contains
     ! empty then DoneAll is set to .true.
     ! The optional argument IsNeiProc\_P array stores the neighboring processor
     ! information to avoid unnecessary communication.
-    ! EOP
 
     integer, parameter :: iTag = 1
     integer :: jProc, iRay, nRayRecv
@@ -502,15 +463,10 @@ contains
   end subroutine extend_buffer
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: ray_test - unit tester
-  !INTERFACE:
   subroutine ray_test
 
-    !DESCRIPTION:
     ! Test the CON\_ray\_trace module. This subroutine should be called from
     ! a small stand alone program.
-    ! EOP
 
     logical :: IsFound
     integer :: iProcStart

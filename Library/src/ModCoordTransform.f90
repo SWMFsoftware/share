@@ -1,11 +1,8 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-! BOP -------------------------------------------------------------------
 !
-! MODULE: ModCoordTransform - rotation matrices, spherical/Cartesian transforms
 !
-!DESCRIPTION:
 !
 ! Contains general subroutines and functions to construct 3 by 3 rotation
 ! matrices around the principal axes, rotation matrix that transform between
@@ -48,8 +45,6 @@
 ! The first returns the cross product of vectors as a 3 element array.
 ! The second returns the inverse of 3 by 3 matrix.
 
-!INTERFACE:
-
 module ModCoordTransform
 
   use ModNumConst, ONLY: cTwoPi, cHalfPi, cUnit_DD
@@ -60,8 +55,6 @@ module ModCoordTransform
   save
 
   private ! except
-
-  !PUBLIC MEMBER FUNCTIONS:
 
   public:: rot_matrix     ! 2D rotation matrix (angle)
   public:: rot_matrix_x   ! rotation matrix around X axis (angle)
@@ -84,11 +77,10 @@ module ModCoordTransform
   public:: atan2_check          ! compute atan2 even if both x and y are zero
   public:: test_coord_transform ! unit tester
 
-  !REVISION HISTORY:
+  ! revision history:
   ! 08Aug03 - Gabor Toth <gtoth@umich.edu> - initial prototype/prolog/code
   ! 29Jun06 - YingJuan - added inverse_matrix function
   ! 02Jun15 - Gabor Toth added support for radius,longitude,latitude
-  ! EOP ___________________________________________________________________
 
   integer, parameter :: x_=1, y_=2, z_=3
 
@@ -251,38 +243,30 @@ contains
   end subroutine xyz_to_rlonlat33
   !============================================================================
 
-  ! BOP -------------------------------------------------------------------
-  ! IROUTINE: xyz_to_sph - convert Cartesian into spherical coordinates
   !
-  !INTERFACE:
 
   subroutine xyz_to_sph33(x,y,z,r,Theta,Phi)
 
-    !INPUT PARAMETERS:
     real, intent(in) :: x,y,z
 
-    !OUTPUT PARAMETERS:
     real, intent(out):: r,Theta,Phi
 
-    !DESCRIPTION:
     !
     ! This is the fundamental routine that converts Cartesian position into
     ! spherical position. All other xyz\_to\_sph varieties call this
     ! subroutine. Here both vectors are given with 3 scalars
     ! (hence the 33 suffix).
 
-    !LOCAL VARIABLES:
+    ! local variables
+
     real :: d
-    ! EOP
     ! ___________________________________________________________________
-    ! BOC
     !--------------------------------------------------------------------------
     d     = x**2 + y**2
     r     = sqrt(d + z**2)
     d     = sqrt(d)
     Theta = atan2_check(d,z)
     Phi   = atan2_check(y,x)
-    ! EOC
   end subroutine xyz_to_sph33
   !============================================================================
 
@@ -364,35 +348,27 @@ contains
   end subroutine sph_to_xyz13
   !============================================================================
 
-  ! BOP -------------------------------------------------------------------
-  ! IROUTINE: sph_to_xyz - convert spherical into Cartesian coordinates
   !
-  !INTERFACE:
 
   subroutine sph_to_xyz33(r,Theta,Phi,x,y,z)
 
-    !INPUT PARAMETERS:
     real, intent(in)  :: r,Theta,Phi
 
-    !OUTPUT PARAMETERS:
     real, intent(out) :: x,y,z
 
-    !DESCRIPTION:
     ! This is the fundamental routine that converts spherical position into
     ! Cartesian position. All other sph\_to\_xyz varieties call this
     ! subroutine. Here both vectors are given with 3 scalars
     ! (hence the 33 suffix).
 
-    !LOCAL VARIABLES:
+    ! local variables
+
     real :: SinTheta
-    ! EOP
     !--------------------------------------------------------------------------
-    ! BOC
     SinTheta = sin(Theta)
     x = r*SinTheta*cos(Phi)
     y = r*SinTheta*sin(Phi)
     z = r*cos(Theta)
-    ! EOC
 
   end subroutine sph_to_xyz33
   !============================================================================
@@ -453,32 +429,22 @@ contains
   end subroutine xyz_to_dir12
   !============================================================================
 
-  ! BOP -------------------------------------------------------------------
-  ! IROUTINE: xyz_to_dir - convert Cartesian vector into direction (angles)
   !
-  !INTERFACE:
   subroutine xyz_to_dir32(x,y,z,Theta,Phi)
 
-    !INPUT PARAMETERS:
     real, intent(in) :: x,y,z
 
-    !OUTPUT PARAMETERS:
     real, intent(out):: Theta,Phi
 
-    !DESCRIPTION:
     !
     ! This is the fundamental routine that converts Cartesian vector into
     ! spherical direction given with angles.
     ! The Cartesian vector can have any positive length.
-    ! EOP
-
-    ! BOC
 
     !--------------------------------------------------------------------------
     Theta = atan2_check(sqrt(x**2 + y**2),z)
     Phi   = atan2_check(y,x)
 
-    ! EOC
   end subroutine xyz_to_dir32
   !============================================================================
 
@@ -493,20 +459,14 @@ contains
   end subroutine xyz_to_dir14
   !============================================================================
 
-  ! BOP -------------------------------------------------------------------
-  ! IROUTINE: xyz_to_dir - convert Cartesian vector into direction
   ! (trigonometric)
   !
-  !INTERFACE:
   subroutine xyz_to_dir34(x,y,z,SinTheta,CosTheta,SinPhi,CosPhi)
 
-    !INPUT PARAMETERS:
     real, intent(in) :: x,y,z
 
-    !OUTPUT PARAMETERS:
     real, intent(out):: SinTheta,CosTheta,SinPhi,CosPhi
 
-    !DESCRIPTION:
     !
     ! This is the fundamental routine that converts Cartesian vector into
     ! spherical direction given with trigonometric functions.
@@ -515,11 +475,10 @@ contains
     ! when the vector is parallel with the Z axis.
     ! The Cartesian vector can have any positive length.
 
-    !LOCAL VARIABLES:
+    ! local variables
+
     real :: r,d
-    ! EOP
     !--------------------------------------------------------------------------
-    ! BOC
     d = x**2+y**2
     r = sqrt(d+z**2)
     d = sqrt(d)
@@ -532,7 +491,6 @@ contains
        SinPhi   = 0
        CosPhi   = 0
     end if
-    ! EOC
 
   end subroutine xyz_to_dir34
   !============================================================================
@@ -621,33 +579,23 @@ contains
   end subroutine dir_to_xyz41
   !============================================================================
 
-  ! BOP -------------------------------------------------------------------
-  ! IROUTINE: dir_to_xyz - convert spher. direction into Cartesian unit vector
   !
-  !INTERFACE:
   subroutine dir_to_xyz43(SinTheta,CosTheta,SinPhi,CosPhi,x,y,z)
 
-    !INPUT PARAMETERS:
     real, intent(in) :: SinTheta,CosTheta,SinPhi,CosPhi
 
-    !OUTPUT PARAMETERS:
     real, intent(out):: x,y,z
 
-    !DESCRIPTION:
     !
     ! This is the fundamental routine that converts a spherical direction
     ! into a Cartesian unit vector. The spherical direction can be
     ! given with 4 trigonometric functions or 2 angles.
     ! The Cartesian unit vector can be returned in 1 array or 3 scalars.
 
-    ! EOP
-
-    ! BOC
     !--------------------------------------------------------------------------
     x = SinTheta*CosPhi
     y = SinTheta*SinPhi
     z = CosTheta
-    ! EOC
 
   end subroutine dir_to_xyz43
   !============================================================================
@@ -689,28 +637,21 @@ contains
   end function rot_matrix_x1
   !============================================================================
 
-  ! BOP -------------------------------------------------------------------
-  ! IROUTINE: rot_matrix_x - rotation matrix around X axis
   !
-  !INTERFACE:
   function rot_matrix_x2(SinAngle, CosAngle) result(Rot_DD)
 
-    !INPUT PARAMETERS:
     real, intent(in) :: SinAngle, CosAngle
 
     !RETURN VALUE:
     real :: Rot_DD(3,3)
 
-    !DESCRIPTION:
     !
     ! This is the fundamental routine that calculates the rotation
     ! matrix around the X axis. Here the rotation angle is given with 2
     ! trigonometric functions. Alternatively it can be given with 1 angle
     ! in radians. The rot\_matrix\_y and rot\_matrix\_z functions are
     ! fully analogous.
-    ! EOP
 
-    ! BOC
     !--------------------------------------------------------------------------
     Rot_DD        =  0
     Rot_DD(y_,y_) =  CosAngle
@@ -718,7 +659,6 @@ contains
     Rot_DD(z_,y_) =  SinAngle
     Rot_DD(z_,z_) =  CosAngle
     Rot_DD(x_,x_) =  1
-    ! EOC
   end function rot_matrix_x2
   !============================================================================
 
@@ -817,19 +757,14 @@ contains
   end function rot_xyz_sph2
   !============================================================================
 
-  ! BOP -------------------------------------------------------------------
-  ! IROUTINE: rot_xyz_sph - Cartesian/spherical vector tranformation matrix
   !
-  !INTERFACE:
   function rot_xyz_sph4(SinTheta,CosTheta,SinPhi,CosPhi) result(XyzSph_DD)
 
-    !INPUT PARAMETERS:
     real, intent(in) :: SinTheta,CosTheta,SinPhi,CosPhi
 
     !RETURN VALUE:
     real             :: XyzSph_DD(3,3)
 
-    !DESCRIPTION:
     !
     ! This is the fundamental routine that calculates the rotation
     ! matrix between Cartesian and spherical coordinates.
@@ -858,35 +793,25 @@ contains
     !
     !     Sph_D = matmul(Xyz_D, XyzSph_DD)
     ! \end{verbatim}
-    ! EOP
 
-    ! BOC
     !--------------------------------------------------------------------------
     XyzSph_DD = reshape( [ &
          CosPhi*SinTheta, SinPhi*SinTheta,  CosTheta, &
          CosPhi*CosTheta, SinPhi*CosTheta, -SinTheta, &
          -SinPhi,         CosPhi,           0.0 ], &
          [3,3] )
-    ! EOC
   end function rot_xyz_sph4
   !============================================================================
 
-  ! BOP =======================================================================
-  ! IROUTINE: cross_product - return cross product of two vectors
-  !INTERFACE:
   function cross_product11(a_D, b_D) result(c_D)
-    !INPUT ARGUMENTS:
     real, intent(in) :: a_D(3), b_D(3)
     !RETURN VALUE:
     real             :: c_D(3)
-    ! EOP
 
-    ! BOC
     !--------------------------------------------------------------------------
     c_D(x_) = a_D(y_)*b_D(z_) - a_D(z_)*b_D(y_)
     c_D(y_) = a_D(z_)*b_D(x_) - a_D(x_)*b_D(z_)
     c_D(z_) = a_D(x_)*b_D(y_) - a_D(y_)*b_D(x_)
-    ! EOC
   end function cross_product11
   !============================================================================
 
@@ -1118,14 +1043,8 @@ contains
 
   end subroutine show_nbyn_matrix
   !============================================================================
-  ! BOP =======================================================================
-  ! IROUTINE: atan2_check - calculate atan2 with a check for 0.,0. arguments
-  !INTERFACE:
   real function atan2_check(x,y)
-    !INPUT ARGUMENTS:
     real, intent(in) :: x,y
-    ! EOP
-    ! BOC
     !--------------------------------------------------------------------------
     if(x==0 .and. y==0)then
        atan2_check = 0
@@ -1133,7 +1052,6 @@ contains
        atan2_check = atan2(x,y)
     end if
     if(atan2_check < 0.0)atan2_check = atan2_check + cTwoPi
-    ! EOC
   end function atan2_check
   !============================================================================
 

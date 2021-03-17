@@ -2,13 +2,9 @@
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 !
-! QUOTE: \clearpage
 !
-! BOP
 !
-! MODULE: ModFreq - frequency related methods
 !
-!DESCRIPTION:
 ! The module provides
 ! a data type TypeFreq and the is\_time\_to function for an easy handling
 ! of actions done with some frequency. The frequency can be defined in
@@ -16,10 +12,8 @@
 ! be also given, which is adjusted to the current step and time with
 ! the adjust\_freq subroutine.
 
-!INTERFACE:
 module ModFreq
 
-  !USES:
   use ModUtilities, ONLY: CON_stop
 
   implicit none
@@ -37,39 +31,31 @@ module ModFreq
      real              :: tNext  ! The next time the action should be done
   end type FreqType
 
-  !PUBLIC MEMBER FUNCTIONS:
   public :: adjust_freq      ! Adjust initial step and time to current values
   public :: check_freq       ! Check frequency settings for correctness
   public :: is_time_to       ! Returns true it is time to act and updates act
 
   !PUBLIC DATA MEMBERS:
 
-  !REVISION HISTORY:
+  ! revision history:
   ! 01Aug03 Aaron Ridley and G. Toth - initial implementation
   ! 22Aug03 G. Toth - added TypeFreq and is_time_to function
   ! 25Aug03 G. Toth - added adjust_freq subroutine
   ! 23Mar04 G. Toth - splitting CON_time into CON_time, ModTime, ModTimeFreq
   ! 19May08 G. Toth - added check_freq subroutine
-  ! EOP
 
   character(len=*), parameter, private :: NameMod='ModFreq'
 
 contains
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: check_freq - check frequency settings
-  !INTERFACE:
   subroutine check_freq(NameAct, Act, DoTimeAccurate)
 
-    !INPUT ARGUMENTS:
     character(len=*), intent(in) :: NameAct        ! Name of action
     type(FreqType),   intent(in) :: Act            ! Frequency of some action
     logical,          intent(in) :: DoTimeAccurate ! Time accurate run?
 
-    !DESCRIPTION:
     ! Check if Dt > 0 in time accurate mode and Dn > 0 in steady state mode
-    ! EOP
     character(len=*), parameter:: NameSub = 'check_freq'
     !--------------------------------------------------------------------------
 
@@ -90,23 +76,16 @@ contains
   end subroutine check_freq
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: adjust_freq - adjust initial values to current values
-  !INTERFACE:
   subroutine adjust_freq(Act, nStep, tSim, DoTimeAccurate)
 
-    !INPUT/OUTPUT ARGUMENTS:
     type(FreqType), intent(inout) :: Act    ! Frequency of some action
 
-    !INPUT ARGUMENTS:
     integer,           intent(in) :: nStep  ! Current step number
     real,              intent(in) :: tSim   ! Current simulation time
     logical,           intent(in) :: DoTimeAccurate ! Time accurate run?
 
-    !DESCRIPTION:
     ! Adjust the nNext and tNext fields of Act based on the
     ! current time step nStep and current simulation time tSim.
-    ! EOP
 
     character(len=*), parameter:: NameSub = 'adjust_freq'
     !--------------------------------------------------------------------------
@@ -121,16 +100,11 @@ contains
   end subroutine adjust_freq
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: is_time_to - is it time to do something
-  !INTERFACE:
   function is_time_to(Act,nStep,tSimulation,DoTimeAccurate,DoCheckOnly) &
        result(IsTimeTo)
 
-    !INPUT/OUTPUT ARGUMENTS:
     type(FreqType), intent(inout) :: Act
 
-    !INPUT ARGUMENTS:
     integer,           intent(in) :: nStep          ! Step number
     real,              intent(in) :: tSimulation    ! Simulation time
     logical,           intent(in) :: DoTimeAccurate ! Time accurate run?
@@ -139,7 +113,6 @@ contains
     !RETURN VALUE:
     logical :: IsTimeTo
 
-    !DESCRIPTION:
     ! Based on the next step/time info in Act and the tSimulation and
     ! nStep values (and the DoTimeAccurate variable) decide
     ! if Act should be done. If the answer is yes and the optional
@@ -148,7 +121,6 @@ contains
     ! If the increased values do not reach the tSimulation and
     ! nStep values then increase the next step/time relative to the
     ! values of tSimulation and nStep.
-    ! EOP
     !--------------------------------------------------------------------------
     if(.not.Act % DoThis)then
        IsTimeTo = .false.
@@ -191,21 +163,17 @@ contains
   end function is_time_to
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: test_freq - test the methods in this module
-  !INTERFACE:
   subroutine test_freq
 
-    !LOCAL VARIABLES:
+    ! local variables
+
     logical, parameter :: IsVerbose = .false.
     type(FreqType)     :: Act
     integer, parameter :: nAct = 10
     logical            :: DoAct(nAct)
     logical            :: DoTimeAccurate = .true.
     logical, parameter :: F=.false., T=.true.
-    ! EOP
     !--------------------------------------------------------------------------
-    ! BOC
     write(*,*)'Testing is_time_to function'
 
     DoTimeAccurate = .false.
@@ -261,8 +229,6 @@ contains
          stop 'Error with freq=10,0.0,0,0.0 adjust_freq(0,0.0)'
 
     write(*,*)'Successful'
-
-    ! EOC
 
   contains
     !==========================================================================

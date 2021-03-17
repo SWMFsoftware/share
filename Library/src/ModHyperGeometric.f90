@@ -1,9 +1,6 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-! BOP
-! MODULE: ModHyperGeometric - calculates hypergeometric series
-!INTERFACE:
 module ModHyperGeometric
   use ModMpi, ONLY: &
        iRealPrec ! 1, if the code is compiled with double precision

@@ -1,12 +1,8 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-! BOP
-! MODULE: CON_axes - coordinate system initialization and setting
-!INTERFACE:
 module CON_axes
 
-  !DESCRIPTION:
   ! CON uses GSE coordinates for planetary data, because it is convenient
   !     as well as it is inertial except for orbital motion. It connects
   !     the planet and the Sun with the X axis, which makes it the
@@ -142,8 +138,6 @@ module CON_axes
   ! Take ellipticity of the planet orbit into account.
   ! Possibly recalculate the GSE-GEI matrix all the time.
 
-  !USES:
-
   use ModKind
   use ModCoordTransform, ONLY: rot_matrix_x, rot_matrix_y, rot_matrix_z, &
        show_rot_matrix, cross_product, dir_to_xyz, xyz_to_dir
@@ -163,14 +157,13 @@ module CON_axes
   use ModConst, ONLY: rSun
   use ModUtilities, ONLY: CON_stop, CON_set_do_test
 
-  !REVISION HISTORY:
+  ! revision history:
   ! 01Aug03 - Gabor Toth and Aaron Ridley  - initial version
   ! 14Aug03 - Gabor Toth <gtoth@umich.edu> - major revision and extension
   ! 23Mar04 - Gabor Toth eliminated the use of CON_time to make
   !                      CON_axes more indepenedent
   ! 17Jan05 - Ofer Cohen and G. Toth merged in GEOPACK and added functions
   !                      angular_velocity and transform_velocity
-  ! EOP
 
   implicit none
 
@@ -227,21 +220,15 @@ module CON_axes
 contains
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: init_axes - initialize the axes
-  !INTERFACE:
   subroutine init_axes(tStartIn)
 
-    !INPUT ARGUMENTS:
     real(Real8_) :: tStartIn
 
-    !DESCRIPTION:
     ! Set the direction and position of the rotation axis in GSE
     ! Set the initial direction and position of the magnetic axis in
     ! GSE, GSM, GEI and GEO systems.
     !
     ! Calculate conversion matrices between MAG-GEO-GEI-GSE systems.
-    ! EOP
 
     real :: XyzPlanetHgr_D(3)
 
@@ -587,16 +574,11 @@ contains
   end subroutine set_gei_geo_matrix
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: set_axes - set time dependent axes and transformation matrices
-  !INTERFACE:
   subroutine set_axes(TimeSim,DoSetAxes)
 
-    !INPUT ARGUMENTS:
     real,              intent(in) :: TimeSim
     logical, optional, intent(in) :: DoSetAxes
 
-    !DESCRIPTION:
     ! The magnetic axis as well as the corotating GEO and MAG frames
     ! are rotating around the rotational axis with OmegaPlanet
     ! angular speed. Calculate the position of the axes and the
@@ -620,7 +602,6 @@ contains
     ! If DtUpdateB0 >  0.001 (sec) then the magnetic axis is updated
     !      if int(TimeSim/DtUpdateB0) differs from int(TimeSimLast/DtUpdateB0)
     !
-    ! EOP
 
     real :: MagAxisGei_D(3)
 
@@ -746,22 +727,15 @@ contains
   end subroutine set_axes
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: get_axes - get parameters of axes at a given time
-  !INTERFACE:
   subroutine get_axes(TimeSim, &
        MagAxisTiltGsmOut, RotAxisGsmOut_D, RotAxisGseOut_D)
 
-    !INPUT ARGUMENTS:
     real, intent(in) :: TimeSim
-    !OUTPUT ARGUMENTS:
     real, intent(out), optional :: MagAxisTiltGsmOut
     real, intent(out), optional :: RotAxisGsmOut_D(3)
     real, intent(out), optional :: RotAxisGseOut_D(3)
-    !DESCRIPTION:
     ! Provides various information about the rotation and magnetic axes
     ! through the optional output arguments.
-    ! EOP
     character(len=*), parameter:: NameSub = 'get_axes'
     !--------------------------------------------------------------------------
     ! Set time independent information
@@ -778,12 +752,8 @@ contains
   end subroutine get_axes
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: transform_matrix - return transform matrix between 2 coord systems
-  !INTERFACE:
   function transform_matrix(TimeSim,TypeCoordIn,TypeCoordOut) result(Rot_DD)
 
-    !INPUT ARGUMENTS:
     real,             intent(in) :: TimeSim      ! Simulation time
     character(len=*), intent(in) :: TypeCoordIn  ! Type of input coord. system
     character(len=*), intent(in) :: TypeCoordOut ! Type of output coord. system
@@ -791,7 +761,6 @@ contains
     !RETURN VALUE:
     real :: Rot_DD(3,3)
 
-    !DESCRIPTION:
     ! Calculate the transformation matrix between two coordinate systems.
     ! One should store the transformation matrix and reuse it, because
     ! this general routine is not very efficient. Typical usage:
@@ -803,7 +772,6 @@ contains
     ! VecIe_D = matmul(IeUa_DD,VecUa_D)
     ! ...
     ! \end{verbatim}
-    ! EOP
 
     real :: InGse_DD(3,3), OutGse_DD(3,3)
     character(len=*), parameter:: NameSub = 'transform_matrix'
@@ -867,14 +835,9 @@ contains
   end function transform_matrix
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: angular_velocity - get angular velocity between two coord systems
-  !INTERFACE:
-
   function angular_velocity(TimeSim, NameCoord1, NameCoord2In, iFrame) &
        result(Omega_D)
 
-    !INPUT ARGUMENTS:
     real,                       intent(in) :: TimeSim      ! Simulation time
     character(len=*),           intent(in) :: NameCoord1   ! 1st coord. system
     character(len=*), optional, intent(in) :: NameCoord2In ! 2nd coord. system
@@ -883,7 +846,6 @@ contains
     !RETURN VALUE:
     real :: Omega_D(3) ! Angular velocity components
 
-    !DESCRIPTION:
     ! This subroutine calculates the angular velocity vector between
     ! two coordinate systems from the transformation matrix between them.
     ! If the second frame is not present in the argument list, the result is
@@ -899,7 +861,6 @@ contains
     ! On the other hand angular\_velocity(t,'GEI','GEO') is the same
     ! as angular\_velocity(t,'GEI','GEO',1) which gives the opposite
     ! (negative) sign for the angular velocity.
-    ! EOP
 
     ! Local variables
     character (len=3) :: NameCoord2
@@ -974,14 +935,9 @@ contains
   end function angular_velocity
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: transform_velocity - transforms velocity between two coord systems
-  !INTERFACE:
-
   function transform_velocity(TimeSim, v1_D, Xyz1_D, &
        NameCoord1, NameCoord2) result(v2_D)
 
-    !INPUT ARGUMENTS:
     real,             intent(in) :: TimeSim       ! Simulation time
     real,             intent(in) :: v1_D(3)       ! Velocity in 1st system
     real,             intent(in) :: Xyz1_D(3) ! Position in 1st system
@@ -991,13 +947,11 @@ contains
     !RETURN VALUE:
     real :: v2_D(3)                                        ! v2 components
 
-    !DESCRIPTION:
     ! This function transforms the velocity vector from one coordinate system
     ! to another. The input position and velocity should be in SI units and
     ! the output velocity vector is also in SI units.
     ! If the two systems have the same name, then the input and output
     ! velocity vectors are the same.
-    ! EOP
 
     ! Local variables
     character (len=3) :: NameCoord1Last = 'XXX', NameCoord2Last = 'XXX'
@@ -1087,15 +1041,10 @@ contains
   end function transform_velocity
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: test_axes - test the CON_axes class
-  !INTERFACE:
   subroutine test_axes
 
-    !DESCRIPTION:
     ! Do some self consistency checks. Stop with an error message if
     ! test fails. Otherwise write out success.
-    ! EOP
     real :: MagAxisTilt
     real :: RotAxisGsm_D(3), RotAxisGeo_D(3), Rot_DD(3,3), Result_DD(3,3)
     real :: Omega_D(3), v2_D(3), Result_D(3), Position_D(3)

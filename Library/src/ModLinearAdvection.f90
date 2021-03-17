@@ -11,7 +11,6 @@ module ModLinearAdvection
 contains
   !============================================================================
   !===========advance_lin_advection==========================================!
-  ! DESCRIPTION: the procedure integrates the linear advection equation,      !
   ! using a one-stage second order scheme                                     !
   subroutine advance_lin_advection_plus(&
        CFLIn_I,       &
@@ -86,7 +85,6 @@ contains
   end subroutine advance_lin_advection_plus
   !============================================================================
   !===========advance_lin_advection==========================================!
-  ! DESCRIPTION: the procedure integrates the log-advection equation, in the  !
   ! conservative or non-conservative formulation, at a logarithmic grid, using!
   ! a one-state second order scheme                                           !
   subroutine advance_lin_advection_minus(&

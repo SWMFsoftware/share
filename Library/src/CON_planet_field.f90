@@ -1,12 +1,8 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-! BOP
-! MODULE: CON_planet_field - provide value and mapping of magnetic field
-!INTERFACE:
 module CON_planet_field
 
-  !DESCRIPTION:
   ! This class provides the magnetic field of the planet
   ! for an arbitrary spatial position at an arbitrary time.
   ! It also provides the mapping from an arbitrary point to a given
@@ -16,7 +12,6 @@ module CON_planet_field
   ! The coordinate system and the normalization of the coordinates
   ! and the magnetic field can be given with string input arguments.
 
-  !USES:
   use CON_planet
   use CON_axes
   use ModUtilities, ONLY: CON_stop
@@ -30,11 +25,10 @@ module CON_planet_field
   public :: map_planet_field  ! Map planet field from a point to a radius
   public :: test_planet_field ! Test the methods in this module
 
-  !REVISION HISTORY:
+  ! revision history:
   ! 11Aug03 - Gabor Toth <gtoth@umich.edu> - initial prototype/prolog/code
   ! 28Nov04 - Gabor Toth - added optional arguments DoNotConvertBack and
   !                        Jacobian matrix to the map_planet_field
-  ! EOP -------------------------------------------------------------------
 
   interface get_planet_field
      module procedure &
@@ -57,19 +51,14 @@ module CON_planet_field
 contains
   !============================================================================
 
-  ! IROUTINE: get_planet_field - get planet field at some time and position
-  !INTERFACE:
   subroutine get_planet_field11(TimeSim, XyzIn_D, TypeCoord, b_D)
 
-    !INPUT ARGUMENTS:
     real,              intent(in) :: TimeSim      ! simulation time
     real,              intent(in) :: XyzIn_D(3)   ! spatial position
     character(len=*),  intent(in) :: TypeCoord    ! type of coordinates
 
-    !OUTPUT ARGUMENTS:
     real,              intent(out):: b_D(3)       ! magnetic field
 
-    !DESCRIPTION:
     ! This is the fundamental subroutine that provides the magnetic
     ! field at a given position at a given simulation time.
     ! If called repeatedly, the subroutine remembers the last simulation time
@@ -80,8 +69,6 @@ contains
     ! The first 3 characters should contain the coordinate system.
     ! This may be followed (after some spaces) by the characters "NORM"
     ! in all capitals. For example "MAG", "GSM NORM", "GSE NORMALIZED" etc.
-
-    ! EOP
 
     real :: Xyz_D(3)     ! Normalized (and rotated) position
     real :: Dipole_D(3)  ! Dipole moment
@@ -434,25 +421,19 @@ contains
   end subroutine calculate_legendre_polynomials
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: map_planet_field - map planet field from a position to some radius
-  !INTERFACE:
   subroutine map_planet_field11(TimeSim, XyzIn_D, TypeCoord, &
        rMapIn, XyzMap_D, iHemisphere, DoNotConvertBack, DdirDxyz_DD)
 
-    !INPUT ARGUMENTS:
     real,              intent(in) :: TimeSim      ! simulation time
     real,              intent(in) :: XyzIn_D(3)   ! spatial position
     character(len=*),  intent(in) :: TypeCoord    ! type of coordinates
     real,              intent(in) :: rMapIn       ! radial distance to map to
     logical, optional, intent(in) :: DoNotConvertBack ! Leave XyzMap in SMG/MAG
 
-    !OUTPUT ARGUMENTS:
     real,              intent(out):: XyzMap_D(3)      ! mapped position
     integer,           intent(out):: iHemisphere      ! which hemisphere
     real, optional,    intent(out):: DdirDxyz_DD(2,3) ! Jacobian matrix
 
-    !DESCRIPTION:
     ! Map the planet field from the input position to the mapping radius.
     ! The coordinate system of the input coordinates is given by the first 3
     ! characters of the TypeCoord string. If the input coordinates are
@@ -486,8 +467,6 @@ contains
     ! If difference between the normalized input and mapping radii
     ! is less than DrNormLimit a trivial mapping is done
     real, parameter :: DrNormLimit = 0.0001
-
-    ! EOP
 
     real             :: Xyz_D(3)        ! Normalized and rotated position
     character(len=3) :: NameCoordSystem ! Input/Output coordinate system
@@ -662,50 +641,37 @@ contains
   end subroutine map_planet_field11
   !============================================================================
 
-  ! BOP ========================================================================
-  ! IROUTINE: map_planet_field33 - map planet field from a position to a radius
-  !INTERFACE:
   subroutine map_planet_field33(TimeSim, xIn, yIn, zIn, TypeCoord, &
        rMap, xMap, yMap, zMap, iHemisphere, DoNotConvertBack, DdirDxyz_DD)
 
-    !INPUT ARGUMENTS:
     real,              intent(in) :: TimeSim       ! simulation time
     real,              intent(in) :: xIn, yIn, zIn ! spatial position
     character(len=*),  intent(in) :: TypeCoord     ! type of coordinates
     real,              intent(in) :: rMap          ! radial distance to map to
     logical, optional, intent(in) :: DoNotConvertBack
 
-    !OUTPUT ARGUMENTS:
     real,              intent(out):: xMap, yMap, zMap ! mapped position
     integer,           intent(out):: iHemisphere      ! mapped hemisphere
     real, optional,    intent(out):: DdirDxyz_DD(2,3) ! Jacobian matrix
 
-    !DESCRIPTION:
     ! Interface to the map\_planet\_field11 routine with 3 scalars for both
     ! input and output positions
 
-    !LOCAL VARIABLES:
+    ! local variables
+
     real :: XyzIn_D(3), XyzMap_D(3)
-    ! EOP
     !--------------------------------------------------------------------------
-    ! BOC
     XyzIn_D(1)=xIn; XyzIn_D(2)=yIn; XyzIn_D(3)=zIn
 
     call map_planet_field(TimeSim, XyzIn_D, TypeCoord, rMap, &
          XyzMap_D, iHemisphere, DoNotConvertBack, DdirDxyz_DD)
 
     xMap=XyzMap_D(1); yMap=XyzMap_D(2); zMap=XyzMap_D(3)
-    ! EOC
   end subroutine map_planet_field33
   !============================================================================
 
-  ! BOP =======================================================================
-  ! IROUTINE: test_planet_field - test methods in CON_planet_field
-  !INTERFACE:
   subroutine test_planet_field
-    !DESCRIPTION:
     ! Test the methods in this class.
-    ! EOP
 
     real :: TimeSim
     real :: xSmg_D(3), xGsm_D(3), xGse_D(3), bSmg_D(3), bGsm_D(3), bGse_D(3)
