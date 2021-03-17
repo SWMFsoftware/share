@@ -183,6 +183,15 @@ foreach $source (@source){
 	s/Michigan, portions used/Michigan,\n!  portions used/;
 	$_ = "" if /This code is a copyright/ and /2002/;
 
+	# Remove the Prologs comments that have zero extra meaning
+	$_ = "" if
+	    /^\s*\!\s*(BOP|INTERFACE:|USES:|EOP|BOC|EOC|DESCRIPTION:)/
+	    or /^\s*\!\s*(OPTIONAL +)?(IN|OUT|INPUT\/OUT)PUT [A-Z]+:/
+	    or /^\s*\!\s*(PUBLIC MEMBER FUNCTIONS:|QUOTE:|IROUTINE:|MODULE:)/;
+
+	s/^(\s*\!)\s*LOCAL VARIABLES:/$1 local variables\n/;
+	s/^(\s*\!)\s*REVISION HISTORY:\s*/$1 revision history:\n/;
+	
 	# Replace old variable names with new names
 	s/\btest_string\b/StringTest/gi;
 	s/\bItest\b/iTest/gi;
