@@ -69,12 +69,16 @@ program post_idl
   ! Variables relatex to Bx=0 plots
   integer :: MaxCoincide = 20                 ! max number of coinciding points
   integer, allocatable :: iCoincide_I(:)      ! indices of coinciding points
-  real,    allocatable :: zCoincide_I(:)      ! |z| of coinciding points
-  integer, allocatable :: iCoincideSort_I(:)  ! point indices sorted by |z|
-  integer :: iLeft, iRight                    ! index of points next to Bx=0
+  real,    allocatable :: zCoincide_I(:)      ! z of coinciding points
+  integer, allocatable :: iCoincideSort_I(:)  ! sorting indices by z
+  integer :: ii, iLeft, iRight,&
+       iLeftTemp, iRightTemp                  ! index of points next to Bx=0
+  real    :: zLeft, zRight                    ! z of the points next to Bx=0
   real    :: BxLeft, BxRight                  ! magnetic field on two sides
   real    :: WeightLeft, WeightRight          ! linear interpolation weights
   integer :: iBx=0                            ! index of Bx plot variable
+  real    :: zCurrentSheet                    ! the |z| of current sheet
+  real    :: zCurrentSheetMin                 ! the current min(|z|) of current sheet
 
   integer :: iDim, iDimCut_D(3), nDim, nParamExtra, l1, l2, l3, l4
   real    :: ParamExtra_I(3)
@@ -759,7 +763,7 @@ program post_idl
               zCoincide_I = 999.9
               ! record the i-th point for bx0
               iCoincide_I(j-i) = i
-              zCoincide_I(j-i) = abs(PlotVar_VC(1,i,1,1))
+              zCoincide_I(j-i) = PlotVar_VC(1,i,1,1)
            end if
            do while( sum(abs(GenCoord_DI(:,j) - GenCoord_DI(:,i)) &
                 /CellSizeMin_D) < 0.01)
@@ -772,7 +776,7 @@ program post_idl
                  ! find the two points with minimum abs value of z
                  ! zCoincide is initialized with large value 999.9
                  iCoincide_I(j-i+1) = j
-                 zCoincide_I(j-i+1) = abs(PlotVar_VC(1,j,1,1))
+                 zCoincide_I(j-i+1) = PlotVar_VC(1,j,1,1)
                  j = j + 1
                  if(j-i >= MaxCoincide) EXIT
               end if
@@ -784,12 +788,32 @@ program post_idl
                  PlotVar_VC(:,i,1,1) = StateSum_V/nSum
               else
                  call sort_quick(MaxCoincide, zCoincide_I, iCoincideSort_I)
-                 iLeft  = iCoincide_I(iCoincideSort_I(1))
-                 iRight = iCoincide_I(iCoincideSort_I(2))
-                 ! The left and right values need to be next to each other
-                 if( abs(PlotVar_VC(1,iLeft,1,1) &
-                      - PlotVar_VC(1,iRight,1,1)) &
-                      < 1.1*CellSize_D(3) ) then
+                 zCurrentSheetMin = huge(1.0)
+                 iLeft = -1
+                 iRight = -1
+
+                 do ii = 1, j - i
+                    ! the actual indices of the consecutive points
+                    iLeftTemp  = iCoincide_I(iCoincideSort_I(ii))
+                    iRightTemp = iCoincide_I(iCoincideSort_I(ii + 1))
+                    zLeft   = PlotVar_VC(1,iLeftTemp,1,1)
+                    zRight  = PlotVar_VC(1,iRightTemp,1,1)
+                    ! check for points next to each other
+                    if(abs(zRight - zLeft) > 1.1 * CellSize_D(3)) CYCLE
+                    BxLeft  = PlotVar_VC(iBx,iLeftTemp,1,1)
+                    BxRight = PlotVar_VC(iBx,iRightTemp,1,1)
+                    ! check for bx sign change
+                    if(BxLeft * BxRight > 0) CYCLE
+                    zCurrentSheet = 0.5 * abs(zLeft + zRight)
+                    ! check the distance from z=0 plane
+                    if(zCurrentSheet > zCurrentSheetMin) CYCLE
+                    ! store new current sheet
+                    zCurrentSheetMin = zCurrentSheet
+                    iLeft  = iLeftTemp
+                    iRight = iRightTemp
+                 end do
+
+                 if(iLeft > 0) then
                     if(iBx > 1) then
                        ! Interpolate linearly to the Bx=0 point
                        BxLeft  = abs(PlotVar_VC(iBx,iLeft,1,1))
