@@ -792,7 +792,7 @@ program post_idl
                  iLeft = -1
                  iRight = -1
 
-                 do ii = 1, j - i
+                 do ii = 1, j - i - 1
                     ! the actual indices of the consecutive points
                     iLeftTemp  = iCoincide_I(iCoincideSort_I(ii))
                     iRightTemp = iCoincide_I(iCoincideSort_I(ii + 1))
