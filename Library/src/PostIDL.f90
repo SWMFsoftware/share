@@ -798,15 +798,21 @@ program post_idl
                     iRightTemp = iCoincide_I(iCoincideSort_I(ii + 1))
                     zLeft   = PlotVar_VC(1,iLeftTemp,1,1)
                     zRight  = PlotVar_VC(1,iRightTemp,1,1)
-                    ! check for points next to each other
+
+                    ! check if points are next to each other
                     if(abs(zRight - zLeft) > 1.1 * CellSize_D(3)) CYCLE
                     BxLeft  = PlotVar_VC(iBx,iLeftTemp,1,1)
                     BxRight = PlotVar_VC(iBx,iRightTemp,1,1)
+
                     ! check for bx sign change
                     if(BxLeft * BxRight > 0) CYCLE
-                    zCurrentSheet = 0.5 * abs(zLeft + zRight)
-                    ! check the distance from z=0 plane
+
+                    ! The distance of the current sheet from z=0
+                    zCurrentSheet = abs( &
+                         (abs(BxLeft)*zRight + abs(BxRight)*zLeft) &
+                         /(abs(BxLeft) + abs(BxRight)) )
                     if(zCurrentSheet > zCurrentSheetMin) CYCLE
+
                     ! store new current sheet
                     zCurrentSheetMin = zCurrentSheet
                     iLeft  = iLeftTemp
