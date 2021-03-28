@@ -5,7 +5,8 @@
 
 my $defaultexception = 
     "set_parameters|correct_electronfluid_efield_cell|select_fluid|".
-    "set_yzr|user_get_b0|user_interface.f90|ModUserEmpty.f90";
+    "set_yzr|user_get_b0|user_interface.f90|ModUserEmpty.f90|".
+    "ModFaceValueGpu.f90|ModFaceFluxGpu.f90|ModUpdateStateGpu.f90";
 
 my $Help       = ($h or $help);
 my $Verbose    = ($v or $verbose);
