@@ -136,7 +136,6 @@ program post_idl
 
   character (len=lStringLine) :: NameCommand, StringLine
   !----------------------------------------------------------------------------
-
   write(*,'(a)')'PostIDL (G.Toth 2000-) starting'
 
   ! No file name given, so read from the header file from STDIN
@@ -920,7 +919,6 @@ contains
 
     ! Variables for roundcube coordinate transformation
     real :: r2, Dist1, Dist2, Coef1, Coef2
-
     !--------------------------------------------------------------------------
     if(TypeGeometry == 'cartesian' .or. NameFileHead(1:3) == 'cut')then
        GenCoord_D = Xyz_D
