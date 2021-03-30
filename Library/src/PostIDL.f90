@@ -77,8 +77,12 @@ program post_idl
   real    :: BxLeft, BxRight                  ! magnetic field on two sides
   real    :: WeightLeft, WeightRight          ! linear interpolation weights
   integer :: iBx=0                            ! index of Bx plot variable
-  real    :: zCurrentSheet                    ! the |z| of current sheet
-  real    :: zCurrentSheetMin                 ! the current min(|z|) of current sheet
+  real    :: zCurrentSheet, zCurrentSheetMin  ! vars for the first CS point
+  real    :: zCurrentSheetDist,&
+       zCurrentSheetMinDist                   ! vars for the not first CS points
+  real    :: zCurrentSheetSelect,&
+       zLastCurrentSheet                      ! vars tracking the current CS position
+  logical :: IsFirstCurrentSheetPoint
 
   integer :: iDim, iDimCut_D(3), nDim, nParamExtra, l1, l2, l3, l4
   real    :: ParamExtra_I(3)
@@ -732,9 +736,9 @@ program post_idl
      if(iError /= 0) stop 'PostIDL.exe ERROR: could not allocate sort arrays'
 
      ! Form sorting function from the generalized coordinates
-     Sort_I = GenCoord_DI(1,:)
-     if(nDim > 1) Sort_I = Sort_I + exp(1.0)*GenCoord_DI(2,:)
-     if(nDim > 2) Sort_I = Sort_I + exp(2.0)*GenCoord_DI(3,:)
+     Sort_I = -exp(10.0) * GenCoord_DI(1,:)
+     if(nDim > 1) Sort_I = Sort_I - exp(2.0)*GenCoord_DI(2,:)
+     if(nDim > 2) Sort_I = Sort_I - exp(1.0)*GenCoord_DI(3,:)
 
      ! Sort points according to the sorting function
      call sort_quick(n1, Sort_I, iSort_I)
@@ -753,6 +757,7 @@ program post_idl
         CellSizeMin_D = dCoordMin_D(iDimCut_D(1:nDim))
         i = 1
         k = 1
+        IsFirstCurrentSheetPoint = .true.
         do while(i < n1)
            StateSum_V = PlotVar_VC(:,i,1,1)
            nSum       = 1
@@ -787,9 +792,10 @@ program post_idl
                  PlotVar_VC(:,i,1,1) = StateSum_V/nSum
               else
                  call sort_quick(MaxCoincide, zCoincide_I, iCoincideSort_I)
-                 zCurrentSheetMin = huge(1.0)
                  iLeft = -1
                  iRight = -1
+                 zCurrentSheetMin = huge(1.0)
+                 zCurrentSheetMinDist = huge(1.0)
 
                  do ii = 1, j - i - 1
                     ! the actual indices of the consecutive points
@@ -806,17 +812,31 @@ program post_idl
                     ! check for bx sign change
                     if(BxLeft * BxRight > 0) CYCLE
 
-                    ! The distance of the current sheet from z=0
-                    zCurrentSheet = abs( &
-                         (abs(BxLeft)*zRight + abs(BxRight)*zLeft) &
-                         /(abs(BxLeft) + abs(BxRight)) )
-                    if(zCurrentSheet > zCurrentSheetMin) CYCLE
-
+                    if(IsFirstCurrentSheetPoint) then
+                       ! for the first CS point, find min(|z|)
+                       zCurrentSheet = abs( &
+                            (abs(BxLeft)*zRight + abs(BxRight)*zLeft) &
+                            /(abs(BxLeft) + abs(BxRight)) )
+                       if(zCurrentSheet > zCurrentSheetMin) CYCLE
+                       zCurrentSheetMin = zCurrentSheet
+                       zCurrentSheetSelect = zCurrentSheetMin
+                       IsFirstCurrentSheetPoint = .false.
+                    else
+                       ! for the continue CS points, find the closest one
+                       ! of the last CS point
+                       zCurrentSheet = (abs(BxLeft)*zRight + abs(BxRight)*zLeft) &
+                            /(abs(BxLeft) + abs(BxRight))
+                       zCurrentSheetDist = abs( zCurrentSheet - zLastCurrentSheet )
+                       if(zCurrentSheetDist > zCurrentSheetMinDist) CYCLE
+                       ! store new current sheet distance
+                       zCurrentSheetSelect = zCurrentSheet
+                       zCurrentSheetMinDist = zCurrentSheetDist
+                    end if
                     ! store new current sheet
-                    zCurrentSheetMin = zCurrentSheet
                     iLeft  = iLeftTemp
                     iRight = iRightTemp
                  end do
+                 zLastCurrentSheet = zCurrentSheetSelect
 
                  if(iLeft > 0) then
                     if(iBx > 1) then
