@@ -758,6 +758,7 @@ program post_idl
         i = 1
         k = 1
         IsFirstCurrentSheetPoint = .true.
+        zLastCurrentSheet = 0.0
         do while(i < n1)
            StateSum_V = PlotVar_VC(:,i,1,1)
            nSum       = 1
