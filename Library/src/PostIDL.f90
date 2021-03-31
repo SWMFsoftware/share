@@ -743,7 +743,7 @@ program post_idl
         if(nDim > 1) Sort_I = Sort_I + exp(1.0)*GenCoord_DI(2,:)
         if(nDim > 2) Sort_I = Sort_I + exp(2.0)*GenCoord_DI(3,:)
      end if
-     
+
      ! Sort points according to the sorting function
      call sort_quick(n1, Sort_I, iSort_I)
 
