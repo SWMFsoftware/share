@@ -23,6 +23,8 @@ public:
     ss.str(stringIn);
     return (*this);
   }
+  ReadParam &operator=(const ReadParam &other) { return (*this); }
+
   void set_verbose(bool in) { isVerbose = in; }
   //==========================================
 
@@ -47,8 +49,8 @@ public:
 
       if (pos1 != std::string::npos) {
         std::string tmp = "_" + commandSuffix;
-        if (commandline.find(tmp) == std::string::npos) {          
-          // Go to next command. 
+        if (commandline.find(tmp) == std::string::npos) {
+          // Go to next command.
           ss.ignore(INT_MAX, '#');
           continue;
         }
