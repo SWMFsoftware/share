@@ -37,6 +37,8 @@ FluidPicInterface::FluidPicInterface() {
   xStart_I = xEnd_I = yStart_I = yEnd_I = zStart_I = zEnd_I = nullptr; 
   
   doCoupleAMPS = false;
+
+  doSplitSpecies = false;
 }
 //-------------------------------------------------------------------------
 
@@ -77,6 +79,9 @@ FluidPicInterface::~FluidPicInterface() {
     delete[] plotString_I;
     delete[] plotVar_I;
   }
+
+  if (doSplitSpecies)
+    delete[] iSPic2Mhd_I;
 }
 //-------------------------------------------------------------------------
 
@@ -194,7 +199,10 @@ void FluidPicInterface::InitData() {
 
   // Get back to SI units
   for (int iVar = 0; iVar < nVarCoupling; iVar++)
-    No2Si_V[iVar] = 1.0 / Si2No_V[iVar];  
+    No2Si_V[iVar] = 1.0 / Si2No_V[iVar];
+
+  timeCtr.Si2NoT = getSi2NoT();
+  timeCtr.No2SiT = getNo2SiT();
 }
 //-------------------------------------------------------------------------
 
@@ -368,6 +376,34 @@ void FluidPicInterface::ReadFromGMinit(const int *const paramint,
   }
 
   nSIn = nS;
+  if (doSplitSpecies) {
+    if (splitType == "Bx" || splitType == "By" || splitType == "Bz") {
+      nS *= 2;
+      iSPic2Mhd_I = new int[nS];
+      for (int i = 0; i < nS; i++) {
+        iSPic2Mhd_I[i] = floor((i + 0.5) / 2.0);
+      }
+    } else if (splitType == "ElectronOnly") {
+      // Assume there are two ion species/fluids in MHD
+      if (nS != 3) {
+        cout << "'ElectronOnly' type splitting is not supported for nSpecies "
+                "= " << nSpecies << " nFluid = " << nFluid << " nS = " << nS
+             << endl;
+        abort();
+      }
+      nS += 1;
+      iSPic2Mhd_I = new int[nS];
+      iSPic2Mhd_I[0] = 0;
+      iSPic2Mhd_I[1] = 0;
+      for (int i = 2; i < nS; i++) {
+        iSPic2Mhd_I[i] = i - 1;
+      }
+
+    } else {
+      cout << " splitType = " << splitType << " is not found!" << endl;
+      abort();
+    }
+  }
 
   useMultiFluid = nIonFluid > 1;
   useMultiSpecies = nSpecies > 1;
@@ -1210,6 +1246,15 @@ void FluidPicInterface::fixPARAM(double *&qom, int *&npcelx, int *&npcely,
     QoQi0_S[i] = QoQi_S[i];
   }
 
+  if (doSplitSpecies) {
+    int idx;
+    for (int i = 0; i < nS; i++) {
+      idx = iSPic2Mhd_I[i];
+      QoQi_S[i] = QoQi0_S[idx];
+      MoMi_S[i] = MoMi0_S[idx];
+    }
+  }
+
   // iones
   for (int is = 0; is < nS; is++) {
     qom[is] = QoQi_S[is] / MoMi_S[is];
@@ -1438,6 +1483,12 @@ void FluidPicInterface::CalcFluidState(const double *dataPIC_I,
 
   if (useElectronFluid) {
 
+    if (doSplitSpecies) {
+      cout << " Species splitting for 5/6 moments has not been "
+              "implemented!" << endl;
+      abort();
+    }
+
     data_I[iEx] = dataPIC_I[iExPIC];
     data_I[iEy] = dataPIC_I[iEyPIC];
     data_I[iEz] = dataPIC_I[iEzPIC];
@@ -1486,6 +1537,8 @@ void FluidPicInterface::CalcFluidState(const double *dataPIC_I,
     Mz = 0;
     for (int iSpecies = 0; iSpecies < nS; iSpecies++) {
       int iMHD = iSpecies;
+      if (doSplitSpecies)
+        iMHD = get_iSPic2Mhd_I(iSpecies);
       if (iMHD == 0) {
         // Electron
 
@@ -1517,7 +1570,7 @@ void FluidPicInterface::CalcFluidState(const double *dataPIC_I,
 
     for (int iSpecies = 0; iSpecies < nS; ++iSpecies) {
       int iIon;
-      iIon = iSpecies - 1; // The first species is electron;
+      iIon = get_iSPic2Mhd_I(iSpecies) - 1; // The first species is electron;
 
       if (iIon >= 0) {
         Rhoi = dataPIC_I[iRhoPIC + iSpecies * nVarSpecies];
