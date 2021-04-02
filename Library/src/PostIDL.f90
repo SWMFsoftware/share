@@ -82,7 +82,6 @@ program post_idl
        zCurrentSheetMinDist                   ! vars for the not first CS points
   real    :: zCurrentSheetSelect,&
        zLastCurrentSheet                      ! vars tracking the current CS position
-  logical :: IsFirstCurrentSheetPoint
 
   integer :: iDim, iDimCut_D(3), nDim, nParamExtra, l1, l2, l3, l4
   real    :: ParamExtra_I(3)
@@ -761,7 +760,6 @@ program post_idl
         CellSizeMin_D = dCoordMin_D(iDimCut_D(1:nDim))
         i = 1
         k = 1
-        IsFirstCurrentSheetPoint = .true.
         zLastCurrentSheet = 0.0
         do while(i < n1)
            StateSum_V = PlotVar_VC(:,i,1,1)
@@ -810,40 +808,34 @@ program post_idl
                     zRight  = PlotVar_VC(1,iRightTemp,1,1)
 
                     ! check if points are next to each other
-                    if(abs(zRight - zLeft) > 1.1 * CellSize_D(3)) CYCLE
+                    if(abs(zRight - zLeft) > 2.1 * CellSize_D(3)) CYCLE
                     BxLeft  = PlotVar_VC(iBx,iLeftTemp,1,1)
                     BxRight = PlotVar_VC(iBx,iRightTemp,1,1)
 
                     ! check for bx sign change
                     if(BxLeft * BxRight > 0) CYCLE
 
-                    if(IsFirstCurrentSheetPoint) then
-                       ! for the first CS point, find min(|z|)
-                       zCurrentSheet = abs( &
-                            (abs(BxLeft)*zRight + abs(BxRight)*zLeft) &
-                            /(abs(BxLeft) + abs(BxRight)) )
-                       if(zCurrentSheet > zCurrentSheetMin) CYCLE
-                       zCurrentSheetMin = zCurrentSheet
-                       zCurrentSheetSelect = zCurrentSheetMin
-                       IsFirstCurrentSheetPoint = .false.
-                    else
-                       ! for the continue CS points, find the closest one
-                       ! of the last CS point
-                       zCurrentSheet = (abs(BxLeft)*zRight + abs(BxRight)*zLeft) &
-                            /(abs(BxLeft) + abs(BxRight))
-                       zCurrentSheetDist = abs( zCurrentSheet - zLastCurrentSheet )
-                       if(zCurrentSheetDist > zCurrentSheetMinDist) CYCLE
-                       ! store new current sheet distance
-                       zCurrentSheetSelect = zCurrentSheet
-                       zCurrentSheetMinDist = zCurrentSheetDist
-                    end if
+                    ! for the continue CS points, find the closest one
+                    ! of the last CS point
+                    zCurrentSheet = (abs(BxLeft)*zRight + abs(BxRight)*zLeft) &
+                         /(abs(BxLeft) + abs(BxRight))
+                    zCurrentSheetDist = abs( zCurrentSheet - zLastCurrentSheet )
+                    if(zCurrentSheetDist > zCurrentSheetMinDist) CYCLE
+                    ! store new current sheet distance
+                    zCurrentSheetSelect = zCurrentSheet
+                    zCurrentSheetMinDist = zCurrentSheetDist
+
                     ! store new current sheet
                     iLeft  = iLeftTemp
                     iRight = iRightTemp
                  end do
-                 zLastCurrentSheet = zCurrentSheetSelect
 
                  if(iLeft > 0) then
+                    ! calculate the y of the CS point
+                    ! only update the zLastCurrentSheet if y is close to 0
+                    if(abs(Coord_DC(2,iLeft,1,1))<1.0)&
+                         zLastCurrentSheet = zCurrentSheetSelect
+
                     if(iBx > 1) then
                        ! Interpolate linearly to the Bx=0 point
                        BxLeft  = abs(PlotVar_VC(iBx,iLeft,1,1))
