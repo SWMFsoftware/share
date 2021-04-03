@@ -736,6 +736,8 @@ program post_idl
 
      ! Form sorting function from the generalized coordinates
      if(IsBx0)then
+        ! the negative sign is for starting from the earth
+        ! the exp(-8.0) on y is to swipe through y direction first
         Sort_I = -GenCoord_DI(1,:) - exp(-8.0)*GenCoord_DI(2,:)
      else
         Sort_I = GenCoord_DI(1,:)
