@@ -532,7 +532,7 @@ istart=$istart MinLength=$MinLength iseparator=$iseparator
     print FILE $text;
     close FILE;
 
-    if(`diff -w -I \'\^ \*\$\' $source $orig`){
+    if(`diff $source $orig`){
 	print "FormatFortran.pl changed $source\n";
     }else{
 	unlink $orig;
