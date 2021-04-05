@@ -380,9 +380,10 @@ pro set_default_values
   variables= ''                 ; array of coordinate/variable/param names
   wnames   = ''                 ; array of variables names
 
-; The byte arrays in the colors common block are set by loadct
+  ;; The byte arrays in the colors common block are set by loadct
   common colors, r_orig, g_orig, b_orig, r_curr, g_curr, b_curr
 
+  ;; Start day for the time axis of plot_log_data
   common start_date, start_year, start_month, start_day
   
   start_year  = 2000
@@ -1580,6 +1581,7 @@ function log_time,wlog,wlognames,timeunit
 
   if nwlog lt 0 then return, hours
 
+  idate = -1
   itime = -1
   istep = -1
   iyear = -1
@@ -1593,6 +1595,7 @@ function log_time,wlog,wlognames,timeunit
   for i = 0, nwlog-1 do begin
      varname = strlowcase(wlognames(i))
      case varname of
+        'date'       : idate = i
         'time'       : itime = i
         't'          : if wlognames(i) eq 't' then itime=i
         'step'       : istep = i
@@ -1626,7 +1629,9 @@ function log_time,wlog,wlognames,timeunit
      endcase
   endfor
 
-  if itime gt -1 then begin
+  if idate gt -1 then begin
+     hours = wlog(*,idate)*24.0  ; number of hours since Jan 1 4713 BC.
+  endif else if itime gt -1 then begin
      hours = wlog(*,itime)/3600.0
   endif else begin
      if idoy gt -1 then begin
@@ -1692,15 +1697,19 @@ function log_time,wlog,wlognames,timeunit
         'microsec': logtime = hours*3600e6
         'ns'    : logtime = hours*3600e9
         'date'  : begin
-           if imon  gt -1 then start_month = wlog(0,imon)
-           if iday  gt -1 then start_day   = wlog(0,iday)
-           if iyear gt -1 then start_year  = wlog(0,iyear)
-           if imon eq -1 or iday eq -1 or iyear eq -1 then   $
-              print, ' Warning: check start time: ', $
-                     STRING(start_month, format='(i02)'),'/', $
-                     STRING(start_day,   format='(i2)'), '/', $
-                     STRING(start_year,  format='(i4)')
-           logtime = JULDAY(start_month, start_day, start_year, hours)
+           if idate gt -1 then begin
+              logtime = hours/24.0
+           endif else begin $
+              if imon  gt -1 then start_month = fix(wlog(0,imon))
+              if iday  gt -1 then start_day   = fix(wlog(0,iday))
+              if iyear gt -1 then start_year  = fix(wlog(0,iyear))
+              if imon eq -1 or iday eq -1 or iyear eq -1 then   $
+                 print, ' Warning: check start time: ', $
+                        STRING(start_month, format='(i02)'),'/', $
+                        STRING(start_day,   format='(i2)'), '/', $
+                        STRING(start_year,  format='(i4)')
+              logtime = JULDAY(start_month, start_day, start_year, hours)
+           endelse
         end
         else: 
      endcase
@@ -5893,6 +5902,48 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, verbose=verbose
         retall
      endif
   endif else if itype eq 7 then begin
+     file = source
+     l = strlen(file)
+     if strmid(file, l-3) eq '.gz' then begin
+        ;; gunzip the file
+        filenew = strmid(file,0,l-3)
+        print,'gunzip -c '+file+' > '+filenew
+        spawn,'gunzip -c '+file+' > '+filenew
+        file = filenew
+     endif
+     l = strlen(file)
+     if strmid(file,l-4) eq '.csv' then begin
+        ;; read csv file
+        if not query_csv(file, info) then begin
+           print,'could not read CSV file '+file
+           retall
+        endif
+        nwlog = info.nfields
+        nt    = info.lines - 1 ; ignore the first line
+        print,'CSV file: nwlog=', nwlog,', nt=', nt, format='(a,i4,a,i8)'
+        value = read_csv(file, header=wlognames)
+        print,'CSV fields:  wlognames=', wlognames
+        wlog = dblarr(nt, nwlog)
+        if strlowcase(strmid(wlognames[0],0,4)) eq 'date' then begin
+           wlognames(0) = 'date' ; standarize the name
+           if wlognames(1) eq 'dbn_nez' then wlognames(1)='B_NorthGeomag'
+           if wlognames(2) eq 'dbe_nez' then wlognames(2)='B_EastGeomag'
+           if wlognames(3) eq 'dbz_nez' then wlognames(3)='B_DownGeomag'
+           for i = 0, nt-1 do begin
+              ;; calculate the Julian day
+              timestamp = value.(0)[i] + 'Z'
+              timestamptovalues, timestamp, year=year, month=month, day=day,$
+                                 hour=hour, minute=minute, second=second
+              wlog(i,0) = JULDAY(month, day, year, hour, minute, second)
+           endfor
+           for i = 1, nwlog-1 do wlog(*,i) = value.(i)
+           print,'Standardized wlognames=', wlognames
+        endif else $
+           for i = 0, nwlog-1 do wlog(*,i) = value.(i)
+
+        logtime = log_time(wlog,wlognames,timeunit)
+        return
+     endif
      filesource=1
      file = source
      unit = 0
@@ -5927,20 +5978,22 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, verbose=verbose
      if isheader then begin
         readf, unit, line
 
-                                ; check if the line contains any character that is not a number
+        ;; check if the line contains any character that is not a
+        ;; number or a separator of the a date
+        
         isheader = 0
         for i = 0, strlen(line)-1 do begin
-           if strmatch(strmid(line,i,1), '[!	0123456789dDeE \.+-]') $
+           if strmatch(strmid(line,i,1), '[!	0123456789dDeE \.+-T:]') $
            then begin
               isheader = 1
               break
            endif
         endfor
 
-                                ; check if line contains a single number only
+        ;; check if line contains a single number only
         if not isheader then begin
            n = 0
-           string_to_array,line, numbers, n
+           string_to_array, line, numbers, n
            if n le 1 then isheader=1
         endif
         
@@ -5951,33 +6004,33 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, verbose=verbose
               headlines = [headlines, line]
            nheadline = nheadline + 1
         endif else begin
-                                ; split line into numbers
+           ;; split line into numbers
            string_to_array,line, numbers, nwlog
-                                ; create arrays to read data into
+           ;; create arrays to read data into
            wlog_ = dblarr(nwlog)
            wlog  = dblarr(nwlog,buf)
 
-                                ; read first line
+           ;; read first line
            reads, line, wlog_
            if total(finite(wlog_)) eq nwlog then begin
               wlog(*,0) = wlog_
               nt = 1L
            endif
 
-                                ; find variable names in the header lines
+           ;; find variable names in the header lines
            for i = nheadline - 1, 0, -1 do begin
               line = headlines[i]
               char = strlowcase(strmid(strtrim(line,1),0,1))
               if char ge 'a' and char le 'z' then begin
 
-                                ; Overwrite #START with spaces if present
+                 ;; Overwrite #START with spaces if present
                  j = strpos(line,'#START')
                  if j ge 0 then strput, line, '      ', j
 
-                                ; split line into names
+                 ;; split line into names
                  string_to_array, line, wlognames, nname
 
-                                ; if number of names agree we are done
+                 ;; if number of names agree we are done
                  if nname eq nwlog then BREAK
               endif
            endfor
