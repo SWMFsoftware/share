@@ -61,7 +61,7 @@
 ; eliminating degenerate dimensions from an array
 ;    reform2
 ; converting logfile time or date+time into hours, getting other functions
-;    log_time, log_func
+;    log_time, log_func, convert_date
 ; limiting changes in a time series
 ;    limit_change, limit_growth
 
@@ -1564,6 +1564,17 @@ function reform2,x
 
 end
 
+;=============================================================================
+function date_to_julday, date
+; Convert date in ISO format into the Julian day:
+; the number of days since Jan 1 4713 BC
+
+  if strmid(date,strlen(date)-1) ne 'Z' then date += 'Z'
+  timestamptovalues, date, year=year, month=month, day=day, $
+                     hour=hour, minute=minute, second=second
+  return, julday(month, day, year, hour, minute, second)
+
+end
 ;=============================================================================
 function log_time,wlog,wlognames,timeunit
 
@@ -5870,7 +5881,24 @@ function rel_errors, w0, w1, w2, w3, w4, w5, ivar=ivar, ratio=ratio, fd=fd
 
   return,errors
 end
+;=============================================================================
+pro read_log_line, line, array
+; read the numbers from a line into an array. Convert dates into Julian day.
 
+  if strpos(line,'T') gt 0 then begin
+     numbers = strsplit(line,' ',/extract)
+     for i = 0, n_elements(array)-1 do begin
+        if strpos(numbers[i],'T') gt 0 then begin
+           array[i] = date_to_julday(numbers[i])
+        endif else begin
+           reads, numbers[i], a
+           array[i] = a
+        endelse
+     endfor
+  endif else $
+     reads, line, array
+end
+     
 ;=============================================================================
 pro get_log, source, wlog, wlognames, logtime, timeunit, verbose=verbose
 
@@ -5925,16 +5953,14 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, verbose=verbose
         print,'CSV fields:  wlognames=', wlognames
         wlog = dblarr(nt, nwlog)
         if strlowcase(strmid(wlognames[0],0,4)) eq 'date' then begin
-           wlognames(0) = 'date' ; standarize the name
+           ;; standarize the variable names
+           wlognames(0) = 'date' 
            if wlognames(1) eq 'dbn_nez' then wlognames(1)='B_NorthGeomag'
            if wlognames(2) eq 'dbe_nez' then wlognames(2)='B_EastGeomag'
            if wlognames(3) eq 'dbz_nez' then wlognames(3)='B_DownGeomag'
            for i = 0, nt-1 do begin
               ;; calculate the Julian day
-              timestamp = value.(0)[i] + 'Z'
-              timestamptovalues, timestamp, year=year, month=month, day=day,$
-                                 hour=hour, minute=minute, second=second
-              wlog(i,0) = JULDAY(month, day, year, hour, minute, second)
+              wlog(i,0) = date_to_julday(value.(0)[i])
            endfor
            for i = 1, nwlog-1 do wlog(*,i) = value.(i)
            print,'Standardized wlognames=', wlognames
@@ -5961,10 +5987,10 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, verbose=verbose
   end
 
   if not keyword_set(verbose) then verbose = 0
-; If verbose is a string set the index string to it
+  ;; If verbose is a string set the index string to it
   if size(verbose,/type) eq 7 then index=verbose else index=''
 
-; Use buffers for efficient reading
+  ;; Use buffers for efficient reading
   line  = ''
   nheadline = 0
   isheader  = 1
@@ -6010,8 +6036,9 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, verbose=verbose
            wlog_ = dblarr(nwlog)
            wlog  = dblarr(nwlog,buf)
 
-           ;; read first line
-           reads, line, wlog_
+           ;; read line into numbers, convert date to julday
+           read_log_line, line, wlog_
+
            if total(finite(wlog_)) eq nwlog then begin
               wlog(*,0) = wlog_
               nt = 1L
@@ -6051,7 +6078,8 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, verbose=verbose
 
         endelse
      endif else begin
-        readf, unit, wlog_
+        readf, unit, line
+        read_log_line, line, wlog_
         if total(finite(wlog_)) eq nwlog then begin
            wlog(*,nt) = wlog_
            nt=nt+1
