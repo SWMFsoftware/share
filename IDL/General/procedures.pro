@@ -16,7 +16,7 @@
 ;   reset_axis, slice_data_restore
 ; reading ascii and binary data produced by VAC, BATSRUS, PWOM, IPIC3D etc:
 ;    open_file, get_file_types, get_file_head, get_pict, 
-;    get_pict_asc, get_pict_bin, get_pict_log, get_log
+;    get_pict_asc, get_pict_bin, get_pict_log, get_log, read_log_line
 ; showing / overwriting information read from last file:
 ;    show_head, show_units, set_units
 ; saving ascii and binary data in the same format as used for input:
@@ -5883,17 +5883,18 @@ function rel_errors, w0, w1, w2, w3, w4, w5, ivar=ivar, ratio=ratio, fd=fd
 end
 ;=============================================================================
 pro read_log_line, line, array
-; read the numbers from a line into an array. Convert dates into Julian day.
+; read the numbers from a line into a double array.
+; Convert date-time string in ISO format into Julian day.
 
+  numbers = strsplit(line,' ',/extract)
+  n = n_elements(numbers)
+  if n_elements(array) ne n then array = dblarr(n)
   if strpos(line,'T') gt 0 then begin
-     numbers = strsplit(line,' ',/extract)
-     for i = 0, n_elements(array)-1 do begin
-        if strpos(numbers[i],'T') gt 0 then begin
-           array[i] = date_to_julday(numbers[i])
-        endif else begin
-           reads, numbers[i], a
-           array[i] = a
-        endelse
+     for i = 0, n-1 do begin
+        if strpos(numbers[i],'T') gt 0 then $
+           array[i] = date_to_julday(numbers[i]) $
+        else $
+           array[i] = double(numbers[i])
      endfor
   endif else $
      reads, line, array
