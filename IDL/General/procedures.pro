@@ -5950,23 +5950,39 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, verbose=verbose
         nwlog = info.nfields
         nt    = info.lines - 1 ; ignore the first line
         print,'CSV file: nwlog=', nwlog,', nt=', nt, format='(a,i4,a,i8)'
-        value = read_csv(file, header=wlognames)
-        print,'CSV fields:  wlognames=', wlognames
-        wlog = dblarr(nt, nwlog)
-        if strlowcase(strmid(wlognames[0],0,4)) eq 'date' then begin
+        value = read_csv(file, header=wlognamesRead)
+        print,'CSV fields:  wlognamesRead=', wlognamesRead
+        if strlowcase(strmid(wlognamesRead[0],0,4)) eq 'date' then begin
+
+           wlog = dblarr(nt, nwlog+5)
+           wlognames = strarr(nwlog+5)
+
            ;; standarize the variable names
-           wlognames(0) = 'date' 
-           if wlognames(1) eq 'dbn_nez' then wlognames(1)='B_NorthGeomag'
-           if wlognames(2) eq 'dbe_nez' then wlognames(2)='B_EastGeomag'
-           if wlognames(3) eq 'dbz_nez' then wlognames(3)='B_DownGeomag'
+           wlognames(0) = 'year'
+           wlognames(1) = 'month'
+           wlognames(2) = 'day'
+           wlognames(3) = 'hour'
+           wlognames(4) = 'min'
+           wlognames(5) = 'second'
+           if wlognamesRead(1) eq 'dbn_nez' then wlognames(6)='B_NorthGeomag'
+           if wlognamesRead(2) eq 'dbe_nez' then wlognames(7)='B_EastGeomag'
+           if wlognamesRead(3) eq 'dbz_nez' then wlognames(8)='B_DownGeomag'
            for i = 0, nt-1 do begin
               ;; calculate the Julian day
-              wlog(i,0) = date_to_julday(value.(0)[i])
+              ;; wlog(i,0) = date_to_julday(value.(0)[i])
+              wlog(i,0) = fix(strmid(value.(0)[i],0, 4))
+              wlog(i,1) = fix(strmid(value.(0)[i],5, 2))
+              wlog(i,2) = fix(strmid(value.(0)[i],8, 2))
+              wlog(i,3) = fix(strmid(value.(0)[i],11,2))
+              wlog(i,4) = fix(strmid(value.(0)[i],14,2))
+              wlog(i,5) = fix(strmid(value.(0)[i],17,2))
            endfor
-           for i = 1, nwlog-1 do wlog(*,i) = value.(i)
+           for i = 1, nwlog-1 do wlog(*,i+5) = value.(i)
            print,'Standardized wlognames=', wlognames
-        endif else $
+        endif else begin
+           wlog = dblarr(nt, nwlog)
            for i = 0, nwlog-1 do wlog(*,i) = value.(i)
+        endelse
 
         logtime = log_time(wlog,wlognames,timeunit)
         return
