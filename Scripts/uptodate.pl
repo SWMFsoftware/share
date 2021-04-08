@@ -14,7 +14,7 @@ my $file = shift @ARGV or die "ERROR in uptodate.pl: Missing file name\n";
 my $dir  = (join(" ", @ARGV) or ".");
 
 if(-f $file){
-    print `find $dir -newer $file`; 
-}else{
-    print "$file does not exist\n";
+    print "UPDATE\n" if `find $dir -newer $file`;
+}else{ 
+    print "CREATE\n";
 }
