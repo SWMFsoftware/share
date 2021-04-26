@@ -804,6 +804,7 @@ contains
   !============================================================================
 
   function cross_product11(a_D, b_D) result(c_D)
+    !$acc routine seq
     real, intent(in) :: a_D(3), b_D(3)
     !RETURN VALUE:
     real             :: c_D(3)
