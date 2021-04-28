@@ -11,7 +11,7 @@ my $mstemquda_software = 'https://github.com/MSTEM-QUDA';
 my %url = (
     "GITM"         => "https://github.com/aaronjridley",
     "VISANAMATLAB" => "https://github.com/henry2004y",
-    "VISANAJULIA"  => "https://github.com/henry2004y",
+    "BATSRUS.jl"   => "https://github.com/henry2004y",
     );
 
 my @repo = ("SWMF, BATSRUS, RCM2, RBE, Ridley_serial, BATL", 
