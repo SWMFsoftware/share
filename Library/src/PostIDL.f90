@@ -419,7 +419,7 @@ program post_idl
 
   if(.not.IsStructured)then
      allocate(GenCoord_DI(nDim,nCellPlot), STAT=iError)
-     if(iError /= 0) stop 'PostIDL.exe ERROR: could not allocate enCoord_DI'
+     if(iError /= 0) stop 'PostIDL.exe ERROR: could not allocate GenCoord_DI'
   end if
 
   if(DoReadBinary .and. nByteRealRead==4) allocate(PlotVar4_V(nPlotVar))
