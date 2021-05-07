@@ -5901,7 +5901,7 @@ pro read_log_line, line, array
 end
      
 ;=============================================================================
-pro get_log, source, wlog, wlognames, logtime, timeunit, verbose=verbose
+pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines, verbose=verbose
 
 ; Read the log data from source. If source is an integer, it is 
 ; interpreted as a unit number. If it is a string, it is taken as the
