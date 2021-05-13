@@ -1413,6 +1413,9 @@ contains
 
     character(len=*), parameter:: NameSub = 'interpolate_arg_array'
     !--------------------------------------------------------------------------
+    if(iTable < 1 .or. iTable > nTable) call CON_stop(NameSub// &
+         ': incorrect value for iTable=', iTable)
+
     Ptr => Table_I(iTable)
     Arg_I(1:Ptr%nIndex) = ArgIn_I(1:Ptr%nIndex)
 
@@ -1475,6 +1478,9 @@ contains
 
     character(len=*), parameter:: NameSub = 'interpolate_with_known_val'
     !--------------------------------------------------------------------------
+    if(iTable < 1 .or. iTable > nTable) call CON_stop(NameSub// &
+         ': incorrect value for iTable=', iTable)
+
     Ptr => Table_I(iTable)
     if(present(Arg2In))then
        Arg2 = Arg2In
@@ -1555,7 +1561,11 @@ contains
 
     type(TableType), pointer:: Ptr
     integer                 :: iParam
+    character(len=*), parameter:: NameSub = 'get_lookup_table'
     !--------------------------------------------------------------------------
+    if(iTable < 1 .or. iTable > nTable) call CON_stop(NameSub// &
+         ': incorrect value for iTable=', iTable)
+
     Ptr => Table_I(iTable)
     if(present(StringDescription)) StringDescription = Ptr%StringDescription
     if(present(NameVar))           NameVar           = Ptr%NameVar
