@@ -152,13 +152,13 @@ sub execute_gitall(){
 	       $localref =~ s/\n.*//s;
 
 	       # Add reference after the status
-	       $status .= "  $localref";
+	       $status .= "  $branch $localref";
 
 	       # Add leading spaces 
 	       $status .= " " x (30-length $status);
 
-	       # Add "detached" if not master branch
-	       $status .= " detached" if $branch ne "master";
+	       # Add "detached" if not master or stable branch
+	       $status .= " detached" if $branch !~ /^master|stable$/;
 
 	       # Store status into RefList array
 	       push @RefList, "$reponame $status";
