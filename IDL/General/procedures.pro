@@ -5886,7 +5886,7 @@ pro read_log_line, line, array
 ; read the numbers from a line into a double array.
 ; Convert date-time string in ISO format into Julian day.
 
-  numbers = strsplit(line,' ',/extract)
+  numbers = strsplit(line,'[ ,	]',/extract,/regex) ; '[ ' + STRING(9B) + ']+'
   n = n_elements(numbers)
   if n_elements(array) ne n then array = dblarr(n)
   if strpos(line,'T') gt 0 then begin
