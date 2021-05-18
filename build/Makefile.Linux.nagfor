@@ -38,7 +38,7 @@ OPT2 = -O2
 OPT3 = -O3
 OPT4 = -O4
 
-CFLAG = ${SEARCH} -c -w -ideclient -fpp ${DEBUG} -kind=byte
+CFLAG = ${SEARCH} -c -w -ideclient -fpp ${OPENMPFLAG} ${DEBUG} -kind=byte
 
 Cflag0  = ${CFLAG} ${PRECISION} ${OPT0}
 Cflag1  = ${CFLAG} ${PRECISION} ${OPT1}
