@@ -419,7 +419,7 @@ contains
   !============================================================================
 
   subroutine xyz_to_dir12(Xyz_D,Theta,Phi)
-
+    !$acc routine seq
     real, intent(in) :: Xyz_D(3)
     real, intent(out):: Theta,Phi
 
@@ -431,7 +431,7 @@ contains
 
   !
   subroutine xyz_to_dir32(x,y,z,Theta,Phi)
-
+    !$acc routine seq
     real, intent(in) :: x,y,z
 
     real, intent(out):: Theta,Phi
@@ -449,7 +449,7 @@ contains
   !============================================================================
 
   subroutine xyz_to_dir14(Xyz_D,SinTheta,CosTheta,SinPhi,CosPhi)
-
+    !$acc routine seq    
     real, intent(in) :: Xyz_D(3)
     real, intent(out):: SinTheta,CosTheta,SinPhi,CosPhi
 
@@ -462,7 +462,7 @@ contains
   ! (trigonometric)
   !
   subroutine xyz_to_dir34(x,y,z,SinTheta,CosTheta,SinPhi,CosPhi)
-
+    !$acc routine seq
     real, intent(in) :: x,y,z
 
     real, intent(out):: SinTheta,CosTheta,SinPhi,CosPhi
@@ -627,7 +627,7 @@ contains
   !============================================================================
 
   function rot_matrix_x1(Angle) result(Rot_DD)
-
+    !$acc routine seq
     real, intent(in) :: Angle
     real :: Rot_DD(3,3)
 
@@ -639,7 +639,7 @@ contains
 
   !
   function rot_matrix_x2(SinAngle, CosAngle) result(Rot_DD)
-
+    !$acc routine seq
     real, intent(in) :: SinAngle, CosAngle
 
     !RETURN VALUE:
@@ -663,7 +663,7 @@ contains
   !============================================================================
 
   function rot_matrix_y1(Angle) result(Rot_DD)
-
+    !$acc routine seq
     real, intent(in) :: Angle
     real             :: Rot_DD(3,3)
 
@@ -674,7 +674,7 @@ contains
   !============================================================================
 
   function rot_matrix_y2(SinAngle,CosAngle) result(Rot_DD)
-
+    !$acc routine seq
     real, intent(in) :: CosAngle, SinAngle
     real             :: Rot_DD(3,3)
 
@@ -690,7 +690,7 @@ contains
   !============================================================================
 
   function rot_matrix_z1(Angle) result(Rot_DD)
-
+    !$acc routine seq
     real, intent(in) :: Angle
     real :: Rot_DD(3,3)
 
@@ -701,7 +701,7 @@ contains
   !============================================================================
 
   function rot_matrix_z2(SinAngle,CosAngle) result(Rot_DD)
-
+    !$acc routine seq
     real, intent(in) :: SinAngle,CosAngle
     real             :: Rot_DD(3,3)
 
@@ -817,6 +817,7 @@ contains
   !============================================================================
 
   function cross_product13(a_D, bX, bY, bZ) result(c_D)
+    !$acc routine seq
     real, intent(in) :: a_D(3), bX, bY, bZ
     real             :: c_D(3)
 
@@ -828,6 +829,7 @@ contains
   !============================================================================
 
   function cross_product31(aX, aY, aZ, b_D) result(c_D)
+    !$acc routine seq    
     real, intent(in) :: aX, aY, aZ, b_D(3)
     real             :: c_D(3)
 
@@ -839,6 +841,7 @@ contains
   !============================================================================
 
   function cross_product33(aX, aY, aZ, bX, bY, bZ) result(c_D)
+    !$acc routine seq    
     real, intent(in) :: aX, aY, aZ, bX, bY, bZ
     real             :: c_D(3)
 
@@ -1045,6 +1048,7 @@ contains
   end subroutine show_nbyn_matrix
   !============================================================================
   real function atan2_check(x,y)
+    !$acc routine seq
     real, intent(in) :: x,y
     !--------------------------------------------------------------------------
     if(x==0 .and. y==0)then

@@ -46,6 +46,7 @@ module CON_planet
   real           :: AngleEquinox
   type(TimeType) :: TimeEquinox = TimeType(2000, 1, 1, 0, 0, 0, &
        0.0, 0.0_REAL8_, '20000101000000')
+  !$acc declare create(OmegaPlanet, OmegaRotation, AngleEquinox, TimeEquinox)
 
   ! Magnetic field type and strength in teslas
   character (len=lTypeBField) :: TypeBField = 'DIPOLE'
@@ -58,6 +59,7 @@ module CON_planet
   real    :: RotAxisPhi        ! Permanent phi   angle in GSE
   real    :: MagAxisTheta      ! Current   theta angla in GSE
   real    :: MagAxisPhi        ! Current   phi   angla in GSE
+  !$acc declare create(MagAxisTheta, MagAxisPhi)
 
   ! Offset of the magnetic field center
   real    :: MagCenter_D(3) = [ 0.0, 0.0, 0.0]
@@ -69,10 +71,12 @@ module CON_planet
   logical :: UseSetRotAxis   = .false.
   logical :: UseRealMagAxis  = .true.
   logical :: UseSetMagAxis   = .false.
+  !$acc declare create(UseRotation)
 
   ! Frequency of updating the magnetic field information
   logical :: DoUpdateB0      = .true.
   real    :: DtUpdateB0      = 0.0001
+  !$acc declare create(DoUpdateB0, DtUpdateB0)
 
   ! A primary axis is set to the true value
   ! a secondary axis is aligned with the primary axis
@@ -127,7 +131,10 @@ contains
     DipoleStrength   = DipoleStrengthPlanet_I(Earth_)
     MagAxisThetaGeo  = bAxisThetaPlanet_I(Earth_)
     MagAxisPhiGeo    = bAxisPhiPlanet_I(Earth_)
-
+            
+    !$acc update device(OmegaPlanet, AngleEquinox, OmegaRotation, TimeEquinox, &
+    !$acc MagAxisPhi, MagAxisTheta)
+    
   end subroutine set_planet_defaults
   !============================================================================
 
@@ -211,7 +218,10 @@ contains
 
     ! For Enceladus the dipole is at Saturn's center
     if(Planet_==Enceladus_) MagCenter_D(2)    = 944.23
-
+    
+    !$acc update device(OmegaPlanet, AngleEquinox, OmegaRotation, TimeEquinox, &
+    !$acc MagAxisPhi, MagAxisTheta)
+    
   end function is_planet_init
   !============================================================================
 
@@ -294,7 +304,7 @@ contains
 
             end select
        end if
-
+       !$acc update device(OmegaPlanet)
     case('#IDEALAXES')
        ! This is a short version of setting one axis parallel with Z
        ! and the other one aligned with it
@@ -379,7 +389,7 @@ contains
           RotPeriodPlanet = RotPeriodPlanet * 3600
           OmegaPlanet = cTwoPi / RotPeriodPlanet
        endif
-
+       !$acc update device(UseRotation, OmegaPlanet)
     case('#NONDIPOLE')
 
        NamePlanetCommands = '#NONDIPOLE ' // NamePlanetCommands
@@ -476,6 +486,7 @@ contains
     ! so it needs DoUpdateB0 to be True even when IdealAxes is used.
     ! If dipole is used with IdealAxes, no update is needed.
 
+    !$acc update device(DoUpdateB0, DtUpdateB0)
   end subroutine check_planet_var
   !============================================================================
 
