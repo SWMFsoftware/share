@@ -621,13 +621,13 @@ contains
 
     ! Reset the helio-centered coordinate transformations if time changed
     logical:: DoTest
+
     character(len=*), parameter:: NameSub = 'set_axes'
     !--------------------------------------------------------------------------
+    TimeSimLast = -1000.0
+    TimeSimHgr  = -1000.0
 
-    TimeSimLast = -1000.0 
-    TimeSimHgr  = -1000.0 
-
-#ifndef OPENACC    
+#ifndef OPENACC
     if(TimeSimHgr /= TimeSim)then
 
        ! Recalculate the HgrHgi_DD matrix
@@ -672,7 +672,7 @@ contains
 
     end if
 
-#ifndef OPENACC    
+#ifndef OPENACC
     call CON_set_do_test(NameSub, DoTest)
 
     if(DoTest)then
@@ -681,7 +681,7 @@ contains
        write(*,*) NameSub,'DtUpdateB0,TimeSim,TimeSimLast=',&
             DtUpdateB0,TimeSim,TimeSimLast
     end if
-#endif    
+#endif
 
     ! Remember the simulation time
     TimeSimLast = TimeSim
@@ -742,7 +742,7 @@ contains
        write(*,*)NameSub,' new MagAxisTiltGsm=',MagAxisTiltGsm*cRadToDeg
        write(*,*)NameSub,' new RotAxisGsm_D  =',RotAxisGsm_D
     end if
-#endif    
+#endif
 
   end subroutine set_axes
   !============================================================================
@@ -758,7 +758,7 @@ contains
     ! through the optional output arguments.
     character(len=*), parameter:: NameSub = 'get_axes'
     !--------------------------------------------------------------------------
-#ifndef OPENACC    
+#ifndef OPENACC
     ! Set time independent information
     if(DoInitializeAxes)&
          call CON_stop(NameSub//' ERROR: init_axes has not been called')

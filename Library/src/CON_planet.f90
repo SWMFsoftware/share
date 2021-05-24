@@ -131,10 +131,10 @@ contains
     DipoleStrength   = DipoleStrengthPlanet_I(Earth_)
     MagAxisThetaGeo  = bAxisThetaPlanet_I(Earth_)
     MagAxisPhiGeo    = bAxisPhiPlanet_I(Earth_)
-            
+
     !$acc update device(OmegaPlanet, AngleEquinox, OmegaRotation, TimeEquinox, &
     !$acc MagAxisPhi, MagAxisTheta)
-    
+
   end subroutine set_planet_defaults
   !============================================================================
 
@@ -218,10 +218,10 @@ contains
 
     ! For Enceladus the dipole is at Saturn's center
     if(Planet_==Enceladus_) MagCenter_D(2)    = 944.23
-    
+
     !$acc update device(OmegaPlanet, AngleEquinox, OmegaRotation, TimeEquinox, &
     !$acc MagAxisPhi, MagAxisTheta)
-    
+
   end function is_planet_init
   !============================================================================
 
