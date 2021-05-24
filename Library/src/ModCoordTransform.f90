@@ -449,7 +449,7 @@ contains
   !============================================================================
 
   subroutine xyz_to_dir14(Xyz_D,SinTheta,CosTheta,SinPhi,CosPhi)
-    !$acc routine seq    
+    !$acc routine seq
     real, intent(in) :: Xyz_D(3)
     real, intent(out):: SinTheta,CosTheta,SinPhi,CosPhi
 
@@ -829,7 +829,7 @@ contains
   !============================================================================
 
   function cross_product31(aX, aY, aZ, b_D) result(c_D)
-    !$acc routine seq    
+    !$acc routine seq
     real, intent(in) :: aX, aY, aZ, b_D(3)
     real             :: c_D(3)
 
@@ -841,7 +841,7 @@ contains
   !============================================================================
 
   function cross_product33(aX, aY, aZ, bX, bY, bZ) result(c_D)
-    !$acc routine seq    
+    !$acc routine seq
     real, intent(in) :: aX, aY, aZ, bX, bY, bZ
     real             :: c_D(3)
 
