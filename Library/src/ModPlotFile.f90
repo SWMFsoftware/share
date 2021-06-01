@@ -134,8 +134,10 @@ contains
     real    :: Time, Coord
 
     logical :: IsCartesian
-    real,         allocatable:: Param_I(:), Coord_ID(:,:), Var_I(:), Var_IV(:,:)
-    real(Real4_), allocatable:: Param4_I(:), Coord4_ID(:,:), Var4_I(:), Var4_IV(:,:)
+    real,         allocatable:: &
+         Param_I(:), Coord_ID(:,:), Var_I(:), Var_IV(:,:)
+    real(Real4_), allocatable:: &
+         Param4_I(:), Coord4_ID(:,:), Var4_I(:), Var4_IV(:,:)
 
     integer :: n_D(0:MaxDim)
     integer :: i, j, k, i_D(3), iDim, iVar, n, nDimOut
@@ -178,9 +180,12 @@ contains
     end if
 
     ! Figure out precision of input variable
-    UseReal4 = present(Var4In_I) .or. present(Var4In_II) .or. present(Var4In_III)  &
-         .or.  present(Var4In_VI).or. present(Var4In_VII).or. present(Var4In_VIII) &
-         .or.  present(Var4In_IV).or. present(Var4In_IIV).or. present(Var4In_IIIV)
+    UseReal4 = &
+         present(Var4In_I) .or.present(Var4In_II).or.present(Var4In_III)  &
+         .or. &
+         present(Var4In_VI).or.present(Var4In_VII).or.present(Var4In_VIII) &
+         .or.  &
+         present(Var4In_IV).or.present(Var4In_IIV).or.present(Var4In_IIIV)
 
     ! Figure out grid dimensions and number of variables. Default is 1.
     n_D = 1
@@ -716,12 +721,12 @@ contains
     real,             optional, intent(out):: VarOut_IIIV(:,:,:,:)        ! 3D
     real,             optional, intent(out):: VarOut_I4V(:,:,:,:,:)       ! 4D
     real,             optional, intent(out):: VarOut_I5V(:,:,:,:,:,:)     ! 5D
-    real(Real4_),     optional, intent(out):: Var4Out_I(:) ! Real4 variable in 1D
+    real(Real4_),     optional, intent(out):: Var4Out_I(:) ! Real4 scalar in 1D
     real(Real4_),     optional, intent(out):: Var4Out_II(:,:)             ! 2D
     real(Real4_),     optional, intent(out):: Var4Out_III(:,:,:)          ! 3D
     real(Real4_),     optional, intent(out):: Var4Out_I4(:,:,:,:)         ! 4D
     real(Real4_),     optional, intent(out):: Var4Out_I5(:,:,:,:,:)       ! 5D
-    real(Real4_),     optional, intent(out):: Var4Out_VI(:,:) ! Real4 variables in 1D
+    real(Real4_),     optional, intent(out):: Var4Out_VI(:,:) ! Real4 vector 1D
     real(Real4_),     optional, intent(out):: Var4Out_VII(:,:,:)          ! 2D
     real(Real4_),     optional, intent(out):: Var4Out_VIII(:,:,:,:)       ! 3D
     real(Real4_),     optional, intent(out):: Var4Out_VI4(:,:,:,:,:)      ! 4D
@@ -746,8 +751,10 @@ contains
     real               :: Time, Coord
     real(Real4_)       :: Time4
     logical            :: IsCartesian
-    real(Real4_), allocatable:: Param4_I(:), Coord4_ID(:,:), Var4_I(:), Var4_IV(:,:)
-    real,         allocatable:: Param_I(:),  Coord_ID(:,:),  Var_I(:), Var_IV(:,:)
+    real(Real4_), allocatable:: &
+         Param4_I(:), Coord4_ID(:,:), Var4_I(:), Var4_IV(:,:)
+    real,         allocatable:: &
+         Param_I(:),  Coord_ID(:,:),  Var_I(:), Var_IV(:,:)
     real    :: TecIndex_I(MaxDim)
     integer :: nTecIndex
     integer :: i, j, k, l, m, iDim, iVar, n
@@ -824,6 +831,17 @@ contains
              read(iUnit, *, ERR=77, END=77) &
                   TecIndex_I(1:nTecIndex), Coord_ID(n,:), Var_IV(n,:)
           end do; end do; end do; end do; end do
+       end if
+
+    case('log', 'sat')
+       if(UseReal4)then
+          do n = 1, n_D(1)
+             read(iUnit, *, ERR=77, END=77) Coord_ID(n,:), Var4_IV(n,:)
+          end do
+       else
+          do n = 1, n_D(1)
+             read(iUnit, *, ERR=77, END=77) Coord_ID(n,:), Var_IV(n,:)
+          end do
        end if
 
     case('ascii', 'formatted')
@@ -994,14 +1012,61 @@ contains
     !==========================================================================
     subroutine read_header
 
+      use ModUtilities, ONLY: split_string
+
       ! Read header information
 
-      character(len=100):: StringMisc
+      character(len=200):: StringMisc
       logical:: DoAddSpace
-      integer:: i
+      integer:: i, iError
+      character(len=20), allocatable:: NameVar_I(:)
       !------------------------------------------------------------------------
       n_D = 1
       select case(TypeFile)
+      case('log', 'sat')
+         ! Taken as simple 1D files with no scalar parameters
+         nStep = 0; Time = 0.0; nDim = 1; nParam = 0 
+         open(iUnit, file=NameFile, status='old', ERR=66)
+         read(iUnit, '(a)', ERR=77, END=77) StringHeader
+         read(iUnit, '(a)', ERR=77, END=77) NameVar
+         do
+            ! Check for trailing #START in the NameVar
+            i = index(NameVar, '#START')
+            if( i > 0)then
+               NameVar = NameVar(1:i-1) ! remove trailing #START
+               EXIT
+            end if
+            read(iUnit, '(a)', ERR=77, END=77) StringMisc
+            if( StringMisc == '#START') EXIT
+            NameVar = StringMisc
+         end do
+         ! Count number of variables
+         allocate(NameVar_I(100))
+         call split_string(NameVar, NameVar_I, nVar)
+         nVar = nVar - 1
+         deallocate(NameVar_I)
+
+         if(nVar < 1)then
+            write(*,*) NameSub,': could not find variable names in ', NameFile
+            goto 77
+         end if
+         ! Count number of lines containing data after #START
+         n_D(1) = 0
+         do
+            read(iUnit, '(a)', IOSTAT=iError) StringMisc
+            if(iError /= 0) EXIT
+            n_D(1) = n_D(1) + 1
+         end do
+         if(n_D(1) < 1)then
+            write(*,*) NameSub,': could not find #START or data in ', NameFile
+         else
+            ! rewind to the #START
+            rewind iUnit
+            do
+               read(iUnit,'(a)', ERR=77, END=77) StringMisc
+               if( index(StringMisc,'#START') > 0) EXIT
+            enddo
+         end if
       case('ascii', 'formatted')
          open(iUnit, file=NameFile, status='old', ERR=66)
 
