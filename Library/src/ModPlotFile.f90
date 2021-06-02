@@ -1025,7 +1025,7 @@ contains
       select case(TypeFile)
       case('log', 'sat')
          ! Taken as simple 1D files with no scalar parameters
-         nStep = 0; Time = 0.0; nDim = 1; nParam = 0 
+         nStep = 0; Time = 0.0; nDim = 1; nParam = 0
          open(iUnit, file=NameFile, status='old', ERR=66)
          read(iUnit, '(a)', ERR=77, END=77) StringHeader
          read(iUnit, '(a)', ERR=77, END=77) NameVar
@@ -1048,7 +1048,7 @@ contains
 
          if(nVar < 1)then
             write(*,*) NameSub,': could not find variable names in ', NameFile
-            goto 77
+            GOTO 77
          end if
          ! Count number of lines containing data after #START
          n_D(1) = 0
