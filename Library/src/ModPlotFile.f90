@@ -40,9 +40,10 @@ module ModPlotFile
   ! size are optionaal parameters.
 
   use ModIoUnit,    ONLY: UnitTmp_
-  use ModKind,      ONLY: Real4_
+  use ModKind,      ONLY: Real4_, Real8_
   use ModHdf5Utils, ONLY: save_hdf5_file
-  use ModUtilities, ONLY: CON_stop
+  use ModTimeConvert, ONLY: time_int_to_real
+  use ModUtilities, ONLY: CON_stop, lower_case
 
   implicit none
 
@@ -746,7 +747,7 @@ contains
     logical            :: DoReadHeader = .true.
     character(len=lStringPlotFile) :: StringHeader
     character(len=lStringPlotFile) :: NameVar
-    integer            :: nStep, nDim, nParam, nVar
+    integer            :: nStep, nDim, nParam, nVar, nVarDate
     integer            :: n1, n2, n3, n4, n5, n_D(MaxDim)
     real               :: Time, Coord
     real(Real4_)       :: Time4
@@ -760,8 +761,12 @@ contains
     integer :: i, j, k, l, m, iDim, iVar, n
 
     ! Remember these values after reading header
-    save :: nDim, nVar, n1, n2, n3, n4, n5, TypeFile, iUnit
+    save :: nDim, nVar, nVarDate, n1, n2, n3, n4, n5, TypeFile, iUnit
 
+    ! Variables to convert integer date into double precision time
+    integer:: iTime_I(7)
+    real(Real8_):: Time8
+    
     character(len=*), parameter:: NameSub = 'read_plot_file'
     !--------------------------------------------------------------------------
     iUnit = UnitTmp_
@@ -834,16 +839,29 @@ contains
        end if
 
     case('log', 'sat')
-       if(UseReal4)then
+       if(nVarDate > 1)then
+          iTime_I = 0
           do n = 1, n_D(1)
-             read(iUnit, *, ERR=77, END=77) Coord_ID(n,:), Var4_IV(n,:)
+             if(UseReal4)then
+                read(iUnit, *, ERR=77,END=77) iTime_I(1:nVarDate), Var4_IV(n,:)
+             else
+                read(iUnit, *, ERR=77,END=77) iTime_I(1:nVarDate), Var_IV(n,:)
+             end if
+             ! Convert date to time
+             call time_int_to_real(iTime_I, Time8)
+             Coord_ID(n,1) = Time8
           end do
        else
-          do n = 1, n_D(1)
-             read(iUnit, *, ERR=77, END=77) Coord_ID(n,:), Var_IV(n,:)
-          end do
+          if(UseReal4)then
+             do n = 1, n_D(1)
+                read(iUnit, *, ERR=77, END=77) Coord_ID(n,:), Var4_IV(n,:)
+             end do
+          else
+             do n = 1, n_D(1)
+                read(iUnit, *, ERR=77, END=77) Coord_ID(n,:), Var_IV(n,:)
+             end do
+          end if
        end if
-
     case('ascii', 'formatted')
        n = 0
        if(UseReal4)then
@@ -973,21 +991,21 @@ contains
           if(present(VarOut_I4V))  VarOut_I4V(i,j,k,l,iVar)   = Var_IV(n,iVar)
           if(present(VarOut_I5V))  VarOut_I5V(i,j,k,l,m,iVar) = Var_IV(n,iVar)
 
-          if(present(Var4Out_I))    Var4Out_I(n)                = Var4_IV(n,iVar)
-          if(present(Var4Out_II))   Var4Out_II(i,j)             = Var4_IV(n,iVar)
-          if(present(Var4Out_III))  Var4Out_III(i,j,k)          = Var4_IV(n,iVar)
-          if(present(Var4Out_I4))   Var4Out_I4(i,j,k,l)         = Var4_IV(n,iVar)
-          if(present(Var4Out_I5))   Var4Out_I5(i,j,k,l,m)       = Var4_IV(n,iVar)
-          if(present(Var4Out_VI))   Var4Out_VI(iVar,n)          = Var4_IV(n,iVar)
-          if(present(Var4Out_VII))  Var4Out_VII(iVar,i,j)       = Var4_IV(n,iVar)
-          if(present(Var4Out_VIII)) Var4Out_VIII(iVar,i,j,k)    = Var4_IV(n,iVar)
-          if(present(Var4Out_VI4))  Var4Out_VI4(iVar,i,j,k,l)   = Var4_IV(n,iVar)
-          if(present(Var4Out_VI5))  Var4Out_VI5(iVar,i,j,k,l,m) = Var4_IV(n,iVar)
-          if(present(Var4Out_IV))   Var4Out_IV(i,iVar)          = Var4_IV(n,iVar)
-          if(present(Var4Out_IIV))  Var4Out_IIV(i,j,iVar)       = Var4_IV(n,iVar)
-          if(present(Var4Out_IIIV)) Var4Out_IIIV(i,j,k,iVar)    = Var4_IV(n,iVar)
-          if(present(Var4Out_I4V))  Var4Out_I4V(i,j,k,l,iVar)   = Var4_IV(n,iVar)
-          if(present(Var4Out_I5V))  Var4Out_I5V(i,j,k,l,m,iVar) = Var4_IV(n,iVar)
+          if(present(Var4Out_I))   Var4Out_I(n)               = Var4_IV(n,iVar)
+          if(present(Var4Out_II))  Var4Out_II(i,j)            = Var4_IV(n,iVar)
+          if(present(Var4Out_III)) Var4Out_III(i,j,k)         = Var4_IV(n,iVar)
+          if(present(Var4Out_I4))  Var4Out_I4(i,j,k,l)        = Var4_IV(n,iVar)
+          if(present(Var4Out_I5))  Var4Out_I5(i,j,k,l,m)      = Var4_IV(n,iVar)
+          if(present(Var4Out_VI))  Var4Out_VI(iVar,n)         = Var4_IV(n,iVar)
+          if(present(Var4Out_VII)) Var4Out_VII(iVar,i,j)      = Var4_IV(n,iVar)
+          if(present(Var4Out_VIII))Var4Out_VIII(iVar,i,j,k)   = Var4_IV(n,iVar)
+          if(present(Var4Out_VI4)) Var4Out_VI4(iVar,i,j,k,l)  = Var4_IV(n,iVar)
+          if(present(Var4Out_VI5)) Var4Out_VI5(iVar,i,j,k,l,m)= Var4_IV(n,iVar)
+          if(present(Var4Out_IV))  Var4Out_IV(i,iVar)         = Var4_IV(n,iVar)
+          if(present(Var4Out_IIV)) Var4Out_IIV(i,j,iVar)      = Var4_IV(n,iVar)
+          if(present(Var4Out_IIIV))Var4Out_IIIV(i,j,k,iVar)   = Var4_IV(n,iVar)
+          if(present(Var4Out_I4V)) Var4Out_I4V(i,j,k,l,iVar)  = Var4_IV(n,iVar)
+          if(present(Var4Out_I5V)) Var4Out_I5V(i,j,k,l,m,iVar)= Var4_IV(n,iVar)
 
        end do; end do; end do; end do; end do
     end do
@@ -1040,10 +1058,54 @@ contains
             if( StringMisc == '#START') EXIT
             NameVar = StringMisc
          end do
-         ! Count number of variables
+         ! Convert to lower case for further processing
+         call lower_case(NameVar)
+
+         ! Count number of variables in NameVar
          allocate(NameVar_I(100))
          call split_string(NameVar, NameVar_I, nVar)
-         nVar = nVar - 1
+
+         ! Check if the first few variables represent date or not
+         ! Possible formats are up to 7 of the following strings:
+         ! year/yr month/mo day/dy hour/hr min/mn sec/sc msec/msc
+         ! a single string: data/date7/date6/date5/date4/date3/date2
+         ! where the digit is the number of integers to be read for the date (default is 7).
+         select case(NameVar_I(1))
+         case('year', 'yr')
+            if(NameVar_I(7) == 'msc' .or. NameVar_I(7) == 'msec') then
+               nVarDate = 7
+            else if(NameVar_I(6) == 'sc' .or. NameVar_I(6) == 'sec')then
+               nVarDate = 6
+            else if(NameVar_I(5) == 'mn' .or. NameVar_I(5) == 'min')then
+               nVarDate = 5
+            else if(NameVar_I(4) == 'hr' .or. NameVar_I(4) == 'hour')then
+               nVarDate = 4
+            else if(NameVar_I(3) == 'dy' .or. NameVar_I(3) == 'day')then
+               nVarDate = 3
+            else if(NameVar_I(2) == 'mo' .or. NameVar_I(2) == 'month')then
+               nVarDate = 2
+            else
+               nVarDate = 1
+            end if
+         case('date', 'date7')
+            nVarDate = 7
+         case('date6')
+            nVarDate = 6
+         case('date5')
+            nVarDate = 5
+         case('date4')
+            nVarDate = 4
+         case('date3')
+            nVarDate = 3
+         case('date2')
+            nVarDate = 2
+         case default
+            nVarDate = 1
+         end select
+
+         ! Set nVar to the number of variables following the "date"
+         nVar = nVar - nVarDate
+
          deallocate(NameVar_I)
 
          if(nVar < 1)then
