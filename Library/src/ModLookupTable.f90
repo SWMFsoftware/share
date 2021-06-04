@@ -682,7 +682,7 @@ contains
     integer, intent(in)              :: iTable, iIndex
     real, allocatable, intent(inout) :: Index_I(:)
 
-    integer :: n
+    integer :: i, n
     type(TableType), pointer:: Ptr
 
     character(len=*), parameter:: NameSub = 'check_index'
@@ -691,9 +691,14 @@ contains
     n = size(Index_I)
     if(n < 3) RETURN
 
-    if(any(Index_I(2:n) < Index_I(1:n-1))) call CON_stop(NameSub// &
-         ' ERROR: decreasing index in '//trim(Ptr%NameFile)//':', iIndex)
-
+    if(any(Index_I(2:n) < Index_I(1:n-1)))then
+       do i = 2, n
+          if(Index_I(i-1) < Index_I(i)) CYCLE
+          write(*,*) '!!! ERROR at i, Index_I(i-1:i)=', i, Index_I(i-1:i)
+       end do
+       call CON_stop(NameSub// &
+            ' ERROR: decreasing index in '//trim(Ptr%NameFile)//':', iIndex)
+    end if
     ! Figure out which indices are non-uniform.
     if (maxval(Index_I(2:n) - Index_I(1:n-1)) > 1.3*Ptr%dIndex_I(iIndex))then
        Ptr%IsUniform_I(iIndex) = .false.
