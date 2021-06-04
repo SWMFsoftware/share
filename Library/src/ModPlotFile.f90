@@ -761,7 +761,7 @@ contains
     integer :: i, j, k, l, m, iDim, iVar, n
 
     ! Remember these values after reading header
-    save :: nDim, nVar, nVarDate, n1, n2, n3, n4, n5, TypeFile, iUnit
+    save :: nDim, nVar, nVarDate, n1, n2, n3, n4, n5, n_D, TypeFile, iUnit
 
     ! Variables to convert integer date into double precision time
     integer:: iTime_I(7)
@@ -841,7 +841,7 @@ contains
     case('log', 'sat')
        if(nVarDate > 1)then
           iTime_I = 0
-          do n = 1, n_D(1)
+          do n = 1, n1
              if(UseReal4)then
                 read(iUnit, *, ERR=77,END=77) iTime_I(1:nVarDate), Var4_IV(n,:)
              else
@@ -853,11 +853,11 @@ contains
           end do
        else
           if(UseReal4)then
-             do n = 1, n_D(1)
+             do n = 1, n1
                 read(iUnit, *, ERR=77, END=77) Coord_ID(n,:), Var4_IV(n,:)
              end do
           else
-             do n = 1, n_D(1)
+             do n = 1, n1
                 read(iUnit, *, ERR=77, END=77) Coord_ID(n,:), Var_IV(n,:)
              end do
           end if
