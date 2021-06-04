@@ -5957,7 +5957,7 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines, ve
            wlog = dblarr(nt, nwlog+5)
            wlognames = strarr(nwlog+5)
 
-           ;; standarize the variable names
+           ;; standardize the variable names
            wlognames(0) = 'year'
            wlognames(1) = 'month'
            wlognames(2) = 'day'
