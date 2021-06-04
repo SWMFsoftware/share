@@ -766,7 +766,7 @@ contains
     ! Variables to convert integer date into double precision time
     integer:: iTime_I(7)
     real(Real8_):: Time8
-    
+
     character(len=*), parameter:: NameSub = 'read_plot_file'
     !--------------------------------------------------------------------------
     iUnit = UnitTmp_
