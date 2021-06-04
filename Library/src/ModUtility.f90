@@ -500,8 +500,8 @@ contains
   subroutine split_string_simple(String, String_I, nStringOut, &
        StringSepIn, UseArraySyntaxIn, DoAddSeparator)
 
-    character(len=*),    intent(in):: String    ! string to be split
-    character (len=*), intent(out):: String_I(:) ! array of substrings
+    character(len=*), intent(in) :: String      ! string to be split
+    character(len=*), intent(out):: String_I(:) ! array of substrings
     integer,          optional, intent(out):: nStringOut ! number of substrings
     character(len=*), optional, intent(in):: StringSepIn ! separator string
     logical, optional, intent(in):: UseArraySyntaxIn     ! expand Var(10:20:2)
