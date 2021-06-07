@@ -86,7 +86,7 @@ my %ValidPart1 = ('integer'   => '(D?[i-nI-N]|Max|Min|Ijk|Int)\d*',
 		  );
 
 # Valid array index characters representing 1 index
-my $ValidArrayIndex1 = '[ABCDEIPQSV]';
+my $ValidArrayIndex1 = '[ABCDEIPQSVW]';
 
 # Valid array index characters representing 3 indexes
 my $ValidArrayIndex3 = '[CFGNXYZ]';
