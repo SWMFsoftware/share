@@ -71,7 +71,7 @@ program post_idl
   integer, allocatable :: iCoincide_I(:)      ! indices of coinciding points
   real,    allocatable :: zCoincide_I(:)      ! z of coinciding points
   integer, allocatable :: iCoincideSort_I(:)  ! sorting indices by z
-  integer :: ii, iLeft, iRight,&
+  integer :: i1, iLeft, iRight,&
        iLeftTemp, iRightTemp                  ! index of points next to Bx=0
   real    :: zLeft, zRight                    ! z of the points next to Bx=0
   real    :: BxLeft, BxRight                  ! magnetic field on two sides
@@ -799,10 +799,10 @@ program post_idl
                  iRight = -1
                  zCurrentSheetMinDist = huge(1.0)
 
-                 do ii = 1, j - i - 1
+                 do i1 = 1, j - i - 1
                     ! the actual indices of the consecutive points
-                    iLeftTemp  = iCoincide_I(iCoincideSort_I(ii))
-                    iRightTemp = iCoincide_I(iCoincideSort_I(ii + 1))
+                    iLeftTemp  = iCoincide_I(iCoincideSort_I(i1))
+                    iRightTemp = iCoincide_I(iCoincideSort_I(i1 + 1))
                     zLeft   = PlotVar_VC(1,iLeftTemp,1,1)
                     zRight  = PlotVar_VC(1,iRightTemp,1,1)
 
