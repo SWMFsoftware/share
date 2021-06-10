@@ -77,11 +77,9 @@ program post_idl
   real    :: BxLeft, BxRight                  ! magnetic field on two sides
   real    :: WeightLeft, WeightRight          ! linear interpolation weights
   integer :: iBx=0                            ! index of Bx plot variable
-  real    :: zCurrentSheet, zCurrentSheetMin  ! vars for the first CS point
-  real    :: zCurrentSheetDist,&
-       zCurrentSheetMinDist                   ! vars for the not first CS points
-  real    :: zCurrentSheetSelect,&
-       zLastCurrentSheet                      ! vars tracking the current CS position
+  real    :: zCurrentSheet                    ! vars for the CS points
+  real    :: zCurrentSheetDist, zCurrentSheetMinDist
+  real    :: zCurrentSheetSelect, zLastCurrentSheet
 
   integer :: iDim, iDimCut_D(3), nDim, nParamExtra, l1, l2, l3, l4
   real    :: ParamExtra_I(3)
@@ -799,7 +797,6 @@ program post_idl
                  call sort_quick(MaxCoincide, zCoincide_I, iCoincideSort_I)
                  iLeft = -1
                  iRight = -1
-                 zCurrentSheetMin = huge(1.0)
                  zCurrentSheetMinDist = huge(1.0)
 
                  do ii = 1, j - i - 1
@@ -821,7 +818,7 @@ program post_idl
                     ! of the last CS point
                     zCurrentSheet = (abs(BxLeft)*zRight + abs(BxRight)*zLeft) &
                          /(abs(BxLeft) + abs(BxRight))
-                    zCurrentSheetDist = abs( zCurrentSheet - zLastCurrentSheet )
+                    zCurrentSheetDist = abs(zCurrentSheet - zLastCurrentSheet)
                     if(zCurrentSheetDist > zCurrentSheetMinDist) CYCLE
                     ! store new current sheet distance
                     zCurrentSheetSelect = zCurrentSheet
