@@ -748,12 +748,16 @@ contains
   !============================================================================
 
   subroutine get_axes(TimeSim, &
-       MagAxisTiltGsmOut, RotAxisGsmOut_D, RotAxisGseOut_D)
+       MagAxisTiltGsmOut, RotAxisGsmOut_D, RotAxisGseOut_D, &
+       MagAxisGseOut_D, MagAxisGsmOut_D)
     !$acc routine seq
     real, intent(in) :: TimeSim
     real, intent(out), optional :: MagAxisTiltGsmOut
     real, intent(out), optional :: RotAxisGsmOut_D(3)
     real, intent(out), optional :: RotAxisGseOut_D(3)
+    real, intent(out), optional :: MagAxisGsmOut_D(3)
+    real, intent(out), optional :: MagAxisGseOut_D(3)
+    
     ! Provides various information about the rotation and magnetic axes
     ! through the optional output arguments.
     character(len=*), parameter:: NameSub = 'get_axes'
@@ -770,6 +774,8 @@ contains
     if (present(MagAxisTiltGsmOut)) MagAxisTiltGsmOut = MagAxisTiltGsm
     if (present(RotAxisGsmOut_D))   RotAxisGsmOut_D   = RotAxisGsm_D
     if (present(RotAxisGseOut_D))   RotAxisGseOut_D   = RotAxis_D
+    if (present(MagAxisGsmOut_D))   MagAxisGsmOut_D   = MagAxisGsm_D
+    if (present(MagAxisGseOut_D))   MagAxisGseOut_D   = MagAxis_D
 
   end subroutine get_axes
   !============================================================================
