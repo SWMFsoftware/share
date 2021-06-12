@@ -757,7 +757,7 @@ contains
     real, intent(out), optional :: RotAxisGseOut_D(3)
     real, intent(out), optional :: MagAxisGsmOut_D(3)
     real, intent(out), optional :: MagAxisGseOut_D(3)
-    
+
     ! Provides various information about the rotation and magnetic axes
     ! through the optional output arguments.
     character(len=*), parameter:: NameSub = 'get_axes'
