@@ -5980,6 +5980,7 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines, ve
            for i = 1, nwlog-1 do wlog(*,i+5) = value.(i)
            print,'Standardized wlognames=', wlognames
         endif else begin
+           wlognames = wlognamesRead
            wlog = dblarr(nt, nwlog)
            for i = 0, nwlog-1 do wlog(*,i) = value.(i)
         endelse
