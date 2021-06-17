@@ -5952,6 +5952,7 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines, ve
         print,'CSV file: nwlog=', nwlog,', nt=', nt, format='(a,i4,a,i8)'
         value = read_csv(file, header=wlognamesRead)
         print,'CSV fields:  wlognamesRead=', wlognamesRead
+        
         if strlowcase(strmid(wlognamesRead[0],0,4)) eq 'date' then begin
 
            wlog = dblarr(nt, nwlog+5)
@@ -5985,6 +5986,14 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines, ve
            for i = 0, nwlog-1 do wlog(*,i) = value.(i)
         endelse
 
+        ;; exclude lines with any non-finite values
+        ii = where(total(~finite(wlog), 2) eq 0.0)
+	if n_elements(ii) ne nt then begin
+           wlog = wlog(ii,*)
+           print,'!!! CSV file contains NaNs! Reduced nt=',n_elements(ii), $
+                 format='(a,i8)'
+	endif
+        
         logtime = log_time(wlog,wlognames,timeunit)
         return
      endif
