@@ -191,6 +191,7 @@ pro set_default_values
 
   common log_data, $
      timeunit, $
+     wlogrownames, $
      wlog , logtime , wlognames , $
      wlog1, logtime1, wlognames1, $
      wlog2, logtime2, wlognames2, $
@@ -204,7 +205,8 @@ pro set_default_values
 
   wlog=0                        ; data array from logfile
   logtime=0                     ; time array from logfile
-  wlognames=''                  ; array of log data names
+  wlognames=''                  ; array of log data column names
+  wlogrownames=''               ; array of log data row names (if present)
   timeunit='h' ; set to '1' (unitless), 's' (second), 'm' (minute), 'h' (hour) 
                                 ;        'millisec', 'microsec', 'ns' (nanosec)
 
@@ -1500,7 +1502,9 @@ pro read_log_data
      retall
   endif
 
-  get_log,   logfilenames(0), wlog,  wlognames,  logtime, timeunit, /verbose
+  ; First time read the row names into wlogrownames
+  get_log, logfilenames(0), wlog,  wlognames,  logtime, timeunit, $
+           wlogrownames, /verbose
   if nlogfile ge 2 then $
      get_log, logfilenames(1), wlog1, wlognames1, logtime1, timeunit, verbose='1'
   if nlogfile ge 3 then $
@@ -5882,32 +5886,40 @@ function rel_errors, w0, w1, w2, w3, w4, w5, ivar=ivar, ratio=ratio, fd=fd
   return,errors
 end
 ;=============================================================================
-pro read_log_line, line, array
-; read the numbers from a line into a double array.
+pro read_log_line, line, array, firstcolumn, rowname
+; read the numbers from a line into a double array starting from firstcolumn.
 ; Convert date-time string in ISO format into Julian day.
+; If firstcolumn is not 0, set the rowname string from the actual 1st column
 
-  numbers = strsplit(line,'[ ,	]',/extract,/regex) ; '[ ' + STRING(9B) + ']+'
-  n = n_elements(numbers)
+  if not keyword_set(firstcolumn) then firstcolumn = 0
+  
+  columns = strsplit(line,'[ ,	]',/extract,/regex)
+
+  if firstcolumn then rowname = columns(0) ; save row name
+
+  n = n_elements(columns) - firstcolumn ; number of columns with numbers
   if n_elements(array) ne n then array = dblarr(n)
-  if strpos(line,'T') gt 0 then begin
-     for i = 0, n-1 do begin
-        if strpos(numbers[i],'T') gt 0 then $
-           array[i] = date_to_julday(numbers[i]) $
+  if strpos(line,'T') gt 0 or firstcolumn then begin
+     for i = firstcolumn, n-1 do begin
+        if strpos(columns[i],'T') gt 0 then $
+           array[i-firstcolumn] = date_to_julday(columns[i]) $
         else $
-           array[i] = double(numbers[i])
+           array[i-firstcolumn] = double(columns[i])
      endfor
   endif else $
      reads, line, array
 end
      
 ;=============================================================================
-pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines, verbose=verbose
+pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
+             rownames, verbose=verbose
 
 ; Read the log data from source. If source is an integer, it is 
 ; interpreted as a unit number. If it is a string, it is taken as the
 ; filename. Read the content of the file into wlog and the variable 
 ; names into wlognames. 
 ; The optional logtime argument is set to the time in hours.
+; The optional rownames argument is set to string array from the first column.
 ; If verbose is present set show verbose information.
 ; If versbose is a string, attach it to 'wlog' in the verbose info.
 
@@ -6019,6 +6031,7 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines, ve
 
   ;; Use buffers for efficient reading
   line  = ''
+  firstcolumn = 0 ; first column with numbers
   nheadline = 0
   isheader  = 1
   headlines = strarr(1)
@@ -6058,31 +6071,20 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines, ve
            nheadline = nheadline + 1
         endif else begin
            ;; split line into numbers
-           string_to_array,line, numbers, nwlog
-           ;; create arrays to read data into
-           wlog_ = dblarr(nwlog)
-           wlog  = dblarr(nwlog,buf)
-
-           ;; read line into numbers, convert date to julday
-           read_log_line, line, wlog_
-
-           if total(finite(wlog_)) eq nwlog then begin
-              wlog(*,0) = wlog_
-              nt = 1L
-           endif
+           string_to_array, line, numbers, nwlog
 
            ;; find variable names in the header lines
            for i = nheadline - 1, 0, -1 do begin
-              line = headlines[i]
-              char = strlowcase(strmid(strtrim(line,1),0,1))
+              hline = headlines[i]
+              char = strlowcase(strmid(strtrim(hline,1),0,1))
               if char ge 'a' and char le 'z' then begin
 
                  ;; Overwrite #START with spaces if present
-                 j = strpos(line,'#START')
-                 if j ge 0 then strput, line, '      ', j
+                 j = strpos(hline,'#START')
+                 if j ge 0 then strput, hline, '      ', j
 
-                 ;; split line into names
-                 string_to_array, line, wlognames, nname
+                 ;; split hline into names
+                 string_to_array, hline, wlognames, nname
 
                  ;; if number of names agree we are done
                  if nname eq nwlog then BREAK
@@ -6095,25 +6097,53 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines, ve
                  wlognames[i] = 'var'+string(i, format='(i2.2)')
            endif
 
+           if strlowcase(wlognames(0)) eq "name" then begin
+              firstcolumn = 1
+              wlognames = wlognames(1:*)
+              nwlog -= 1
+           end
+
+           ;; create arrays to read data into
+           wlog_ = dblarr(nwlog)
+           wlog  = dblarr(nwlog,buf)
+           rownames = strarr(buf)
+           
+           ;; read line into rowname, numbers, convert date to julday
+           read_log_line, line, wlog_, firstcolumn, rowname
+
+           ;; store first line if it is fine
+           if total(finite(wlog_)) eq nwlog then begin
+              wlog(*,0) = wlog_
+              if firstcolumn then rownames(0) = rowname
+              nt = 1L
+           endif
+           
            if verbose then begin
               if filesource then print,'logfile',index,'  =',file
               print,'headlines',index,':'
               print, format='(a)', strtrim(headlines,2)
+
+              if firstcolumn then $
+                 print,'  wlogrownames(0)= ', rownames[0]
+
               for i=0, nwlog-1 do $
-                 print,FORMAT='("  wlog",A,"(*,",I2,")= ",A)',index,i,wlognames(i)
+                 print, format='("  wlog",A,"(*,",I2,")= ",A)', $
+                       index, i, wlognames(i)
            endif
 
         endelse
      endif else begin
         readf, unit, line
-        read_log_line, line, wlog_
+        read_log_line, line, wlog_, firstcolumn, rowname
         if total(finite(wlog_)) eq nwlog then begin
            wlog(*,nt) = wlog_
+           if firstcolumn then rownames(nt) = rowname
            nt=nt+1
         endif
         if nt ge buf then begin
            buf=buf+dbuf
            wlog=[[wlog],[dblarr(nwlog,buf)]]
+           if firstcolumn then rownames = [[rownames],[strarr(buf)]]
         endif
      endelse
 
@@ -6123,6 +6153,11 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines, ve
   if verbose then print,'Number of recorded timesteps: nt=',nt
 
   wlog = transpose(wlog(*,0:nt-1))
+
+  if firstcolumn then begin
+     rownames = rownames(0:nt-1) ; remove extra buffer
+  endif else $
+     rownames = ''
 
   logtime = log_time(wlog,wlognames,timeunit)
   if verbose then print,'Setting logtime',index
@@ -6883,7 +6918,7 @@ pro save_pict, filename, headline, varname, w, x, $
                filetype=filetype, append=append
 
   common debug_param & on_error, onerror
-
+ 
   if n_elements(filename) eq 0 or n_elements(headline) eq 0 or $
      n_elements(varname) eq 0 or n_elements(w) eq 0 then begin
      print,'ERROR in save_pict: ', $
