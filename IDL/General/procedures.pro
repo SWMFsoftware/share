@@ -5895,16 +5895,20 @@ pro read_log_line, line, array, firstcolumn, rowname
   
   columns = strsplit(line,'[ ,	]',/extract,/regex)
 
-  if firstcolumn then rowname = columns(0) ; save row name
+  if firstcolumn then begin
+     rowname = columns(0)              ; save row name
+     columns = columns(firstcolumn:*)  ; remove first column(s)
+  endif
 
-  n = n_elements(columns) - firstcolumn ; number of columns with numbers
+  n = n_elements(columns); number of columns with numbers
+  
   if n_elements(array) ne n then array = dblarr(n)
   if strpos(line,'T') gt 0 or firstcolumn then begin
-     for i = firstcolumn, n-1 do begin
+     for i = 0, n-1 do begin
         if strpos(columns[i],'T') gt 0 then $
-           array[i-firstcolumn] = date_to_julday(columns[i]) $
+           array[i] = date_to_julday(columns[i+firstcolumn]) $
         else $
-           array[i-firstcolumn] = double(columns[i])
+           array[i] = double(columns[i])
      endfor
   endif else $
      reads, line, array
