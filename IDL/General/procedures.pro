@@ -6960,7 +6960,8 @@ pro save_pict, filename, headline, varname, w, x, $
   if keyword_set(gencoord) then ndim = -ndim
 
   unit=1
-
+  close, unit
+  
   if filetype eq 'ascii' then begin
      openw, unit, filename, append=append
 
