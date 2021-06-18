@@ -191,7 +191,6 @@ pro set_default_values
 
   common log_data, $
      timeunit, $
-     wlogrownames, $
      wlog , logtime , wlognames , $
      wlog1, logtime1, wlognames1, $
      wlog2, logtime2, wlognames2, $
@@ -201,7 +200,8 @@ pro set_default_values
      wlog6, logtime6, wlognames6, $
      wlog7, logtime7, wlognames7, $
      wlog8, logtime8, wlognames8, $
-     wlog9, logtime9, wlognames9
+     wlog9, logtime9, wlognames9, $
+     wlogrownames
 
   wlog=0                        ; data array from logfile
   logtime=0                     ; time array from logfile
@@ -1595,7 +1595,7 @@ function log_time,wlog,wlognames,timeunit
   hours = 0.0*wlog(*,0)
 
   if nwlog lt 0 then return, hours
-
+  
   idate = -1
   itime = -1
   istep = -1
@@ -1721,7 +1721,7 @@ function log_time,wlog,wlognames,timeunit
               if imon eq -1 or iday eq -1 or iyear eq -1 then   $
                  print, ' Warning: check start time: ', $
                         STRING(start_month, format='(i02)'),'/', $
-                        STRING(start_day,   format='(i2)'), '/', $
+                        STRING(start_day,   format='(i02)'),'/', $
                         STRING(start_year,  format='(i4)')
               logtime = JULDAY(start_month, start_day, start_year, hours)
            endelse
@@ -6212,7 +6212,7 @@ pro plot_log
 
   string_to_array,logfunc,logfuncs,nlogfunc
 
-; read in arrays if not present
+  ;; read in arrays if not present
   if    (nlog eq 1 and n_elements(wlognames0) eq 0) $
      or (nlog eq 2 and n_elements(wlognames1) eq 0) $
      or (nlog eq 3 and n_elements(wlognames2) eq 0) then begin
@@ -6223,23 +6223,23 @@ pro plot_log
 
   endif
 
-; Shift times by 0 unless defined
+  ;; Shift times by 0 unless defined
   if n_elements(timeshifts) lt nlog then timeshifts = fltarr(nlog)
 
-; Shall we do an FFT transform and plot power spectra?
+  ;; Shall we do an FFT transform and plot power spectra?
   if n_elements(dofft) eq 0 then dofft=0
 
-; Do not smooth data unless defined
+  ;; Do not smooth data unless defined
   if n_elements(smooths) lt nlog then smooths = intarr(nlog)
 
-; Calculate the xrange from the data unless defined
+  ;; Calculate the xrange from the data unless defined
   if n_elements(xrange) ne 2 then begin
      DoXrange = 1
      xrange   = [1e30, -1e30]
   endif else $
      DoXrange = 0
 
-; Calculate yranges from the data unless defined
+  ;; Calculate yranges from the data unless defined
   if n_elements(yranges) ne 2*nlogfunc then begin
      DoYrange = 1
      yranges = fltarr(2,nlogfunc)
@@ -6345,7 +6345,7 @@ pro plot_log
               wlognames = wlognames9
            end
         endcase
-        
+
         hour = log_time(wlog,wlognames,timeunit) + timeshifts(ilog)
 
         if(dofft)then begin
