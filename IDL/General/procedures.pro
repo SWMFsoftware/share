@@ -388,9 +388,9 @@ pro set_default_values
   ;; Start day for the time axis of plot_log_data
   common start_date, start_year, start_month, start_day
   
-  start_year  = 2000
-  start_month = 1
-  start_day   = 1
+  start_year  = -1
+  start_month = -1
+  start_day   = -1
 
 end
 ;===========================================================================
@@ -1485,7 +1485,8 @@ pro read_log_data
   common getlog_param
   common log_data
   common ask_param
-
+  common start_date
+  
   nlogfile=0
   askstr,'logfilename(s) ',logfilename,doask
   string_to_array, logfilename, logfilenames, nlogfile, /wildcard
@@ -1502,27 +1503,31 @@ pro read_log_data
      retall
   endif
 
+  ; initialize start date for all log files
+  start_year = -1 & start_month = -1 & start_day = -1
+  
   ; First time read the row names into wlogrownames
   get_log, logfilenames(0), wlog,  wlognames,  logtime, timeunit, $
            wlogrownames, /verbose
-  if nlogfile ge 2 then $
-     get_log, logfilenames(1), wlog1, wlognames1, logtime1, timeunit, verbose='1'
-  if nlogfile ge 3 then $
-     get_log, logfilenames(2), wlog2, wlognames2, logtime2, timeunit, verbose='2'
-  if nlogfile ge 4 then $
-     get_log, logfilenames(3), wlog3, wlognames3, logtime3, timeunit, verbose='3'
-  if nlogfile ge 5 then $
-     get_log, logfilenames(4), wlog4, wlognames4, logtime4, timeunit, verbose='4'
-  if nlogfile ge 6 then $
-     get_log, logfilenames(5), wlog5, wlognames5, logtime5, timeunit, verbose='5'
-  if nlogfile ge 7 then $
-     get_log, logfilenames(6), wlog6, wlognames6, logtime6, timeunit, verbose='6'
-  if nlogfile ge 8 then $
-     get_log, logfilenames(7), wlog7, wlognames7, logtime7, timeunit, verbose='7'
-  if nlogfile ge 9 then $
-     get_log, logfilenames(8), wlog8, wlognames8, logtime8, timeunit, verbose='8'
-  if nlogfile gt 9 then $
-     get_log, logfilenames(9), wlog9, wlognames9, logtime9, timeunit, verbose='9'
+
+  if nlogfile ge 2 then get_log, $
+     logfilenames(1), wlog1, wlognames1, logtime1, timeunit, verbose='1'
+  if nlogfile ge 3 then get_log, $
+     logfilenames(2), wlog2, wlognames2, logtime2, timeunit, verbose='2'
+  if nlogfile ge 4 then get_log, $
+     logfilenames(3), wlog3, wlognames3, logtime3, timeunit, verbose='3'
+  if nlogfile ge 5 then get_log, $
+     logfilenames(4), wlog4, wlognames4, logtime4, timeunit, verbose='4'
+  if nlogfile ge 6 then get_log, $
+     logfilenames(5), wlog5, wlognames5, logtime5, timeunit, verbose='5'
+  if nlogfile ge 7 then get_log, $
+     logfilenames(6), wlog6, wlognames6, logtime6, timeunit, verbose='6'
+  if nlogfile ge 8 then get_log, $
+     logfilenames(7), wlog7, wlognames7, logtime7, timeunit, verbose='7'
+  if nlogfile ge 9 then get_log, $
+     logfilenames(8), wlog8, wlognames8, logtime8, timeunit, verbose='8'
+  if nlogfile gt 9 then get_log, $
+     logfilenames(9), wlog9, wlognames9, logtime9, timeunit, verbose='9'
 
 end
 
@@ -1644,21 +1649,29 @@ function log_time,wlog,wlognames,timeunit
      endcase
   endfor
 
+  if start_year  lt 0 and iyear gt -1 then start_year  = wlog(0,iyear)
+  if start_month lt 0 and imon  gt -1 then start_month = wlog(0,imon)
+  if start_day   lt 0 and iday  gt -1 then start_day   = wlog(0,iday)
+  if start_day   lt 0 and idoy  gt -1 then begin
+     start_month = 1
+     start_day   = wlog(0,idoy)
+  endif
+
   if idate gt -1 then begin
      hours = wlog(*,idate)*24.0  ; number of hours since Jan 1 4713 BC.
   endif else if itime gt -1 then begin
      hours = wlog(*,itime)/3600.0 ; convert seconds to hours
   endif else begin
-     if iyear gt -1 and idoy gt -1 then $         ; Year and Day-of-year
+     if iyear gt -1 and idoy gt -1 then $ ; Year and Day-of-year
         hours = 24*(julday(1, wlog(*,idoy), wlog(*,iyear)) -   $
-                    julday(1, wlog(0,idoy), wlog(0,iyear))   )
+                    julday(1, start_day, start_year))
 
      if iyear eq -1 and idoy gt -1 then $ ; Day-of-year only
-        hours = 24*(wlog(*,idoy) - wlog(0,idoy))
+        hours = 24*(wlog(*,idoy) - start_day)
      
      if iyear gt -1 and imon gt -1 and iday gt -1 then $ ; Year, month, day
         hours = 24*(julday(wlog(*,imon), wlog(*,iday), wlog(*,iyear)) - $
-                    julday(wlog(0,imon), wlog(0,iday), wlog(0,iyear))   )
+                    julday(start_month, start_day, start_year))
 
      ;; Add time columns   
      if ihour gt -1 then hours += wlog(*,ihour)
@@ -1697,9 +1710,6 @@ function log_time,wlog,wlognames,timeunit
            if idate gt -1 then begin
               logtime = hours/24.0
            endif else begin $
-              if imon  gt -1 then start_month = fix(wlog(0,imon))
-              if iday  gt -1 then start_day   = fix(wlog(0,iday))
-              if iyear gt -1 then start_year  = fix(wlog(0,iyear))
               if imon eq -1 or iday eq -1 or iyear eq -1 then   $
                  print, ' Warning: check start time: ', $
                         STRING(start_month, format='(i02)'),'/', $
