@@ -1647,42 +1647,24 @@ function log_time,wlog,wlognames,timeunit
   if idate gt -1 then begin
      hours = wlog(*,idate)*24.0  ; number of hours since Jan 1 4713 BC.
   endif else if itime gt -1 then begin
-     hours = wlog(*,itime)/3600.0
+     hours = wlog(*,itime)/3600.0 ; convert seconds to hours
   endif else begin
-     if idoy gt -1 then begin
-        hours = wlog(*,idoy)*24.0
-        if ihour gt -1 then hours += wlog(*,ihour)
-        if imin  eq idoy + 2 then hours[i] += wlog(i,imin)/60.0
-        if isec  eq idoy + 3 then hours[i] += wlog(i,isec)/3600.0
-        if imsc  eq idoy + 4 then hours[i] += wlog(i,imsc)/3.6e6
-        if iyear gt -1 then hours += wlog(*,iyear)*365.25*24
-     endif else if iyear eq -1 or iday eq -1 then begin
-        if ihour gt -1 then begin
-           hours = wlog(*,ihour)
-           for i=1L, n_elements(hours)-1 do $
-              while hours(i) lt hours(i-1) do $
-                 hours(i) = hours(i) + 24.0
-        endif
-     endif else begin
-        ; calculate time from year, day, hour, minute, second, millisec
-        nday = 0
-        daylast  = wlog(0,iday)
-        for i = 0L, n_elements(hours) - 1 do begin
-           dday = wlog(i,iday) - daylast
-           if dday ne 0 then begin
-              ; if we go to the next month we assume
-              ; we ended on the last day of the month(?)
-              if dday lt 0 then dday = wlog(i,iday)
-              daylast = wlog(i,iday)
-              nday = nday + dday
-           endif
-           hours[i] = nday*24.0
-           if ihour eq iday + 1 then hours[i] += wlog(i,ihour)
-           if imin  eq iday + 2 then hours[i] += wlog(i,imin)/60.0
-           if isec  eq iday + 3 then hours[i] += wlog(i,isec)/3600.0
-           if imsc  eq iday + 4 then hours[i] += wlog(i,imsc)/3.6e6
-        endfor
-     endelse
+     if iyear gt -1 and idoy gt -1 then $         ; Year and Day-of-year
+        hours = 24*(julday(1, wlog(*,idoy), wlog(*,iyear)) -   $
+                    julday(1, wlog(0,idoy), wlog(0,iyear))   )
+
+     if iyear eq -1 and idoy gt -1 then $ ; Day-of-year only
+        hours = 24*(wlog(*,idoy) - wlog(0,idoy))
+     
+     if iyear gt -1 and imon gt -1 and iday gt -1 then $ ; Year, month, day
+        hours = 24*(julday(wlog(*,imon), wlog(*,iday), wlog(*,iyear)) - $
+                    julday(wlog(0,imon), wlog(0,iday), wlog(0,iyear))   )
+
+     ;; Add time columns   
+     if ihour gt -1 then hours += wlog(*,ihour)
+     if imin  eq ihour + 1 then hours += wlog(*,imin)/60.0
+     if isec  eq imin  + 1 then hours += wlog(*,isec)/3600.0
+     if imsc  eq isec  + 1 then hours += wlog(*,imsc)/3.6e6
   endelse
 
   if max(hours) eq min(hours) then begin
