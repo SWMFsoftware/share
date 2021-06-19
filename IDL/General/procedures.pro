@@ -5971,16 +5971,13 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
         
         if strlowcase(strmid(wlognamesRead[0],0,4)) eq 'date' then begin
 
+           help,nwlog
            wlog = dblarr(nt, nwlog+5)
            wlognames = strarr(nwlog+5)
+           wlognames = ['year', 'mo', 'dy', 'hr', 'mn', 'sc', $
+                        wlognamesRead(1:*)]
 
            ;; standardize the variable names
-           wlognames(0) = 'year'
-           wlognames(1) = 'month'
-           wlognames(2) = 'day'
-           wlognames(3) = 'hour'
-           wlognames(4) = 'min'
-           wlognames(5) = 'second'
            if wlognamesRead(1) eq 'dbn_nez' then wlognames(6)='B_NorthGeomag'
            if wlognamesRead(2) eq 'dbe_nez' then wlognames(7)='B_EastGeomag'
            if wlognamesRead(3) eq 'dbz_nez' then wlognames(8)='B_DownGeomag'
