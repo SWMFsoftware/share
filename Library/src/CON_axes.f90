@@ -825,11 +825,11 @@ contains
        InGse_DD = GeoGse_DD
     case('GEI')
        InGse_DD = transpose(GseGei_DD)
-    case('HGI')
-       InGse_DD = HgiGse_DD
-    case('HGC')
+    case('HGI', 'hgi')
+       InGse_DD = HgiGse_DD  ! hgi is the rotated HGI
+    case('HGC', 'hgc')
        InGse_DD = HgcGse_DD
-    case('HGR')
+    case('HGR', 'hgr')
        InGse_DD = HgrGse_DD
     case default
        call CON_stop(NameSub//' unknown TypeCoordIn='//TypeCoordIn)
@@ -848,11 +848,11 @@ contains
        OutGse_DD = GeoGse_DD
     case('GEI')
        OutGse_DD = transpose(GseGei_DD)
-    case('HGI')
+    case('HGI', 'hgi')
        OutGse_DD = HgiGse_DD
-    case('HGC')
+    case('HGC', 'hgc')
        OutGse_DD = HgcGse_DD
-    case('HGR')
+    case('HGR', 'hgr')
        OutGse_DD = HgrGse_DD
     case default
        call CON_stop(NameSub//' unknown TypeCoordOut='//TypeCoordOut)
@@ -860,6 +860,24 @@ contains
 
     Rot_DD = matmul(OutGse_DD,transpose(InGse_DD))
 
+    ! Rotated HGI/HGC case
+    if(dLongitudeHgi /= 0.0)then
+       if(TypeCoordIn == 'HGI' .or. TypeCoordIn == 'HGC') &
+            Rot_DD = matmul(Rot_DD, rot_matrix_z(-dLongitudeHgi))
+
+       if(TypeCoordOut == 'HGI' .or. TypeCoordOut == 'HGC') &
+            Rot_DD = matmul(rot_matrix_z(dLongitudeHgi), Rot_DD)
+    end if
+
+    ! Rotated HGR case
+    if(dLongitudeHgr /= 0.0)then
+       if(TypeCoordIn == 'HGR') then
+          Rot_DD = matmul(Rot_DD, rot_matrix_z(-dLongitudeHgr))
+       elseif(TypeCoordOut == 'HGR') then
+          Rot_DD = matmul(rot_matrix_z(dLongitudeHgr), Rot_DD)
+       end if
+    end if
+    
   end function transform_matrix
   !============================================================================
 
