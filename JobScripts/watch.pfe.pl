@@ -23,7 +23,7 @@ my @results;
 my $running;
 my $user = $ENV{USER};
 LOOP:{
-    @results = `qstat -u \$USER | grep $pattern`;
+    @results = `/PBS/bin/qstat -u \$USER | grep $pattern`;
     my $ids;
     foreach (@results){
 	#/^(\d+)[^:]+:\d\d ([A-Z]) +((\dd\+)?\d\d:\d\d)/;
@@ -36,7 +36,7 @@ LOOP:{
     if($running){
 	$ids =~ s/ $running//;
 	print "qdel $ids\n";
-	`qdel $ids`;
+	`/PBS/bin/qdel $ids`;
 	last LOOP;
     }
 

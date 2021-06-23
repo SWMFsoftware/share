@@ -80,7 +80,7 @@ foreach $machine (@machine){
 # submit jobs;
 foreach $machine (@machine){
     print "qsub $script.$machine\n";
-    `qsub $script.$machine`;
+    `/PBS/bin/qsub $script.$machine`;
 }
 
 # start watch.pfe.pl in the background
