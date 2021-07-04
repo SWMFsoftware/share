@@ -7,7 +7,7 @@ COMPILE.mpicxx= mpicxx
 
 LINK.cpp = ${COMPILE.c} -lstdc++
 
-CPPLIB = -lstdc++ -lmpi_cxx
+CPPLIB = -lstdc++ -lmpi_cxx -lmpi++
 
 #DEBUGC =  -g 
 
