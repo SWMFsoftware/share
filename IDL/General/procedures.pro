@@ -3903,11 +3903,11 @@ pro plot_func
   else                     siz = size(x)
   n1=siz(1)
   if plotdim eq 1 then begin
-     n2=1
-     irr=0
+     n2  = 1
+     irr = 0
   endif else begin
      n2=siz(2)
-     irr=n2 eq 1
+     irr = gencoord or (n2 eq 1)
   endelse
 
   if irr and axistype eq 'cells' then begin
