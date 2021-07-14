@@ -743,7 +743,7 @@ contains
        write(*,*)NameSub,' new RotAxisGsm_D  =',RotAxisGsm_D
     end if
 #endif
-    
+
   end subroutine set_axes
   !============================================================================
 
