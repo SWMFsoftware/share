@@ -585,7 +585,7 @@ contains
   !============================================================================
 
   subroutine set_axes(TimeSim,DoSetAxes)
-    !$acc routine seq
+    !! $acc routine seq
     real,              intent(in) :: TimeSim
     logical, optional, intent(in) :: DoSetAxes
 
@@ -743,14 +743,14 @@ contains
        write(*,*)NameSub,' new RotAxisGsm_D  =',RotAxisGsm_D
     end if
 #endif
-
+    
   end subroutine set_axes
   !============================================================================
 
   subroutine get_axes(TimeSim, &
        MagAxisTiltGsmOut, RotAxisGsmOut_D, RotAxisGseOut_D, &
        MagAxisGseOut_D, MagAxisGsmOut_D)
-    !$acc routine seq
+    !! acc routine seq
     real, intent(in) :: TimeSim
     real, intent(out), optional :: MagAxisTiltGsmOut
     real, intent(out), optional :: RotAxisGsmOut_D(3)
