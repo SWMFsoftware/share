@@ -283,7 +283,6 @@ contains
   !============================================================================
 
   subroutine rlonlat_to_xyz31(r, Lon, Lat, Xyz_D)
-
     real, intent(in) :: r, Lon, Lat
     real, intent(out):: Xyz_D(3)
 
@@ -327,6 +326,7 @@ contains
   !============================================================================
 
   subroutine sph_to_xyz31(r,Theta,Phi,Xyz_D)
+    !$acc routine seq
 
     real, intent(in) :: r,Theta,Phi
     real, intent(out):: Xyz_D(3)
@@ -351,7 +351,7 @@ contains
   !
 
   subroutine sph_to_xyz33(r,Theta,Phi,x,y,z)
-
+    !$acc routine seq
     real, intent(in)  :: r,Theta,Phi
 
     real, intent(out) :: x,y,z

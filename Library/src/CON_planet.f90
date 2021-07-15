@@ -51,6 +51,7 @@ module CON_planet
   ! Magnetic field type and strength in teslas
   character (len=lTypeBField) :: TypeBField = 'DIPOLE'
   real                        :: DipoleStrength
+  !$acc declare create(DipoleStrength)
   real    :: MagAxisThetaGeo  ! Permanent theta  in GEO
   real    :: MagAxisPhiGeo    ! Permanent phi    in GEO
 
@@ -63,6 +64,7 @@ module CON_planet
 
   ! Offset of the magnetic field center
   real    :: MagCenter_D(3) = [ 0.0, 0.0, 0.0]
+  !$acc declare create(MagCenter_D)
 
   ! Optional changes relative to the "real" planet
   logical :: UseRotation     = .true.
