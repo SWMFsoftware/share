@@ -585,7 +585,7 @@ contains
   !============================================================================
 
   subroutine set_axes(TimeSim,DoSetAxes)
-    !! $acc routine seq
+    !$acc routine seq
     real,              intent(in) :: TimeSim
     logical, optional, intent(in) :: DoSetAxes
 
