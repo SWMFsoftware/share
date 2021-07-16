@@ -247,7 +247,7 @@ contains
   ! k^\prime=sqrt(1 - k^2)=exp(-u)
   !
   real function toroid_p(n, Kappa2In, KappaPrime2In)
-    ! tilde{P} function, integer n > 0 or n=0
+    ! tilde{P} function, integer n > 0 or n=0, related to k**3 * (k^\prime)**n
     integer, intent(in):: n
     real, optional, intent(in) :: Kappa2In, KappaPrime2In
     real :: Kappa2, KappaPrime2
@@ -269,6 +269,7 @@ contains
   !============================================================================
   real function toroid_q(n, KappaPrime2In, Kappa2In)
     ! tilde{Q}_n function, integer n > 0! The case n=0 is treated below
+    ! related to k**3 * (k^\prime)**n
     integer, intent(in):: n  !.ge.1
     real, optional, intent(in) :: KappaPrime2In, Kappa2In
     character(len=*), parameter:: NameSub = 'toroid_q'
@@ -289,7 +290,7 @@ contains
   end function toroid_q
   !============================================================================
   real function toroid_q0(KappaPrime2In, Kappa2In)
-    ! tilde{Q}_0 function! The case n>0 is treated above
+    ! tilde{Q}_0 function, related to k**3! The case n>0 is treated above
     real, optional, intent(in) :: KappaPrime2In, Kappa2In
 
     character(len=*), parameter:: NameSub = 'toroid_q0'
