@@ -560,7 +560,7 @@ contains
   !============================================================================
 
   subroutine set_gei_geo_matrix(TimeSim)
-    !$acc routine seq
+
     ! The rotation is around the Z axis, which is the rotational axis
     !
     ! This matrix only changes due to the precession of Earth.
@@ -585,7 +585,7 @@ contains
   !============================================================================
 
   subroutine set_axes(TimeSim,DoSetAxes)
-    !$acc routine seq
+
     real,              intent(in) :: TimeSim
     logical, optional, intent(in) :: DoSetAxes
 
@@ -750,7 +750,7 @@ contains
   subroutine get_axes(TimeSim, &
        MagAxisTiltGsmOut, RotAxisGsmOut_D, RotAxisGseOut_D, &
        MagAxisGseOut_D, MagAxisGsmOut_D)
-    !! acc routine seq
+
     real, intent(in) :: TimeSim
     real, intent(out), optional :: MagAxisTiltGsmOut
     real, intent(out), optional :: RotAxisGsmOut_D(3)
