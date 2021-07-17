@@ -244,7 +244,7 @@ foreach $source (@source){
 	}
 
 	# Find start of subroutines and functions
-	if(/^(\s*)(program|module|(recursive\s+)?subroutine|(recursive\s+)?($AnyType\s+)?function)\s+(\w+)/i){
+	if(/^(\s*)(program|module|((pure|recursive)\s+)?subroutine|((pure|recursive)\s+)?($AnyType\s+)?function)\s+(\w+)/i){
 
 	    my $actualindent = $1;
 	    $unittype = lc($2);
