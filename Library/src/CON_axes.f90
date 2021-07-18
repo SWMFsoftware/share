@@ -199,7 +199,7 @@ module CON_axes
   real    :: MagAxis_D(3)      ! Current  position of the magnetix axis in GSE
   real    :: MagAxisGsm_D(3)   ! Current  position of the magnetix axis in GSM
   real    :: MagAxisTiltGsm    ! Current  tilt  in GSM
-  !$acc declare create(MagAxis0Gei_D, MagAxisTiltGsm,MagAxisGsm_D,MagAxis_D)
+  !$acc declare create(MagAxis0Gei_D, MagAxisTiltGsm, MagAxisGsm_D, MagAxis_D)
 
   ! Logical tells if the time independent axis parameters have been set
   logical :: DoInitializeAxes=.true.
@@ -532,7 +532,6 @@ contains
 
     end subroutine set_hgi_gse_d_planet
     !==========================================================================
-
     subroutine set_v_planet
 
       ! Caculate vPlanet in HGI system
@@ -555,10 +554,8 @@ contains
 
     end subroutine set_v_planet
     !==========================================================================
-
   end subroutine init_axes
   !============================================================================
-
   subroutine set_gei_geo_matrix(TimeSim)
 
     ! The rotation is around the Z axis, which is the rotational axis
@@ -568,7 +565,6 @@ contains
     real, intent(in) :: TimeSim
 
     real :: AlphaEquinox
-
     !--------------------------------------------------------------------------
     if(.not.UseRotation)then
        ! If the planet does not rotate we may take GEI=GEO
@@ -583,7 +579,6 @@ contains
 
   end subroutine set_gei_geo_matrix
   !============================================================================
-
   subroutine set_axes(TimeSim,DoSetAxes)
 
     real,              intent(in) :: TimeSim
@@ -627,7 +622,6 @@ contains
     TimeSimLast = -1000.0
     TimeSimHgr  = -1000.0
 
-#ifndef OPENACC
     if(TimeSimHgr /= TimeSim)then
 
        ! Recalculate the HgrHgi_DD matrix
@@ -654,7 +648,6 @@ contains
        ! Remember the time
        TimeSimHgr = TimeSim
     end if
-#endif
 
     ! Check if there is a need to update the magnetic axis
     ! and related transformations
@@ -672,7 +665,6 @@ contains
 
     end if
 
-#ifndef OPENACC
     call CON_set_do_test(NameSub, DoTest)
 
     if(DoTest)then
@@ -681,7 +673,6 @@ contains
        write(*,*) NameSub,'DtUpdateB0,TimeSim,TimeSimLast=',&
             DtUpdateB0,TimeSim,TimeSimLast
     end if
-#endif
 
     ! Remember the simulation time
     TimeSimLast = TimeSim
@@ -736,17 +727,21 @@ contains
     MagGse_DD = matmul(MagGeo_DD,GeoGse_DD)
     GeoSmg_DD = matmul(GeoGse_DD, GseSmg_DD)
 
-#ifndef OPENACC
     if(DoTest)then
        write(*,*)NameSub,' new MagAxis_D     =',MagAxis_D
        write(*,*)NameSub,' new MagAxisTiltGsm=',MagAxisTiltGsm*cRadToDeg
        write(*,*)NameSub,' new RotAxisGsm_D  =',RotAxisGsm_D
     end if
-#endif
 
+    !$acc update device(RotAxis_D, RotAxisGsm_D)
+    !$acc update device(MagAxisTiltGsm, MagAxisGsm_D, MagAxis_D)
+    !$acc update device(SmgGsm_DD, GsmGse_DD, GseGei_DD, GeiGeo_DD, MagGeo_DD)
+    !$acc update device(HgrHgi_DD, HgrGse_DD, HgcHgi_DD, HgcGse_DD)
+    !$acc update device(SmgGse_DD, GeoGse_DD, MagGse_DD)
+    !$acc update device(GseGeo_DD, GseSmg_DD, GeoSmg_DD)
+    
   end subroutine set_axes
   !============================================================================
-
   subroutine get_axes(TimeSim, &
        MagAxisTiltGsmOut, RotAxisGsmOut_D, RotAxisGseOut_D, &
        MagAxisGseOut_D, MagAxisGsmOut_D)
@@ -762,11 +757,9 @@ contains
     ! through the optional output arguments.
     character(len=*), parameter:: NameSub = 'get_axes'
     !--------------------------------------------------------------------------
-#ifndef OPENACC
     ! Set time independent information
     if(DoInitializeAxes)&
          call CON_stop(NameSub//' ERROR: init_axes has not been called')
-#endif
 
     ! Set time dependent information (TimeSim is cashed)
     call set_axes(TimeSim)
