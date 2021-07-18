@@ -21,9 +21,6 @@
 #PBS -S /bin/csh
 #PBS -N GPU
 
-# set the number of MPI processes by changing select and ncpus:
-# nProc = select*ncpus
-
 # To run on v100 GPU (up to 4)
 ### PBS -lselect=1:ncpus=2:ngpus=1:model=sky_gpu
 #PBS -lselect=1:ncpus=2:ngpus=1:model=cas_gpu
@@ -44,8 +41,11 @@
 # Specify group (account charged) if necessary
 ### PBS -W group_list=...
 
-# Load nvidia compilers (nvhpc/20.9 or nvhpc/21.2)
-module purge; module use -a /nasa/nvidia/hpc_sdk/modulefiles; module load nvhpc/20.9
+# Load nvidia runtime libraries (should be the same as used for compilation)
+module purge
+module use -a /nasa/nvidia/hpc_sdk/modulefiles
+module load nvhpc/20.9
+# module load nvhpc/21.2
 
 echo `which nvfortran`
 echo `which mpiexec`
