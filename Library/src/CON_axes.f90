@@ -739,7 +739,7 @@ contains
     !$acc update device(HgrHgi_DD, HgrGse_DD, HgcHgi_DD, HgcGse_DD)
     !$acc update device(SmgGse_DD, GeoGse_DD, MagGse_DD)
     !$acc update device(GseGeo_DD, GseSmg_DD, GeoSmg_DD)
-    
+
   end subroutine set_axes
   !============================================================================
   subroutine get_axes(TimeSim, &
