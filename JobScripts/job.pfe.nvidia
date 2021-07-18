@@ -1,0 +1,59 @@
+#!/bin/csh
+
+# Job script for Pleiades computer at NASA Ames using the GPU nodes.
+# Currently the GPU nodes are on pbspl4, so it is best to
+# 
+#   ssh pbspl4
+#   cd SWMF/run
+#   qsub job.pfe.nvidia
+#
+# An alternative is to submit jobs for different CPU types and
+# keep the first one that started:
+#
+#   qsub.pfe.pl job.pfe.nvidia GPU gpu_sky gpu_cas
+#
+# To check the status of submitted jobs, use
+#
+# qstat -u YOUR_USER_NAME             # on pbspl4 node
+# qstat v100@pbspl4 -u YOUR_USER_NAME # from other nodes
+#
+
+#PBS -S /bin/csh
+#PBS -N GPU
+
+# set the number of MPI processes by changing select and ncpus:
+# nProc = select*ncpus
+
+# To run on v100 GPU (up to 4)
+### PBS -lselect=1:ncpus=2:ngpus=1:model=sky_gpu
+#PBS -lselect=1:ncpus=2:ngpus=1:model=cas_gpu
+
+# Select queue
+#PBS -q v100@pbspl4
+###PBS -q devel@pbspl4
+
+# Set walltime
+#PBS -l walltime=1:00:00
+
+# Merge output and error files
+#PBS -j oe
+
+# Send mails if error occurs
+#PBS -m e
+
+# Specify group (account charged) if necessary
+### PBS -W group_list=...
+
+# Load nvidia compilers (nvhpc/20.9 or nvhpc/21.2)
+module purge; module use -a /nasa/nvidia/hpc_sdk/modulefiles; module load nvhpc/20.9
+
+echo `which nvfortran`
+echo `which mpiexec`
+
+# cd into the run directory
+cd $PBS_O_WORKDIR
+
+# run SWMF with proper number of CPU cores
+mpiexec -n 2 ./SWMF.exe > runlog
+
+exit
