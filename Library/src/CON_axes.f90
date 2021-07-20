@@ -732,15 +732,16 @@ contains
        write(*,*)NameSub,' new MagAxisTiltGsm=',MagAxisTiltGsm*cRadToDeg
        write(*,*)NameSub,' new RotAxisGsm_D  =',RotAxisGsm_D
     end if
-
+  end subroutine set_axes
+  !============================================================================
+  subroutine update_axes_gpu
     !$acc update device(RotAxis_D, RotAxisGsm_D)
     !$acc update device(MagAxisTiltGsm, MagAxisGsm_D, MagAxis_D)
     !$acc update device(SmgGsm_DD, GsmGse_DD, GseGei_DD, GeiGeo_DD, MagGeo_DD)
     !$acc update device(HgrHgi_DD, HgrGse_DD, HgcHgi_DD, HgcGse_DD)
     !$acc update device(SmgGse_DD, GeoGse_DD, MagGse_DD)
     !$acc update device(GseGeo_DD, GseSmg_DD, GeoSmg_DD)
-
-  end subroutine set_axes
+  end subroutine update_axes_gpu
   !============================================================================
   subroutine get_axes(TimeSim, &
        MagAxisTiltGsmOut, RotAxisGsmOut_D, RotAxisGseOut_D, &
