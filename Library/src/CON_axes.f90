@@ -199,7 +199,7 @@ module CON_axes
   real    :: MagAxis_D(3)      ! Current  position of the magnetix axis in GSE
   real    :: MagAxisGsm_D(3)   ! Current  position of the magnetix axis in GSM
   real    :: MagAxisTiltGsm    ! Current  tilt  in GSM
-  !$acc declare create(MagAxis0Gei_D, MagAxisTiltGsm, MagAxisGsm_D, MagAxis_D)
+  !$acc declare create(MagAxisTiltGsm, MagAxisGsm_D, MagAxis_D)
 
   ! Logical tells if the time independent axis parameters have been set
   logical :: DoInitializeAxes=.true.
@@ -439,7 +439,6 @@ contains
     DoInitializeAxes=.false.
 
     !$acc update device(tStart)
-    !$acc update device(RotAxis_D, RotAxisGsm_D, MagAxis0Gei_D)
   contains
     !==========================================================================
 
@@ -460,7 +459,6 @@ contains
            rot_matrix_x(RotAxisTheta) &
            )
 
-      !$acc update device(GseGei_DD)
     end subroutine set_gse_gei_matrix
     !==========================================================================
 
@@ -478,7 +476,7 @@ contains
       MagGeo_DD = matmul( &
            rot_matrix_y(-MagAxisThetaGeo), &
            rot_matrix_z(-MagAxisPhiGeo))
-      !$acc update device(MagGeo_DD)
+
     end subroutine set_mag_geo_matrix
     !==========================================================================
 
@@ -579,7 +577,7 @@ contains
 
   end subroutine set_gei_geo_matrix
   !============================================================================
-  subroutine set_axes(TimeSim,DoSetAxes)
+  subroutine set_axes(TimeSim, DoSetAxes)
 
     real,              intent(in) :: TimeSim
     logical, optional, intent(in) :: DoSetAxes
@@ -610,18 +608,14 @@ contains
 
     real :: MagAxisGei_D(3)
 
-    real :: TimeSimLast   ! Last simulation time for magnetic fields
-    real :: TimeSimHgr    ! Last simulation time for HGR update
+    real :: TimeSimLast = -1000.0  ! Last simulation time for magnetic fields
+    real :: TimeSimHgr  = -1000.0  ! Last simulation time for HGR update
     real :: Angle
 
     ! Reset the helio-centered coordinate transformations if time changed
     logical:: DoTest
-
     character(len=*), parameter:: NameSub = 'set_axes'
     !--------------------------------------------------------------------------
-    TimeSimLast = -1000.0
-    TimeSimHgr  = -1000.0
-
     if(TimeSimHgr /= TimeSim)then
 
        ! Recalculate the HgrHgi_DD matrix
@@ -629,7 +623,8 @@ contains
        ! this matrix transforms from HGI to HGR, so a point at rest
        ! in HGI rotates BACKWARDS in HGR
 
-       Angle = modulo(-OmegaCarrington*(TimeSim + tStart - tStartCarringtonCoord), &
+       Angle = modulo( &
+            -OmegaCarrington*(TimeSim + tStart - tStartCarringtonCoord), &
             cTwoPi8)
 
        ! Modify angle by the offsets
@@ -669,9 +664,9 @@ contains
 
     if(DoTest)then
        write(*,*) NameSub,'UseAlignedAxes,UseRotation,DoUpdateB0=',&
-            UseAlignedAxes,UseRotation,DoUpdateB0
+            UseAlignedAxes, UseRotation, DoUpdateB0
        write(*,*) NameSub,'DtUpdateB0,TimeSim,TimeSimLast=',&
-            DtUpdateB0,TimeSim,TimeSimLast
+            DtUpdateB0, TimeSim, TimeSimLast
     end if
 
     ! Remember the simulation time
@@ -732,17 +727,15 @@ contains
        write(*,*)NameSub,' new MagAxisTiltGsm=',MagAxisTiltGsm*cRadToDeg
        write(*,*)NameSub,' new RotAxisGsm_D  =',RotAxisGsm_D
     end if
-  end subroutine set_axes
-  !============================================================================
-  subroutine update_axes_gpu
+
     !$acc update device(RotAxis_D, RotAxisGsm_D)
     !$acc update device(MagAxisTiltGsm, MagAxisGsm_D, MagAxis_D)
     !$acc update device(SmgGsm_DD, GsmGse_DD, GseGei_DD, GeiGeo_DD, MagGeo_DD)
     !$acc update device(HgrHgi_DD, HgrGse_DD, HgcHgi_DD, HgcGse_DD)
     !$acc update device(SmgGse_DD, GeoGse_DD, MagGse_DD)
     !$acc update device(GseGeo_DD, GseSmg_DD, GeoSmg_DD)
-    !--------------------------------------------------------------------------
-  end subroutine update_axes_gpu
+
+  end subroutine set_axes
   !============================================================================
   subroutine get_axes(TimeSim, &
        MagAxisTiltGsmOut, RotAxisGsmOut_D, RotAxisGseOut_D, &
