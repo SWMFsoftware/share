@@ -23,6 +23,7 @@ module CON_planet_field
   ! PUBLIC MEMBER FUNCTIONS
   public :: get_planet_field  ! Get planet field at some time and place
   public :: map_planet_field  ! Map planet field from a point to a radius
+  public :: map_planet_field_fast ! map dipole field
   public :: test_planet_field ! Test the methods in this module
 
   ! revision history:
@@ -668,6 +669,97 @@ contains
 
     xMap=XyzMap_D(1); yMap=XyzMap_D(2); zMap=XyzMap_D(3)
   end subroutine map_planet_field33
+  !============================================================================
+  subroutine map_planet_field_fast(XyzIn_D, rMap, XyzMap_D, iHemisphere, &
+       DdirDxyz_DD, UseGsm, DoNotConvertBack)
+    !$acc routine seq
+
+    ! This subroutine is a simplified version of
+    ! CON_planet_field.f90:map_planet_field11
+
+    real,              intent(in) :: XyzIn_D(3)   ! spatial position
+    real,              intent(in) :: rMap       ! radial distance to map to
+    real,              intent(out):: XyzMap_D(3)      ! mapped position
+    integer,           intent(out):: iHemisphere      ! which hemisphere
+    real, optional,    intent(out):: DdirDxyz_DD(2,3) ! Jacobian matrix
+    logical, optional, intent(in) :: UseGsm           ! use GSM coords
+    logical, optional, intent(in) :: DoNotConvertBack ! Leave XyzMap in SMG/MAG
+
+    real             :: Xyz_D(3)        ! Normalized and rotated position
+
+    ! Temporary variables for the analytic mapping
+    real :: rMap2, rMap3, r, r3, XyRatio, XyMap2, XyMap, Xy2
+
+    character(len=*), parameter:: NameSub = 'map_planet_field_fast'
+    !--------------------------------------------------------------------------
+    if(present(UseGsm)) then
+       Xyz_D = matmul( SmgGsm_DD, XyzIn_D)
+    else
+       Xyz_D = XyzIn_D
+    end if
+
+    ! In MAG/SMG coordinates the hemisphere depends on the sign of Z
+    iHemisphere = sign(1.0,Xyz_D(3))
+
+    ! Normalized radial distance
+    r = sqrt(sum(Xyz_D**2))
+
+    ! Calculate powers of the radii
+    rMap2 = rMap**2
+    rMap3 = rMap2*rMap
+    r3    = r**3
+
+    ! This is the ratio of input and mapped X and Y components
+    XyRatio = sqrt(rMap3/r3)
+
+    ! Calculate the X and Y components of the mapped position
+    XyzMap_D(1:2) = XyRatio*Xyz_D(1:2)
+
+    ! The squared distance of the mapped position from the magnetic axis
+    XyMap2 = XyzMap_D(1)**2 + XyzMap_D(2)**2
+
+    ! Check if there is a mapping at all
+    if(rMap2 < XyMap2)then
+       ! The point does not map to the given radius
+       iHemisphere = 0
+
+       ! Put mapped point to the magnetic equator
+       XyzMap_D(1:2) = (rMap/sqrt(Xyz_D(1)**2 + Xyz_D(2)**2))*Xyz_D(1:2)
+       XyzMap_D(3) = 0
+    else
+       ! Calculate the Z component of the mapped position
+       ! Select the same hemisphere as for the input position
+       XyzMap_D(3) = iHemisphere*sqrt(rMap2 - XyMap2)
+    end if
+
+    if(.not.present(DoNotConvertBack) .and. present(UseGsm)) &
+         XyzMap_D = matmul(XyzMap_D, SmgGsm_DD )
+
+    if(.not.present(DdirDxyz_DD)) RETURN
+
+    XyMap = sqrt(XyMap2)
+
+    DdirDxyz_DD(1,1:2) = - XyzMap_D(1:2) * &
+         ( 0.5 - 1.5 * (Xyz_D(3) / r)**2 ) / &
+         ( XyzMap_D(3) * XyMap / XyRatio )
+
+    ! dTheta/dz = - sqrt(xMap^2+yMap^2)/zMap*1.5*z/r^2
+    DdirDxyz_DD(1,3) = - XyMap / XyzMap_D(3) * 1.5 * Xyz_D(3) / r**2
+
+    ! dPhi/dx = -y/(x^2+y^2)
+    ! dPhi/dy =  x/(x^2+y^2)
+    Xy2              =   Xyz_D(1)**2 + Xyz_D(2)**2
+    DdirDxyz_DD(2,1) = - Xyz_D(2) / Xy2
+    DdirDxyz_DD(2,2) =   Xyz_D(1) / Xy2
+
+    ! dPhi/dz = 0.0
+    DdirDxyz_DD(2,3) = 0.0
+
+    ! Transform into the system of the input coordinates
+    ! dDir/dXyzIn = dDir/dXyzSMGMAG . dXyzSMGMAG/dXyzIn
+    if(present(UseGsm)) DdirDxyz_DD = matmul(DdirDxyz_DD, SmgGsm_DD)
+
+  end subroutine map_planet_field_fast
   !============================================================================
 
   subroutine test_planet_field
