@@ -17,6 +17,9 @@ module ModKind
   !PUBLIC DATA MEMBERS:
   integer, parameter :: Real4_ = selected_real_kind(6,30)
   integer, parameter :: Real8_ = selected_real_kind(12,100)
+  integer, parameter :: Int1_  = selected_int_kind(2)
+  integer, parameter :: Int2_  = selected_int_kind(4)
+  integer, parameter :: Int4_  = selected_int_kind(8)
   integer, parameter :: Int8_  = selected_int_kind(16)
 
   ! Number of bytes in the default real number (precision)
