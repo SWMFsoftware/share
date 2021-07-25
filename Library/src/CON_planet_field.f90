@@ -691,12 +691,12 @@ contains
     real :: rMap2, rMap3, r, r3, XyRatio, XyMap2, XyMap, Xy2
 
     logical :: UseGsm
-    
+
     character(len=*), parameter:: NameSub = 'map_planet_field_fast'
     !--------------------------------------------------------------------------
     UseGsm = .false.
     if(present(UseGsmIn)) UseGsm = UseGsmIn
-    
+
     if(UseGsm) then
        Xyz_D = matmul( SmgGsm_DD, XyzIn_D)
     else
