@@ -671,7 +671,7 @@ contains
   end subroutine map_planet_field33
   !============================================================================
   subroutine map_planet_field_fast(XyzIn_D, rMap, XyzMap_D, iHemisphere, &
-       DdirDxyz_DD, UseGsm, DoNotConvertBack)
+       DdirDxyz_DD, UseGsmIn, DoNotConvertBack)
     !$acc routine seq
 
     ! This subroutine is a simplified version of
@@ -682,7 +682,7 @@ contains
     real,              intent(out):: XyzMap_D(3)      ! mapped position
     integer,           intent(out):: iHemisphere      ! which hemisphere
     real, optional,    intent(out):: DdirDxyz_DD(2,3) ! Jacobian matrix
-    logical, optional, intent(in) :: UseGsm           ! use GSM coords
+    logical, optional, intent(in) :: UseGsmIn         ! use GSM coords
     logical, optional, intent(in) :: DoNotConvertBack ! Leave XyzMap in SMG/MAG
 
     real             :: Xyz_D(3)        ! Normalized and rotated position
@@ -690,9 +690,14 @@ contains
     ! Temporary variables for the analytic mapping
     real :: rMap2, rMap3, r, r3, XyRatio, XyMap2, XyMap, Xy2
 
+    logical :: UseGsm
+    
     character(len=*), parameter:: NameSub = 'map_planet_field_fast'
     !--------------------------------------------------------------------------
-    if(present(UseGsm)) then
+    UseGsm = .false.
+    if(present(UseGsmIn)) UseGsm = UseGsmIn
+    
+    if(UseGsm) then
        Xyz_D = matmul( SmgGsm_DD, XyzIn_D)
     else
        Xyz_D = XyzIn_D
@@ -732,7 +737,7 @@ contains
        XyzMap_D(3) = iHemisphere*sqrt(rMap2 - XyMap2)
     end if
 
-    if(.not.present(DoNotConvertBack) .and. present(UseGsm)) &
+    if(.not.present(DoNotConvertBack) .and. UseGsm) &
          XyzMap_D = matmul(XyzMap_D, SmgGsm_DD )
 
     if(.not.present(DdirDxyz_DD)) RETURN
@@ -757,7 +762,7 @@ contains
 
     ! Transform into the system of the input coordinates
     ! dDir/dXyzIn = dDir/dXyzSMGMAG . dXyzSMGMAG/dXyzIn
-    if(present(UseGsm)) DdirDxyz_DD = matmul(DdirDxyz_DD, SmgGsm_DD)
+    if(UseGsm) DdirDxyz_DD = matmul(DdirDxyz_DD, SmgGsm_DD)
 
   end subroutine map_planet_field_fast
   !============================================================================
