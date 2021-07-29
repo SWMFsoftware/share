@@ -159,45 +159,41 @@ module ModCoordTransform
 
 contains
   !============================================================================
-
   subroutine xyz_to_sph11(Xyz_D,Sph_D)
+    !$acc routine seq
 
     real, intent(in) :: Xyz_D(3)
     real, intent(out):: Sph_D(3)
-
     !--------------------------------------------------------------------------
     call xyz_to_sph(Xyz_D(1),Xyz_D(2),Xyz_D(3),Sph_D(1),Sph_D(2),Sph_D(3))
 
   end subroutine xyz_to_sph11
   !============================================================================
-
   subroutine xyz_to_sph13(Xyz_D,r,Theta,Phi)
+    !$acc routine seq
 
     real, intent(in) :: Xyz_D(3)
     real, intent(out):: r,Theta,Phi
-
     !--------------------------------------------------------------------------
     call xyz_to_sph(Xyz_D(1),Xyz_D(2),Xyz_D(3),r,Theta,Phi)
 
   end subroutine xyz_to_sph13
   !============================================================================
-
   subroutine xyz_to_sph31(x,y,z,Sph_D)
+    !$acc routine seq
 
     real, intent(in) :: x,y,z
     real, intent(out):: Sph_D(3)
-
     !--------------------------------------------------------------------------
     call xyz_to_sph(x,y,z,Sph_D(1),Sph_D(2),Sph_D(3))
 
   end subroutine xyz_to_sph31
   !============================================================================
-
   subroutine xyz_to_rlonlat11(Xyz_D,rLonLat_D)
+    !$acc routine seq
 
     real, intent(in) :: Xyz_D(3)
     real, intent(out):: rLonLat_D(3)
-
     !--------------------------------------------------------------------------
     call xyz_to_sph(Xyz_D(1),Xyz_D(2),Xyz_D(3), &
          rLonLat_D(1),rLonLat_D(3),rLonLat_D(2))
@@ -206,46 +202,41 @@ contains
 
   end subroutine xyz_to_rlonlat11
   !============================================================================
-
   subroutine xyz_to_rlonlat13(Xyz_D,r,Lon,Lat)
+    !$acc routine seq
 
     real, intent(in) :: Xyz_D(3)
     real, intent(out):: r,Lon,Lat
-
     !--------------------------------------------------------------------------
     call xyz_to_sph(Xyz_D(1),Xyz_D(2),Xyz_D(3),r,Lat,Lon)
     Lat = cHalfPi - Lat
 
   end subroutine xyz_to_rlonlat13
   !============================================================================
-
   subroutine xyz_to_rlonlat31(x,y,z,rLonLat_D)
+    !$acc routine seq
 
     real, intent(in) :: x,y,z
     real, intent(out):: rLonLat_D(3)
-
     !--------------------------------------------------------------------------
     call xyz_to_sph(x,y,z,rLonLat_D(1),rLonLat_D(3),rLonLat_D(2))
     rLonLat_D(3) = cHalfPi - rLonLat_D(3)
 
   end subroutine xyz_to_rlonlat31
   !============================================================================
-
   subroutine xyz_to_rlonlat33(x,y,z,r,Lon,Lat)
+    !$acc routine seq
 
     real, intent(in) :: x,y,z
     real, intent(out):: r,Lon,Lat
-
     !--------------------------------------------------------------------------
     call xyz_to_sph(x,y,z,r,Lat,Lon)
     Lat = cHalfPi - Lat
 
   end subroutine xyz_to_rlonlat33
   !============================================================================
-
-  !
-
   subroutine xyz_to_sph33(x,y,z,r,Theta,Phi)
+    !$acc routine seq
 
     real, intent(in) :: x,y,z
 
@@ -257,19 +248,16 @@ contains
     ! subroutine. Here both vectors are given with 3 scalars
     ! (hence the 33 suffix).
 
-    ! local variables
-
     real :: d
-    ! ___________________________________________________________________
     !--------------------------------------------------------------------------
     d     = x**2 + y**2
     r     = sqrt(d + z**2)
     d     = sqrt(d)
     Theta = atan2_check(d,z)
     Phi   = atan2_check(y,x)
+
   end subroutine xyz_to_sph33
   !============================================================================
-
   subroutine rlonlat_to_xyz11(rLonLat_D,Xyz_D)
 
     real, intent(in) :: rLonLat_D(3)
@@ -871,12 +859,10 @@ contains
 
     character(len=*), parameter:: NameSub = 'inverse_matrix33'
     !--------------------------------------------------------------------------
-#ifndef _OPENACC
     Limit = 1.e-16
     if(present(SingularLimit)) Limit = SingularLimit
     DoIgnore = .false.
     if(present(DoIgnoreSingular)) DoIgnore = DoIgnoreSingular
-#endif
 
     ! Invert the 3x3 matrix:
     b_DD(1,1)=a_DD(2,2)*a_DD(3,3)-a_DD(2,3)*a_DD(3,2)
@@ -893,24 +879,22 @@ contains
 
     DetA= a_DD(1,1)*b_DD(1,1)+a_DD(1,2)*b_DD(2,1)+a_DD(1,3)*b_DD(3,1)
 
-#ifndef _OPENACC
     if(DoIgnore)then
-#endif
        if(DetA == 0)then
           b_DD = -777.
        else
           b_DD = b_DD/DetA
        end if
-#ifndef _OPENACC
     elseif(abs(detA) > Limit*maxval(abs(a_DD)) )then
        b_DD = b_DD/DetA
     else
+#ifndef _OPENACC
        write(*,*)'Error in ',NameSub,' for matrix:'
        call show_rot_matrix(a_DD)
        write(*,*)'Determinant=', DetA
+#endif
        call CON_stop('Singular matrix in '//NameSub)
     end if
-#endif
 
   end function inverse_matrix33
   !============================================================================
