@@ -130,6 +130,7 @@ contains
   end subroutine CON_set_do_test
   !============================================================================
   subroutine CON_stop(String, Value1, Value2, Value3, Value4)
+    !$acc routine seq
 
     character(len=*), intent(in):: String
     class(*), optional, intent(in):: Value1, Value2, Value3, Value4
@@ -146,6 +147,9 @@ contains
     logical:: IsMpiInitialized
     integer:: iProc=0, nError, iError
     !--------------------------------------------------------------------------
+#ifdef _OPENACC
+    stop String
+#else
     call MPI_initialized(IsMpiInitialized, iError)
 
     if(IsMpiInitialized) call MPI_comm_rank(MPI_COMM_WORLD, iProc, iError)
@@ -169,6 +173,7 @@ contains
     ! Stop execution
     if(IsMpiInitialized) call MPI_abort(MPI_COMM_WORLD, nError, iError)
     stop
+#endif
 
   end subroutine CON_stop
   !============================================================================
@@ -984,6 +989,7 @@ contains
   !============================================================================
   subroutine find_cell4(MinCoord, MaxCoord, Coord, iCoord, dCoord, &
        Coord_I, DoExtrapolate, StringError, IsInside)
+    !$acc routine seq
 
     ! Single precision coordinates.
     !
@@ -1220,6 +1226,7 @@ contains
   !============================================================================
   subroutine find_cell8(MinCoord, MaxCoord, Coord, iCoord, dCoord, &
        Coord_I, DoExtrapolate, StringError, IsInside)
+    !$acc routine seq
 
     ! double precision version of the subroutine above
 
