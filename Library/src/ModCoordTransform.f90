@@ -853,6 +853,7 @@ contains
   !============================================================================
 
   function inverse_matrix33(a_DD, SingularLimit, DoIgnoreSingular) result(b_DD)
+    !$acc routine seq
 
     ! Return the inverse of the 3x3 matrix a_DD
     ! The optional SingularLimit gives the smallest value for the determinant
@@ -870,10 +871,12 @@ contains
 
     character(len=*), parameter:: NameSub = 'inverse_matrix33'
     !--------------------------------------------------------------------------
+#ifndef _OPENACC
     Limit = 1.e-16
     if(present(SingularLimit)) Limit = SingularLimit
     DoIgnore = .false.
     if(present(DoIgnoreSingular)) DoIgnore = DoIgnoreSingular
+#endif
 
     ! Invert the 3x3 matrix:
     b_DD(1,1)=a_DD(2,2)*a_DD(3,3)-a_DD(2,3)*a_DD(3,2)
@@ -890,12 +893,15 @@ contains
 
     DetA= a_DD(1,1)*b_DD(1,1)+a_DD(1,2)*b_DD(2,1)+a_DD(1,3)*b_DD(3,1)
 
+#ifndef _OPENACC
     if(DoIgnore)then
+#endif
        if(DetA == 0)then
           b_DD = -777.
        else
           b_DD = b_DD/DetA
        end if
+#ifndef _OPENACC
     elseif(abs(detA) > Limit*maxval(abs(a_DD)) )then
        b_DD = b_DD/DetA
     else
@@ -904,6 +910,7 @@ contains
        write(*,*)'Determinant=', DetA
        call CON_stop('Singular matrix in '//NameSub)
     end if
+#endif
 
   end function inverse_matrix33
   !============================================================================
