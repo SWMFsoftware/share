@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Load Nvidia HPC compilers
+# ml use /scratch/projects/compilers/nvhpc20v7/modulefiles
+# ml load nvhpc/20.7
+
+# Install SWMF/BATSRUS with nvfortran + nvc. So far, only -O1 produces 
+# correct results:
+# ./Config.pl -install -compiler=nvfortran,nvc -O1
+
+# Request an active session:
+# idev -A ATM20001 -t 02:00:00
+
+# Run jobs with an active session:
+# mpirun -np 1 ./SWMF.exe 
+# mpiexec -np 1 ./BATSRUS.exe
