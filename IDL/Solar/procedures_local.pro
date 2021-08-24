@@ -779,7 +779,7 @@ pro process_aia, filename, aia_map = aia_map, xy_map = xs_map, $
                  ys_map = ys_map, index = index
 
   if (filename ne '') then begin
-     aia_prep, filename, -1, index, data,/normalize
+     aia_prep, filename, -1, index, data,/normalize,/no_mpo_update
      index2map, index, data, aia_map
      aia_map = rebin_map(aia_map, xs_map, ys_map)
   endif else begin
@@ -1765,9 +1765,12 @@ pro download_images,  TimeEvent = TimeEvent, CaseInst = CaseInst,    $
      endif
 
      ObsTimeBand_I  = ListTimeLocal_I[indexTmp_I]
-     index_I[iBand] = where(abs(ListTimeLocal_I   - TimeEventT)         $
+     indexTempLocal = where(abs(ListTimeLocal_I   - TimeEventT)         $
                             eq min(abs(ObsTimeBand_I - TimeEventT))     $
                             and ListLocal_I.Wave.Min eq Band_I[iBand])
+
+
+     index_I[iBand] = indexTempLocal[0]
 
      StringLine = strsplit(ListLocal_I[index_I[iBand]].fileid,'/', /extract)
      nStrings   = n_elements(StringLine)
