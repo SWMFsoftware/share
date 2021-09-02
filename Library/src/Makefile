@@ -23,6 +23,7 @@ OBJECTS = \
 	ModBlasLapack.o\
 	ModConst.o\
 	ModCoordTransform.o\
+	ModCubicEquation.o\
 	ModExactRS.o\
 	ModFreq.o\
 	ModHyperGeometric.o\
