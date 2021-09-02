@@ -205,6 +205,22 @@ test_hypergeometric:
 	-@(./test_hypergeometric.exe > test_hypergeometric.diff)
 	@ls -l test_hypergeometric.diff
 #######################################################################
+test_cubic_equation.o: test_cubic_equation.f90
+	${COMPILE.f90} ${Cflag0} test_cubic_equation.f90
+
+test_cubic_equation_exe:
+	@(cd ../src; make LIB)
+	@make test_cubic_equation.o
+	${LINK.f90} -o test_cubic_equation.exe test_cubic_equation.o \
+		-L${LIBDIR} -lSHARE ${Lflag}
+
+test_cubic_equation:
+	@echo test_cubic_equation starting     >  test_cubic_equation.diff
+	@make test_cubic_equation_exe	       >> test_cubic_equation.diff
+	@echo ./test_cubic_equation.exe        >> test_cubic_equation.diff
+	-@(./test_cubic_equation.exe > test_cubic_equation.diff)
+	@ls -l test_cubic_equation.diff
+#######################################################################
 test_io_unit_exe:
 	@(cd ../src; make LIB)
 	@make test_io_unit.o
