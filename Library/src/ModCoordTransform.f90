@@ -1,4 +1,4 @@
-!  Copyright (C) 2002 Regents of the University of Michigan,
+!  CopyriOAAxght (C) AAOA2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 !
@@ -61,13 +61,13 @@ module ModCoordTransform
   public:: rot_matrix_y   ! rotation matrix around Y axis (angle)
   public:: rot_matrix_z   ! rotation matrix around Z axis (angle)
   public:: rot_xyz_sph    ! rotation matrix between Cartesian-spherical (dir)
+  public:: rot_xyz_rlonlat! rotation matrix between rlonlat-Cartesian
   public:: xyz_to_sph     ! convert Cartesian into spherical coordinates
   public:: sph_to_xyz     ! convert spherical into Cartesian coordinates
   public:: xyz_to_rlonlat ! convert Cartesian into Radius-Longitude-Latitude
   public:: rlonlat_to_xyz ! convert Radius-Longitude-Latitude into Cartesian
   public:: xyz_to_dir     ! convert Cartesian vector to spherical direction
   public:: dir_to_xyz     ! convert spher. direction to Cartesian unit vector
-  public:: xyz_to_lonlat  ! convert Cartesian vector to Longitude-Latitude
   public:: lonlat_to_xyz  ! convert Longitude-Latitude to Cartesian unit vector
   public:: cross_product  ! return the cross product of two vectors
   public:: inverse_matrix ! return the inverse of a 3 by 3 matrix
@@ -102,7 +102,11 @@ module ModCoordTransform
 
   interface rot_xyz_sph
      module procedure rot_xyz_sph1, rot_xyz_sph2, rot_xyz_sph3, rot_xyz_sph4
-  end interface
+  end interface rot_xyz_sph
+
+  interface rot_xyz_rlonlat
+     module procedure rot_xyz_rlonlat1, rot_xyz_rlonlat2, rot_xyz_rlonlat3, rot_xyz_rlonlat4
+  end interface rot_xyz_rlonlat
 
   interface xyz_to_sph
      module procedure xyz_to_sph11, xyz_to_sph13, xyz_to_sph31, xyz_to_sph33
@@ -126,11 +130,6 @@ module ModCoordTransform
 
   interface xyz_to_dir
      module procedure xyz_to_dir12, xyz_to_dir32, xyz_to_dir14, xyz_to_dir34
-  end interface
-
-  interface xyz_to_lonlat
-     module procedure xyz_to_lonlat11, xyz_to_lonlat12, xyz_to_lonlat31, &
-          xyz_to_lonlat32
   end interface
 
   interface dir_to_xyz
@@ -350,47 +349,6 @@ contains
     z = r*cos(Theta)
 
   end subroutine sph_to_xyz33
-  !============================================================================
-  subroutine xyz_to_lonlat11(Xyz_D, LonLat_D)
-    !$acc routine seq
-
-    real, intent(in) :: Xyz_D(3)
-    real, intent(out):: LonLat_D(2)
-    !--------------------------------------------------------------------------
-    call xyz_to_lonlat(Xyz_D(1), Xyz_D(2), Xyz_D(3), LonLat_D(1), LonLat_D(2))
-
-  end subroutine xyz_to_lonlat11
-  !============================================================================
-  subroutine xyz_to_lonlat12(Xyz_D, Lon, Lat)
-    !$acc routine seq
-
-    real, intent(in) :: Xyz_D(3)
-    real, intent(out):: Lon,Lat
-    !--------------------------------------------------------------------------
-    call xyz_to_lonlat(Xyz_D(1),Xyz_D(2),Xyz_D(3),Lon,Lat)
-
-  end subroutine xyz_to_lonlat12
-  !============================================================================
-  subroutine xyz_to_lonlat31(x, y, z, LonLat_D)
-    !$acc routine seq
-
-    real, intent(in) :: x, y, z
-    real, intent(out):: LonLat_D(2)
-    !--------------------------------------------------------------------------
-    call xyz_to_lonlat(x, y, z, LonLat_D(1), LonLat_D(2))
-
-  end subroutine xyz_to_lonlat31
-  !============================================================================
-  subroutine xyz_to_lonlat32(x,y,z,Lon,Lat)
-    !$acc routine seq
-
-    real, intent(in) :: x,y,z
-    real, intent(out):: Lon,Lat
-    !--------------------------------------------------------------------------
-    Lon = atan2_check(y,x)
-    Lat = cHalfPi - atan2_check(sqrt(x**2 + y**2),z)
-
-  end subroutine xyz_to_lonlat32
   !============================================================================
   subroutine xyz_to_dir12(Xyz_D,Theta,Phi)
     !$acc routine seq
@@ -734,6 +692,96 @@ contains
 
   end function rot_xyz_sph4
   !============================================================================
+  function rot_xyz_rlonlat1(Xyz_D) result(Rot_DD)
+
+    real, intent(in) :: Xyz_D(3)
+    real             :: Rot_DD(3,3)
+    
+    real             :: r, lon, lat
+    real :: SinLon, CosLon, SinLat, CosLat
+    !--------------------------------------------------------------------------
+    call xyz_to_rlonlat(Xyz_D,r,lon,lat)
+
+    SinLon = sin(lon)
+    CosLon = cos(lon)
+    SinLat = sin(lat)
+    CosLat = cos(lat)
+    Rot_DD = rot_xyz_rlonlat(SinLon,CosLon,SinLat,CosLat)
+
+  end function rot_xyz_rlonlat1
+  !============================================================================
+  function rot_xyz_rlonlat3(x,y,z) result(Rot_DD)
+
+    real, intent(in) :: x,y,z
+    real             :: Rot_DD(3,3)
+    
+    real             :: r, lon, lat
+    real :: SinLon, CosLon, SinLat, CosLat
+    !--------------------------------------------------------------------------
+    call xyz_to_rlonlat(x,y,z,r,lon,lat)
+
+    SinLon = sin(lon)
+    CosLon = cos(lon)
+    SinLat = sin(lat)
+    CosLat = cos(lat)
+    Rot_DD = rot_xyz_rlonlat(SinLon,CosLon,SinLat,CosLat)
+
+  end function rot_xyz_rlonlat3
+  !============================================================================
+  function rot_xyz_rlonlat2(lon, lat) result(Rot_DD)
+
+    real, intent(in) :: lon, lat
+    real             :: Rot_DD(3,3)
+
+    real :: SinLon, CosLon, SinLat, CosLat
+    !--------------------------------------------------------------------------
+
+    SinLon = sin(lon)
+    CosLon = cos(lon)
+    SinLat = sin(lat)
+    CosLat = cos(lat)
+    Rot_DD = rot_xyz_rlonlat(SinLon,CosLon,SinLat,CosLat)
+    
+  end function rot_xyz_rlonlat2
+  !============================================================================
+  function rot_xyz_rlonlat4(SinLon, CosLon, SinLat, CosLat) result(XyzRlonlat_DD)
+    real, intent(in) :: SinLon, CosLon, SinLat, CosLat
+    real             :: SinTheta, CosTheta, SinPhi, CosPhi
+    real             :: XyzSph_DD(3,3), XyzRlonlat_DD(3,3), LonlatThetaphi_DD(3,3), ThetaphiXyz_DD(3,3)
+    !--------------------------------------------------------------------------
+    ! An vector in the Rlonlat coordinate can be transformed into Xyz by
+    ! vec_Xyz = matmul(XyzRlonlat, vec_Rlonlat)
+    !         = matmul(ThetaphiXyz_DD, matmul(LonlatThetaphi_DD, vrc_Rlonlat))
+    ! The inner matmul change the order of (r, lon, lat) to (r, theta, phi),
+    ! The outer matmul change (r, theta, phi) into the Xyz coordinate.
+    !LonlatThetaphi_DD = reshape( [ &
+    !     1,        0,        0, &
+    !     0,        0,        1, &
+    !     0,        -1,        0], &
+    !     [3,3] )
+    !write(*,*) "LonLatThetaphi_DD:"
+    !call show_rot_matrix(LonlatThetaphi_DD)
+    !
+    !ThetaphiXyz_DD = reshape( [ &
+    !     CosLat*CosLon, CosLat*SinLon, SinLat, &
+    !     SinLat*CosLon, SinLat*SinLon, -CosLat, &
+    !     -sinLon,       CosLon,        0.0], &
+    !     [3,3] )
+    !write(*,*) "ThetaphiXyz_DD:"
+    !call show_rot_matrix(ThetaphiXyz_DD)
+    !
+    !XyzRlonlat_DD = matmul(ThetaphiXyz_DD, LonlatThetaphi_DD)
+    !write(*,*) "XyzRlonlat, matmul:"
+    !call show_rot_matrix(XyzRlonlat_DD)
+
+    XyzRlonlat_DD = reshape ( [ &
+         CosLat*CosLon,  CosLat*SinLon,  SinLat, &
+         -SinLon,        CosLon,         0.0,     &
+         -SinLat*CosLon, -SinLat*SinLon, CosLat ], &
+         [3,3] )
+
+  end function rot_xyz_rlonlat4
+  !============================================================================
   function cross_product11(a_D, b_D) result(c_D)
     !$acc routine seq
 
@@ -992,13 +1040,16 @@ contains
 
     real, parameter      :: cTiny = 0.000001
     real, dimension(3)   :: Xyz_D, Sph_D, rLonLat_D, Xyz2_D
-    real:: XyzSph_DD(3,3), aInv_II(5,5)
+    real:: XyzSph_DD(3,3), XyzRlonlat_DD(3,3), aInv_II(5,5)
     real, parameter :: a_II(5,5)=reshape([ 3.0, 7.0, 5.0,21.0, 8.0,&
                                           16.0, 8.0,17.0,53.0, 7.0,&
                                           14.0, 6.0,35.0,18.0, 1.0,&
                                           13.0,19.0, 4.0,22.0,11.0,&
                                            9.0,21.0, 1.0,23.0,12.0],[5,5])
     !--------------------------------------------------------------------------
+    ! Transfor Xyz_D to Sph_D by calling subroutine xyz_to_sph
+    ! Tranfer Sph_D back to Xyz2_D by calling subroutine sph_to_xyz
+    ! Check the difference between the Xyz_D and Xyz2_D. 
     Xyz_D = [0.1, 0.2, 0.3]
     write(*,'(a,3es16.8)')'Xyz_D=',Xyz_D
 
@@ -1013,6 +1064,7 @@ contains
     if(maxval(abs(Xyz_D-Xyz2_D)) > cTiny) &
          write(*,'(a)')'Error transforming xyz->sph->xyz'
 
+    ! Test xyz_to_rlonlat() and rlonlat_to_xyz()
     call xyz_to_rlonlat(Xyz_D, rLonLat_D)
 
     write(*,'(a,3es16.8)')'rLonLat_D=',rLonLat_D
@@ -1024,6 +1076,7 @@ contains
     if(maxval(abs(Xyz_D-Xyz2_D)) > cTiny) &
          write(*,'(a)')'Error transforming xyz->rlonlat->xyz'
 
+    ! test rot_matrix_z()
     write(*,'(a,/,3( 3f14.10,/ ))') 'rot_matrix_z(-Phi)='
     call show_rot_matrix(rot_matrix_z(-Sph_D(3)))
 
@@ -1041,6 +1094,7 @@ contains
     if(abs(Xyz_D(3)-Sph_D(1)) > cTiny) &
          write(*,'(a)')'Error rotating Xyz_D, length changed'
 
+    ! Tese rot_matrix_x(), rot_matrix_y() and rot_matrix_z
     Xyz_D = [0.001, -0.4, 0.35353]
     write(*,'(a,3es16.8)')'Original Xyz=',Xyz_D
     Xyz2_D = matmul(rot_matrix_x(1.),Xyz_D)
@@ -1054,6 +1108,7 @@ contains
     if(maxval(abs(Xyz_D-Xyz2_D)) > cTiny) &
          write(*,'(a)')'Error rotating back and forth'
 
+    ! Test rot_xyz_sph()
     write(*,*)
     Xyz_D = [8.0, 0.1, 6.0]
     write(*,'(a,3es16.8)')'Cartesian position=',Xyz_D
@@ -1083,6 +1138,29 @@ contains
     write(*,'(a)')'Check inversion: the matrix product, A.AInv = diag{1}:'
     call show_nbyn_matrix(5,matmul(aInv_II, a_II))
 
+    ! Test rot_xyz_rlonlat()
+    write(*,*)
+    Xyz_D = [8.0, 0.1, 6.0]
+    write(*,'(a,3es16.8)')'Cartesian position=',Xyz_D
+    XyzRlonlat_DD = rot_xyz_rlonlat(Xyz_D)
+    write(*,'(a)')'XyzRlonlat_DD'; call show_rot_matrix(XyzRlonlat_DD)
+
+    Rlonlat_D = [1.0, 0.0, 0.0]
+    write(*,'(a,3es16.8)')'Rlonlat vector  =',Rlonlat_D
+    write(*,'(a,3es16.8)')'Cartesian vector  =',matmul(XyzRlonlat_DD,Rlonlat_D)
+    Rlonlat_D = [0.0, 0.0, -1.0]
+    write(*,'(a,3es16.8)')'Rlonlat vector  =',Rlonlat_D
+    write(*,'(a,3es16.8)')'Cartesian vector  =',matmul(XyzRlonlat_DD,Rlonlat_D)
+    Rlonlat_D = [0.0, 1.0, 0.0]
+    write(*,'(a,3es16.8)')'Rlonlat vector  =',Rlonlat_D
+    write(*,'(a,3es16.8)')'Cartesian vector  =',matmul(XyzRlonlat_DD,Rlonlat_D)
+    write(*,*)
+    write(*,'(a)')'Check inversion: write the inverse of XyzRlonlat_DD:'
+    call show_nbyn_matrix(3,inverse_matrix_nn(3,XyzRlonlat_DD))
+    write(*,'(a)')'For comparison: write the transposed XyzRlonlat_DD:'
+    call show_nbyn_matrix(3,transpose(XyzRlonlat_DD))
+    
+    
   end subroutine test_coord_transform
   !============================================================================
 end module ModCoordTransform
