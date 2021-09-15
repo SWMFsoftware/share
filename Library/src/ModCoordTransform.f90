@@ -1,4 +1,4 @@
-!  CopyriOAAxght (C) AAOA2002 Regents of the University of Michigan,
+!  Copyright (C) AAOA2002 ReOAgents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 !
@@ -68,6 +68,7 @@ module ModCoordTransform
   public:: rlonlat_to_xyz ! convert Radius-Longitude-Latitude into Cartesian
   public:: xyz_to_dir     ! convert Cartesian vector to spherical direction
   public:: dir_to_xyz     ! convert spher. direction to Cartesian unit vector
+  public:: xyz_to_lonlat  ! convert Cartesian vector to Longitude-Latitude
   public:: lonlat_to_xyz  ! convert Longitude-Latitude to Cartesian unit vector
   public:: cross_product  ! return the cross product of two vectors
   public:: inverse_matrix ! return the inverse of a 3 by 3 matrix
@@ -128,6 +129,11 @@ module ModCoordTransform
           rlonlat_to_xyz31, rlonlat_to_xyz33
   end interface
 
+  interface xyz_to_lonlat
+     module procedure xyz_to_lonlat11, xyz_to_lonlat12, xyz_to_lonlat31, &
+          xyz_to_lonlat32
+  end interface
+  
   interface xyz_to_dir
      module procedure xyz_to_dir12, xyz_to_dir32, xyz_to_dir14, xyz_to_dir34
   end interface
@@ -349,6 +355,47 @@ contains
     z = r*cos(Theta)
 
   end subroutine sph_to_xyz33
+  !============================================================================
+  subroutine xyz_to_lonlat11(Xyz_D, LonLat_D)
+    !$acc routine seq
+
+    real, intent(in) :: Xyz_D(3)
+    real, intent(out):: LonLat_D(2)
+    !--------------------------------------------------------------------------
+    call xyz_to_lonlat(Xyz_D(1), Xyz_D(2), Xyz_D(3), LonLat_D(1), LonLat_D(2))
+
+  end subroutine xyz_to_lonlat11
+  !============================================================================
+  subroutine xyz_to_lonlat12(Xyz_D, Lon, Lat)
+    !$acc routine seq
+
+    real, intent(in) :: Xyz_D(3)
+    real, intent(out):: Lon,Lat
+    !--------------------------------------------------------------------------
+    call xyz_to_lonlat(Xyz_D(1),Xyz_D(2),Xyz_D(3),Lon,Lat)
+
+  end subroutine xyz_to_lonlat12
+  !============================================================================
+  subroutine xyz_to_lonlat31(x, y, z, LonLat_D)
+    !$acc routine seq
+
+    real, intent(in) :: x, y, z
+    real, intent(out):: LonLat_D(2)
+    !--------------------------------------------------------------------------
+    call xyz_to_lonlat(x, y, z, LonLat_D(1), LonLat_D(2))
+
+  end subroutine xyz_to_lonlat31
+  !============================================================================
+  subroutine xyz_to_lonlat32(x,y,z,Lon,Lat)
+    !$acc routine seq
+
+    real, intent(in) :: x,y,z
+    real, intent(out):: Lon,Lat
+    !--------------------------------------------------------------------------
+    Lon = atan2_check(y,x)
+    Lat = cHalfPi - atan2_check(sqrt(x**2 + y**2),z)
+
+  end subroutine xyz_to_lonlat32
   !============================================================================
   subroutine xyz_to_dir12(Xyz_D,Theta,Phi)
     !$acc routine seq
