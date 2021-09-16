@@ -133,7 +133,7 @@ module ModCoordTransform
      module procedure xyz_to_lonlat11, xyz_to_lonlat12, xyz_to_lonlat31, &
           xyz_to_lonlat32
   end interface
-  
+
   interface xyz_to_dir
      module procedure xyz_to_dir12, xyz_to_dir32, xyz_to_dir14, xyz_to_dir34
   end interface
@@ -743,7 +743,7 @@ contains
 
     real, intent(in) :: Xyz_D(3)
     real             :: Rot_DD(3,3)
-    
+
     real             :: r, lon, lat
     real :: SinLon, CosLon, SinLat, CosLat
     !--------------------------------------------------------------------------
@@ -761,7 +761,7 @@ contains
 
     real, intent(in) :: x,y,z
     real             :: Rot_DD(3,3)
-    
+
     real             :: r, lon, lat
     real :: SinLon, CosLon, SinLat, CosLat
     !--------------------------------------------------------------------------
@@ -788,7 +788,7 @@ contains
     SinLat = sin(lat)
     CosLat = cos(lat)
     Rot_DD = rot_xyz_rlonlat(SinLon,CosLon,SinLat,CosLat)
-    
+
   end function rot_xyz_rlonlat2
   !============================================================================
   function rot_xyz_rlonlat4(SinLon, CosLon, SinLat, CosLat) result(XyzRlonlat_DD)
@@ -801,25 +801,25 @@ contains
     !         = matmul(ThetaphiXyz_DD, matmul(LonlatThetaphi_DD, vrc_Rlonlat))
     ! The inner matmul change the order of (r, lon, lat) to (r, theta, phi),
     ! The outer matmul change (r, theta, phi) into the Xyz coordinate.
-    !LonlatThetaphi_DD = reshape( [ &
+    ! LonlatThetaphi_DD = reshape( [ &
     !     1,        0,        0, &
     !     0,        0,        1, &
     !     0,        -1,        0], &
     !     [3,3] )
-    !write(*,*) "LonLatThetaphi_DD:"
-    !call show_rot_matrix(LonlatThetaphi_DD)
+    ! write(*,*) "LonLatThetaphi_DD:"
+    ! call show_rot_matrix(LonlatThetaphi_DD)
     !
-    !ThetaphiXyz_DD = reshape( [ &
+    ! ThetaphiXyz_DD = reshape( [ &
     !     CosLat*CosLon, CosLat*SinLon, SinLat, &
     !     SinLat*CosLon, SinLat*SinLon, -CosLat, &
     !     -sinLon,       CosLon,        0.0], &
     !     [3,3] )
-    !write(*,*) "ThetaphiXyz_DD:"
-    !call show_rot_matrix(ThetaphiXyz_DD)
+    ! write(*,*) "ThetaphiXyz_DD:"
+    ! call show_rot_matrix(ThetaphiXyz_DD)
     !
-    !XyzRlonlat_DD = matmul(ThetaphiXyz_DD, LonlatThetaphi_DD)
-    !write(*,*) "XyzRlonlat, matmul:"
-    !call show_rot_matrix(XyzRlonlat_DD)
+    ! XyzRlonlat_DD = matmul(ThetaphiXyz_DD, LonlatThetaphi_DD)
+    ! write(*,*) "XyzRlonlat, matmul:"
+    ! call show_rot_matrix(XyzRlonlat_DD)
 
     XyzRlonlat_DD = reshape ( [ &
          CosLat*CosLon,  CosLat*SinLon,  SinLat, &
@@ -1093,10 +1093,10 @@ contains
                                           14.0, 6.0,35.0,18.0, 1.0,&
                                           13.0,19.0, 4.0,22.0,11.0,&
                                            9.0,21.0, 1.0,23.0,12.0],[5,5])
-    !--------------------------------------------------------------------------
     ! Transfor Xyz_D to Sph_D by calling subroutine xyz_to_sph
     ! Tranfer Sph_D back to Xyz2_D by calling subroutine sph_to_xyz
-    ! Check the difference between the Xyz_D and Xyz2_D. 
+    ! Check the difference between the Xyz_D and Xyz2_D.
+    !--------------------------------------------------------------------------
     Xyz_D = [0.1, 0.2, 0.3]
     write(*,'(a,3es16.8)')'Xyz_D=',Xyz_D
 
@@ -1206,8 +1206,7 @@ contains
     call show_nbyn_matrix(3,inverse_matrix_nn(3,XyzRlonlat_DD))
     write(*,'(a)')'For comparison: write the transposed XyzRlonlat_DD:'
     call show_nbyn_matrix(3,transpose(XyzRlonlat_DD))
-    
-    
+
   end subroutine test_coord_transform
   !============================================================================
 end module ModCoordTransform
