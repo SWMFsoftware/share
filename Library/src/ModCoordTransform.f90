@@ -798,7 +798,6 @@ contains
     real             :: SinTheta, CosTheta, SinPhi, CosPhi
     real             :: XyzSph_DD(3,3), XyzRlonlat_DD(3,3), &
          LonlatThetaphi_DD(3,3), ThetaphiXyz_DD(3,3)
-    !--------------------------------------------------------------------------
     ! An vector in the Rlonlat coordinate can be transformed into Xyz by
     ! vec_Xyz = matmul(XyzRlonlat, vec_Rlonlat)
     !         = matmul(ThetaphiXyz_DD, matmul(LonlatThetaphi_DD, vrc_Rlonlat))
@@ -824,6 +823,7 @@ contains
     ! write(*,*) "XyzRlonlat, matmul:"
     ! call show_rot_matrix(XyzRlonlat_DD)
 
+    !--------------------------------------------------------------------------
     XyzRlonlat_DD = reshape ( [ &
          CosLat*CosLon,  CosLat*SinLon,  SinLat, &
          -SinLon,        CosLon,         0.0,     &
