@@ -106,7 +106,8 @@ module ModCoordTransform
   end interface rot_xyz_sph
 
   interface rot_xyz_rlonlat
-     module procedure rot_xyz_rlonlat1, rot_xyz_rlonlat2, rot_xyz_rlonlat3, rot_xyz_rlonlat4
+     module procedure rot_xyz_rlonlat1, rot_xyz_rlonlat2, &
+          rot_xyz_rlonlat3, rot_xyz_rlonlat4
   end interface rot_xyz_rlonlat
 
   interface xyz_to_sph
@@ -744,15 +745,15 @@ contains
     real, intent(in) :: Xyz_D(3)
     real             :: Rot_DD(3,3)
 
-    real             :: r, lon, lat
+    real             :: r, Lon, Lat
     real :: SinLon, CosLon, SinLat, CosLat
     !--------------------------------------------------------------------------
     call xyz_to_rlonlat(Xyz_D,r,lon,lat)
 
-    SinLon = sin(lon)
-    CosLon = cos(lon)
-    SinLat = sin(lat)
-    CosLat = cos(lat)
+    SinLon = sin(Lon)
+    CosLon = cos(Lon)
+    SinLat = sin(Lat)
+    CosLat = cos(Lat)
     Rot_DD = rot_xyz_rlonlat(SinLon,CosLon,SinLat,CosLat)
 
   end function rot_xyz_rlonlat1
@@ -762,39 +763,41 @@ contains
     real, intent(in) :: x,y,z
     real             :: Rot_DD(3,3)
 
-    real             :: r, lon, lat
+    real             :: r, Lon, Lat
     real :: SinLon, CosLon, SinLat, CosLat
     !--------------------------------------------------------------------------
     call xyz_to_rlonlat(x,y,z,r,lon,lat)
 
-    SinLon = sin(lon)
-    CosLon = cos(lon)
-    SinLat = sin(lat)
-    CosLat = cos(lat)
+    SinLon = sin(Lon)
+    CosLon = cos(Lon)
+    SinLat = sin(Lat)
+    CosLat = cos(Lat)
     Rot_DD = rot_xyz_rlonlat(SinLon,CosLon,SinLat,CosLat)
 
   end function rot_xyz_rlonlat3
   !============================================================================
   function rot_xyz_rlonlat2(lon, lat) result(Rot_DD)
 
-    real, intent(in) :: lon, lat
+    real, intent(in) :: Lon, Lat
     real             :: Rot_DD(3,3)
 
     real :: SinLon, CosLon, SinLat, CosLat
     !--------------------------------------------------------------------------
 
-    SinLon = sin(lon)
-    CosLon = cos(lon)
-    SinLat = sin(lat)
-    CosLat = cos(lat)
+    SinLon = sin(Lon)
+    CosLon = cos(Lon)
+    SinLat = sin(Lat)
+    CosLat = cos(Lat)
     Rot_DD = rot_xyz_rlonlat(SinLon,CosLon,SinLat,CosLat)
 
   end function rot_xyz_rlonlat2
   !============================================================================
-  function rot_xyz_rlonlat4(SinLon, CosLon, SinLat, CosLat) result(XyzRlonlat_DD)
+  function rot_xyz_rlonlat4(SinLon, CosLon, SinLat, CosLat) &
+       result(XyzRlonlat_DD)
     real, intent(in) :: SinLon, CosLon, SinLat, CosLat
     real             :: SinTheta, CosTheta, SinPhi, CosPhi
-    real             :: XyzSph_DD(3,3), XyzRlonlat_DD(3,3), LonlatThetaphi_DD(3,3), ThetaphiXyz_DD(3,3)
+    real             :: XyzSph_DD(3,3), XyzRlonlat_DD(3,3), &
+         LonlatThetaphi_DD(3,3), ThetaphiXyz_DD(3,3)
     !--------------------------------------------------------------------------
     ! An vector in the Rlonlat coordinate can be transformed into Xyz by
     ! vec_Xyz = matmul(XyzRlonlat, vec_Rlonlat)
