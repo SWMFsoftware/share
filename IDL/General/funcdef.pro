@@ -68,7 +68,11 @@ function funcdef,xx,w,func
      ['uez'      , 'uz-uH0*{jz}/rho'                         ], $ 
      ['ue'       , 'sqrt({uex}^2+{uey}^2+{uez}^2)'           ], $
      ['ur'       , '(x*ux+y*uy+z*uz)/r'                      ], $ ; radial u
-     ['Br'       , '(x*bx+y*by+z*bz)/r'                      ], $ ; radial B 
+     ['Br'       , '(x*bx+y*by+z*bz)/r'                      ], $ ; radial B
+     ['Bt'       , 'sin(Lat)*cos(Lon)*bx+sin(Lat)*sin(Lon)*by-cos(Lat)*bz'], $ ; B in theta direction
+     ['Bp'       , '-sin(Lon)*bx+cos(Lon)*by'                ], $ ; B in phi direction
+     ['Blon'     , '{Bp}'                                    ], $ ; B in longitude direction
+     ['Blat'     , '-{Bt}'                                   ], $ ; B in latitude direction
      ['B0x'      , 'bx-{b1x}'                                ], $ ; B0x
      ['B0y'      , 'by-{b1y}'                                ], $ ; B0y
      ['B0z'      , 'bz-{b1z}'                                ], $ ; B0z
