@@ -1444,6 +1444,59 @@ end
 
 ;------------------------------------------------------------------------------
 
+function calc_dist_insitu,time_obs, u_obs, n_obs, T_obs,  B_obs,    $
+                          time_simu,u_simu,n_simu,ti_simu,b_simu,   $
+                          dist_int_u, dist_int_t, dist_int_n, dist_int_b
+
+  ;; print,'Calculating integrated curve distance between obs. & SWMF output at 1 AU'
+
+  index_u = where(u_obs gt 0)
+  index_n = where(n_obs gt 0)
+  index_T = where(T_obs gt 0)
+  index_B = where(B_obs gt 0)
+
+  ;;Normalization for OMNI data
+  t_norm=10                     ;10 days
+  u_norm   = max(u_obs) - min(u_obs(index_u))
+  n_norm   = max(n_obs) - min(n_obs(index_n))
+  tem_norm = max(T_obs) - min(T_obs(index_T))
+  mag_norm = max(B_obs) - min(B_obs(index_B))
+
+  ;; print,'Normalizations:'
+  ;; help,t_norm,u_norm,n_norm,tem_norm,mag_norm
+
+  ;;time in units of t_norm days
+  t_obsv = time_obs/(24.*60.*60.*1.e3)/t_norm
+  t_swmf = time_simu
+
+  ;; Converting swmf time (YYYY-MO-DDTHH:MM:SS) to epoch time in sec
+  TIMESTAMPTOVALUES,time_simu+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
+  cdf_epoch,t_swmf,yy,mo,dy,hh,mm,ss,/compute_epoch ; in milliseconds
+  t_swmf=t_swmf/(24.*60.*60.*1.e3)/t_norm
+
+  dist_int_u=curve_int_distance(t_obsv(index_u), u_obs(index_u)/u_norm,   $
+                                t_swmf, u_simu/u_norm)
+  dist_int_t=curve_int_distance(t_obsv(index_T), T_obs(index_T)/tem_norm, $
+                                t_swmf, ti_simu/tem_norm)
+  dist_int_n=curve_int_distance(t_obsv(index_n), n_obs(index_n)/n_norm,   $
+                                t_swmf, n_simu/n_norm)
+  dist_int_b=curve_int_distance(t_obsv(index_B), B_obs(index_B)/mag_norm, $
+                                t_swmf, b_simu*1.e5/mag_norm)
+
+  ;; print,FORMAT='(a,f7.3,f7.4,f7.4,f7.4)',$
+  ;;      'Integrated  Curve distance (Ur, Np, T, B) is: '$
+  ;;      ,trim(dist_int_u),dist_int_N,dist_int_t,dist_int_b
+
+  dist_int=['Dist_U ='+STRING(trim(dist_int_u),format='(f6.3)'),$
+            'Dist_N ='+STRING(trim(dist_int_n),format='(f6.3)'),$
+            'Dist_T ='+STRING(trim(dist_int_t),format='(f6.3)'),$
+            'Dist_B ='+STRING(trim(dist_int_b),format='(f6.3)')]
+
+  return,dist_int
+end
+
+;------------------------------------------------------------------------------
+
 pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
                  time_simu, u_simu, n_simu, ti_simu, te_simu, b_simu,         $
                  start_time, end_time, fileplot=fileplot, typeData=typeData,  $
@@ -1513,43 +1566,11 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   utc_obs = anytim2utc(cdf2utc(time_obs),/external)
 
   if DoShowDist then begin
-     print,'Calculating integrated curve distance between obs. & SWMF output at 1 AU'
-     
-     ;;Normalization for OMNI data
-     t_norm=10                  ;10 days
-     u_norm = max(u_obs) - min(u_obs(index_u))
-     n_norm = max(n_obs) - min(n_obs(index_n))
-     tem_norm = max(T_obs) - min(T_obs(index_T))
-     mag_norm = max(B_obs) - min(B_obs(index_B))
 
-     print,'Normalizations:'
-     help,t_norm,u_norm,n_norm,tem_norm,mag_norm
-     
-     ;;time in units of t_norm days
-     t_obsv = time_obs/(24.*60.*60.*1.e3)/t_norm
-     t_swmf = time_simu
-
-     ;; Converting swmf time (YYYY-MO-DDTHH:MM:SS) to epoch time in sec
-     TIMESTAMPTOVALUES,time_simu+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
-     cdf_epoch,t_swmf,yy,mo,dy,hh,mm,ss,/compute_epoch ; in milliseconds
-     t_swmf=t_swmf/(24.*60.*60.*1.e3)/t_norm
-
-     dist_int_u=curve_int_distance(t_obsv(index_u), u_obs(index_u)/u_norm,$
-                                   t_swmf, u_simu/u_norm)
-     dist_int_t=curve_int_distance(t_obsv(index_T), T_obs(index_T)/tem_norm,$
-                                   t_swmf, ti_simu/tem_norm)
-     dist_int_n=curve_int_distance(t_obsv(index_n), n_obs(index_n)/n_norm,$
-                                   t_swmf, n_simu/n_norm)
-     dist_int_b=curve_int_distance(t_obsv(index_B), B_obs(index_B)/mag_norm,$
-                                   t_swmf, b_simu*1.e5/mag_norm)
-     print,FORMAT='(a,f7.3,f7.4,f7.4,f7.4)',$
-           'Integrated  Curve distance (Ur, Np, T, B) is: '$
-           ,trim(dist_int_u),dist_int_N,dist_int_t,dist_int_b
-     
-     dist_int=['Dist_U ='+STRING(trim(dist_int_u),format='(f6.3)'),$
-               'Dist_N ='+STRING(trim(dist_int_n),format='(f6.3)'),$
-               'Dist_T ='+STRING(trim(dist_int_t),format='(f6.3)'),$
-               'Dist_B ='+STRING(trim(dist_int_b),format='(f6.3)')]
+     dist_int = calc_dist_insitu(time_obs, u_obs, n_obs, T_obs, B_obs,     $
+                                 time_simu,u_simu,n_simu,ti_simu,b_simu,   $
+                                 dist_int_u, dist_int_t,                   $
+                                 dist_int_n, dist_int_b)
 
      openw, lun_dist, file_dist, /get_lun
      printf,lun_dist, 'Dist_U ='+STRING(trim(dist_int_u),format='(f6.3)')
@@ -1702,7 +1723,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
          charthick=5,xthick=5,ythick=5,position=pos, /noerase
 
   if DoShowDist ne 0 then legend,dist_int(3),thick=5,charsize=1,charthick=5,  $
-                                 position=[0.75,legendPosL-0.67],/norm,box=0
+                                 position=[0.75,legendPosR-0.67],/norm,box=0
 end
 
 ;--------------------------------------------------------------------
