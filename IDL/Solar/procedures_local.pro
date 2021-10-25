@@ -1452,7 +1452,8 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
                  legendPosL=legendPosL, legendPosR=legendPosR,                $
                  DoShowDist=DoShowDist, DoLogRho=DoLogRho, DoLogT=DoLogT,     $
                  IsOverPlot=IsOverPlot, DoLegend=DoLegend,                    $
-                 ymin_I=ymin_I, ymax_I=ymax_I, linethick=linethick
+                 ymin_I=ymin_I, ymax_I=ymax_I, linethick=linethick,           $
+                 nLegendPlot=nLegendPlot
 
   if (not isa(DoPlotTe)) then DoPlotTe = 1
 
@@ -1472,7 +1473,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
 
   if (not isa(IsOverPlot)) then IsOverPlot = 0
   if (not isa(DoShowDist)) then DoShowDist = 1
-  if (not isa(legendPosL)) then legendPosL = 0.95
+  if (not isa(legendPosL)) then legendPosL = [0.15,0.95]
   if (not isa(legendPosR)) then legendPosR = 0.94
   if (not isa(DoLogRho))   then DoLogRho   = 0
   if (not isa(DoLogT))     then DoLogT     = 0
@@ -1491,6 +1492,12 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   endelse
 
   if IsOverPlot ne 1 then legendNamesLocal = [typeData, legendNamesLocal]
+
+  if (DoLegend eq 1) then begin
+     nLegendPlot = n_elements(legendNamesLocal)
+  endif else begin
+     nLegendPlot = 0
+  endelse
 
   index_u = where(u_obs gt 0)
   index_n = where(n_obs gt 0)
@@ -1580,25 +1587,25 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
                   psym=0,textcolor=0,thick=6,                               $
                   linestyle=[0,0,2],                                        $
                   charsize=1,pspacing=1.8,charthick=5,bthick=5,             $
-                  position=[0.15,legendPosL],/norm,box=0
+                  position=legendPosL,/norm,box=0
         endif else begin
            legend,legendNamesLocal, colors=[colorLocal,colorLocal],        $
                   psym=0,textcolor=0,thick=6,                              $
                   linestyle=[0,2],                                         $
                   charsize=1,pspacing=1.8,charthick=5,bthick=5,            $
-                  position=[0.15,legendPosL],/norm,box=0
+                  position=legendPosL,/norm,box=0
         endelse        
      endif else begin
         if IsOverPlot ne 1 then begin
            legend,legendNamesLocal, colors=[0, colorLocal],                 $
                   psym=0,textcolor=0,thick=6,linestyle=0,                   $
                   charsize=1,pspacing=1.8,charthick=5,bthick=5,             $
-                  position=[0.15,legendPosL], /norm,box=0
+                  position=legendPosL, /norm,box=0
         endif else begin
            legend,legendNamesLocal, colors=colorLocal,                      $
                   psym=0,textcolor=0,thick=6,linestyle=0,                   $
                   charsize=1,pspacing=1.8,charthick=5,bthick=5,             $
-                  position=[0.15,legendPosL],/norm,box=0
+                  position=legendPosL,/norm,box=0
         endelse        
      endelse
   endif
@@ -1629,7 +1636,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
 
   
   if DoShowDist ne 0 then legend,dist_int(1),thick=5,charsize=1,charthick=5, $
-                                 position=[0.75,legendPosL-0.22],/norm,box=0  
+                                 position=[0.75,legendPosR-0.22],/norm,box=0
   ;;----------------------------------------------------------------------
   ;; plot temperature
 
@@ -1659,7 +1666,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
             ystyle=1,/noerase, ytype=DoLogT
   endif
   if DoShowDist ne 0 then legend,dist_int(2),thick=5,charsize=1,charthick=5, $
-                                 position=[0.75,legendPosL-0.45],/norm,box=0
+                                 position=[0.75,legendPosR-0.45],/norm,box=0
   ;;----------------------------------------------------------------------
   ;; plot magnetic field
 
