@@ -1,6 +1,6 @@
 pro compare_insitu_from_list, filename_list=filenmae_list, dir_plot=dir_plot,   $
                               DoPlotTe=DoPlotTe, CharSizeLocal=CharSizeLocal,   $
-                              nyMaxLegend=nyMaxLegend
+                              nyMaxLegend=nyMaxLegend,DoHighlight=DoHighlight
 
   if (not keyword_set(filenmae_list)) then begin
      if (file_test('./filename_list.txt')) then begin
@@ -20,6 +20,7 @@ pro compare_insitu_from_list, filename_list=filenmae_list, dir_plot=dir_plot,   
   if (not keyword_set(DoPlotTe))       then DoPlotTe = 0
   if (not keyword_set(CharSizeLocal))  then CharSizeLocal = 2.5
   if (not keyword_set(nyMaxLegend))    then nyMaxLegend=3
+  if (not keyword_set(DoHighlight))    then DoHighlight=0
 
   umax_plot = 900
   nmax_plot = 35
@@ -30,6 +31,8 @@ pro compare_insitu_from_list, filename_list=filenmae_list, dir_plot=dir_plot,   
   nmax = 0
   tmax = 0
   bmax = 0
+
+  dist_un_min = 999.9
 
   ;; first iteration to get the CR number and the range of the plot...
   openr, lun, filename_list, /get_lun
@@ -81,15 +84,38 @@ pro compare_insitu_from_list, filename_list=filenmae_list, dir_plot=dir_plot,   
         tmax = max([tmax,max(ti_swmf)*1.3])
         bmax = max([bmax,max(B_swmf )*1.3]*1e5)
         if DoPlotTe then tmax = max([tmax,max(te_swmf)*1.3])
+
+        if DoHighlight then begin
+           if (not isa(time_obs)) then begin
+              get_insitu_data, start_time, end_time, TypeData, u_obs, n_obs, tem_obs,  $
+                               mag_obs, time_obs, DoContainData=DoContainData
+
+              if DoContainData ne 1 then begin
+                 print, " Error: no observational data are found."
+                 return
+              endif
+           endif
+
+           dist_int = calc_dist_insitu(time_obs, u_obs,  n_obs, tem_obs, mag_obs, $
+                                       time_swmf,ut_swmf,n_swmf,ti_swmf, B_swmf,  $
+                                       dist_int_u, dist_int_t,                    $
+                                       dist_int_n, dist_int_b)
+
+           print,filename_sat+' ave dist of n and u is: ', $
+                 (dist_int_u+dist_int_n)/2.0
+           
+           dist_un_min = min([dist_un_min,(dist_int_u+dist_int_n)/2.0])
+        endif
      end
   end
 
-  get_insitu_data, start_time, end_time, TypeData, u_obs, n_obs, tem_obs,  $
-                   mag_obs, time_obs, DoContainData=DoContainData
-
-  if DoContainData ne 1 then begin
-     print, " Error: no observational data are found."
-     return
+  if (not isa(time_obs)) then begin
+     get_insitu_data, start_time, end_time, TypeData, u_obs, n_obs, tem_obs,  $
+                      mag_obs, time_obs, DoContainData=DoContainData
+     if DoContainData ne 1 then begin
+        print, " Error: no observational data are found."
+        return
+     endif
   endif
   
   ;; adjust again with the observation
@@ -167,6 +193,22 @@ pro compare_insitu_from_list, filename_list=filenmae_list, dir_plot=dir_plot,   
            colorIn = 6
         endelse
 
+        if DoHighlight then begin
+           dist_int = calc_dist_insitu(time_obs, u_obs,  n_obs, tem_obs, mag_obs, $
+                                       time_swmf,ut_swmf,n_swmf,ti_swmf, B_swmf,  $
+                                       dist_int_u, dist_int_t,                    $
+                                       dist_int_n, dist_int_b)
+
+           if abs(dist_un_min - (dist_int_n+dist_int_u)/2.0) le 1e-5 then begin
+              time_swmf_h = time_swmf
+              ur_swmf_h   = ur_swmf
+              n_swmf_h    = n_swmf
+              ti_swmf_h   = ti_swmf
+              te_swmf_h   = te_swmf
+              B_swmf_h    = B_swmf
+           endif
+        endif
+
         ;; calculate the position for the legend, 0.02112 is from the
         ;; print out value when calling legend in procedures_local...
         nxLegend = nLegendPlotTotal/nyMaxLegend
@@ -187,9 +229,25 @@ pro compare_insitu_from_list, filename_list=filenmae_list, dir_plot=dir_plot,   
         nLegendPlotTotal = nLegendPlotTotal + nLegendPlot
         IsOverPlot = 1
 
-        print,' nLegendPlotTotal =', nLegendPlotTotal
+        ;; print,' nLegendPlotTotal =', nLegendPlotTotal
      end
   end
+
+  if DoHighlight then begin
+     nxLegend = nLegendPlotTotal/nyMaxLegend
+     nyLegend = nLegendPlotTotal mod nyMaxLegend
+     legendPosLIn=[0.15+0.2*nxLegend,0.95-0.02112*nyLegend]
+
+     plot_insitu, time_obs, u_obs,  n_obs,  tem_obs, mag_obs,                 $
+                  time_swmf_h, ur_swmf_h, n_swmf_h,  ti_swmf_h,  te_swmf_h, B_swmf_h,     $
+                  start_time, end_time, typeData=typeData,                    $
+                  charsize=CharSizeLocal, DoPlotTe = DoPlotTe,                $
+                  legendNames='Optimal Run', DoShowDist=0,                    $
+                  ymax_I=[umax_plot,nmax_plot,tmax_plot,bmax_plot],           $
+                  IsOverPlot=IsOverPlot, DoLogT=1, linethick=15,              $
+                  colorLocal=5, DoLegend=1,                                   $
+                  nLegendPlot=nLegendPlot,legendPosL=legendPosLIn
+  endif
 
   device,/close_file
 end
