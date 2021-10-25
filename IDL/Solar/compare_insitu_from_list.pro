@@ -2,8 +2,21 @@ pro compare_insitu_from_list, filename_list=filenmae_list, dir_plot=dir_plot,   
                               DoPlotTe=DoPlotTe, CharSizeLocal=CharSizeLocal,   $
                               nyMaxLegend=nyMaxLegend
 
-  if (not keyword_set(filenmae_list))  then filename_list  = './filename_list.txt'
-  if (not keyword_set(dir_plot))       then dir_plot = './output/'
+  if (not keyword_set(filenmae_list)) then begin
+     if (file_test('./filename_list.txt')) then begin
+        filename_list  = './filename_list.txt'
+     endif else begin
+        print,'Error, ./filename_list.txt does not exist, need to specify filename_list.'
+        return
+     endelse
+  endif
+  
+  if (not keyword_set(dir_plot)) then begin
+     if (file_test('./output', /directory) eq 0) then file_mkdir, './output'
+     dir_plot = './output'
+     print, ' Saves into the default dir_plot = ./output'
+  endif
+
   if (not keyword_set(DoPlotTe))       then DoPlotTe = 0
   if (not keyword_set(CharSizeLocal))  then CharSizeLocal = 2.5
   if (not keyword_set(nyMaxLegend))    then nyMaxLegend=3
