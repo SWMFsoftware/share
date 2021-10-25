@@ -43,37 +43,45 @@ pro compare_insitu_from_list, filename_list=filenmae_list, dir_plot=dir_plot,   
   while not eof(lun) do begin
      readf,lun,line
      strings_local = strsplit(line,',', /EXTRACT)
-     filename_sat = strings_local[0]
 
-     read_swmf_sat, filename_sat, time_swmf, n_swmf, ux_swmf, uy_swmf,       $
-                    uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf,    $
-                    ut_swmf, ur_swmf, B_swmf, DoContainData=DoContainData,   $
-                    TypeData=TypeData, TypePlot=TypePlot,                    $
-                    start_time=start_time, end_time=end_time
+     filenames_sat  = strings_local[0]
+     filename_sat_I = FILE_SEARCH(filenames_sat, count=nFileSim)
 
-     if DoContainData ne 1 then begin
-        print, " Error: filename=", file_sim_adapt, " does not contain any data"
-        continue
-     endif
+     if nFileSim eq 0 then $
+        print, 'no file is found for '+filenames_sat
 
-     CR_number = fix(tim2carr(time_swmf(n_elements(time_swmf)/2),/dc))
+     for ifile=1,nFileSim do begin
+        filename_sat = filename_sat_I(ifile-1)
+        read_swmf_sat, filename_sat, time_swmf, n_swmf, ux_swmf, uy_swmf,       $
+                       uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf,    $
+                       ut_swmf, ur_swmf, B_swmf, DoContainData=DoContainData,   $
+                       TypeData=TypeData, TypePlot=TypePlot,                    $
+                       start_time=start_time, end_time=end_time
 
-     if (not keyword_set(CR_number_plot)) then $
-        CR_number_plot = CR_number
+        if DoContainData ne 1 then begin
+           print, " Error: filename=", filename_sat, " does not contain any data"
+           continue
+        endif
 
-     if CR_number_plot ne CR_number then begin
-        print, 'CR_number_plot /= CR_number, the comparison must be done with the same CR'
-        print, 'correct the list to proceed. '
-        print, 'CR_number_plot =', CR_number_plot
-        print, 'CR_number      =', CR_number
-        return
-     endif
+        CR_number = fix(tim2carr(time_swmf(n_elements(time_swmf)/2),/dc))
 
-     umax = max([umax,max(ut_swmf)*1.3])
-     nmax = max([nmax,max(n_swmf )*1.3])
-     tmax = max([tmax,max(ti_swmf)*1.3])
-     bmax = max([bmax,max(B_swmf )*1.3]*1e5)
-     if DoPlotTe then tmax = max([tmax,max(te_swmf)*1.3])
+        if (not keyword_set(CR_number_plot)) then $
+           CR_number_plot = CR_number
+
+        if CR_number_plot ne CR_number then begin
+           print, 'CR_number_plot /= CR_number, the comparison must be done with the same CR'
+           print, 'correct the list to proceed. '
+           print, 'CR_number_plot =', CR_number_plot
+           print, 'CR_number      =', CR_number
+           return
+        endif
+
+        umax = max([umax,max(ut_swmf)*1.3])
+        nmax = max([nmax,max(n_swmf )*1.3])
+        tmax = max([tmax,max(ti_swmf)*1.3])
+        bmax = max([bmax,max(B_swmf )*1.3]*1e5)
+        if DoPlotTe then tmax = max([tmax,max(te_swmf)*1.3])
+     end
   end
 
   get_insitu_data, start_time, end_time, TypeData, u_obs, n_obs, tem_obs,  $
@@ -111,55 +119,76 @@ pro compare_insitu_from_list, filename_list=filenmae_list, dir_plot=dir_plot,   
   while not eof(lun) do begin
      readf,lun,line
      strings_local = strsplit(line,',', /EXTRACT)
-     filename_sat = strings_local[0]
+
+     filenames_sat  = strings_local[0]
+     filename_sat_I = FILE_SEARCH(filenames_sat, count=nFileSim)
+
+     for ifile=1,nFileSim do begin
+        filename_sat=filename_sat_I(ifile-1)
      
-     read_swmf_sat, filename_sat, time_swmf, n_swmf, ux_swmf, uy_swmf,       $
-                    uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf,    $
-                    ut_swmf, ur_swmf, B_swmf, DoContainData=DoContainData,   $
-                    TypeData=TypeData, TypePlot=TypePlot,                    $
-                    start_time=start_time, end_time=end_time
+        read_swmf_sat, filename_sat, time_swmf, n_swmf, ux_swmf, uy_swmf,       $
+                       uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf,    $
+                       ut_swmf, ur_swmf, B_swmf, DoContainData=DoContainData,   $
+                       TypeData=TypeData, TypePlot=TypePlot,                    $
+                       start_time=start_time, end_time=end_time
 
-     DoLegendIn = 1
-     ;; set the legend and DoLegendIn
-     if (strings_local[1] eq 'none') then begin
-        ;; none means don't write the legend for this line
-        DoLegendIn = 0
-     endif else if (strings_local[1] eq 'default') then begin
-        ;; not so sure whether a user should use default, but just in case...
-        if (strpos(filename_sat, 'AWSoM2T') ge 0) then begin
-           legendNameIn = 'AWSoM-2T'
-        endif else if (strpos(filename_sat, 'AWSoMR') ge 0) then begin
-           legendNameIn = 'AWSoM-R'
+        DoLegendIn = 1
+        if n_elements(strings_local) ge 1 then begin
+           ;; set the legend and DoLegendIn
+           if (strings_local[1] eq 'none') then begin
+              ;; none means don't write the legend for this line
+              DoLegendIn = 0
+           endif else if (strings_local[1] eq 'default') then begin
+              ;; not so sure whether a user should use default, but just in case...
+              if (strpos(filename_sat, 'AWSoM2T') ge 0) then begin
+                 legendNameIn = 'AWSoM-2T'
+              endif else if (strpos(filename_sat, 'AWSoMR') ge 0) then begin
+                 legendNameIn = 'AWSoM-R'
+              endif else begin
+                 legendNameIn = 'AWSoM'
+              endelse
+           endif else begin
+              legendNameIn = strings_local[1]
+           endelse
         endif else begin
-           legendNameIn = 'AWSoM'
+           DoLegendIn = 0
         endelse
-     endif else begin
-        legendNameIn = strings_local[1]
-     endelse
 
-     ;; set the line thickness and the color
-     linethickIn = float(strings_local[2])
-     colorIn     = fix(strings_local[3])
+        ;; set the line thickness and the color
+        if n_elements(strings_local) ge 2 then begin
+           linethickIn = float(strings_local[2])
+        endif else begin
+           linethickIn = 3
+        endelse
 
-     ;; calculate the position for the legend, 0.02112 is from the
-     ;; print out value when calling legend in procedures_local...
-     nxLegend = nLegendPlotTotal/nyMaxLegend
-     nyLegend = nLegendPlotTotal mod nyMaxLegend
-     legendPosLIn=[0.15+0.2*nxLegend,0.95-0.02112*nyLegend]
-           
-     plot_insitu, time_obs, u_obs,  n_obs,  tem_obs, mag_obs,                 $
-                  time_swmf, ur_swmf, n_swmf,  ti_swmf,  te_swmf, B_swmf,     $
-                  start_time, end_time, typeData=typeData,                    $
-                  charsize=CharSizeLocal, DoPlotTe = DoPlotTe,                $
-                  legendNames=legendNameIn, DoShowDist=0,                     $
-                  ymax_I=[umax_plot,nmax_plot,tmax_plot,bmax_plot],           $
-                  IsOverPlot=IsOverPlot, DoLogT=1, linethick=linethickIn,     $
-                  colorLocal=colorIn, DoLegend=DoLegendIn,                    $
-                  nLegendPlot=nLegendPlot,legendPosL=legendPosLIn
+        if n_elements(strings_local) ge 3 then begin
+           colorIn = fix(strings_local[3])
+        endif else begin
+           colorIn = 6
+        endelse
 
-     ;; nLegendPlot is the number of legend printed in plot_insitu
-     nLegendPlotTotal = nLegendPlotTotal + nLegendPlot
-     IsOverPlot = 1
+        ;; calculate the position for the legend, 0.02112 is from the
+        ;; print out value when calling legend in procedures_local...
+        nxLegend = nLegendPlotTotal/nyMaxLegend
+        nyLegend = nLegendPlotTotal mod nyMaxLegend
+        legendPosLIn=[0.15+0.2*nxLegend,0.95-0.02112*nyLegend]
+
+        plot_insitu, time_obs, u_obs,  n_obs,  tem_obs, mag_obs,                 $
+                     time_swmf, ur_swmf, n_swmf,  ti_swmf,  te_swmf, B_swmf,     $
+                     start_time, end_time, typeData=typeData,                    $
+                     charsize=CharSizeLocal, DoPlotTe = DoPlotTe,                $
+                     legendNames=legendNameIn, DoShowDist=0,                     $
+                     ymax_I=[umax_plot,nmax_plot,tmax_plot,bmax_plot],           $
+                     IsOverPlot=IsOverPlot, DoLogT=1, linethick=linethickIn,     $
+                     colorLocal=colorIn, DoLegend=DoLegendIn,                    $
+                     nLegendPlot=nLegendPlot,legendPosL=legendPosLIn
+
+        ;; nLegendPlot is the number of legend printed in plot_insitu
+        nLegendPlotTotal = nLegendPlotTotal + nLegendPlot
+        IsOverPlot = 1
+
+        print,' nLegendPlotTotal =', nLegendPlotTotal
+     end
   end
 
   device,/close_file
