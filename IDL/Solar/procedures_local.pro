@@ -1485,7 +1485,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
 
   if DoLogT then ymin_I[2]=1e3
 
-  if IsOverPlot eq 1 then begin
+  if IsOverPlot then begin
      if (not isa(DoShowDist)) then DoShowDist = 0
   endif else begin
      if (not isa(DoShowDist)) then DoShowDist = 1
@@ -1493,7 +1493,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
 
   if IsOverPlot ne 1 then legendNamesLocal = [typeData, legendNamesLocal]
 
-  if (DoLegend eq 1) then begin
+  if DoLegend then begin
      nLegendPlot = n_elements(legendNamesLocal)
   endif else begin
      nLegendPlot = 0
@@ -1512,7 +1512,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
 
   utc_obs = anytim2utc(cdf2utc(time_obs),/external)
 
-  if DoShowDist eq 1 then begin
+  if DoShowDist then begin
      print,'Calculating integrated curve distance between obs. & SWMF output at 1 AU'
      
      ;;Normalization for OMNI data
@@ -1580,7 +1580,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
          charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos, $
          xtickname=REPLICATE(' ', 7),xtitle=' ', /noerase
 
-  if DoLegend eq 1 then begin
+  if DoLegend then begin
      if (DoPlotTe) then begin
         if IsOverPlot ne 1 then begin
            legend,legendNamesLocal, colors=[0,colorLocal,colorLocal],       $
@@ -1608,7 +1608,15 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
                   position=legendPosL,/norm,box=0
         endelse        
      endelse
-  endif
+  endif else if IsOverPlot ne 1 then begin
+     ;; print typeData as legend even if DoLegend = 0 but the plot is
+     ;; not over-plot
+     legend,typeData, colors=0,                                       $
+            psym=0,textcolor=0,thick=6,linestyle=0,                   $
+            charsize=1,pspacing=1.8,charthick=5,bthick=5,             $
+            position=legendPosL, /norm,box=0
+     nLegendPlot = 1
+  endelse
 
   if DoShowDist ne 0 then legend,dist_int(0),thick=6,charsize=1,charthick=5,  $
                                  position=[0.75,legendPosR], /norm, box=0
