@@ -1453,7 +1453,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
                  DoShowDist=DoShowDist, DoLogRho=DoLogRho, DoLogT=DoLogT,     $
                  IsOverPlot=IsOverPlot, DoLegend=DoLegend,                    $
                  ymin_I=ymin_I, ymax_I=ymax_I, linethick=linethick,           $
-                 nLegendPlot=nLegendPlot
+                 nLegendPlot=nLegendPlot,file_dist=file_dist
 
   if (not isa(DoPlotTe)) then DoPlotTe = 1
 
@@ -1551,6 +1551,13 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
                'Dist_T ='+STRING(trim(dist_int_t),format='(f6.3)'),$
                'Dist_B ='+STRING(trim(dist_int_b),format='(f6.3)')]
 
+     openw, lun_dist, file_dist, /get_lun
+     printf,lun_dist, 'Dist_U ='+STRING(trim(dist_int_u),format='(f6.3)')
+     printf,lun_dist, 'Dist_N ='+STRING(trim(dist_int_n),format='(f6.3)')
+     printf,lun_dist, 'Dist_T ='+STRING(trim(dist_int_t),format='(f6.3)')
+     printf,lun_dist, 'Dist_B ='+STRING(trim(dist_int_b),format='(f6.3)')
+     close, lun_dist
+     free_lun,lun_dist
   endif
 
   loadcolors

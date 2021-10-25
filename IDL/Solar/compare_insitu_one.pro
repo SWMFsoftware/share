@@ -87,7 +87,8 @@ pro compare_insitu_one, file_sim=file_sim,                      $
                time_swmf, ur_swmf, n_swmf,  ti_swmf,  te_swmf, B_swmf, $
                start_time, end_time, typeData=typeData,                $
                charsize=CharSizeLocal, DoPlotTe = DoPlotTe,            $
-               legendNames=Model, DoLogT=DoLogT
+               legendNames=Model, DoLogT=DoLogT,                       $
+               file_dist=fileplot.replace('.eps','.txt')
 
   device,/close_file
 end
