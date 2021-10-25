@@ -2,7 +2,7 @@ pro compare_insitu_from_list, filename_list=filenmae_list, dir_plot=dir_plot,   
                               DoPlotTe=DoPlotTe, CharSizeLocal=CharSizeLocal,   $
                               nyMaxLegend=nyMaxLegend
 
-  if (not keyword_set(filenmae_list))  then filename_list  = './simdata/filename_list.txt'
+  if (not keyword_set(filenmae_list))  then filename_list  = './filename_list.txt'
   if (not keyword_set(dir_plot))       then dir_plot = './output/'
   if (not keyword_set(DoPlotTe))       then DoPlotTe = 0
   if (not keyword_set(CharSizeLocal))  then CharSizeLocal = 2.5
