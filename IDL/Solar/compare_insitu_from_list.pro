@@ -1,4 +1,4 @@
-pro compare_insitu_from_list, filename_list=filenmae_list, dir_plot=dir_plot,   $
+pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   $
                               DoPlotTe=DoPlotTe, CharSizeLocal=CharSizeLocal,   $
                               nyMaxLegend=nyMaxLegend,DoHighlight=DoHighlight
 
@@ -254,4 +254,3 @@ pro compare_insitu_from_list, filename_list=filenmae_list, dir_plot=dir_plot,   
 
   device,/close_file
 end
-OB
