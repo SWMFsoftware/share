@@ -3,7 +3,7 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
                     extra_plt_info=extra_plt_info,          $
                     UseTimePlotName=UseTimePlotName,        $
                     CharSizeLocal=CharSizeLocal,            $
-                    DoPlotTe=DoPlotTe, Model=Model,         $
+                    DoPlotTe=DoPlotTe, ModelIn=ModelIn,     $
                     dir_obs=dir_obs
 
   if (not keyword_set(dir_sim)) then begin
@@ -38,7 +38,15 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
   if (not keyword_set(CharSizeLocal))   then CharSizeLocal = 2.5
   if (not keyword_set(DoPlotTe))        then DoPlotTe = 0
 
-  if (not keyword_set(Model)) then Model = 'AWSoM'
+  if (strpos(dir_sim, 'AWSoM2T') ge 0) then begin
+     Model = 'AWSoM-2T'
+  endif else if (strpos(dir_sim, 'AWSoMR') ge 0) then begin
+     Model = 'AWSoM-R'
+  endif else if (strpos(dir_sim, 'AWSoM') ge 0) then begin
+     Model = 'AWSoM'
+  endif
+  
+  if (keyword_set(ModelIn)) then Model = ModelIn
 
   files_sim = file_search(dir_sim+'/*sat', count = nSimFile)
 
