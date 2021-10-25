@@ -206,6 +206,7 @@ pro compare_insitu_from_list, filename_list=filenmae_list, dir_plot=dir_plot,   
               ti_swmf_h   = ti_swmf
               te_swmf_h   = te_swmf
               B_swmf_h    = B_swmf
+              filename_sat_h = filename_sat
            endif
         endif
 
@@ -247,7 +248,10 @@ pro compare_insitu_from_list, filename_list=filenmae_list, dir_plot=dir_plot,   
                   IsOverPlot=IsOverPlot, DoLogT=1, linethick=15,              $
                   colorLocal=5, DoLegend=1,                                   $
                   nLegendPlot=nLegendPlot,legendPosL=legendPosLIn
+
+     print, 'The optimal run is found at '+filename_sat_h
   endif
 
   device,/close_file
 end
+OB
