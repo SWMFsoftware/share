@@ -23,7 +23,7 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
   endif
 
   if (not keyword_set(dir_obs)) then begin
-     if (file_test('./obsdata', /directory) eq 0) then file_mkdir, './output'
+     if (file_test('./obsdata', /directory) eq 0) then file_mkdir, './obsdata'
      dir_obs = './obsdata'
      print, ' Saves into the default dir_obs = ./obsdata'
   endif
