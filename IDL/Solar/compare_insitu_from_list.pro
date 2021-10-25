@@ -2,7 +2,7 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
                               DoPlotTe=DoPlotTe, CharSizeLocal=CharSizeLocal,   $
                               nyMaxLegend=nyMaxLegend,DoHighlight=DoHighlight
 
-  if (not keyword_set(filenmae_list)) then begin
+  if (not keyword_set(filename_list)) then begin
      if (file_test('./filename_list.txt')) then begin
         filename_list  = './filename_list.txt'
      endif else begin
