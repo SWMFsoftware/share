@@ -159,7 +159,7 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
                        start_time=start_time, end_time=end_time
 
         DoLegendIn = 1
-        if n_elements(strings_local) ge 1 then begin
+        if n_elements(strings_local) ge 2 then begin
            ;; set the legend and DoLegendIn
            if (strings_local[1] eq 'none') then begin
               ;; none means don't write the legend for this line
@@ -181,13 +181,13 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
         endelse
 
         ;; set the line thickness and the color
-        if n_elements(strings_local) ge 2 then begin
+        if n_elements(strings_local) ge 3 then begin
            linethickIn = float(strings_local[2])
         endif else begin
            linethickIn = 3
         endelse
 
-        if n_elements(strings_local) ge 3 then begin
+        if n_elements(strings_local) ge 4 then begin
            colorIn = fix(strings_local[3])
         endif else begin
            colorIn = 6
