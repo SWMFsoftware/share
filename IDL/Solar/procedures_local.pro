@@ -1616,7 +1616,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
             charsize=1,pspacing=1.8,charthick=5,bthick=5,             $
             position=legendPosL, /norm,box=0
      nLegendPlot = 1
-  endelse
+  endif
 
   if DoShowDist ne 0 then legend,dist_int(0),thick=6,charsize=1,charthick=5,  $
                                  position=[0.75,legendPosR], /norm, box=0
