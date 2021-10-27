@@ -21,7 +21,9 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
   if (not keyword_set(CharSizeLocal))  then CharSizeLocal = 2.5
   if (not keyword_set(nyMaxLegend))    then nyMaxLegend=3
   if (not keyword_set(DoHighlight))    then DoHighlight=0
-
+  if (keyword_set(DoHighlight))        then $
+     openw, lun_opt, './output/avg_dist.txt',/get_lun 
+  
   umax_plot = 900
   nmax_plot = 35
   tmax_plot = 1e6
@@ -101,14 +103,16 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
                                        dist_int_u, dist_int_t,                    $
                                        dist_int_n, dist_int_b)
 
-           print,filename_sat+' ave dist of n and u is: ', $
+           print,filename_sat+' avg dist of n and u is: ', $
                  (dist_int_u+dist_int_n)/2.0
+           printf,lun_opt,filename_sat+' avg dist of n and u is: ', $
+                  (dist_int_u+dist_int_n)/2.0
            
            dist_un_min = min([dist_un_min,(dist_int_u+dist_int_n)/2.0])
         endif
      end
   end
-
+  
   if (not isa(time_obs)) then begin
      get_insitu_data, start_time, end_time, TypeData, u_obs, n_obs, tem_obs,  $
                       mag_obs, time_obs, DoContainData=DoContainData
@@ -250,6 +254,10 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
                   nLegendPlot=nLegendPlot,legendPosL=legendPosLIn
 
      print, 'The optimal run is found at '+filename_sat_h
+     printf, lun_opt, 'The optimal run is found at '+filename_sat_h
+     
+     close,lun_opt
+     free_lun,lun_opt     
   endif
 
   device,/close_file
