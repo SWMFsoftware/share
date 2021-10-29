@@ -5957,13 +5957,13 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
         endif
         nwlog = info.nfields
         nt    = info.lines - 1 ; ignore the first line
-        print,'CSV file: nwlog=', nwlog,', nt=', nt, format='(a,i4,a,i8)'
+        ;; print,'CSV file: nwlog=', nwlog,', nt=', nt, format='(a,i4,a,i8)'
         value = read_csv(file, header=wlognamesRead)
-        print,'CSV fields:  wlognamesRead=', wlognamesRead
+        ;; print,'CSV fields:  wlognamesRead=', wlognamesRead
         
         if strlowcase(strmid(wlognamesRead[0],0,4)) eq 'date' then begin
 
-           help,nwlog
+           ;; help,nwlog
            wlog = dblarr(nt, nwlog+5)
            wlognames = strarr(nwlog+5)
            wlognames = ['year', 'mo', 'dy', 'hr', 'mn', 'sc', $
@@ -5984,7 +5984,7 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
               wlog(i,5) = fix(strmid(value.(0)[i],17,2))
            endfor
            for i = 1, nwlog-1 do wlog(*,i+5) = value.(i)
-           print,'Standardized wlognames=', wlognames
+           ;; print,'Standardized wlognames=', wlognames
         endif else begin
            wlognames = wlognamesRead
            wlog = dblarr(nt, nwlog)
