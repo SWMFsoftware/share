@@ -6037,18 +6037,22 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
      if isheader then begin
         readf, unit, line
 
-        ;; check if the line contains any character that is not a
-        ;; number or a separator of the a date
-        
         isheader = 0
-        for i = 0, strlen(line)-1 do begin
-           if strmatch(strmid(line,i,1), '[!	0123456789dDeE \.+-T:]') $
-           then begin
-              isheader = 1
-              break
-           endif
-        endfor
-
+        if strmid(line,strlen(line)-6,6) eq "#START" then $
+           readf, unit, line $
+        else begin
+           ;; check if the line contains any character that is not a
+           ;; number or a separator of a date
+        
+           for i = 0, strlen(line)-1 do begin
+              if strmatch(strmid(line,i,1), '[!	0123456789dDeET \.\+\-\:]') $
+              then begin
+                 isheader = 1
+                 break
+              endif
+           endfor
+        endelse
+        
         ;; check if line contains a single number only
         if not isheader then begin
            n = 0
