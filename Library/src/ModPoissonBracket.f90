@@ -350,7 +350,7 @@ contains
     ! 3. Time step, Dt.
     ! 4. CGL local, at each cell including one laayer of GC
     !
-    ! Calculate source = f(t+Dt) - f(t): 
+    ! Calculate source = f(t+Dt) - f(t):
     !
     ! First order monotone scheme
     Source_C = -CFLCoef_G(1:nI,1:nJ,1:nK)*DeltaMinusF_G(1:nI,1:nJ,1:nK)
