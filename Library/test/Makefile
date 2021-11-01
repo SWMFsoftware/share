@@ -525,9 +525,6 @@ test_poisson_bracket:
 	-@(${SCRIPTDIR}/DiffNum.pl -b -a=1e-7 \
 		test_poisson.out test_poisson.ref.out.gz \
 						> test_poisson.diff)
-	-@(${SCRIPTDIR}/DiffNum.pl -b -a=1e-7 \
-		test_multipoisson_002.out test_multipoisson.ref.out.gz \
-                                                >> test_poisson.diff)
 	@ls -l test_poisson.diff
 
 #######################################################################
