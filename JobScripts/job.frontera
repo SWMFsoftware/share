@@ -30,7 +30,7 @@
 #SBATCH -t 24:00:00           # Run time (hh:mm:ss)
 #SBATCH --mail-type=all       # Send email at begin and end of job
 ###SBATCH --mail-user=your_email@umich.edu
-###SBATCH -A myproject       # Project/Allocation name (req'd if you have more than 1)
+#SBATCH -A BCS21001           # Project/Allocation name (may need change)
 
 # Any other commands must follow all #SBATCH directives...
 

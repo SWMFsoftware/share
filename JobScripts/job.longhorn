@@ -9,7 +9,7 @@
 # ./Config.pl -install -compiler=nvfortran,nvc -O1
 
 # Request an active session:
-# idev -A ATM20001 -t 02:00:00
+# idev -A BCS21001 -t 02:00:00
 
 # Run jobs with an active session:
 # mpirun -np 1 ./SWMF.exe 
