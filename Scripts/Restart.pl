@@ -498,9 +498,12 @@ sub link_tree{
 	}
 
 	# Link input restart directory in the restart tree
-	print "ln -s ../$RestartTree/$Comp $Dir\n" if $Verbose;
-	symlink "../$RestartTree/$Comp", $Dir or 
-	    die "$ERROR could not link $RestartTree/$Comp to $Dir!\n";
+	my $Tree = $RestartTree;
+	# Go up one level for relative path (e.g. GM/restartIN -> ../TREE/GM)
+	$Tree = "../$Tree" unless $Tree =~ /^\//;
+	print "ln -s $Tree/$Comp $Dir\n" if $Verbose;
+	symlink "$Tree/$Comp", $Dir or 
+	    die "$ERROR could not link $Tree/$Comp to $Dir!\n";
     }
     print "# Restart.pl has linked  restart tree $RestartTree/.\n";
 }
