@@ -131,7 +131,7 @@ pro set_default_values
 
 ; Animation parameters for the movie
   common animate_param, $
-     firstpict, dpict, npictmax, savemovie, wsubtract, timediff, $
+     firstpict, dpict, npictmax, savemovie, wsubtract, timediff, pictdiff, $
      videosave, videofile, videorate, videoobject, videostream, videotime
   firstpict=1        ; a scalar or array (per file) of the index of first frame
   dpict=1            ; a scalar or array (per file) of distance between frames
@@ -140,6 +140,8 @@ pro set_default_values
                      ; or into a 'mov/mp4/avi' video file.
   wsubtract=0        ; Array subtracted from w during animation
   timediff=0         ; take time derivative of w during animation if timediff=1
+  pictdiff=0         ; running difference in w (w-wprev) during animation
+                     ; independent of dt or iteration if pictdiff=1
   videosave=0        ; save video?
   videofile='movie'  ; name of video file with extension .savemovie
   videorate=10       ; number of frames per second
@@ -978,6 +980,16 @@ pro animate_data
               endelse
            endif
 
+           if keyword_set(pictdiff) then begin
+              if npict eq 0 then begin
+                 wprev  = w
+                 w      = 0.0*w
+              endif else begin
+                 w     = w - wprev
+                 wprev = wprev + w
+              endelse
+           endif
+           
            wnames=variables(ndim:ndim+nw-1)
            error=err or error
 
@@ -1112,6 +1124,16 @@ pro animate_data
                  wprev = wprev + w*dt
                  timeprev = time
                  itprev   = it
+              endelse
+           endif
+
+           if keyword_set(pictdiff) then begin
+              if ipict eq 0 then begin
+                 wprev = w
+                 w     = 0.0*w
+              endif else begin
+                 w     = w - wprev
+                 wprev = wprev + w
               endelse
            endif
 
