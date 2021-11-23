@@ -83,7 +83,7 @@ MPILIB =
 
 #OPENMPFLAG = -mp
 
-#ACCFLAG = -acc -Minfo=all -gpu=cc70
+#ACCFLAG = -acc -gpu=cc70
 
 #
 # This is the search path for used modules
@@ -94,7 +94,7 @@ SEARCH = -module ${INCLDIR} ${INCL_EXTRA}
 #
 # Flags used for debugging. 
 #
-DEBUGFLAG = -C -g #-Ktrap=fp
+DEBUGFLAG = -C -g -Minfo=all #-Ktrap=fp
 DEBUG     = 
 
 #
