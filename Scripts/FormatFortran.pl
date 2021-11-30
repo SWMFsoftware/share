@@ -321,7 +321,8 @@ foreach $source (@source){
 	    $iseparator = $i if s/^\s+\!\-\-\-\-+\!?\n//;
 	    
 	    # Skip empty lines and comments and FPP directives
-	    next if /^$/ or s/^\s*\n/\n/ or /^\s*\!/ or /^#/;
+	    next if (/^$/ or s/^\s*\n/\n/ or /^\s*\!/ or /^#/) 
+		and not /^\s*\!\$acc\s+(loop|parallel)/;
 
 	    # Skip external statements
 	    next if /^\s*external\b/;
