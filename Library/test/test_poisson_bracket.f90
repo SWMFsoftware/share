@@ -146,7 +146,9 @@ module ModTestPoissonBracket
   use ModPlotFile,       ONLY: save_plot_file
   use ModConst
   implicit none
-
+  integer, parameter :: nX = 10000 !# of Lagrangian points
+  integer, parameter :: nP = 40    ! 80  - for Fig5.Right Panel!# momentum bins
+  real ::  VDFOld_G(-1:nX+2, -1:nP+2)
 contains
   !============================================================================
 
@@ -158,7 +160,7 @@ contains
     integer, parameter::  nQ = 30,  nP = 360
     ! Loop variables
     integer           ::  iQ, iStep
-    ! Momentum max and min, in units of mc 
+    ! Momentum max and min, in units of mc
     real, parameter   :: qMax = 10.0, qMin = 0.01
     ! Mesh size in \phi
     real, parameter   :: DeltaPhi = cTwoPi/nP
@@ -224,8 +226,6 @@ contains
   !============================================================================
   subroutine test_dsa_poisson
     use ModDiffusion
-    integer, parameter :: nX = 10000 !# of Lagrangian points
-    integer, parameter :: nP = 40   !# of momentum bins
     real,    parameter :: pMax = 100, pMin = 1
     real,    parameter :: tFinal = 6000.00
     real,    parameter :: DtTrial = 1.0
@@ -236,11 +236,11 @@ contains
     real ::  VolumeX_I(0:nX+1), VolumeNewX_I(0:nX+1)
     real ::  VolumeP_I(0:nP+1)
     real ::  dVolumeDt_G(0:nX+1, 0:nP+1), dVolumeXDt_G(0:nX+1)
-    real ::  DOuter_I(nX) = 1.0, dInner_I(nX) = 100.0
+    real ::  DOuter_I(nX) = 1.0, dInner_I(nX) = 100.0 ! 200.0 For Fig5
     real ::  dHamiltonian02_FY(0:nX+1, -1:nP+1)
     real ::  LogMomentum_I(0:nP+1)     ! Cell centered, for plots
     real ::  Momentum3_I(-1:nP+1)
-    real ::  Time = 0.0, Dt, DtNext, DtAdjust, Source_C(nX,nP), CFL
+    real ::  Time = 0.0, Dt, DtNext, DtAdjust, Source_C(nX,nP)
     real ::  Coord_I(-1:nX+2)  ! Time-dependent coordinate of a mesh
     real ::  Dist_I(-1:nX+1)   ! Distance from mesh i to mesh i+1
 
@@ -250,7 +250,7 @@ contains
     Source_C(nX,nP) = 0.0
     ! Logarithmic grid in momentum. pMin is the value at the left face
     ! of the first physical cell, pMax is the value at the right face
-    ! off the last cell. The momentum ratio at the faces of each cell is: 
+    ! off the last cell. The momentum ratio at the faces of each cell is:
     MomentumRatio   = exp(log(pMax/pMin)/nP)
     ! The momentum at the left fface of 0th ghost cell is:
     MomentumMax     = pMin/MomentumRatio
@@ -263,7 +263,7 @@ contains
        MomentumMax = MomentumMin*MomentumRatio
        Momentum3_I(iP) = MomentumMax**3/3
        VolumeP_I(iP)   = Momentum3_I(iP) - Momentum3_I(iP-1)
-       ! Only for visualization log10 of the cell centered momentum  
+       ! Only for visualization log10 of the cell centered momentum
        LogMomentum_I(iP) = 0.50*log10(MomentumMin*MomentumMax)
     end do
     VDF_G = 1.0e-8; VDF_G(:,1) = 1/VolumeP_I(1)
@@ -289,8 +289,10 @@ contains
        call explicit(nX, nP, VDF_G, Volume_G, Source_C, &
             dHamiltonian02_FY=dHamiltonian02_FY,        &
             dVolumeDt_G = dVolumeDt_G,                  &
-            DtIn=Dt, CFLIn=0.98, CFLOut=CFL, DtOut=DtAdjust,  &
-            DtRecommend=DtNext)
+            DtIn=Dt,           & ! Input time step
+            CFLIn=0.98,        & ! Input CFL to calculate next time step
+            DtOut=DtAdjust,    & ! Actual time step, which may be reduced
+            DtRecommend=DtNext)  ! Calculation of next time step
        Dt = DtAdjust
        ! Correct final volumes, if Dt had been reduced
        VolumeNew_G  = Volume_G  + Dt*dVolumeDt_G
@@ -321,6 +323,7 @@ contains
          StringFormatIn = '(2F16.9)',                    &
          Coord1In_I = LogMomentum_I(1:nP),               &
          VarIn_I = alog10(VDF_G(5000,1:nP)))
+    VDFOld_G = VDF_G
   contains
     !==========================================================================
     subroutine update_coords(Time)
@@ -335,7 +338,7 @@ contains
       ! Loop variables
       integer :: iX, iP
       real    :: CoordLagr
-      ! Shock wave with the copmtreesion ratio of 4, with width ~1
+      ! Shock wave with the copmtression ratio of 4, with width ~1
       !------------------------------------------------------------------------
       do iX = -1, nX +2
          CoordLagr = iX - 0.50 -Time
@@ -355,10 +358,142 @@ contains
     end subroutine update_coords
     !==========================================================================
   end subroutine test_dsa_poisson
+  !============================================================================
+  subroutine test_dsa_sa_mhd
+    use ModDiffusion
+    real,    parameter :: pMax = 100, pMin = 1
+    real,    parameter :: tFinal = 6000.00
+    real ::  MomentumRatio, MomentumMin, MomentumMax
+    real ::  VDF_G(-1:nX+2, -1:nP+2)
+    real ::  Hamiltonian_N(-1:nX+1, -1:nP+1)
+    real ::  Volume_G(0:nX+1, 0:nP+1)
+    real ::  VolumeX_I(-1:nX+2)
+    real ::  VolumeP_I(0:nP+1)
+    real ::  DOuter_I(nX) = 1.0, dInner_I(nX) = 200.0
+    real ::  LogMomentum_I(0:nP+1)     ! Cell centered, for plots
+    real ::  Momentum3_I(-1:nP+1)
+    real ::  Time = 0.0, Dt, Source_C(nX,nP), CFL
+    real ::  Coord_I(-1:nX+2)  ! Time-dependent coordinate of a mesh
+    real ::  Dist_I(-1:nX+1)   ! Distance from mesh i to mesh i+1
+
+    ! Loop variables
+    integer :: iX, iP, iStep
+    !--------------------------------------------------------------------------
+    Source_C(nX,nP) = 0.0
+    ! Logarithmic grid in momentum. pMin is the value at the left face
+    ! of the first physical cell, pMax is the value at the right face
+    ! off the last cell. The momentum ratio at the faces of each cell is:
+    MomentumRatio   = exp(log(pMax/pMin)/nP)
+    ! The momentum at the left fface of 0th ghost cell is:
+    MomentumMax     = pMin/MomentumRatio
+    ! Calculate the generalized variable p^3/3 at each face, starting from
+    ! the left fface of 0th cell
+    Momentum3_I(-1) = MomentumMax**3/3
+    ! For cells from 0 to nP+1 calculate face values and volume factor:
+    do iP = 0, nP + 1
+       MomentumMin = MomentumMax
+       MomentumMax = MomentumMin*MomentumRatio
+       Momentum3_I(iP) = MomentumMax**3/3
+       VolumeP_I(iP)   = Momentum3_I(iP) - Momentum3_I(iP-1)
+       ! Only for visualization log10 of the cell centered momentum
+       LogMomentum_I(iP) = 0.50*log10(MomentumMin*MomentumMax)
+    end do
+    VDF_G = VDFOld_G
+
+    Time = 0.0; iStep = 0
+    call update_coords(6000.0)
+    ! Figure 5, left panel
+    ! do iX = 5982,6005
+    !   write(*,*)0.50*(Coord_I(iX)+Coord_I(iX+1)),&
+    !        1/(Coord_I(iX+1)-Coord_I(iX))
+    ! end do
+    ! stop
+    do
+       VDFOld_G = VDF_G
+       call explicit(nX, nP, VDF_G, Volume_G, Source_C, &
+            Hamiltonian12_N=Hamiltonian_N,              &
+            CFLIn=0.98, DtOut=Dt)
+       iStep = iStep +1
+       if(Time + Dt>= tFinal)then
+          Dt = tFinal - Time
+          call explicit(nX, nP, VDF_G, Volume_G, Source_C, &
+               Hamiltonian12_N=Hamiltonian_N,              &
+               DtIn=Dt)
+          VDF_G(1:nX, 1:nP) = VDF_G(1:nX, 1:nP) + Source_C
+          do iP =1, nP
+             call advance_diffusion1(Dt,nX,Dist_I(1:nX),VDF_G(1:nX,&
+                  iP),DOuter_I(1:nX),DInner_I(1:nX))
+          end do
+          Time = tFinal
+          EXIT
+       end if
+       VDF_G(1:nX, 1:nP) = VDF_G(1:nX, 1:nP) + Source_C
+       do iP =1, nP
+          call advance_diffusion1(Dt,nX,Dist_I(1:nX),VDF_G(1:nX,&
+               iP),DOuter_I(1:nX),DInner_I(1:nX))
+       end do
+       Time = Time + Dt
+       VDF_G(1:nX,-1:0 ) = 1.0e-8
+       VDF_G(1:nX,nP+1:nP+2) = 1.0e-8
+       VDF_G( 0,      :) = VDF_G(1,       :)
+       VDF_G(-1,      :) = VDF_G(1,       :)
+       VDF_G(nX+1,    :) = max(VDF_G(nX,      :), 1.0e-8)
+       VDF_G(nX+2,    :) = max(VDF_G(nX,      :), 1.0e-8)
+       VDF_G(nX+1:nX+2,1) = 1/VolumeP_I(1)
+    end do
+    call save_plot_file(NameFile='test_dsa_sa_mhd.out', &
+         TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
+         NameVarIn='LogMomentum VDF'  ,                  &
+         CoordMinIn_D=[ LogMomentum_I(1 ) ],             &
+         CoordMaxIn_D=[ LogMomentum_I(nP) ],             &
+         StringFormatIn = '(2F16.9)',                    &
+         Coord1In_I = LogMomentum_I(1:nP),               &
+         VarIn_I = alog10(VDF_G(5000,1:nP)))
+  contains
+    !==========================================================================
+    subroutine update_coords(Time)
+      real, intent(in):: Time
+
+      ! Effective width of the shock wave, in cell size
+      integer, parameter:: nWidth = 1
+
+      ! terms in the functions, describing the
+      ! lagrangian point motion
+      real, parameter:: cQuad = 0.375/nWidth, cConst = 0.375*nWidth
+      ! Loop variables
+      integer :: iX, iP
+      real    :: CoordLagr
+      ! Shock wave with the copmtression ratio of 4, with width ~1
+      !------------------------------------------------------------------------
+      do iX = -1, nX +2
+         CoordLagr = iX - 0.50 -Time
+         if(CoordLagr>=0.0)then
+            Coord_I(iX) = CoordLagr + Time
+         elseif(CoordLagr>=-real(nWidth))then
+            Coord_I(iX) = CoordLagr + Time + cQuad*CoordLagr**2
+         else
+            Coord_I(iX) = 0.250*CoordLagr -cConst + Time
+         end if
+      end do
+      Dist_I(-1:nX+1) = Coord_I(0:nX+2) - Coord_I(-1:nX+1)
+      VolumeX_I(0:nX+1) = 0.50*(Dist_I(-1:nX) + Dist_I(0:nX+1))
+      VolumeX_I(-1)  = Dist_I(-1); VolumeX_I(nX+2) =  Dist_I(nX+1)
+      do iP = 0, nP+1
+         Volume_G(0:nX+1,iP) = VolumeP_I(iP)*VolumeX_I(0:nX+1)
+      end do
+      do iP = -1, nP+1
+         Hamiltonian_N(-1:nX+1, iP)= -0.50*Momentum3_I(iP)*&
+              (VolumeX_I(-1:nX+1) + VolumeX_I(0:nX+2))
+      end do
+    end subroutine update_coords
+    !==========================================================================
+  end subroutine test_dsa_sa_mhd
+  !============================================================================
 end module ModTestPoissonBracket
 !==============================================================================
 program test_program
-  use ModTestPoissonBracket, ONLY: test_poisson_bracket, test_dsa_poisson
+  use ModTestPoissonBracket, ONLY: test_poisson_bracket, test_dsa_sa_mhd, &
+       test_dsa_poisson
   use ModNumConst,           ONLY: cTwoPi
   ! use ModTestPoissonBracketAndScatter, ONLY: test_scatter
   implicit none
@@ -366,6 +501,7 @@ program test_program
   !----------------------------------------------------------------------------
   call test_poisson_bracket(cTwoPi)
   call test_dsa_poisson
+  ! call test_dsa_sa_mhd ! for Fig5.Right Panel
   ! call test_multipoisson_bracket(50.0)
 
   ! Test for comparing two diffusions is long. It should be repeated twice with
@@ -373,3 +509,4 @@ program test_program
 
   ! call test_scatter(50.0)
 end program test_program
+!==============================================================================
