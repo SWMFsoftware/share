@@ -2715,7 +2715,7 @@ pro read_plot_param
      askstr,'plotmode(s)                ',plotmode,doask
   endif else begin
      if strmid(plotmode,0,4) eq 'plot' then plotmode='contbar'
-     print,'2D plotmode: shade/surface/cont/tv/polar/lonlatn/lonlats/velovect/vector/stream'
+     print,'2D plotmode: shade/surface/cont/tv/polar/lonlatn/lonlats/velovect/vector/stream/scatter'
      print,'2D +options: degree/radian/hour'
      print,'2D +options: bar,body,fill,grid,irr,label,max,mean,log,lgx,lgy'
      print,'2D +options: map,mesh,noaxis,over,usa,white,#c999,#ct999'
@@ -4396,6 +4396,13 @@ pro plot_func
                       FOLLOW=label, FILL=fill, LEVELS=levels,   $
                       XSTYLE=noaxis+1,YSTYLE=noaxis+1,/NOERASE, $
                       XLOG=lgx, YLOG=lgy
+           'scatter'  :begin
+              if not keyword_set(tri) then                   $
+                 triangulate,float(xx),float(yy),tri
+              contour,f,xx,yy,TRIANGULATION=tri,             $
+                      XSTYLE=1,YSTYLE=+1,/NOERASE, nodata=1
+              scatter_plot,xx,yy,f,f_min=f_min
+           end
            'polar'    :polar_contour,f>f_min,yy*angleunit,xx,$
                                      FOLLOW=label, FILL=fill, LEVELS=levels,$
                                      XSTYLE=noaxis+1,YSTYLE=noaxis+1,/dither, $
@@ -7070,4 +7077,54 @@ pro reset_axis
   if !x.title eq ' ' then !x.title = ''
   if !y.title eq ' ' then !y.title = ''
 
+end
+;==============================================================================
+pro scatter_plot, xx, yy, f, f_min=f_min, f_max=f_max,            $
+                  shape=shape, size=size
+
+  if n_elements(xx) ne n_elements(yy) or              $
+     n_elements(xx) ne n_elements(f) then begin
+     print, 'scatter_plot: xx, yy and f must be the same size!!!'
+     return
+  endif
+
+  if not keyword_set(f_min) then f_min=min(f)
+  if not keyword_set(f_max) then f_max=max(f)
+  if not keyword_set(shape) then shape='circle'
+  if not keyword_set(size)  then size=2
+
+  ;; remove all the data points outside (including) f_min and f_max
+  index = where(f gt f_min)
+  xx_local = xx(index)
+  yy_local = yy(index)
+  f_local  = f(index)
+
+  index = where(f lt f_max)
+  xx_local = xx_local(index)
+  yy_local = yy_local(index)
+  f_local  = f_local(index)
+
+  nCount = n_elements(xx_local)
+
+  for i=0,nCount-1 do begin
+     x_tmp = xx_local(i)
+     y_tmp = yy_local(i)
+     f_tmp = f_local(i)
+
+     if shape eq 'square' then begin
+        polyfill,[x_tmp-size,x_tmp-size,x_tmp+size,x_tmp+size],         $
+                 [y_tmp-size,y_tmp+size,y_tmp+size,y_tmp-size],         $
+                 color=(f_tmp-f_min)/(f_max-f_min)*255, noclip=0
+     endif else if shape eq 'circle' then begin
+        rCircle = float(size)
+        theta = findgen(361)*!pi*2.0/360.0
+        polyfill, x_tmp+rCircle*cos(theta), y_tmp+rCircle*sin(theta),   $
+                  color = (f_tmp-f_min)/(f_max-f_min)*255, noclip=0
+     endif else begin
+        print, 'scatter_plot: shape must be square or circle!!!'
+        return
+     endelse
+  end
+
+  plot,xx_local,yy_local, psym=1, linestyle=6, XSTYLE=1,YSTYLE=1,/noerase
 end
