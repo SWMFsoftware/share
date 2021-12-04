@@ -4401,7 +4401,7 @@ pro plot_func
                  triangulate,float(xx),float(yy),tri
               contour,f,xx,yy,TRIANGULATION=tri,             $
                       XSTYLE=1,YSTYLE=+1,/NOERASE, nodata=1
-              scatter_plot,xx,yy,f,f_min=f_min
+              scatter_plot,xx,yy,f,f_min=f_min,xrange=xrange,yrange=yrange
            end
            'polar'    :polar_contour,f>f_min,yy*angleunit,xx,$
                                      FOLLOW=label, FILL=fill, LEVELS=levels,$
@@ -7080,7 +7080,7 @@ pro reset_axis
 end
 ;==============================================================================
 pro scatter_plot, xx, yy, f, f_min=f_min, f_max=f_max,            $
-                  shape=shape, size=size
+                  shape=shape, size=size, xrange=xrange, yrange=yrange
 
   if n_elements(xx) ne n_elements(yy) or              $
      n_elements(xx) ne n_elements(f) then begin
@@ -7126,5 +7126,6 @@ pro scatter_plot, xx, yy, f, f_min=f_min, f_max=f_max,            $
      endelse
   end
 
-  plot,xx_local,yy_local, psym=1, linestyle=6, XSTYLE=1,YSTYLE=1,/noerase
+  plot,xx_local,yy_local, psym=1, linestyle=6, XSTYLE=1,YSTYLE=1, $
+       xrange=xrange,yrange=yrange,/noerase
 end
