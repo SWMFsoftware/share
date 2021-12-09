@@ -4,6 +4,7 @@
 #  For more information, see http://csem.engin.umich.edu/tools/swmf
 
 use POSIX 'mktime', 'strftime';
+use Cwd 'abs_path';
 
 my $Help        = ($h or $H or $help);
 my $Mode        = ($m or $mode or "auto");
@@ -15,6 +16,7 @@ my $WarnOnly    = ($W or $Warn or $warn);
 my $TimeUnit    = ($t or $u or $timeunit or $unit);
 my $Repeat      = ($r or $repeat);
 my $Keep        = ($k or $keep);   # Number of restart trees to keep
+my $LinkOrigTree= ($l or $linkorig); # Link to original restart
 my $Wait        = ($w or $wait or 120);
 my @RestartTree;                   # List of restart trees created
 my $RestartTree = $ARGV[0];        # Name of the restart tree directory
@@ -341,7 +343,7 @@ sub create_tree_check{
 	foreach (split /,/,$Dirs){$Dir=$_; last if -d $Dir};
 	if(not -d $Dir){
 	    print "$WARNING could not find directory $Dirs!\n";
-	    next COMPONENT;
+	    next COMPONENT;	
 	}
 
 	opendir(DIR,$Dir) or die "$ERROR could not open directory $Dir!\n";
@@ -385,15 +387,24 @@ sub create_tree{
     # Move the output restart directories of the components into the tree
     # and create empty output restart directories
     my $Comp;
-    foreach $Comp (sort keys %RestartOutDirFound){
-	my $Dir=$RestartOutDirFound{$Comp};
+    foreach $Comp (sort keys %RestartOutDir){
+	if($RestartOutDirFound{$Comp}){
+	    my $Dir=$RestartOutDirFound{$Comp};
 
-	print "mv $Dir $RestartTree/$Comp\n" if $Verbose;
-	rename $Dir, "$RestartTree/$Comp" or 
-	    die "$ERROR could not move $Dir into $RestartTree/$Comp!\n";
+	    print "mv $Dir $RestartTree/$Comp\n" if $Verbose;
+	    rename $Dir, "$RestartTree/$Comp" or 
+		die "$ERROR could not move $Dir into $RestartTree/$Comp!\n";
 
-	print "mkdir $Dir\n" if $Verbose;
-	mkdir $Dir, 0777 or die "$ERROR could not create directory $Dir!\n";
+	    print "mkdir $Dir\n" if $Verbose;
+	    mkdir $Dir, 0777 or die "$ERROR could not create directory $Dir!\n";
+	}elsif($LinkOrigTree and (-d $RestartInDir{$Comp} or -l $RestartInDir{$Comp})){
+	    warn "Link orig tree for Comp=$Comp\n";
+	    my $link = readlink($RestartInDir{$Comp});
+	    $link =~ s/^\.\.\///;
+	    warn "readling=",$link,"\n";
+	    warn "abs_path=",abs_path($link),"\n";
+	    symlink abs_path($link), "$RestartTree/$Comp";
+	}
     }
 
     print "# Restart.pl has created restart tree $RestartTree/.\n";
@@ -541,7 +552,7 @@ Usage:
 
     Restart.pl -h
 
-    Restart.pl [-o] [-t=UNIT] [-m=a|f|s] [-c] [-v] [-W] [DIR]
+    Restart.pl [-o] [-t=UNIT] [-m=a|f|s] [-c] [-v] [-W] [-l] [DIR]
 
     Restart.pl -i [-m=a|f|s] [-c] [-v] DIR
 
@@ -563,6 +574,9 @@ Usage:
 
     -k=NUMBER   Keep the last NUMBER restart trees. Only works with the -r(epeat)
     -keep=...   argument. By default all restart trees are kept.
+
+    -l		Link the current input restart directory for components
+    -linkorig   that did not produce an output restart directory.
 
     -r=REPEAT   Repeat creating (and linking unless -o is used) of the 
     -repeat=... restart tree every REPEAT seconds. This can be used to
@@ -610,9 +624,10 @@ Examples:
 
 Restart.pl -c
 
-    Create restart tree from current results and link input to it:
+    Create restart tree from current results and link input to it.
+    Link to input restart tree for components without restart output:
 
-Restart.pl
+Restart.pl -l
 
     Check every 15 seconds for new restart output, and move it to 
     a new restart tree with the date and time in the name,
