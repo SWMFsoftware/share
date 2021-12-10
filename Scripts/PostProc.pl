@@ -24,6 +24,7 @@ my $Pattern       = $p;
 my $Format        = ($f or $format); $Format = "-f=$Format" if $Format;
 my $NoPtec        = $noptec;
 my $JuliaTec      = ($vtu or $vtk or $vtu or $VTU);
+my $Link          = ($l or $link);
 
 use strict;
 use File::Find;
@@ -183,7 +184,7 @@ REPEAT:{
 	    &shell("$command $PlotDir/ $Rsync/$Dir") if -d $PlotDir;
 	}
 	&shell("$rsync $ParamIn $Rsync/")          if -f $ParamIn;
-	&shell("$rsync PARAM.* LAYOUT.* $Rsync/")  if $AllParam;
+	&shell("$rsync PARAM.* $Rsync/")           if $AllParam;
 	&shell("$rsync runlog $Rsync/")            if -f "runlog";
 	&shell("$rsync runlog_[0-9]* $Rsync/")     if glob("runlog_[0-9]*");
 	&shell("$rsync log.[0-9]* $Rsync/")        if glob("log.[0-9]*");
@@ -252,7 +253,7 @@ foreach my $Dir (sort keys %PlotDir){
 # Copy and move some input and output files if present
 if(-f $ParamIn){
     if($AllParam){
-	&shell_info("cp PARAM.* LAYOUT.* $NameOutput");
+	&shell_info("cp PARAM.* $NameOutput");
     }else{
 	&shell_info("cp $ParamIn $NameOutput");
 	&shell_info("mv $ParamInOrig $NameOutput") if -f $ParamInOrig;
@@ -271,7 +272,7 @@ if(-f "runlog"){
     warn "$WARNING: no $RunLog file was found\n";
 }
 
-&shell_info("./Restart.pl -o -W -l $NameOutput/RESTART");
+&shell_info("./Restart.pl -o -W -l=$Link $NameOutput/RESTART");
 
 if($Rsync){
     &shell_info("rsync -avzt $NameOutput/ $Rsync");
@@ -408,9 +409,10 @@ sub print_help{
 
 Usage:
 
-   PostProc.pl [-h] [-v] [-c] [-g] [-m | -M | -t | -T] [-noptec]
-               [-r=REPEAT [-s=STOP] | DIR] [-n=NTHREAD] [-p=PATTERN] [-param|-allparam]
-               [-vtu]
+   PostProc.pl [-h] [-v] [-c] [-g] [-m | -M | -t | -T] [-noptec] [-vtu]
+               [-n=NTHREAD] [-p=PATTERN] [-f=FORM]
+               [-r=REPEAT [-s=STOP] | DIR [-l=COMP] ] 
+               [-rsync=TARGET] [-allparam]
  
    -h -help    Print help message and exit.
 
@@ -424,17 +426,21 @@ Usage:
 
    -g -gzip    Gzip the big ASCII files.
 
-   -m -movie   Create movies (.outs) from series of IDL files (.out) and keep series.
+   -m -movie   Create movies (.outs) from series of IDL files (.out) 
+               and keep series.
 
    -M -MOVIE   Create movies from series of IDL files and remove IDL files.
 
-   -t -tar     Create tar files (.out.tar) from series of .out files and keep series.
+   -t -tar     Create tar files (.out.tar) from series of .out files 
+               and keep series.
 
    -T -TAR     Create tar files from series of IDL files and remove IDL files.
 
    -noptec     Do not process Tecplot files with the pTEC script. 
 
    -n=NTHREAD  Run pIDL in parallel using NTHREAD threads. The default is 4.
+
+   -p=PATTERN  Pass pattern to pIDL so it only processes the files that match.
 
    -r=REPEAT   Repeat post processing every REPEAT seconds.
                Cannot be used with the DIR argument. The script will stop
@@ -444,13 +450,10 @@ Usage:
    -s=STOP     Exit from the script after STOP days. Useful when the script
                is run in the background with repeat flag. Default is 2 days.
 
-   -p=PATTERN  Pass pattern to pIDL so it only processes the files that match.
+   -vtu -vtk   Concatenate unstructured 3D outputs to *.dat and convert 
+               to VTK format (.vtu) using Julia.
 
-   -vtu -vtk   Concatenate unstructured 3D outputs to *.dat and convert to VTK format 
-               (.vtu) using Julia.
-
-   -param      Copy and/or rsync PARAM.* and LAYOUT.* files.
-   -allparam   Same as -param.
+   -allparam   Copy and/or rsync all PARAM.* files.
 
    -rsync=TARGET Copy processed plot files into an other directory 
                (possibly on another machine) using rsync. The TARGET
@@ -461,6 +464,9 @@ Usage:
                then the output directory is synchronized.
                rsync must be installed on the local and target machines,
                and no password should be required to execute rsync.
+
+   -l=COMP     Pass -l=COMP argument to Restart.pl. This can be useful when
+   -link=COMP  creating the RESTART tree inside the output tree DIR.
 
    DIR         Name of the directory tree to collect the processed files in.
                Cannot be used with the -r option. The directory is created
@@ -480,14 +486,16 @@ PostProc.pl -noptec -f=tec
 
    Post-process the plot files, create movies from IDL output,
    concatenate satellite, log, and magnetometer files, move output into a 
-   directory tree "RESULTS/run23", and run PostIDL.exe on 8 cores:
+   directory tree "RESULTS/run23", run PostIDL.exe on 8 cores, and
+   link RESULTS/run23/RESTART/IH to the current IH input restart directory if
+   IH/restartOUT is empty:
 
-PostProc.pl -M -cat -n=8 RESULTS/run23
+PostProc.pl -M -cat -n=8 -l=IH RESULTS/run23
 
    Post-process the plot files, compress the ASCII files, rsync the results
-   and PARAM.* and LAYOUT.* files to another machine and print verbose info:
+   and all PARAM.* files to another machine and print verbose info:
 
-PostProc.pl -g -param -rsync=ME@OTHERMACHINE:My/Results -v
+PostProc.pl -g -allparam -rsync=ME@OTHERMACHINE:My/Results -v
 
    Post-process the .tec files, convert to unstructured VTK format:
 
@@ -506,7 +514,7 @@ mpiexec SWMF.exe
 touch '.$StopFile.'
 
    Collect processed output into a directory tree named OUTPUT/New
-   and rsync it together with the PARAM.* and LAYOUT.* files 
+   and rsync it together with all the PARAM.* files 
    into the run/OUTPUT/New directory on another machine:
 
 PostProc.pl -allparam -rsync=ME@OTHERMACHINE:run/OUTPUT/New OUTPUT/New'
