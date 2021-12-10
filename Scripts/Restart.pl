@@ -16,7 +16,7 @@ my $WarnOnly    = ($W or $Warn or $warn);
 my $TimeUnit    = ($t or $u or $timeunit or $unit);
 my $Repeat      = ($r or $repeat);
 my $Keep        = ($k or $keep);   # Number of restart trees to keep
-my $LinkOrigTree= ($l or $linkorig); # Link to original restart
+my $LinkOrig    = ($l or $linkorig); # Link to original restart for listed components
 my $Wait        = ($w or $wait or 120);
 my @RestartTree;                   # List of restart trees created
 my $RestartTree = $ARGV[0];        # Name of the restart tree directory
@@ -44,7 +44,7 @@ if($Mode =~ /^a/i){
 }
 
 # Check for illegal combination of switches
-die "$ERROR at most one argument can be specified!$HELP" if $#ARGV > 0;
+die "$ERROR at most one argument can be specified!$HELP" if @ARGV > 1;
 die "$ERROR cannot use -i and -o together!$HELP" if $InputOnly and $OutputOnly;
 die "$ERROR cannot use -i and -r together!$HELP" if $InputOnly and $Repeat;
 die "$ERROR cannot use -c and -r together!$HELP" if $CheckOnly and $Repeat;
@@ -177,7 +177,7 @@ LOOP:{
 	&create_tree unless $CheckOnly;
 	if($Keep and $Repeat){
 	    push(@RestartTree, $RestartTree);
-	    if($#RestartTree >= $Keep){
+	    if(@RestartTree > $Keep){
 		my $OldTree = shift(@RestartTree);
 		print "# Restart.pl removing $OldTree in the background\n";
 		exec("rm -rf $OldTree") unless fork();
@@ -349,7 +349,7 @@ sub create_tree_check{
 	opendir(DIR,$Dir) or die "$ERROR could not open directory $Dir!\n";
 	my @Content = readdir(DIR);
 	closedir(DIR);
-	if($#Content < 2){
+	if(@Content < 3){
 	    print "$WARNING directory $Dir is empty!\n";
 	    next COMPONENT;
         }
@@ -396,14 +396,28 @@ sub create_tree{
 		die "$ERROR could not move $Dir into $RestartTree/$Comp!\n";
 
 	    print "mkdir $Dir\n" if $Verbose;
-	    mkdir $Dir, 0777 or die "$ERROR could not create directory $Dir!\n";
-	}elsif($LinkOrigTree and (-d $RestartInDir{$Comp} or -l $RestartInDir{$Comp})){
-	    warn "Link orig tree for Comp=$Comp\n";
-	    my $link = readlink($RestartInDir{$Comp});
-	    $link =~ s/^\.\.\///;
-	    warn "readling=",$link,"\n";
-	    warn "abs_path=",abs_path($link),"\n";
-	    symlink abs_path($link), "$RestartTree/$Comp";
+	    mkdir $Dir,0777 or die "$ERROR could not create directory $Dir!\n";
+	}elsif($LinkOrig =~ /\b$Comp\b/){
+	    my $link = $RestartInDir{$Comp};
+	    if(not -l $link){
+		warn "WARNING: Symbolic link $link is missing\n"
+	    }else{
+		my $Dir = readlink($link);
+		$Dir =~ s/^\.\.\///; # remove the ../ if present
+		if(not -d $Dir){
+		    warn "WARNING: $link -> $Dir is not a directory\n";
+		}else{
+		    opendir(DIR, $Dir);
+		    my @Content = readdir(DIR);
+		    closedir(DIR);
+		    if(@Content < 3){
+			warn "WARNING: $link -> $Dir is empty\n";
+		    }else{
+			# use absolute path in the new link
+			symlink abs_path($Dir), "$RestartTree/$Comp";
+		    }
+		}
+	    }
 	}
     }
 
@@ -552,7 +566,7 @@ Usage:
 
     Restart.pl -h
 
-    Restart.pl [-o] [-t=UNIT] [-m=a|f|s] [-c] [-v] [-W] [-l] [DIR]
+    Restart.pl [-o] [-t=UNIT] [-m=a|f|s] [-c] [-v] [-W] [-l=COMPS] [DIR]
 
     Restart.pl -i [-m=a|f|s] [-c] [-v] DIR
 
@@ -575,8 +589,9 @@ Usage:
     -k=NUMBER   Keep the last NUMBER restart trees. Only works with the -r(epeat)
     -keep=...   argument. By default all restart trees are kept.
 
-    -l		Link the current input restart directory for components
-    -linkorig   that did not produce an output restart directory.
+    -l=COMPS	Link the current input restart directory into the output restart tree
+    -link=...   for components listed in COMPS that did not produce an output 
+                restart directory. COMPS is comma separated list of components IDs.
 
     -r=REPEAT   Repeat creating (and linking unless -o is used) of the 
     -repeat=... restart tree every REPEAT seconds. This can be used to
@@ -625,9 +640,14 @@ Examples:
 Restart.pl -c
 
     Create restart tree from current results and link input to it.
-    Link to input restart tree for components without restart output:
 
-Restart.pl -l
+Restart.pl
+
+    Create restart tree RESTART4 from current results and link input to it.
+    Link the current input restart directories for IH and OH if they 
+    have not produced new output restart files:
+
+Restart.pl -l=IH,OH RESTART4
 
     Check every 15 seconds for new restart output, and move it to 
     a new restart tree with the date and time in the name,
