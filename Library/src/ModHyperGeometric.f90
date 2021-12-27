@@ -145,7 +145,7 @@ contains
     n = nC - (1 + nA + nB)
 
     ! The formulae for the "logarithmic case" (integer n)
-    ! http://functions.wolfram.com/HypergeometricFunctions/Hypergeometric2F1/
+    ! http://functions.wolfram.com/HypergeometricFunctions/Hypergeometric2F1/06/01/04/01/02/
     ! strongly depend on the sign of n. Consider case-by-case
     if(n==0)then
        LogFactor    = -log(OneMinusZ) + 2.0*psi_int(1) - &
