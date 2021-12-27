@@ -75,6 +75,11 @@ clean: cleanfiles
 distclean: clean
 	rm -rf *.tmp *.diff test*.out
 
+# Setting BLESS=YES or Y will copy the solution into the reference solution
+BLESS=NO
+
+DIFFNUM = ${SCRIPTDIR}/DiffNum.pl -BLESS=${BLESS}
+
 #######################################################################
 test_time_convert_exe:
 	@(cd ../src; make LIB)
@@ -198,11 +203,21 @@ test_hypergeometric_exe:
 	${LINK.f90} -o test_hypergeometric.exe test_hypergeometric.o \
 		-L${LIBDIR} -lSHARE ${Lflag}
 
+test_hypergeometric_check:
+	-@(${DIFFNUM} -b -a=1e-7 \
+		test_inductance.out test_inductance.ref \
+			> test_hypergeometric.diff)
+	-@(${DIFFNUM} -b -a=1e-7 \
+		test_fields.out test_fields.ref \
+                        >> test_hypergeometric.diff)
+
 test_hypergeometric:
 	@echo test_hypergeometric starting     >  test_hypergeometric.diff
 	@make test_hypergeometric_exe	       >> test_hypergeometric.diff
 	@echo ./test_hypergeometric.exe        >> test_hypergeometric.diff
+	-@(rm -f test_inductunce.out test_fields.out)
 	-@(./test_hypergeometric.exe > test_hypergeometric.diff)
+	-@(make test_hypergeometric_check)
 	@ls -l test_hypergeometric.diff
 #######################################################################
 test_cubic_equation.o: test_cubic_equation.f90
