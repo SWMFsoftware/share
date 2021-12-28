@@ -37,32 +37,32 @@ program test
   Kappa02 = 1 - KappaPrime02 
   Kappa0 = sqrt(Kappa02); Kappa03 = Kappa0*Kappa02
   ConstRatio = 0.125*toroid_p(0, KappaPrime2In=KappaPrime02)/&
-       toroid_q0(KappaPrime2In=KappaPrime02)
+       toroid_q(0,KappaPrime2In=KappaPrime02)
   do iLoop = 1, nStep/2
      KappaPrime = iLoop*0.50*DeltaKappaPrime
      KappaPrime2 = KappaPrime**2
      Kappa2 = 1 - KappaPrime2; Kappa = sqrt(Kappa2); Kappa3 = Kappa*Kappa2
      Coord_I(iLoop) = KappaPrime
-     Var_VI(AzimuthalS_,iLoop) = ConstRatio*Kappa3*toroid_q0(&
+     Var_VI(AzimuthalS_,iLoop) = ConstRatio*Kappa3*toroid_q(0,&
           KappaPrime2In=KappaPrime2)
      Var_VI(PoloidalS_,iLoop) = KappaPrime*ConstRatio*Kappa3*&
           toroid_dq0du(KappaPrime2In=KappaPrime2)
   end do
-  ConstRatio = 0.125*toroid_dpdu(0, KappaPrime2In=KappaPrime02)/&
-       (toroid_dq0du(KappaPrime2In=KappaPrime02)*KappaPrime02)
+  ConstRatio = 0.125*toroid_dp0du(KappaPrime2In=KappaPrime02)/&
+       (toroid_dq0du(KappaPrime2In=KappaPrime02))
   ConstLev = -1/( toroid_dq0du(KappaPrime2In=KappaPrime02)*KappaPrime02*&
        Kappa0)
   do iLoop = 1, nStep/2
      KappaPrime = iLoop*0.50*DeltaKappaPrime
      KappaPrime2 = KappaPrime**2
      Kappa2 = 1 - KappaPrime2; Kappa = sqrt(Kappa2); Kappa3 = Kappa*Kappa2
-     Var_VI(AzimuthalU_,iLoop) = ConstRatio*Kappa3*toroid_q0(KappaPrime2In = &
+     Var_VI(AzimuthalU_,iLoop) = ConstRatio*Kappa3*toroid_q(0,KappaPrime2In = &
           KappaPrime2) + ConstLev
      Var_VI(PoloidalU_,iLoop) = KappaPrime*ConstRatio*toroid_dq0du(&
           KappaPrime2In=KappaPrime2)*Kappa3
      Var_VI(ToroidalU_,iLoop) = sqrt(6*(-ConstRatio)*ConstLev*(&
-          Kappa03*toroid_q0(KappaPrime2In=KappaPrime02)&
-          - Kappa3*toroid_q0(KappaPrime2In=KappaPrime2)))
+          Kappa03*toroid_q(0,KappaPrime2In=KappaPrime02)&
+          - Kappa3*toroid_q(0,KappaPrime2In=KappaPrime2)))
   end do
   do iLoop = 1 + nStep/2, nStep
      KappaPrime = iLoop*0.50*DeltaKappaPrime
@@ -73,10 +73,10 @@ program test
           KappaPrime2)
      Var_VI(AzimuthalU_,iLoop) = 0.125*Kappa3*toroid_p(0, KappaPrime2In = &
           KappaPrime2)
-     Var_VI(PoloidalS_,iLoop) = 0.125*Kappa3*toroid_dpdu(0, KappaPrime2In = &
-          KappaPrime2)/KappaPrime
-     Var_VI(PoloidalU_,iLoop) = 0.125*Kappa3*toroid_dpdu(0, KappaPrime2In = &
-          KappaPrime2)/KappaPrime
+     Var_VI(PoloidalS_,iLoop) = 0.125*Kappa3*toroid_dp0du(KappaPrime2In = &
+          KappaPrime2)*KappaPrime
+     Var_VI(PoloidalU_,iLoop) = 0.125*Kappa3*toroid_dp0du(KappaPrime2In = &
+          KappaPrime2)*KappaPrime
      Var_VI(ToroidalU_,iLoop)  = 0.0
   end do
   call save_plot_file(NameFile='test_fields.out', &

@@ -204,10 +204,10 @@ test_hypergeometric_exe:
 		-L${LIBDIR} -lSHARE ${Lflag}
 
 test_hypergeometric_check:
-	-@(${DIFFNUM} -b -a=1e-7 \
+	-@(${DIFFNUM} -b -r=1e-7 \
 		test_inductance.out test_inductance.ref \
 			> test_hypergeometric.diff)
-	-@(${DIFFNUM} -b -a=1e-7 \
+	-@(${DIFFNUM} -b -r=1e-7 \
 		test_fields.out test_fields.ref \
                         >> test_hypergeometric.diff)
 

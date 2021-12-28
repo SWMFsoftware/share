@@ -59,10 +59,10 @@ contains
     integer, intent(in) :: n
     ! \Gamma(0.5 + n)
     integer :: k
-
+    ! n >= -1!
     !--------------------------------------------------------------------------
-    gamma_semi = cSqrtPi
-    do k = 1, n
+    gamma_semi = -2.0*cSqrtPi
+    do k = 0, n
        gamma_semi = gamma_semi * (real(k) - 0.50)
     end do
   end function gamma_semi
@@ -228,7 +228,7 @@ contains
     end if
   end function hyper_semi_semi_int
   !============================================================================
-  !=====================|Toroid functions|=========
+  !=====================|Toroidal functions|=========
   !                     v                v
   !
   ! Calculate functions
@@ -274,8 +274,8 @@ contains
     real, optional, intent(in) :: KappaPrime2In, Kappa2In
     character(len=*), parameter:: NameSub = 'toroid_q'
     !--------------------------------------------------------------------------
-    if(n < 1)call CON_stop(&
-         NameSub//': argument n should be positive')
+    if(n < 0)call CON_stop(&
+         NameSub//': argument n should be non-negative')
     if(present(KappaPrime2In))then
        toroid_q = hyper_semi_semi_int(nA=1, nB=1+n, nC=n+1, &
             ZIn = KappaPrime2In)
@@ -289,53 +289,21 @@ contains
     toroid_q = -toroid_q*cSqrtPi*gamma_semi(n-1)/factorial(n)
   end function toroid_q
   !============================================================================
-  real function toroid_q0(KappaPrime2In, Kappa2In)
-    ! tilde{Q}_0 function, related to k**3! The case n>0 is treated above
-    real, optional, intent(in) :: KappaPrime2In, Kappa2In
-
-    character(len=*), parameter:: NameSub = 'toroid_q0'
-    !--------------------------------------------------------------------------
-    if(present(KappaPrime2In))then
-       toroid_q0 = 2.0*cPi*hyper_semi_semi_int(nA=1, nB=1, nC=1, &
-            ZIn = KappaPrime2In)
-    elseif(present(Kappa2In))then
-       toroid_q0 = 2.0*cPi*hyper_semi_semi_int(nA=1, nB=1, nC=1, &
-            OneMinusZIn = Kappa2In)
-    else
-       call CON_stop(&
-            NameSub//': Kappa2In or KappaPrime2InIn should be present')
-    end if
-  end function toroid_q0
-  !============================================================================
   !                         ^                  ^
   !=========================|Toroidal functions|======================
   !=================|Derivatives of toroidal functions|===============
   !                 v                                 v
-  real function toroid_dpdu(n, Kappa2In, KappaPrime2In)
-    ! d\tilde{P}_n/du  function, related to k(k^\prime)^n
-    integer, intent(in):: n
+  real function toroid_dp0du(Kappa2In, KappaPrime2In)
+    ! d\tilde{P}^{-1}_{0-1/2}/du  function, related to k(k^\prime)^2
     real, optional, intent(in) :: Kappa2In, KappaPrime2In
     real :: Kappa2
     character(len=*), parameter:: NameSub = 'toroid_dpdu'
     !--------------------------------------------------------------------------
-    if(present(Kappa2In))then
-       toroid_dpdu = hyper_semi_semi_int(nA=0, nB=n, nC=1, &
-            ZIn = Kappa2In)
-       Kappa2 = Kappa2In
-    elseif(present(KappaPrime2In))then
-       toroid_dpdu = hyper_semi_semi_int(nA=0, nB=n, nC=1, &
-            OneMinusZIn = KappaPrime2In)
-       Kappa2 = 1 - KappaPrime2In
-    else
-       call CON_stop(&
-            NameSub//': Kappa2In or KappaPrime2InIn should be present')
-    end if
-    toroid_dpdu = toroid_dpdu - (1.0 - 0.50*Kappa2)*&
-         toroid_p(n, Kappa2In, KappaPrime2In)
-  end function toroid_dpdu
+    toroid_dp0du = 3*toroid_p(1, Kappa2In, KappaPrime2In)
+  end function toroid_dp0du
   !============================================================================
   real function toroid_dq0du(KappaPrime2In, Kappa2In)
-    ! Derivative of \tilde{Q}_0 function over du
+    ! Derivative of \tilde{Q}^{-1}_{0-1/2} function over du
     ! Related to \kappa(\kappa^\prime)^2
     real, optional, intent(in) :: KappaPrime2In, Kappa2In
 
@@ -361,7 +329,7 @@ contains
     ! Loop variable
     integer::n
     !--------------------------------------------------------------------------
-    InvInductance = toroid_q0(KappaPrime2In=KappaPrime2)/&
+    InvInductance = toroid_q(0,KappaPrime2In=KappaPrime2)/&
          (0.25*toroid_p(0, KappaPrime2In=KappaPrime2))
     Tolerance = InvInductance*cTolerance_I(iRealPrec)
     InvInductanceTotal = InvInductance
