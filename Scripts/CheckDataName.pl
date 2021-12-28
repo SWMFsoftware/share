@@ -48,8 +48,8 @@ my $part = "[a-z][a-z0-9]*";
 # Valid name part with upper case: Calc B0
 my $Part = "[A-Z][a-z0-9]*";
 
-# Valid first name part: i, i1, I1, Var, Var2
-my $FirstPart = '([a-z][0-9]*|[A-Z][a-z0-9]+)';
+# Valid first name part: i, i1, I1, B, B0, Var, Var2
+my $FirstPart = '([a-zA-Z][0-9]*|[A-Z][a-z0-9]+)';
 
 # Valid method name: calc_b0
 my $method = "$part(_$part)*";
