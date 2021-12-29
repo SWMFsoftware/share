@@ -246,7 +246,7 @@ sub check_methods{
 
 	# Check if the first name part matches the type
 	my $part1 = $Name;
-	$part1 =~ s/^[A-Z]+_//; # remove leading IE_ or CON_
+	$part1 =~ s/^[A-Z][A-Z]+_//; # remove leading IE_ or CON_
 	$part1 =~ s/_.*//;      # remove trailing name parts
 
 	# real or derived type should not match anything else
@@ -373,9 +373,9 @@ sub check_variables{
 
 	# Check if the first name part matches the type
 	my $part1 = $Var;
-	$part1 =~ s/^[A-Z]+_//;     # remove leading IE_ or CON_
-	$part1 =~ s/(.)[A-Z].*/$1/; # remove trailing name parts
-	$part1 =~ s/_.*//;          # remove array index part
+	$part1 =~ s/^[A-Z][A-Z]+_//; # remove leading IE_ or CON_
+	$part1 =~ s/(.)[A-Z].*/$1/;  # remove trailing name parts
+	$part1 =~ s/_.*//;           # remove array index part
 
 	# real type should not match anything else
 	if($Type eq 'type'){
