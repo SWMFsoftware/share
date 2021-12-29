@@ -297,7 +297,7 @@ contains
     ! d\tilde{P}^{-1}_{0-1/2}/du  function, related to k(k^\prime)^2
     real, optional, intent(in) :: Kappa2In, KappaPrime2In
     real :: Kappa2
-    character(len=*), parameter:: NameSub = 'toroid_dpdu'
+    character(len=*), parameter:: NameSub = 'toroid_dp0du'
     !--------------------------------------------------------------------------
     toroid_dp0du = 3*toroid_p(1, Kappa2In, KappaPrime2In)
   end function toroid_dp0du
