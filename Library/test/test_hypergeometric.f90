@@ -6,15 +6,15 @@ program test
   use ModHyperGeometric
   use ModPlotFile
   implicit none
-  integer, parameter :: nStep = 400, Exact_ = 1, Approx_ = 2
+  integer, parameter :: nStep = 400, SCR_ = 1, L0Ext_=2, Approx_ = 3
   integer, parameter :: AzimuthalS_ = 1, PoloidalS_ = 2, &
        AzimuthalU_ = 3, PoloidalU_ = 4, ToroidalU_ = 5
   real   , parameter :: DeltaKappaPrime = 0.0010
   integer            :: iLoop
-  real               :: R0, a, ConstRatio, ConstLev,   &
-       KappaPrime, KappaPrime2, Kappa, Kappa2, Kappa3, &
+  real               :: R0, a, ConstRatio, ConstLev,     &
+       KappaPrime, KappaPrime2, Kappa, Kappa2, Kappa3,   &
        KappaPrime0, KappaPrime02, Kappa0, Kappa02, Kappa03
-  real :: Var_VI(Exact_:ToroidalU_,nStep), Coord_I(nSTep)
+  real :: Var_VI(SCR_:ToroidalU_,nStep), Coord_I(nSTep)
   !--------------------------
   do iLoop = 1, nStep
      KappaPrime0  = iLoop*DeltaKappaPrime
@@ -22,15 +22,17 @@ program test
      a  = 2*KappaPrime0/(1 - KappaPrime02)
      R0 = (1 + KappaPrime02)/(1 - KappaPrime02)
      Coord_I(iLoop) = a/R0
-     Var_VI(Exact_,iLoop)   = scr_inductance(KappaPrime02)
-     Var_VI(Approx_,iLoop) = R0*(log(8.0/ Coord_I(iLoop)) - 2.0)
+     Var_VI(SCR_,iLoop)   = scr_inductance(KappaPrime02)
+     Var_VI(L0Ext_,iLoop) = l0_ext_inductance(KappaPrime02)
+     Var_VI(Approx_,iLoop) = log(8.0/Coord_I(iLoop)) - 2.0
   end do
   call save_plot_file(NameFile='test_inductance.out', &
        TypeFileIn='ascii'                     ,&
-       NameVarIn='a_over_R0 Exact_inductance Approximate_inductance', &
-       StringFormatIn = '(3es18.10)'          ,&
-       Coord1In_I = Coord_I                    ,&
-       VarIn_VI = Var_VI(Exact_:Approx_,1:nStep) )
+       NameVarIn = &
+       'a_over_R0 Inductance_SCR L_Ext_inductance Approximate_inductance', &
+       StringFormatIn = '(4es18.10)'          ,&
+       Coord1In_I = Coord_I                   ,&
+       VarIn_VI = Var_VI(SCR_:Approx_,1:nStep) )
   ! test Green function (field from the current over the toroid surface
   KappaPrime0 = 0.10 
   KappaPrime02 = KappaPrime0**2
@@ -48,8 +50,8 @@ program test
      Var_VI(PoloidalS_,iLoop) = KappaPrime*ConstRatio*Kappa3*&
           toroid_dq0du(KappaPrime2In=KappaPrime2)
   end do
-  ConstRatio = 0.125*toroid_dp0du(KappaPrime2In=KappaPrime02)/&
-       (toroid_dq0du(KappaPrime2In=KappaPrime02))
+  ConstRatio = 0.125*toroid_p(1,KappaPrime2In=KappaPrime02)/&
+       (toroid_q(1,KappaPrime2In=KappaPrime02))
   ConstLev = -1/( toroid_dq0du(KappaPrime2In=KappaPrime02)*KappaPrime02*&
        Kappa0)
   do iLoop = 1, nStep/2
@@ -85,6 +87,6 @@ program test
        'kappa_prime AzimuthalS PoloidalS AzimuthalU_ PoloidalU ToroidalU', &
        StringFormatIn = '(6es18.10)'          ,&
        Coord1In_I = Coord_I                   ,&
-       VarIn_VI = Var_VI(Exact_:ToroidalU_,1:nStep))
+       VarIn_VI = Var_VI(AzimuthalS_:ToroidalU_,1:nStep))
 end program test
 

@@ -228,8 +228,8 @@ contains
     end if
   end function hyper_semi_semi_int
   !============================================================================
-  !=====================|Toroidal functions|=========
-  !                     v                v
+  !=======================|Toroidal functions|=================================
+  !                       v                  v
   !
   ! Calculate functions
   !
@@ -289,10 +289,10 @@ contains
     toroid_q = -toroid_q*cSqrtPi*gamma_semi(n-1)/factorial(n)
   end function toroid_q
   !============================================================================
-  !                         ^                  ^
-  !=========================|Toroidal functions|======================
-  !=================|Derivatives of toroidal functions|===============
-  !                 v                                 v
+  !                           ^                  ^
+  !===========================|Toroidal functions|=============================
+  !===================|Derivatives of toroidal functions|======================
+  !                   v                                 v
   real function toroid_dp0du(Kappa2In, KappaPrime2In)
     ! d\tilde{P}^{-1}_{0-1/2}/du  function, related to k(k^\prime)^2
     real, optional, intent(in) :: Kappa2In, KappaPrime2In
@@ -313,8 +313,9 @@ contains
   end function toroid_dq0du
   !============================================================================
   !                 ^                                 ^
-  !=================|Derivatives of toroidal functions|===============
-  !
+  !=================|Derivatives of toroidal functions|========================
+  !==============================|Inductances|=================================
+  !                              v           v
   real function scr_inductance(KappaPrime2)
     real, intent(in):: KappaPrime2
 
@@ -322,7 +323,7 @@ contains
     ! to \mu_0R_\infty as a function of (k^prime)^2. For a given R0 and a,
     ! R_\infty = sqrt(R_0^2-a^2) and k^\prime=a/(R_0+R_\infty)
 
-    ! Inverse of inductances: from a geven harmonic harmonic and total
+    ! Inverse of inductances: from a given harmonic harmonic and total
     real:: InvInductance, InvInductanceTotal
     real:: Tolerance
 
@@ -344,6 +345,16 @@ contains
     ! Invert and accunf for the common multiplier
     scr_inductance = 2.0*cPi**2/InvInductanceTotal
   end function scr_inductance
+  !============================================================================
+  real function l0_ext_inductance(KappaPrime2)
+    real, intent(in):: KappaPrime2
+
+    ! calculate the ratio of interrnal inductance
+    ! to \mu_0R_\infty as a function of (k^prime_0)^2.
+    !--------------------------------------------------------------------------
+    l0_ext_inductance = 0.50*toroid_p(0, KappaPrime2In=KappaPrime2)*cPi**2/&
+         toroid_q(0,KappaPrime2In=KappaPrime2)
+  end function l0_ext_inductance
   !============================================================================
   subroutine calc_elliptic_int_1kind(Z, KElliptic)
     real, intent(in):: Z
@@ -370,7 +381,5 @@ contains
     EElliptic = 0.50*cPi*hyper_semi_semi_int(nA=-1, nB=0, nC=1, ZIn=ArgK**2)
   end subroutine calc_elliptic_int_2kind
   !============================================================================
-  !===========The toroid functions=================================
-
 end module ModHyperGeometric
 !==============================================================================
