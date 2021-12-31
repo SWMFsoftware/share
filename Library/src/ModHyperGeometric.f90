@@ -97,11 +97,12 @@ contains
     end do
   end function hypergeom
   !============================================================================
-  real function hyper_semi_semi_int(nA, nB, nC, ZIn, OneMinusZIn)
+  recursive function hyper_semi_semi_int(nA, nB, nC, ZIn, OneMinusZIn) &
+       RESULT(FuncVal)
     integer,        intent(in) :: nA, nB, nC
     real, optional, intent(in) :: ZIn, OneMinusZIn
     real    :: Z, OneMinusZ
-
+    real    :: FuncVal
     ! Calculate hypergeometric series F(a, b, c, z), if
     ! semiinteger a = 0.5 + nA, nA = 0, 1, 2
     ! semiinteger b = 0.5 + nB, nB = 0, 1, 2
@@ -131,7 +132,7 @@ contains
 
        ! Direct summation of the hypergeometric series, well withing the
        ! convergence radius
-       hyper_semi_semi_int = hypergeom(&
+       FuncVal = hypergeom(&
             A=A,        &
             B=B,        &
             C=C,        &
@@ -145,13 +146,14 @@ contains
     n = nC - (1 + nA + nB)
 
     ! The formulae for the "logarithmic case" (integer n)
-    ! http://functions.wolfram.com/HypergeometricFunctions/Hypergeometric2F1/06/01/04/01/02/
+    ! https://dlmf.nist.gov
     ! strongly depend on the sign of n. Consider case-by-case
     if(n==0)then
+       ! Apply Eq. 15.8.10 in https://dlmf.nist.gov:
        LogFactor    = -log(OneMinusZ) + 2.0*psi_int(1) - &
             (psi_semi(nA) + psi_semi(nB))
        rMember      = factorial(nA + nB)/(gamma_semi(nA)*gamma_semi(nB))
-       hyper_semi_semi_int = rMember*LogFactor
+       FuncVal = rMember*LogFactor
        aPlusI       = A - 1.0
        bPlusI       = B - 1.0
        i = 0
@@ -161,50 +163,25 @@ contains
           bPlusI = bPlusI + 1.0
           rMember = rMember*aPlusI*bPlusI/i**2*OneMinusZ
           LogFactor = LogFactor + 2.0/real(i) - 1.0/aPlusI - 1.0/bPlusI
-          hyper_semi_semi_int = hyper_semi_semi_int + rMember*LogFactor
+          FuncVal = FuncVal + rMember*LogFactor
        end do
     elseif(n<0)then
+       ! Apply Eq. 15.8.12 in https://dlmf.nist.gov:
        n = -n
-       rMember      = factorial(nC-1)*factorial(n-1)/(OneMinusZ**n*&
-            gamma_semi(nA)*gamma_semi(nB))
-       hyper_semi_semi_int = rMember
-       aPlusI       = A - (n + 1.0)
-       bPlusI       = B - (n + 1.0)
-       do i = 1, n-1
-          aPlusI = aPlusI + 1.0
-          bPlusI = bPlusI + 1.0
-          rMember = rMember*aPlusI*bPlusI/(real(i)*real(n -i))*(-OneMinusZ)
-          hyper_semi_semi_int = hyper_semi_semi_int + rMember
-       end do
-       aPlusI = aPlusI + 1.0
-       bPlusI = bPlusI + 1.0
-       cPlusI = real(n)
-       rMember = rMember*aPlusI*bPlusI/cPlusI*(-OneMinusZ)
-       LogFactor    = -log(OneMinusZ) + psi_int(1) + psi_int(1+n) - &
-            (psi_semi(nA) + psi_semi(nB))
-       hyper_semi_semi_int = hyper_semi_semi_int + rMember*LogFactor
-       i = 0
-       do while(abs(rMember) >= cTolerance_I(iRealPrec))
-          i = i + 1
-          aPlusI = aPlusI + 1.0
-          bPlusI = bPlusI + 1.0
-          cPlusI = cPlusI + 1.0
-          rMember = rMember*aPlusI*bPlusI/(real(i)*cPlusI)*OneMinusZ
-          LogFactor = LogFactor + 1.0/real(i) + 1.0/cPlusI - &
-               1.0/aPlusI - 1.0/bPlusI
-          hyper_semi_semi_int = hyper_semi_semi_int + rMember*LogFactor
-       end do
+       FuncVal = hyper_semi_semi_int(nA - n, nB - n, nC, ZIn, OneMinusZIn)/&
+            OneMinusZ**n
     else
+       ! Apply Eq. 15.8.10 in https://dlmf.nist.gov:
        rMember      = factorial(nC-1)*factorial(n-1)/(&
             gamma_semi(nA + n)*gamma_semi(nB + n))
-       hyper_semi_semi_int = rMember
+       FuncVal = rMember
        aPlusI       = A - 1.0
        bPlusI       = B - 1.0
        do i = 1, n-1
           aPlusI = aPlusI + 1.0
           bPlusI = bPlusI + 1.0
           rMember = rMember*aPlusI*bPlusI/(real(i)*real(n - i))*(-OneMinusZ)
-          hyper_semi_semi_int = hyper_semi_semi_int + rMember
+          FuncVal = FuncVal + rMember
        end do
        aPlusI = aPlusI + 1.0
        bPlusI = bPlusI + 1.0
@@ -212,7 +189,7 @@ contains
        rMember = rMember*aPlusI*bPlusI/cPlusI*(-OneMinusZ)
        LogFactor    = -log(OneMinusZ) + psi_int(1) + psi_int(1 + n) - &
             (psi_semi(nA + n) + psi_semi(nB + n))
-       hyper_semi_semi_int = hyper_semi_semi_int + rMember*LogFactor
+       FuncVal = FuncVal + rMember*LogFactor
        i = 0
        do while(abs(rMember) >= cTolerance_I(iRealPrec))
           i = i + 1
@@ -222,7 +199,7 @@ contains
           rMember = rMember*aPlusI*bPlusI/(real(i)*cPlusI)*OneMinusZ
           LogFactor = LogFactor + 1.0/real(i) + 1.0/cPlusI - &
                1.0/aPlusI - 1.0/bPlusI
-          hyper_semi_semi_int = hyper_semi_semi_int + rMember*LogFactor
+          FuncVal = FuncVal + rMember*LogFactor
        end do
 
     end if
