@@ -82,7 +82,7 @@ my $ValidFraction = 'c\d+over\d+';
 # Valid first name parts depending on variable/function type:
 my %ValidPart1 = ('integer'   => '(D?[i-nI-N]|Max|Min|Ijk|Int)\d*',
 		  'logical'   => '(Is|Use|Used|Unused|Do|Done)\d*',
-		  'character' => '(Name|Type|String)\d*'
+		  'character' => '(Name|Type|String|Char)\d*'
 		  );
 
 # Valid array index characters representing 1 index
@@ -177,7 +177,8 @@ sub check_file{
 	    $Function = "";
 	}
 
-	if($Line =~ /^(program|subroutine|module|function|$AnyType\s+function)\s/i){
+	if($Line =~ /^(program|subroutine|module|function|$AnyType\s+function)\s/i or
+	   $Line =~ /\bexternal\b/i){
 	    &check_methods unless $NoMethodCheck;
 	}elsif($Line =~ /^$AnyType/){
 	    &check_variables unless $NoVariableCheck;
@@ -310,9 +311,13 @@ sub check_variables{
     }else{
 	# Replace dimension of the array variables  Var(..., ..., ...)
 	# with #X where X is the number of dimension for arrays
+
+	# remove inner nested parens (a(b)c(d)e) -> (ace)
+	1 while $Vars =~ s/(\([^\(\)]*)\([^\(\)]*\)/$1/;
+
 	while($Vars =~ s/\s*\(([^\(]+)\)/\#\#/){
 	    my $Dimension = $1;
-	    my $nDim = split(',',$Dimension);
+	    my $nDim = split(',', $Dimension);
 	    $Vars =~ s/\#\#/\#$nDim/;
 	}
     }
