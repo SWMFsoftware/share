@@ -301,6 +301,8 @@ sub check_variables{
     my $Parameter;
     $Parameter = 1 if $Type =~ /\bparameter\b/;
 
+    print "Vars1=$Vars\n" if $Debug;
+
     # Check for dimension(..., ..., ...) in $Type
     my $nDimAll = 0;
     if($Type =~ s/dimension\s*\(([^\(]+)\)//i){
@@ -308,31 +310,43 @@ sub check_variables{
 	$nDimAll = split(',',$Dimension);
 	# Get rid of all the (..) in $Vars
 	1 while $Vars =~ s/\s*\([^\(]+\)//;
+	print "Vars2=$Vars\n" if $Debug;
     }else{
 	# Replace dimension of the array variables  Var(..., ..., ...)
 	# with #X where X is the number of dimension for arrays
-
+	
 	# remove inner nested parens (a(b)c(d)e) -> (ace)
 	1 while $Vars =~ s/(\([^\(\)]*)\([^\(\)]*\)/$1/;
-
+	print "Vars2=$Vars\n" if $Debug;
+	
 	while($Vars =~ s/\s*\(([^\(]+)\)/\#\#/){
 	    my $Dimension = $1;
 	    my $nDim = split(',', $Dimension);
 	    $Vars =~ s/\#\#/\#$nDim/;
 	}
+	print "Vars3=$Vars\n" if $Debug;
     }
 
     # Get the basic type
     $Type =~ s/^(character|integer|real|logical|type).*/$1/;
-
+    print "Type=$Type\n" if $Debug;
+    
     # Remove '= reshape(#N,#M'
     $Vars =~ s/\s*=\s*reshape\([\#\d,]+//i;
-
+    print "Vars4=$Vars\n" if $Debug;
+    
     # Remove '= [...]' array initialization
-    $Vars =~ s/\s*=\s*\[[^\[]+\]//;
+    $Vars =~ s/\s*=\s*\[[^\[\]]+\]//g;
+    print "Vars5=$Vars\n" if $Debug;
+    
+    # Remove '= "..."' initialization
+    $Vars =~ s/\s*=\s*([\'\"])[^\1]*\1//g;
+    print "Vars6=$Vars\n" if $Debug;
 
     # Split up $Vars
     my @Vars = split(/\s*,\s*/, $Vars);
+    print "\@Vars=",join("!", @Vars), "\n" if $Debug;
+
     my $Var;
     foreach $Var (@Vars){
 
