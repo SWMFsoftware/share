@@ -6,8 +6,15 @@ module ModHyperGeometric
        iRealPrec ! 1, if the code is compiled with double precision
   use ModNumConst, ONLY: cPi
   use ModUtilities, ONLY: CON_stop
-
   implicit none
+  PRIVATE ! Except
+  public :: toroid_p ! tilde{P}_n function, related to k**3 * (k^\prime)**n
+  public :: toroid_q ! tilde{Q}_n function, related to k**3 * (k^\prime)**n
+  public :: scr_inductance    ! inductance of a superconducting ring
+  public :: l0_ext_inductance ! the external inductance of a ring current
+  public :: calc_elliptic_int_1kind  ! Elliptic integral, of the first kind
+  public :: calc_elliptic_int_2kind  ! Elliptic integral, of the second kind
+  public :: toroid_dp0du, toroid_dq0du ! Temporary
   real, parameter:: cTolerance_I(0:1) = [1.0e-7, 1.0e-15]
   real, parameter:: cEiler    = 0.57721566490
   real, parameter:: cSqrtPi   = 1.7724538509055159
@@ -245,9 +252,8 @@ contains
   end function toroid_p
   !============================================================================
   real function toroid_q(n, KappaPrime2In, Kappa2In)
-    ! tilde{Q}_n function, integer n > 0! The case n=0 is treated below
-    ! related to k**3 * (k^\prime)**n
-    integer, intent(in):: n  !.ge.1
+    ! tilde{Q}_n function, integer n > 0, related to k**3 * (k^\prime)**n
+    integer, intent(in):: n  
     real, optional, intent(in) :: KappaPrime2In, Kappa2In
     character(len=*), parameter:: NameSub = 'toroid_q'
     !--------------------------------------------------------------------------
@@ -326,7 +332,7 @@ contains
   real function l0_ext_inductance(KappaPrime2)
     real, intent(in):: KappaPrime2
 
-    ! calculate the ratio of interrnal inductance
+    ! calculate the ratio of external inductance
     ! to \mu_0R_\infty as a function of (k^prime_0)^2.
     !--------------------------------------------------------------------------
     l0_ext_inductance = 0.50*toroid_p(0, KappaPrime2In=KappaPrime2)*cPi**2/&
