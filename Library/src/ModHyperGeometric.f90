@@ -253,7 +253,7 @@ contains
   !============================================================================
   real function toroid_q(n, KappaPrime2In, Kappa2In)
     ! tilde{Q}_n function, integer n > 0, related to k**3 * (k^\prime)**n
-    integer, intent(in):: n  
+    integer, intent(in):: n
     real, optional, intent(in) :: KappaPrime2In, Kappa2In
     character(len=*), parameter:: NameSub = 'toroid_q'
     !--------------------------------------------------------------------------
