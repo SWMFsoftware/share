@@ -1419,3 +1419,64 @@ contains
 
 end module ModUtilities
 !==============================================================================
+subroutine CON_set_do_test_ext(String,DoTest,DoTestMe)
+
+  use ModUtilities, ONLY: CON_set_do_test
+
+  implicit none
+
+  character (len=*), intent(in)  :: String
+  logical          , intent(out) :: DoTest, DoTestMe
+
+  ! See ModUtilities.
+  !----------------------------------------------------------------------------
+  call CON_set_do_test(String, DoTest, DoTestMe)
+
+end subroutine CON_set_do_test_ext
+!==============================================================================
+subroutine CON_stop_ext(StringError)
+
+  use ModUtilities, ONLY: CON_stop
+  implicit none
+
+  character (len=*), intent(in) :: StringError
+
+  ! This subroutine is used to abort the run with an error report.
+  ! It provides an external subroutine interface to ModUtilities::CON\_stop.
+  ! Open I/O units are closed and empty output files are deleted before abort.
+  ! This will only be done on the aborting processor(s).
+
+  !----------------------------------------------------------------------------
+  call CON_stop(StringError)
+end subroutine CON_stop_ext
+!==============================================================================
+subroutine CON_io_unit_new_ext(iUnit)
+
+  use ModIoUnit, ONLY: io_unit_new
+
+  implicit none
+
+  integer, intent(out) :: iUnit
+  ! This external subroutine is an access method for non-F90 source.
+  ! The file should be opened right after the unit number was obtained
+  ! so that the unit number gets locked. When the file is closed, the
+  ! unit number is automatically released.
+  !----------------------------------------------------------------------------
+  iUnit = io_unit_new()
+end subroutine CON_io_unit_new_ext
+!==============================================================================
+subroutine CON_io_unit_tmp(iUnit)
+
+  use ModIoUnit, ONLY: UnitTMP_
+
+  implicit none
+
+  integer, intent(out) :: iUnit
+  ! This external subroutine is an access method for non-F90 source.
+  ! The file using a temporary unit number should be closed before
+  ! any other file could be opened.
+  !----------------------------------------------------------------------------
+  iUnit = UnitTMP_
+end subroutine CON_io_unit_tmp
+!==============================================================================
+
