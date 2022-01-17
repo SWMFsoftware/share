@@ -358,12 +358,9 @@ sub check_variables{
 	print "Type = '$Type' Var = '$Var' nDim = '$nDim'\n" if $Debug;
 
 	# Check for a possible named index
-	my $NamedIndex = $Parameter and $Type eq 'integer' and $nDim == 0;
+	my $NamedIndex = $Type eq 'integer' and $nDim == 0 and $Var =~ /_$/;
 	next if $NamedIndex and $Var =~ /^$ValidNamedIndex$/;
 
-	# Allow for r_ ... Lat_ declarations in BATL_geometry
-	next if $File =~ /BATL_geometry/ and $Var =~ /^(r|Phi|Theta|Lon|Lat)_$/;
-	
 	# Check for special real constants like c1over3
 	my $RealConstant = $Parameter and $Type eq 'real' and $nDim == 0;
 	next if $RealConstant and $Var =~ /^$ValidFraction$/;
