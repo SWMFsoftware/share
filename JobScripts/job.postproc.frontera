@@ -53,6 +53,11 @@
 
 # Other commands must follow all #SBATCH directives...
 
+# If there is error messages like
+# ib_mlx5_log.c:174 Transport retry count exceeded on
+#    mlx5_1:1/RoCE (synd 0x15 vend 0x81 hw_synd 0/0)
+# add the following setting:
+# export UCX_TLS="knem,rc"
 
 module list
 pwd

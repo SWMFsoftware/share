@@ -48,6 +48,12 @@ export I_MPI_ADJUST_REDUCE=1
 # The following line suppresses such warnings. 
 export UCX_LOG_LEVEL=ERROR 
 
+# If there is error messages like
+# ib_mlx5_log.c:174 Transport retry count exceeded on
+#    mlx5_1:1/RoCE (synd 0x15 vend 0x81 hw_synd 0/0)
+# add the following setting:
+# export UCX_TLS="knem,rc"
+
 # Launch MPI code... 
 # Use ibrun instead of mpirun or mpiexec
 ibrun ./SWMF.exe  > runlog_`date +%y%m%d%H%M`
