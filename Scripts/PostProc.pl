@@ -25,6 +25,7 @@ my $Format        = ($f or $format); $Format = "-f=$Format" if $Format;
 my $NoPtec        = $noptec;
 my $JuliaTec      = ($vtu or $vtk or $vtu or $VTU);
 my $Link          = ($l or $link);
+my $Quiet         = $q;
 
 use strict;
 use File::Find;
@@ -127,6 +128,9 @@ REPEAT:{
 	chdir $Dir 
 	    or die "$ERROR: could not change directory to $Dir\n";
 
+	my $pIDL = "./pIDL $MovieFlag $SleepFlag -n=$nThread $Pattern $Format";
+	$pIDL .= " -q" if $Quiet;
+	
 	# Post process files if necessary
 	if($Dir eq "IE"){
 	    if($Gzip){
@@ -136,9 +140,9 @@ REPEAT:{
 	    }
             &concat_sat_log if $Concat;
 	}elsif( $Dir =~ /^PC$/ ){
-	    &shell("./pIDL $MovieFlag $SleepFlag -n=$nThread $Pattern $Format");
+	    &shell($pIDL);
 	}elsif( $Dir =~ /^SC|IH|OH|GM|EE$/ ){
-	    &shell("./pIDL $MovieFlag $SleepFlag -n=$nThread $Pattern $Format");
+	    &shell($pIDL);
 	    unless($NoPtec){
 		if($Gzip){
 		    &shell("./pTEC A g");
@@ -209,6 +213,8 @@ REPEAT:{
     }
 }
 
+&read_runlog unless $Quiet;
+
 # Done except for collecting output files
 exit 0 unless $NameOutput;
 
@@ -261,8 +267,6 @@ if(-f $ParamIn){
 }else{
     warn "$WARNING: no $ParamIn file was found\n";
 }
-
-&read_runlog;
 
 if(-f "runlog"){
     &shell_info("mv runlog $NameOutput");
@@ -441,6 +445,8 @@ Usage:
    -n=NTHREAD  Run pIDL in parallel using NTHREAD threads. The default is 4.
 
    -p=PATTERN  Pass pattern to pIDL so it only processes the files that match.
+
+   -q          Quiet mode. Do not print out speeds from runlog file.
 
    -r=REPEAT   Repeat post processing every REPEAT seconds.
                Cannot be used with the DIR argument. The script will stop
