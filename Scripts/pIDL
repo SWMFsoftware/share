@@ -71,7 +71,8 @@ if(@HeaderFiles){
 	unless -x $PostIdl;
     sleep $Sleep;
 }elsif(not $MakeMovie){
-    die "$WARNING: no header files were found\n";
+    warn "$WARNING: no header files were found\n" unless $Quiet;
+    exit 0;
 }
 
 # Success, go ahead and process files
