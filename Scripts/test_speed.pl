@@ -56,7 +56,7 @@ foreach $dir (@ARGV){
 
 foreach $test (sort keys %Test){
     foreach $dir (@ARGV){
-	printf "%s %20s: %4.2f\n", $dir, $test, $Speed{$dir}{$test};
+	printf "test_%-20s %s: %8.2f\n", $test, $dir, $Speed{$dir}{$test};
     }
 }
 
