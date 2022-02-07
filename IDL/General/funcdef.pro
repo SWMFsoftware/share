@@ -150,7 +150,11 @@ function funcdef,xx,w,func
      ['jpx'      , 'qi*{n1}*{uxs1}+qe*{n0}*{uxs0}'           ], $ ; jx from particles
      ['jpy'      , 'qi*{n1}*{uys1}+qe*{n0}*{uys0}'           ], $ ; jy from particles
      ['jpz'      , 'qi*{n1}*{uzs1}+qe*{n0}*{uzs0}'           ], $ ; jz from particles
-     ['jp'       , 'sqrt({jpx}^2+{jpy}^2+{jpz}^2)'           ], $ ; j from particles 
+     ['jex'      , 'qe*{n0}*{uxs0}'                          ], $ ; jx from electrons
+     ['jey'      , 'qe*{n0}*{uys0}'                          ], $ ; jy from electrons
+     ['jez'      , 'qe*{n0}*{uzs0}'                          ], $ ; jz from electrons
+     ['jp'       , 'sqrt({jpx}^2+{jpy}^2+{jpz}^2)'           ], $ ; j from particles
+     ['je'       , 'sqrt({jex}^2+{jey}^2+{jez}^2)'           ], $ ; j from electrons 
      ['jppar'    , '({jpx}*{bx}+{jpy}*{by}+{jpz}*{bz})/b'    ], $ ; j parallel to field line
      ['jpperp'   , 'sqrt({jp}^2-{jppar}^2)'                  ], $ ; j perpendicular to field line
      ['jpxbx'    , '{jpy}*{bz}-{jpz}*{by}'                   ], $ ; (j x b)_x

@@ -923,6 +923,8 @@ pro setdevice, psfile, orient, psfont, percent, eps=eps, 	$
 
 end
 
+;;;;;;;;;;;;;;;;;;;;; START ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 list = findfile("-t i*.idl")
 if strlen(list[0]) gt 0 then filein = list[0] $
 else filein = 'in000000.idl'
@@ -1209,16 +1211,16 @@ for hem = 0, isouth do begin
       if hem eq 0 and i eq 0 then begin
         pn = -1
         print,'opening1 file=',list[0]+'.ps'
-        setdevice, list[0]+'.ps','p',4
+        set_device, list[0]+'.eps',/port,psfont=4,xratio=0.95,yratio=0.95
 	pos_space, ppp, space, sizes
       endif
     endif else begin
 
       if (ntotal le 5) and (nvars_to_plot le 3) then begin
-        if hem eq 1 and i eq 0 then closedevice
+        if hem eq 1 and i eq 0 then close_device
         if i eq 0 then begin
           print,'opening2 file=',list[0]+'_'+strmid(hems(hem),0,5)+'.ps'
-          setdevice, list[0]+'_'+strmid(hems(hem),0,5)+'.ps','p',4
+          set_device, list[0]+'_'+strmid(hems(hem),0,5)+'.eps',/port,psfont=4,xratio=0.95,yratio=0.95
           pos_space, ppp, space, sizes, nx = nvars_to_plot
         endif
       endif else begin
@@ -1226,13 +1228,13 @@ for hem = 0, isouth do begin
         if ((i eq 0) and (ntotal eq 1)) or (ntotal gt 1) then begin
           pn = -1
           if i gt 0 then begin
-              closedevice
+              close_device
               print,'closing file'
           endif
           print,'opening3 file=',list[0]+'_Var'+tostr(i) $
-            +'_'+strmid(hems(hem),0,5)+'.ps'
-          setdevice, list[0]+'_Var'+tostr(i)+'_'+strmid(hems(hem),0,5)+'.ps',$
-                     'p',4
+            +'_'+strmid(hems(hem),0,5)+'.eps'
+          set_device, list[0]+'_Var'+tostr(i)+'_'+strmid(hems(hem),0,5)+'.eps',$
+                     /port,psfont=4,xratio=0.95,yratio=0.95
           pos_space, ppp, space, sizes
         endif
 
@@ -1252,18 +1254,18 @@ for hem = 0, isouth do begin
 
     if n_elements(ct_path) eq 0 then begin
         path = !path
-        Idl_loc = strpos(path,'/Idl')
+        Idl_loc = strpos(path,'/IDL/General')
         if (Idl_loc lt 0) then begin
             ct_path = '.'
         endif else begin
             list = strsplit(path,':',/extract)
             for nl = 0,n_elements(list)-1 do begin
-                dir=list[nl]
-                if strpos(dir,'/Idl') gt strlen(dir)-6 then ct_path = dir
+               dir=list[nl]
+               print, 'dir', dir
+                if strpos(dir,'IDL/General') gt -1 then ct_path = dir
             endfor
         endelse
     endif
-
     if (mini ge 0.0) then begin
         levels = maxi*findgen(9)/8.0 + mini
         readct,ncolors, ct_path+"/white_red.ct"
@@ -1402,6 +1404,6 @@ for hem = 0, isouth do begin
 
 endfor
 
-closedevice
+close_device
 
 end    
