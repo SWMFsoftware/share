@@ -6257,7 +6257,7 @@ pro plot_log
   ;; Calculate the xrange from the data unless defined
   if n_elements(xrange) ne 2 then begin
      DoXrange = 1
-     xrange   = [1e30, -1e30]
+     xrange   = [1d30, -1d30]
   endif else $
      DoXrange = 0
 
