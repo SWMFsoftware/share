@@ -154,10 +154,10 @@ BLAS  = lapack.o blas.o
 .SUFFIXES: .f90 .F90 .f .for .ftn .o
 
 .f90.o:
-	${COMPILE.f90} ${Cflag4} $<
+	${COMPILE.f90} ${Cflag1} $<
 
 .F90.o:
-	${COMPILE.f90} -DsysLinux -DcompPGF90 ${Cflag4} $<
+	${COMPILE.f90} -DsysLinux -DcompPGF90 ${Cflag1} $<
 
 .f.o:
 	${COMPILE.f77} ${Cflag4} -Mextend $<
