@@ -10,7 +10,6 @@ C
 C============================================================================
       SUBROUTINE XERBLA( SRNAME, INFO )
 
-      use ModUtilities, ONLY: CON_stop
 *
 *  -- LAPACK auxiliary routine (version 1.1) --
 *     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -46,7 +45,7 @@ C============================================================================
 *
       WRITE( *, FMT = 9999 )SRNAME, INFO
 *
-      call CON_STOP('LAPACK::XERBLA')
+      call CON_STOP_EXT('LAPACK::XERBLA')
 *
  9999 FORMAT( ' ** On entry to ', A6, ' parameter number ', I2, ' had ',
      $      'an illegal value' )
@@ -1235,8 +1234,6 @@ C=============================================================================
 C=============================================================================
       SUBROUTINE DGETRF( M, N, A, LDA, IPIV, INFO )
 
-      use ModUtilities, ONLY: CON_stop
-
 *
 *  -- LAPACK routine (version 2.0) --
 *     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -1395,7 +1392,7 @@ C=============================================================================
         PRINT *,'LAPACK routine DGETRF:'
         PRINT *,'U(',INFO,INFO,') is exactly zero. The matrix'
         PRINT *,'is singular: the inverse cannot be computed.'
-        call CON_STOP('LAPACK::DGETRF')
+        call CON_STOP_EXT('LAPACK::DGETRF')
       ENDIF
       RETURN
 *
