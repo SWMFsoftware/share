@@ -80,7 +80,7 @@ foreach $machine (@machine){
     $text =~ s/^### (PBS -l.*model=$machine)$/#$1/im;
     
     # Change the name of the resubmit script
-    $text =~ s/^(if.*qsub) .*$/$1 $fileout/m;
+    $text =~ s/^qsub .*$/qsub $fileout/m;
 
     open(SCRIPT, ">$fileout") or die "Could not open $fileout\n";
     print SCRIPT $text;
