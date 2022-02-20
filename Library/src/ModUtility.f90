@@ -145,7 +145,7 @@ contains
     ! Abort execution with MPI_abort and stop.
 
     logical:: IsMpiInitialized
-    integer:: iProc=0, nError, iError
+    integer:: iProc=0, nError=1, iError
     !--------------------------------------------------------------------------
 #ifdef _OPENACC
     stop String
@@ -154,7 +154,8 @@ contains
 
     if(IsMpiInitialized) call MPI_comm_rank(MPI_COMM_WORLD, iProc, iError)
 
-    write(*,*) 'ERROR: aborting execution on processor', iProc, ' with message:'
+    write(*,*) 'ERROR: aborting execution on processor', iProc, &
+         ' with message:'
     write(*,'(a)') 'ERROR: '//String
     if(present(Value1)) call write_value(Value1)
     if(present(Value2)) call write_value(Value2)
