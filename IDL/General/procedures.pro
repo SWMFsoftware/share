@@ -4223,7 +4223,7 @@ pro plot_func
         endif
 
         ;; Omit X axis if unneeded
-        if plotiy gt 0 and not showxtitle then begin
+        if plotiy gt (multiy - nplot) > 0 and not showxtitle then begin
            if not showxaxis then !x.tickname = strarr(60)+' '
            !x.title = ' '
         endif
@@ -6377,7 +6377,7 @@ pro plot_log
            xcoord = findgen(n)*freqmin
         endif else $
            xcoord = hour
-
+        
         for ifunc = 0, nlogfunc-1 do begin
 
            field = double(log_func(wlog, wlognames, logfuncs(ifunc), error))
