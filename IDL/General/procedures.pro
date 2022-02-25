@@ -3788,6 +3788,21 @@ pro set_units, type, distunit=distunit, Mion=Mion, Melectron=Melectron
      endcase
   endfor
 
+  ;; Set qi/qe and mi/me for PIC file
+  if where(variables eq 'qS0') gt -1 then begin     
+     if qS1 gt qS0 then begin
+        qi = qS1
+        mi = mS1
+        qe = qS0
+        me = mS0
+     endif else begin        
+        qi = qS0
+        mi = mS0
+        qe = qS1
+        me = mS1                
+     endelse
+  endif
+  
   if gammae eq -1 then gammae = gamma
 
   ;; Overwrite distance unit if given as an argument
