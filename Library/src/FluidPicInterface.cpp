@@ -514,6 +514,8 @@ void FluidPicInterface::ReadFromGMinit(const int *const paramint,
   Unorm = ParamRealRegion[n++];
   Mnorm = ParamRealRegion[n++];
 
+  ScalingFactor = ParamRealRegion[n++];
+
   doRotate = false;
   double csmall = 1e-7;
   for (int i = 0; i < nDim; i++)

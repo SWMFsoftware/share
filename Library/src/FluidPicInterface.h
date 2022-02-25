@@ -196,6 +196,8 @@ protected:
       Qnorm; // normalization units for length, velocity, mass and charge
              // Normalized q/m ==1 for proton in CGS units
 
+  double ScalingFactor;
+
   //-------------------------------------------------------------------
   // nSIn is the number of species exists at the MHD side. PIC may use
   // two or more species to represent one MHD species. nS is the nuber of the
