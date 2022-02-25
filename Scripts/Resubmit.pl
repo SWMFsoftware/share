@@ -67,7 +67,7 @@ while(not -f $Done1 and not -f $Done2){   # loop until done
     sleep $sleep while not (-f $Success1 or -f $Success2); # wait for finish
     print "job finished successfully on ", `date`;
     sleep 60;                             # wait for the job to quit
-    `Restart.pl`;                         # process restart files
+    `./Restart.pl`;                       # process restart files
     if(-f "PARAM.in.restart" and not -f "PARAM.in.start"){
 	`mv PARAM.in PARAM.in.start`;
 	`cp PARAM.in.restart PARAM.in`;
