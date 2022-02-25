@@ -147,12 +147,12 @@ function funcdef,xx,w,func
      ['ne'       , 'n0'                                      ], $ ; electron number density
      ['npcgs'    , 'Rho/1.6726e-24'                           ], $ ; ion number density in cgs
      ['dqtot1d'  , '{qtot}-diff1({ex},x)*eps0'               ], $ ; error in net charge in 1D
-     ['jpx'      , 'qi*{n1}*{uxs1}+qe*{n0}*{uxs0}'           ], $ ; jx from particles
-     ['jpy'      , 'qi*{n1}*{uys1}+qe*{n0}*{uys0}'           ], $ ; jy from particles
-     ['jpz'      , 'qi*{n1}*{uzs1}+qe*{n0}*{uzs0}'           ], $ ; jz from particles
-     ['jex'      , 'qe*{n0}*{uxs0}'                          ], $ ; jx from electrons
-     ['jey'      , 'qe*{n0}*{uys0}'                          ], $ ; jy from electrons
-     ['jez'      , 'qe*{n0}*{uzs0}'                          ], $ ; jz from electrons
+     ['jpx'      , 'qS1*{n1}*{uxs1}+qS0*{n0}*{uxs0}'           ], $ ; jx from particles
+     ['jpy'      , 'qS1*{n1}*{uys1}+qS0*{n0}*{uys0}'           ], $ ; jy from particles
+     ['jpz'      , 'qS1*{n1}*{uzs1}+qS0*{n0}*{uzs0}'           ], $ ; jz from particles
+     ['jex'      , 'qS0*{n0}*{uxs0}'                          ], $ ; jx from electrons
+     ['jey'      , 'qS0*{n0}*{uys0}'                          ], $ ; jy from electrons
+     ['jez'      , 'qS0*{n0}*{uzs0}'                          ], $ ; jz from electrons
      ['jp'       , 'sqrt({jpx}^2+{jpy}^2+{jpz}^2)'           ], $ ; j from particles
      ['je'       , 'sqrt({jex}^2+{jey}^2+{jez}^2)'           ], $ ; j from electrons 
      ['jppar'    , '({jpx}*{bx}+{jpy}*{by}+{jpz}*{bz})/b'    ], $ ; j parallel to field line
