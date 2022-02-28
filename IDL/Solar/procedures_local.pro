@@ -1446,52 +1446,99 @@ end
 
 function calc_dist_insitu,time_obs, u_obs, n_obs, T_obs,  B_obs,    $
                           time_simu,u_simu,n_simu,ti_simu,b_simu,   $
-                          dist_int_u, dist_int_t, dist_int_n, dist_int_b
+                          dist_int_u, dist_int_t, dist_int_n, dist_int_b, $
+                          EventTimeDist, TimeWindowDist
 
-  ;; print,'Calculating integrated curve distance between obs. & SWMF output at 1 AU'
+  ;; Converting swmf time (YYYY-MO-DDTHH:MM:SS) to epoch time in milliseconds
+  TIMESTAMPTOVALUES,time_simu+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
+  cdf_epoch,time_simu_local,yy,mo,dy,hh,mm,ss,/compute_epoch ; in milliseconds
 
-  index_u = where(u_obs gt 0)
-  index_n = where(n_obs gt 0)
-  index_T = where(T_obs gt 0)
-  index_B = where(B_obs gt 0)
+  u_obs_local = u_obs
+  n_obs_local = n_obs
+  T_obs_local = T_obs
+  B_obs_local = B_obs
+  time_obs_local = time_obs
+
+  u_simu_local  = u_simu
+  n_simu_local  = n_simu
+  ti_simu_local = ti_simu
+  b_simu_local  = b_simu
+
+  ; Normalization time for 10 days by default
+  t_norm=10
+
+  ;; set the time range for calculating the distance if needed...
+  if EventTimeDist ne 'none' then begin
+     ;; set new normalization time
+     t_norm = floor(abs(TimeWindowDist)/2)
+
+     TIMESTAMPTOVALUES,EventTimeDist+'Z',year=yy_d,month=mo_d,day=dy_d, $
+                       hour=hh_d,min=mm_d,sec=ss_d
+     cdf_epoch,EventTimeDist_epo,yy_d,mo_d,dy_d,hh_d,mm_d,ss_d,/compute_epoch
+
+     ;; TimeWindowDist in days, but epoch time is in milliseconds
+     TimeDistStart_epo = min([EventTimeDist_epo, $
+                              EventTimeDist_epo+TimeWindowDist*24.*60.*60.*1e3])
+     TimeDistEnd_epo   = max([EventTimeDist_epo, $
+                              EventTimeDist_epo+TimeWindowDist*24.*60.*60.*1e3])
+
+     ;; extract observation during the time range
+     index_tmp = where(time_obs_local ge TimeDistStart_epo and time_obs_local le TimeDistEnd_epo)
+     u_obs_local = u_obs(index_tmp)
+     n_obs_local = n_obs(index_tmp)
+     T_obs_local = T_obs(index_tmp)
+     B_obs_local = B_obs(index_tmp)
+     time_obs_local = time_obs_local(index_tmp)
+
+     ; cdf_epoch,time_obs_local(0),y1,m1,d1,h1,min1,s1,ss1,/break
+     ; print,y1,m1,d1,h1,min1,s1,ss1
+     ; cdf_epoch,time_obs_local(-1),y1,m1,d1,h1,min1,s1,ss1,/break
+     ; print,y1,m1,d1,h1,min1,s1,ss1
+
+     ;; extract simulation during the time range
+     index_tmp = where(time_simu_local ge TimeDistStart_epo and time_simu_local le TimeDistEnd_epo)
+     u_simu_local  = u_simu(index_tmp)
+     n_simu_local  = n_simu(index_tmp)
+     ti_simu_local = ti_simu(index_tmp)
+     b_simu_local  = b_simu(index_tmp)
+     time_simu_local = time_simu_local(index_tmp)
+
+     ; cdf_epoch,time_simu_local(0),y1,m1,d1,h1,min1,s1,ss1,/break
+     ; print,y1,m1,d1,h1,min1,s1,ss1
+     ; cdf_epoch,time_simu_local(-1),y1,m1,d1,h1,min1,s1,ss1,/break
+     ; print,y1,m1,d1,h1,min1,s1,ss1
+  endif
+
+  index_u = where(u_obs_local gt 0)
+  index_n = where(n_obs_local gt 0)
+  index_T = where(T_obs_local gt 0)
+  index_B = where(B_obs_local gt 0)
 
   ;;Normalization for OMNI data
-  t_norm=10                     ;10 days
-  u_norm   = max(u_obs) - min(u_obs(index_u))
-  n_norm   = max(n_obs) - min(n_obs(index_n))
-  tem_norm = max(T_obs) - min(T_obs(index_T))
-  mag_norm = max(B_obs) - min(B_obs(index_B))
+  u_norm   = max(u_obs_local) - min(u_obs_local(index_u))
+  n_norm   = max(n_obs_local) - min(n_obs_local(index_n))
+  tem_norm = max(T_obs_local) - min(T_obs_local(index_T))
+  mag_norm = max(B_obs_local) - min(B_obs_local(index_B))
 
-  ;; print,'Normalizations:'
-  ;; help,t_norm,u_norm,n_norm,tem_norm,mag_norm
+  ;;time in units of t_norm days, initially in milliseconds
+  time_simu_local = time_simu_local/(24.*60.*60.*1e3)/t_norm
+  time_obs_local  = time_obs       /(24.*60.*60.*1e3)/t_norm
 
-  ;;time in units of t_norm days
-  t_obsv = time_obs/(24.*60.*60.*1.e3)/t_norm
-  t_swmf = time_simu
-
-  ;; Converting swmf time (YYYY-MO-DDTHH:MM:SS) to epoch time in sec
-  TIMESTAMPTOVALUES,time_simu+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
-  cdf_epoch,t_swmf,yy,mo,dy,hh,mm,ss,/compute_epoch ; in milliseconds
-  t_swmf=t_swmf/(24.*60.*60.*1.e3)/t_norm
-
-  dist_int_u=curve_int_distance(t_obsv(index_u), u_obs(index_u)/u_norm,   $
-                                t_swmf, u_simu/u_norm)
-  dist_int_t=curve_int_distance(t_obsv(index_T), T_obs(index_T)/tem_norm, $
-                                t_swmf, ti_simu/tem_norm)
-  dist_int_n=curve_int_distance(t_obsv(index_n), n_obs(index_n)/n_norm,   $
-                                t_swmf, n_simu/n_norm)
-  dist_int_b=curve_int_distance(t_obsv(index_B), B_obs(index_B)/mag_norm, $
-                                t_swmf, b_simu*1.e5/mag_norm)
-
-  ;; print,FORMAT='(a,f7.3,f7.4,f7.4,f7.4)',$
-  ;;      'Integrated  Curve distance (Ur, Np, T, B) is: '$
-  ;;      ,trim(dist_int_u),dist_int_N,dist_int_t,dist_int_b
+  dist_int_u=curve_int_distance(time_obs_local(index_u), u_obs_local(index_u)/u_norm,   $
+                                time_simu_local, u_simu_local/u_norm)
+  dist_int_t=curve_int_distance(time_obs_local(index_T), T_obs_local(index_T)/tem_norm, $
+                                time_simu_local, ti_simu_local/tem_norm)
+  dist_int_n=curve_int_distance(time_obs_local(index_n), n_obs_local(index_n)/n_norm,   $
+                                time_simu_local, n_simu_local/n_norm)
+  dist_int_b=curve_int_distance(time_obs_local(index_B), B_obs_local(index_B)/mag_norm, $
+                                time_simu_local, b_simu_local*1.e5/mag_norm)
 
   dist_int=['Dist_U ='+STRING(trim(dist_int_u),format='(f6.3)'),$
             'Dist_N ='+STRING(trim(dist_int_n),format='(f6.3)'),$
             'Dist_T ='+STRING(trim(dist_int_t),format='(f6.3)'),$
             'Dist_B ='+STRING(trim(dist_int_b),format='(f6.3)')]
 
+  ;; print, dist_int
   return,dist_int
 end
 
@@ -1506,7 +1553,8 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
                  DoShowDist=DoShowDist, DoLogRho=DoLogRho, DoLogT=DoLogT,     $
                  IsOverPlot=IsOverPlot, DoLegend=DoLegend,                    $
                  ymin_I=ymin_I, ymax_I=ymax_I, linethick=linethick,           $
-                 nLegendPlot=nLegendPlot,file_dist=file_dist
+                 nLegendPlot=nLegendPlot,file_dist=file_dist,                 $
+                 EventTimeDist=EventTimeDist, TimeWindowDist=TimeWindowDist
 
   if (not isa(DoPlotTe)) then DoPlotTe = 1
 
@@ -1570,7 +1618,8 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
      dist_int = calc_dist_insitu(time_obs, u_obs, n_obs, T_obs, B_obs,     $
                                  time_simu,u_simu,n_simu,ti_simu,b_simu,   $
                                  dist_int_u, dist_int_t,                   $
-                                 dist_int_n, dist_int_b)
+                                 dist_int_n, dist_int_b,                   $
+                                 EventTimeDist, TimeWindowDist)
 
      openw, lun_dist, file_dist, /get_lun
      printf,lun_dist, 'Dist_U ='+STRING(trim(dist_int_u),format='(f6.3)')
