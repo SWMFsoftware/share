@@ -4,7 +4,9 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
                     UseTimePlotName=UseTimePlotName,        $
                     CharSizeLocal=CharSizeLocal,            $
                     DoPlotTe=DoPlotTe, ModelIn=ModelIn,     $
-                    dir_obs=dir_obs
+                    dir_obs=dir_obs,                        $
+                    EventTimeDist=EventTimeDist,            $
+                    TimeWindowDist=TimeWindowDist
 
   if (not keyword_set(dir_sim)) then begin
      if (file_test('./simdata', /directory)) then begin
@@ -56,6 +58,9 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
      print, ' no simulation data'
      return
   endif
+
+  if (not isa(EventTimeDist))  then EventTimeDist  = 'none'
+  if (not isa(TimeWindowDist)) then TimeWindowDist = -7
 
   print, "+++++++++++++++++++++++++++++++++++++++++++++++++++++"
   print, "compare_remote: dir_obs    =", dir_obs
@@ -120,7 +125,8 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
                                UseTimePlotName=UseTimePlotName,                           $
                                CharSizeLocal=CharSizeLocal, DoPlotTe=DoPlotTe,            $
                                Model=Model, dir_obs=dir_obs, dir_plot=dirs_adapt[iFile],  $
-                               DoSaveObs=0, DoLogT=1
+                               DoSaveObs=0, DoLogT=1, EventTimeDist=EventTimeDist,        $
+                               TimeWindowDist=TimeWindowDist
         endfor
      endfor
   endif
@@ -132,7 +138,8 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
                          UseTimePlotName=UseTimePlotName,                  $
                          CharSizeLocal=CharSizeLocal, DoPlotTe=DoPlotTe,   $
                          Model=Model, dir_obs=dir_obs, dir_plot=dir_plot,  $
-                         DoSaveObs=1
+                         DoSaveObs=1, EventTimeDist=EventTimeDist,         $
+                         TimeWindowDist=TimeWindowDist
   endfor
 end
 

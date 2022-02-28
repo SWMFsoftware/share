@@ -5,7 +5,9 @@ pro compare_insitu_one, file_sim=file_sim,                      $
                         CharSizeLocal=CharSizeLocal,            $
                         DoPlotTe=DoPlotTe, Model=Model,         $
                         dir_obs=dir_obs, dir_plot=dir_plot,     $
-                        DoSaveObs=DoSaveObs,DoLogT=DoLogT
+                        DoSaveObs=DoSaveObs,DoLogT=DoLogT,      $
+                        EventTimeDist=EventTimeDist,            $
+                        TimeWindowDist=TimeWindowDist
 
   if (not keyword_set(extra_plt_info)) then begin
      extra_plt_info = ''
@@ -20,6 +22,9 @@ pro compare_insitu_one, file_sim=file_sim,                      $
   if (not keyword_set(Model)) then Model = 'AWSoM'
 
   if (not isa(DoSaveObs)) then DoSaveObs = 1
+
+  if (not isa(EventTimeDist))  then EventTimeDist  = 'none'
+  if (not isa(TimeWindowDist)) then TimeWindowDist = -7
 
   print, "compare_insitu_one: DoSaveObs=", DoSaveObs
 
@@ -88,7 +93,8 @@ pro compare_insitu_one, file_sim=file_sim,                      $
                start_time, end_time, typeData=typeData,                $
                charsize=CharSizeLocal, DoPlotTe = DoPlotTe,            $
                legendNames=Model, DoLogT=DoLogT,                       $
-               file_dist=fileplot.replace('.eps','.txt')
+               file_dist=fileplot.replace('.eps','.txt'),              $
+               EventTimeDist=EventTimeDist, TimeWindowDist=TimeWindowDist
 
   device,/close_file
 end
