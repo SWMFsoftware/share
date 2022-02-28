@@ -51,6 +51,7 @@ module ModUtilities
   end interface find_cell
 
   logical, public :: DoFlush = .true. ! parameter for flush_unit
+  logical, public :: DoMakeDir = .true. ! parameter for make_dir
   logical, public :: DoWriteCallSequence = .false. ! parameter for CON_stop
 
   ! Parameters for CON_set_do_test
@@ -246,6 +247,7 @@ contains
     ! Check if directory exists
     character(len=*), parameter:: NameSub = 'make_dir'
     !--------------------------------------------------------------------------
+    if(.not. DoMakeDir) RETURN
     call check_dir(NameDir, iError)
     if(iError == 0)then
        if(present(iErrorOut)) iErrorOut = 0
