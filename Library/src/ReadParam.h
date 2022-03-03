@@ -228,6 +228,12 @@ public:
       std::abort();
     }
   }
+
+  inline void skip_lines(int nlines) {
+    for (int i = 0; i < nlines; i++) {
+      ss.ignore(INT_MAX, '\n');
+    }
+  }
 };
 
 inline void char_to_string(std::string &ss, char *chararray, int length,
