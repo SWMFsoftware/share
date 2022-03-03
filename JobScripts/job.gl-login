@@ -100,7 +100,7 @@ source ~/.bash_profile
 # (For the SWMF the LAYOUT.in may be able to achieve something similar)
 # #SBATCH --export=MPI_DSM_DISTRIBUTE=0
 # #SBATCH --export=KMP_AFFINITY=disabled
-# #SBATCH --export=OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+# #SBATCH --export=OMP_NUM_THREADS=36
 
 ## Run
 printf "START TIME: `date +%Y%m%d`\n"
