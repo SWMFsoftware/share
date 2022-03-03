@@ -8,6 +8,52 @@
 #include <sstream>
 #include <string>
 
+// Analyze the PARAM.in parameter string. Example:
+// input: 1E-2*1e1 week       output: 60480
+inline double analyze_string(std::string &s) {
+  double res = 0, v1 = 0, v2 = 0;
+
+  char operation = 'A';
+
+  std::stringstream ss(s);
+  ss >> v1;
+  res = v1;
+
+  if (ss.good())
+    ss >> operation;
+
+  if (ss.good())
+    ss >> v2;
+
+  if (operation == '+') {
+    res = v1 + v2;
+  } else if (operation == '-') {
+    res = v1 - v2;
+  } else if (operation == '*') {
+    res = v1 * v2;
+  } else if (operation == '/') {
+    res = v1 / v2;
+  }
+
+  // Assume res is time.
+  if (s.find(" m") != std::string::npos) {
+    res *= 60;
+  } else if (s.find(" h") != std::string::npos) {
+    res *= 3600;
+  } else if (s.find(" d") != std::string::npos) {
+    res *= 3600 * 24;
+  } else if (s.find(" w") != std::string::npos) {
+    res *= 3600 * 24 * 7;
+  } else if (s.find(" y") != std::string::npos) {
+    res *= 3600 * 24 * 365.25;
+  } else if (s.find(" UT") != std::string::npos) {
+    std::cout << "Error: UT is not supported! " << std::endl;
+    std::abort();
+  }
+
+  return res;
+}
+
 class ReadParam {
 public:
   std::stringstream ss;
@@ -66,6 +112,29 @@ public:
   }
   //==============================
 
+  void read_var(std::string description, double &var) {
+    std::string sVar;
+    read_var(description, sVar, false);
+    var = analyze_string(sVar);
+    if (isVerbose) {
+      std::cout << "PC: " << std::left << std::setw(40) << var << description
+                << std::endl;
+      return;
+    }
+  }
+
+  void read_var(std::string description, float &var) {
+    double dd;
+    read_var(description, dd);
+    var = (float)dd;
+  }
+
+  void read_var(std::string description, int &var) {
+    double dd;
+    read_var(description, dd);
+    var = (int)dd;
+  }
+
   template <class T> void read_var(std::string description, T &var) {
 
     if (ss.good())
@@ -73,7 +142,7 @@ public:
 
     if (ss.good()) {
       // If ss is empty, ss.good() is false now.
-      // If ss is the last line, ss.good() is still true is there is a
+      // If ss is the last line, ss.good() is still true if there is a
       // '\n' at the end of each line.
       ss.ignore(INT_MAX, '\n');
       if (isVerbose) {
@@ -114,7 +183,8 @@ public:
   }
   //==========================================================
 
-  inline void read_var(std::string description, std::string &var) {
+  inline void read_var(std::string description, std::string &var,
+                       bool doAllowPrint = true) {
     // Read input until \t or next line or three successive white spaces.
     std::string text;
 
@@ -146,7 +216,7 @@ public:
           "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01"
           "23456789_=+-.~&*[]|{}@!#$%^()/?<>,;:";
       var = temp.substr(0, temp.find_last_of(char0) + 1);
-      if (isVerbose) {
+      if (isVerbose && doAllowPrint) {
         std::cout << "PC: " << std::left << std::setw(40) << var << description
                   << std::endl;
         return;
