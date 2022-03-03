@@ -1651,12 +1651,11 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
             xstyle=1,yrange=[ymin,ymax],ystyle=1,                         $
             charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos, $
             xtickname=REPLICATE(' ', 7),xtitle=' '
-  ;; utplot,time_simu, u_simu, background=7, color=colorLocal,               $
-  ;;        thick=linethick, timerange=[start_time,end_time],                $
-  ;;        xstyle=1,yrange=[ymin,ymax],ystyle=1,                            $
-  ;;        charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos,    $
-  ;;        xtickname=REPLICATE(' ', 7),xtitle=' ', /noerase
-  outplot, time_simu, u_simu, color=colorLocal, thick=linethick, position=pos
+  utplot,time_simu, u_simu, background=7, color=colorLocal,               $
+         thick=linethick, timerange=[start_time,end_time],                $
+         xstyle=1,yrange=[ymin,ymax],ystyle=1,                            $
+         charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos,    $
+         xtickname=REPLICATE(' ', 7),xtitle=' ', /noerase
 
   if DoLegend then begin
      if (DoPlotTe) then begin
@@ -1714,12 +1713,11 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
             charthick=5,xthick=5,                                         $
             ythick=5,position=pos,xtickname=REPLICATE(' ', 7),xtitle=' ', $
             yrange=[ymin,ymax], ystyle=1
-  ;; utplot,time_simu, n_simu, background=7, color=colorLocal,thick=linethick,   $
-  ;;        timerange=[start_time,end_time],xstyle=1,charsize=charsize,          $
-  ;;        charthick=5,xthick=5,                                                $
-  ;;        ythick=5,position=pos,xtickname=REPLICATE(' ', 7),xtitle=' ',        $
-  ;;        yrange=[ymin,ymax], ystyle=1, /noerase
-  outplot, time_simu, n_simu, color=colorLocal,thick=linethick,position=pos
+  utplot,time_simu, n_simu, background=7, color=colorLocal,thick=linethick,   $
+         timerange=[start_time,end_time],xstyle=1,charsize=charsize,          $
+         charthick=5,xthick=5,                                                $
+         ythick=5,position=pos,xtickname=REPLICATE(' ', 7),xtitle=' ',        $
+         yrange=[ymin,ymax], ystyle=1, /noerase
   
   if DoShowDist ne 0 then legend,dist_int(1),thick=5,charsize=1,charthick=5, $
                                  position=[0.75,legendPosR-0.22],/norm,box=0
@@ -1738,20 +1736,18 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
             charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos,      $
             xtickname=REPLICATE(' ', 7),xtitle=' ',yrange=[ymin,ymax],ystyle=1,$
             ytype=DoLogT
-  ;; utplot,time_simu, ti_simu, background=7, color=colorLocal,thick=linethick,   $
-  ;;        timerange=[start_time,end_time], xstyle=1,                            $
-  ;;        charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos,         $
-  ;;        xtickname=REPLICATE(' ', 7),xtitle=' ',yrange=[ymin,ymax],ystyle=1,   $
-  ;;        /noerase,ytype=DoLogT
-  outplot, time_simu, ti_simu, color=colorLocal,thick=linethick, position=pos
+  utplot,time_simu, ti_simu, background=7, color=colorLocal,thick=linethick,   $
+         timerange=[start_time,end_time], xstyle=1,                            $
+         charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos,         $
+         xtickname=REPLICATE(' ', 7),xtitle=' ',yrange=[ymin,ymax],ystyle=1,   $
+         /noerase,ytype=DoLogT
 
   if (DoPlotTe) then begin
-     ;; utplot,time_simu, te_simu, background=7, color=colorLocal,thick=linethick,$
-     ;;        timerange=[start_time,end_time], xstyle=1, linestyle=2,            $
-     ;;        charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos,      $
-     ;;        xtickname=REPLICATE(' ', 7),xtitle=' ',yrange=[ymin,ymax],         $
-     ;;        ystyle=1,/noerase, ytype=DoLogT
-     outplot, time_simu, te_simu, color=colorLocal,thick=linethick,position=pos
+     utplot,time_simu, te_simu, background=7, color=colorLocal,thick=linethick,$
+            timerange=[start_time,end_time], xstyle=1, linestyle=2,            $
+            charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos,      $
+            xtickname=REPLICATE(' ', 7),xtitle=' ',yrange=[ymin,ymax],         $
+            ystyle=1,/noerase, ytype=DoLogT
   endif
   if DoShowDist ne 0 then legend,dist_int(2),thick=5,charsize=1,charthick=5, $
                                  position=[0.75,legendPosR-0.45],/norm,box=0
@@ -1769,11 +1765,10 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
             timerange=[start_time,end_time],xstyle=1,yrange=[ymin,ymax],     $
             ysytle=1, charsize=charsize,                                     $
             charthick=5,xthick=5,ythick=5,position=pos
-  ;; utplot,time_simu, b_simu*1.e5, color=colorLocal,thick=linethick,            $
-  ;;        timerange=[start_time,end_time],xstyle=1,yrange=[ymin,ymax],ysytle=1,$
-  ;;        charsize=charsize,                                                   $
-  ;;        charthick=5,xthick=5,ythick=5,position=pos, /noerase
-  outplot, time_simu, b_simu*1e5, color=colorLocal,thick=linethick,position=pos
+  utplot,time_simu, b_simu*1.e5, color=colorLocal,thick=linethick,            $
+         timerange=[start_time,end_time],xstyle=1,yrange=[ymin,ymax],ysytle=1,$
+         charsize=charsize,                                                   $
+         charthick=5,xthick=5,ythick=5,position=pos, /noerase
 
   if DoShowDist ne 0 then legend,dist_int(3),thick=5,charsize=1,charthick=5,  $
                                  position=[0.75,legendPosR-0.67],/norm,box=0
