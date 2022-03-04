@@ -6507,6 +6507,11 @@ pro rms_logfiles,logfilename,varname,tmin=tmin,tmax=tmax,verbose=verbose
      print,varnames(ivar),sqrt(total((var0(*,ivar)-var1(*,ivar))^2)/ntime), $
            sqrt(total(var0(*,ivar)^2)/ntime), sqrt(total(var1(*,ivar)^2)/ntime)
 
+  print,'var |A-B| |A| |B|'
+  for ivar=0,nvar-1 do $
+     print,varnames(ivar),total(abs(var0(*,ivar)-var1(*,ivar)))/ntime, $
+           total(abs(var0(*,ivar)))/ntime, total(abs(var1(*,ivar)))/ntime
+
 end
 ;============================================================================
 pro interpol_logfiles,logfilename,var0,var1,varname,time,tmin=tmin,tmax=tmax,$
