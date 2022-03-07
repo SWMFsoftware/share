@@ -41,7 +41,7 @@ can be chosen from the 9 names above.
 
 Unless the -n (or -nowatch) flag is used, the code starts $watch with
 the NAME argument to make sure that when any of the jobs start to run, 
-the others get deleted with qdel. The output is piped into watch.log. 
+the others get deleted with qdel. The output is piped into watch.NAME.log. 
 
 Note you can add or delete jobs with matching NAME while $watch is running.
 
@@ -95,8 +95,8 @@ foreach $machine (@machine){
 
 # start $watch in the background
 unless($NoWatch){
-    print "$watch $name >& watch.log\n";
-    exec("./$watch $name > watch.log 2>&1") unless fork();
+    print "$watch $name >& watch.$name.log\n";
+    exec("./$watch $name > watch.$name.log 2>&1") unless fork();
 }
 
 exit 0;
