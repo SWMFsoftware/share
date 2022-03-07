@@ -1755,6 +1755,14 @@ function log_func, wlog, varnames, varname, error
   error = 0
   ivar  = min(where(strlowcase(varnames) eq strlowcase(varname)))
                                 ; Variable is found, return with array
+
+  ;; dst and dst_sm are considered equivalent
+  if ivar lt 0 and strlowcase(varname) eq 'dst_sm' then $
+     ivar  = min(where(strlowcase(varnames) eq 'dst'))
+
+  if ivar lt 0 and strlowcase(varname) eq 'dst' then $
+     ivar  = min(where(strlowcase(varnames) eq 'dst_sm'))
+  
   if ivar ge 0 then return, wlog(*,ivar)
 
                                 ; Try calculating temperature or pressure
