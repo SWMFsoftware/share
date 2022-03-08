@@ -55,8 +55,7 @@ program test
   ! Eqs. 29
   Q1 = 0.125*toroid_p(1,KappaPrime2In=KappaPrime02)/&
        (toroid_q(1,KappaPrime2In=KappaPrime02))
-  CurrentE = -1/(3*toroid_q(1,KappaPrime2In=KappaPrime02)*KappaPrime02*&
-       Kappa0)
+  CurrentE = -1/(3*KappaPrime02*Kappa0*toroid_q(1,KappaPrime2In=KappaPrime02))
   do iLoop = 1, nStep/2
      KappaPrime = iLoop*0.50*DeltaKappaPrime
      KappaPrime2 = KappaPrime**2
@@ -66,9 +65,11 @@ program test
           KappaPrime2) + CurrentE
      Var_VI(PoloidalU_,iLoop) = 3*Q1*KappaPrime*Kappa3*toroid_q(1,    &
           KappaPrime2In=KappaPrime2)
-     Var_VI(ToroidalU_,iLoop) = sqrt(6*(-Q1)*CurrentE*(&
-          Kappa03*toroid_q(0,KappaPrime2In=KappaPrime02)&
-          - Kappa3*toroid_q(0,KappaPrime2In=KappaPrime2)))
+     Var_VI(ToroidalU_,iLoop) = sqrt(&
+          toroid_p(1,KappaPrime2In=KappaPrime02)  /            &
+          (4*KappaPrime02*Kappa0*(toroid_q(1,KappaPrime2In=KappaPrime02))**2) &
+          *(Kappa03*toroid_q(0,KappaPrime2In=KappaPrime02)     &
+          - Kappa3*toroid_q(0,KappaPrime2In=KappaPrime2) )     )
   end do
   do iLoop = 1 + nStep/2, nStep
      KappaPrime = iLoop*0.50*DeltaKappaPrime
