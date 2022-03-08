@@ -60,7 +60,7 @@ module ModTimeConvert
   interface time_real_to_int
      module procedure time_real_to_int1, time_real_to_int2
   end interface
-
+  public :: time_real_to_julian, time_int_to_julian
   public :: test_time        ! unit tester
 
   !PUBLIC DATA MEMBERS:
@@ -68,7 +68,7 @@ module ModTimeConvert
   ! iYearBase MUST follow : mod(iYearBase,4) == 1
   ! iYearBase MUST be AFTER 1900
   ! This particular value is required by the UA component GITM:
-  integer, parameter :: iYearBase = 1965
+  ! Inherited from ModConst: iYearBase = 1965
 
   ! The earliest year which is already correctly handled
   integer, parameter :: iYearMin  = iYearBase
@@ -338,7 +338,34 @@ contains
 
   end function n_day_of_year
   !============================================================================
+  !============================================================================
+  subroutine time_real_to_julian(Time, JulianDay)
+    ! convert real time info into real julian time
+    real, intent(in)  :: Time
+    real, intent(out) :: JulianDay
 
+    integer:: iTime_I(7)
+    !--------------------------------------------------------------------------
+    JulianDay = JulianDayBase + Time/cSecondPerDay
+
+  end subroutine time_real_to_julian
+  !============================================================================
+  subroutine time_int_to_julian(iTime_I, JulianDay)
+
+    ! convert integer time info into real julian time
+    integer, intent(in)  :: iTime_I(1:7)
+    real,    intent(out) :: JulianDay
+
+    ! formula is valid for date after March, 1900 to yar 2099
+    !--------------------------------------------------------------------------
+    JulianDay = 367*iTime_I(1) - &
+               floor(7*(iTime_I(1)+floor((iTime_I(2)+9)/12.))/4.)+&
+               floor(275 * iTime_I(2) / 9.) + &
+               iTime_I(3) + 1721013.5 +&
+               (iTime_I(4)+iTime_I(5)/60.+iTime_I(6)/3600.)/24.
+  end subroutine time_int_to_julian
+
+  !============================================================================
   subroutine test_time
 
     integer, parameter :: iYearMax  = 2499
