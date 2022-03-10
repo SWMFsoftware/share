@@ -132,7 +132,7 @@ if($Interactive){
 	die "$ERROR Could not open parameter input file $InputFile!\n";
 }
 
-while($_=&read_line){
+while($_ = &read_line){
 
     # Read command of form #COMMANDNAME
     if(/^\#(\w+)/){
@@ -154,9 +154,9 @@ while($_=&read_line){
     &process_elements($command{$realName});
 
     # Check the line after the command
-    $_ = &read_line;
-    warn "$WARNING non-empty line: $_ after command $commandName\n"
-	unless /^\s*$/;
+    last unless($_ = &read_line);
+    warn "$WARNING non-empty line: $_ after command \#$commandName\n"
+    	unless /^\s*$/;
     
 }
 # Check if the final session has the required commands defined and
