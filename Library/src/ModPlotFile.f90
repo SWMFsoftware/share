@@ -59,7 +59,6 @@ module ModPlotFile
 
 contains
   !============================================================================
-
   subroutine save_plot_file(NameFile, TypePositionIn, &
        TypeFileIn, StringHeaderIn, nStepIn, TimeIn, &
        ParamIn_I, NameVarIn, NameVarIn_I, NameUnitsIn,&
@@ -79,7 +78,7 @@ contains
     use ModUtilities, ONLY: split_string, join_string, open_file, close_file
 
     character(len=*),           intent(in):: NameFile       ! name of plot file
-    character(len=*), optional, intent(in):: TypePositionIn ! asis/rewind/append
+    character(len=*), optional, intent(in):: TypePositionIn ! rewind/append
     character(len=*), optional, intent(in):: TypeFileIn     ! ascii/real8/real4
     character(len=*), optional, intent(in):: StringHeaderIn ! header line
     character(len=*), optional, intent(in):: StringFormatIn ! ascii data format
@@ -109,7 +108,7 @@ contains
     real,             optional, intent(in):: VarIn_IV(:,:)  ! variables in 1D
     real,             optional, intent(in):: VarIn_IIV(:,:,:)            ! 2D
     real,             optional, intent(in):: VarIn_IIIV(:,:,:,:)         ! 3D
-    real(Real4_),     optional, intent(in):: Var4In_I(:)    ! Real4 variable in 1D
+    real(Real4_),     optional, intent(in):: Var4In_I(:)    ! Real4 var in 1D
     real(Real4_),     optional, intent(in):: Var4In_II(:,:)               ! 2D
     real(Real4_),     optional, intent(in):: Var4In_III(:,:,:)            ! 3D
     real(Real4_),     optional, intent(in):: Var4In_VI(:,:)  ! variables in 1D
@@ -153,7 +152,6 @@ contains
 
     character(len=*), parameter:: NameSub = 'save_plot_file'
     !--------------------------------------------------------------------------
-
     TypePosition = 'rewind'
     if(present(TypePositionIn))TypePosition = TypePositionIn
     TypeStatus = 'replace'
@@ -466,7 +464,8 @@ contains
        if(any(Coord_ID == huge(1.0))) call CON_stop(NameSub // &
             ' coordinates were not defined')
 
-       ! Fill in the Var_IV/Var4_IV variable array using the available information
+       ! Fill in the Var_IV/Var4_IV variable array using
+       ! the available information
        if(UseReal4)then
           Var4_IV = huge(1.0_Real4_)
        else
@@ -658,7 +657,6 @@ contains
 
   end subroutine save_plot_file
   !============================================================================
-
   subroutine read_plot_file(NameFile, iUnitIn,         &
        TypeFileIn, StringHeaderOut,                    &
        nStepOut, TimeOut, nDimOut, nParamOut, nVarOut, &
@@ -1069,7 +1067,8 @@ contains
          ! Possible formats are up to 7 of the following strings:
          ! year/yr month/mo day/dy hour/hr min/mn sec/sc msec/msc
          ! a single string: data/date7/date6/date5/date4/date3/date2
-         ! where the digit is the number of integers to be read for the date (default is 7).
+         ! where the digit is the number of integers to be read
+         ! for the date (default is 7).
          select case(NameVar_I(1))
          case('year', 'yr')
             if(NameVar_I(7) == 'msc' .or. NameVar_I(7) == 'msec') then
@@ -1262,10 +1261,8 @@ contains
 
     end subroutine read_header
     !==========================================================================
-
   end subroutine read_plot_file
   !============================================================================
-
   subroutine test_plot_file
 
     ! Set up a hydro shock tube initial condition on a 2D Cartesian grid
@@ -1607,6 +1604,5 @@ contains
 
   end subroutine test_plot_file
   !============================================================================
-
 end module ModPlotFile
 !==============================================================================
