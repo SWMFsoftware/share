@@ -71,7 +71,7 @@ my $ValidModuleFileName = "$ValidModuleName(_$part)*\.[fF]90";
 my $ValidScalarName = "($ValidComp)?$FirstPart($Part)*";
 
 # Valid array variable names: VariableName IE_GridSize_C State_VGB
-my $ValidArrayName = "${ValidScalarName}_[A-Z]+";
+my $ValidArrayName = "${ValidScalarName}_[A-Z][A-Z2-7]*";
 
 # Valid named index name: Rho_ rho_ x_ AnyName_ GM_ j0_ nJp1_
 my $ValidNamedIndex = "[a-zA-Z]([a-zA-Z0-9])*_";
@@ -426,6 +426,9 @@ sub check_variables{
 	    my $Index = $Var;
 	    $Index =~ s/.*_//; # Cut everything before index names _XYZ
 
+	    # Replace I4 with IIII
+	    $Index =~ s/I([2-7])/"I"x$1/ge;
+	    
 	    # Try both C = 1 and  C = 3 dimensions
 	    $_ = $Index;
 	    my $n1 = s/$ValidArrayIndex1//g + 3* s/$ValidArrayIndex3//g;
