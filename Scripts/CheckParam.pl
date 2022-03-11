@@ -156,7 +156,7 @@ while($_ = &read_line){
     # Check the line after the command
     last unless($_ = &read_line);
     warn "$WARNING non-empty line: $_ after command \#$commandName\n"
-    	unless /^\s*$/;
+    	unless /^\s*$/ or /^Begin session/ and $commandName eq "RUN";
     
 }
 # Check if the final session has the required commands defined and
