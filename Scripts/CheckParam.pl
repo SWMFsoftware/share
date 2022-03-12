@@ -155,8 +155,12 @@ while($_ = &read_line){
 
     # Check the line after the command
     last unless($_ = &read_line);
-    warn "$WARNING non-empty line: $_ after command \#$commandName\n"
-    	unless /^\s*$/ or /^Begin session/ and $commandName eq "RUN";
+    warn "$WARNING non-empty line $nLine in $InputFile".
+	" after command \#$commandName:\n$_"
+    	unless
+	/^[\s\!\-\=\#]*$/
+	or /^Begin session/ and $commandName eq "RUN"
+	or /FracSecond/ and $commandName eq "STARTTIME";
     
 }
 # Check if the final session has the required commands defined and
@@ -1342,6 +1346,20 @@ sub COMP::count_split{
 
     # return total number of words
     return $nExtra + split(' ',$String);
+}
+##############################################################################
+sub COMP::max{
+    # This function can be used in the XML file to return max of arguments
+    my $max = shift;
+    foreach (@_){$max = $_ if $_ > $max};
+    return $max;
+}
+##############################################################################
+sub COMP::min{
+    # This function can be used in the XML file to return min of arguments
+    my $min = shift;
+    foreach (@_){$min = $_ if $_ < $min};
+    return $min;
 }
 ##############################################################################
 #!QUOTE: \clearpage
