@@ -157,10 +157,10 @@ while($_ = &read_line){
     last unless($_ = &read_line);
     warn "$WARNING non-empty line $nLine in $InputFile".
 	" after command \#$commandName:\n$_"
-    	unless
-	/^[\s\!\-\=\#]*$/
-	or /^Begin session/ and $commandName eq "RUN"
-	or /FracSecond/ and $commandName eq "STARTTIME";
+    	unless /^[\s\!\-\=\#]*$/               # empty or speparator line
+	or /^\!/                                         # ! comment
+	or /^Begin session/ and $commandName eq "RUN"    # Begin session
+	or /FracSecond/ and $commandName eq "STARTTIME"; # ... FracSecond
     
 }
 # Check if the final session has the required commands defined and
