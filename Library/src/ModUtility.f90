@@ -225,7 +225,6 @@ contains
 
   end subroutine write_value
   !============================================================================
-
   subroutine make_dir(NameDir, iErrorOut)
 
     character(len=*), intent(in):: NameDir ! Directory name
@@ -268,7 +267,6 @@ contains
 
   end subroutine make_dir
   !============================================================================
-
   subroutine check_dir(NameDir, iErrorOut)
 
     character(len=*), intent(in) :: NameDir
@@ -290,6 +288,7 @@ contains
     ! Try to open a file in this directory
     character(len=*), parameter:: NameSub = 'check_dir'
     !--------------------------------------------------------------------------
+    if(.not. DoMakeDir) RETURN
     open(UnitTmp_, file=trim(NameDir)//'/.test', status='unknown', &
          iostat = iError)
 
@@ -307,7 +306,6 @@ contains
 
   end subroutine check_dir
   !============================================================================
-
   subroutine fix_dir_name(NameDir)
 
     character(len=*), intent(inout) :: NameDir
@@ -331,7 +329,6 @@ contains
 
   end subroutine fix_dir_name
   !============================================================================
-
   subroutine open_file(iUnitIn, File, Form, Status, Position, Access, Recl, &
        iComm, NameCaller)
 
@@ -423,7 +420,6 @@ contains
 
   end subroutine open_file
   !============================================================================
-
   subroutine close_file(iUnitIn, Status, NameCaller)
 
     ! Interface for the Fortran close statement with error checking
@@ -458,7 +454,6 @@ contains
 
   end subroutine close_file
   !============================================================================
-
   subroutine remove_file(NameFile, NameCaller)
 
     ! Remove file NameFile if it exists
@@ -478,7 +473,6 @@ contains
 
   end subroutine remove_file
   !============================================================================
-
   subroutine touch_file(NameFile, NameCaller)
 
     ! Create file NameFile if it does not exist
@@ -493,7 +487,6 @@ contains
 
   end subroutine touch_file
   !============================================================================
-
   subroutine flush_unit(iUnit)
 
     integer, intent(in) :: iUnit
@@ -504,7 +497,6 @@ contains
 
   end subroutine flush_unit
   !============================================================================
-
   subroutine split_string_simple(String, String_I, nStringOut, &
        StringSepIn, UseArraySyntaxIn, DoAddSeparator)
 
@@ -520,7 +512,6 @@ contains
 
   end subroutine split_string_simple
   !============================================================================
-
   subroutine split_string(String, MaxString, String_I, nStringOut, &
        StringSepIn, UseArraySyntaxIn, DoAddSeparator)
 
@@ -674,10 +665,8 @@ contains
       end do
     end subroutine expand_array
     !==========================================================================
-
   end subroutine split_string
   !============================================================================
-
   subroutine join_string_simple(String_I, String, StringSepIn)
 
     character(len=*), intent(in) :: String_I(:)
@@ -688,7 +677,6 @@ contains
 
   end subroutine join_string_simple
   !============================================================================
-
   subroutine join_string(nString, String_I, String, StringSepIn)
 
     integer,          intent(in) :: nString
@@ -720,7 +708,6 @@ contains
 
   end subroutine join_string
   !============================================================================
-
   subroutine upper_case(String)
 
     character (len=*), intent(inout) :: String
@@ -737,7 +724,6 @@ contains
 
   end subroutine upper_case
   !============================================================================
-
   subroutine lower_case(String)
 
     character (len=*), intent(inout) :: String
@@ -754,7 +740,6 @@ contains
 
   end subroutine lower_case
   !============================================================================
-
   subroutine string_to_char_array(String, String_I)
 
     ! Convert Fortran string into a C-style character array
@@ -774,7 +759,6 @@ contains
 
   end subroutine string_to_char_array
   !============================================================================
-
   subroutine char_array_to_string(String_I, String)
 
     ! Convert C-style character array into a Fortran string.
@@ -792,7 +776,6 @@ contains
 
   end subroutine char_array_to_string
   !============================================================================
-
   subroutine sleep(DtCpu)
 
     real, intent(in) :: DtCpu  ! CPU time to sleep (in seconds)
@@ -809,7 +792,6 @@ contains
 
   end subroutine sleep
   !============================================================================
-
   subroutine check_allocate(iError, NameArray)
 
     integer,intent(in)::iError
@@ -821,7 +803,6 @@ contains
 
   end subroutine check_allocate
   !============================================================================
-
   recursive function greatest_common_divisor(i, j) result(kGCD)
     ! Calculate the greatest common divisor of i and j
     ! with Euclid's algorithm
@@ -1419,7 +1400,6 @@ contains
 
   end subroutine find_cell8
   !============================================================================
-
 end module ModUtilities
 !==============================================================================
 subroutine CON_set_do_test_ext(String,DoTest,DoTestMe)
