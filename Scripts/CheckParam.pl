@@ -36,7 +36,6 @@ my $ValidComp = 'CZ|EE|GM|IE|IH|IM|OH|PC|PS|PT|PW|RB|SC|SP|UA';
 
 # Error strings
 my $ERROR = 'CheckParam_ERROR:';
-my $WARNING = 'CheckParam_WARNING:';
 my $XMLERROR;
 my $COMMANDERROR;
 
@@ -155,12 +154,12 @@ while($_ = &read_line){
 
     # Check the line after the command
     last unless($_ = &read_line);
-    warn "$WARNING non-empty line $nLine in $InputFile".
+    warn "$ERROR non-empty line $nLine in $InputFile".
 	" after command \#$commandName:\n$_"
     	unless /^[\s\!\-\=\#]*$/               # empty or speparator line
-	or /^\!/                                         # ! comment
-	or /^Begin session/ and $commandName eq "RUN"    # Begin session
-	or /FracSecond/ and $commandName eq "STARTTIME"; # ... FracSecond
+	or /^\!/                                                # ! comment
+	or /^Begin session/ and $commandName eq "RUN"           # Begin session
+	or /^\s*0.*FracSecond$/ and $commandName eq "STARTTIME";# FracSecond
     
 }
 # Check if the final session has the required commands defined and
