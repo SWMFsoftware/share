@@ -82,6 +82,9 @@ foreach $machine (@machine){
     # Change the name of the resubmit script
     $text =~ s/^qsub .*$/qsub $fileout/m;
 
+    # Change the event name
+    $text =~ s/^(setenv EVENT) Event../$1 $name/m if $name =~ /^Event\d\d$/;
+
     open(SCRIPT, ">$fileout") or die "Could not open $fileout\n";
     print SCRIPT $text;
     close SCRIPT;
