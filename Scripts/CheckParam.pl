@@ -715,8 +715,9 @@ sub read_line{
 		$FormattedLine =~ s/(   |\t)\s*(.*)//; 
 		my $comment = $2;
 		# Overwrite first word of comment with parameter name if passed
+		# Keep the ^ marker if present
 		my $paramName = $_[0]; # optional argument of read_line
-		$comment =~ s/^\S*/$paramName/ if $paramName;
+		$comment =~ s/^[^\s\^]*/$paramName/ if $paramName;
 		$FormattedLine = $indent.$FormattedLine; # Put back the indent
 		# Append comment with 2 or 3 tabs
 		if($comment){
