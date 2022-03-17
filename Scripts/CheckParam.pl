@@ -158,7 +158,7 @@ while($_ = &read_line){
 	" after command \#$commandName:\n$_"
     	unless /^[\s\!\-\=\#]*$/               # empty or speparator line
 	or /^\!/                                                # ! comment
-	or /^Begin session/ and $commandName eq "RUN"           # Begin session
+	or /^Begin session/i and $commandName eq "RUN"          # Begin session
 	or /^\s*0.*FracSecond$/ and $commandName eq "STARTTIME";# FracSecond
     
 }
@@ -702,14 +702,15 @@ sub read_line{
 
     if($Format){
 	$FormattedLine =~ s/[\s\n]+$//; # remove trailing spaces
+	$FormattedLine = "$1 " . "-" x (50 - length($1))
+	    if $FormattedLine =~ /^(\#USERINPUTBEGIN|\#USERINPUTEND)/;
+		
 	if(not $UserInput){
 	    $FormattedLine =~ s/^( *)//; my $indent = $1; # remove initial spaces
 	    if($FormattedLine =~ /^(\#(RUN|END))\b/){
 		$FormattedLine = "$1 "."#" x 74;
 	    }elsif($FormattedLine =~ /^(#(END|BEGIN)_COMP \w\w)/){
 		$FormattedLine = "$1 " . "-" x (77 - length($1));
-	    }elsif($FormattedLine =~ /^(#USERINPUT(BEGIN|END))/){
-		$FormattedLine = "$1 " . "-" x (50 - length($1));
 	    }else{
 		# Get comment after 3 spaces or TAB
 		$FormattedLine =~ s/(   |\t)\s*(.*)//; 
