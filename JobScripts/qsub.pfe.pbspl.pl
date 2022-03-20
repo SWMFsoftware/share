@@ -19,7 +19,6 @@ if(not @machine){
 }
 
 my $qsub  = "qsub.pfe.pbspl.pl";
-my $watch = "watch.pfe.pbspl.pl";
 
 if(not $script or $script =~ /\-+h/i){
     print "
@@ -39,15 +38,17 @@ Aitken and Electra machine names.
 Otherwise, the job will be submitted for the listed machines that
 can be chosen from the 9 names above.
 
-Unless the -n (or -nowatch) flag is used, the code starts $watch with
-the NAME argument to make sure that when any of the jobs start to run, 
-the others get deleted with qdel. The output is piped into watch.NAME.log. 
+Unless the -n (or -nowatch) flag is used and more than one job scripts
+were submitted, the code starts watching qstat for all jobs matching
+the NAME argument to make sure that when any of the jobs start to run,
+the others get deleted with qdel. The output is piped into
+watch.NAME.log.
 
-Note you can add or delete jobs with matching NAME while $watch is running.
+Note you can add or delete jobs with matching NAME while $qsub is running.
 
 Example:
 
-$qsub job.long Mars
+$qsub ensemble.job Event03
 ";
     exit;
 }
@@ -64,7 +65,8 @@ close SCRIPT;
 
 # Copy original script
 my $machine;
-my @script;
+$script =~ s/.*\///; # remove path (save into local directory) 
+$script .= ".$name"; # add name
 
 foreach $machine (@machine){    
     my $fileout = "$script.$machine";
@@ -96,10 +98,67 @@ foreach $machine (@machine){
     `/PBS/bin/qsub $script.$machine`;
 }
 
-# start $watch in the background
-unless($NoWatch){
-    print "$watch $name >& watch.$name.log\n";
-    exec("./$watch $name > watch.$name.log 2>&1") unless fork();
+exit 0 if $NoWatch or @machine < 2;
+
+my $watch = "watch.$name.log";
+print "Start watching jobs. See $watch\n";
+
+# Continue running in the background
+if(fork() > 0){exit 0;} 
+
+use POSIX "setsid"; 
+POSIX::setsid();
+$SIG{HUP}="IGNORE";
+
+open STDOUT, ">$watch" or die "Could not open $watch\n";
+open STDERR, ">&STDOUT";
+
+my $pattern = $name;
+my $qstat   = '/PBS/bin/qstat -u $USER';
+my $qdel    = '/PBS/bin/qdel';
+
+my @results;
+my $running;
+my $user = $ENV{USER};
+LOOP:{
+    @results = `$qstat | grep $pattern`;
+    my $ids;
+    foreach (@results){
+	/^(\d+).*([A-Z]) +\S+/;
+	print "id=$1 status=$2: $_";
+	$ids .= " $1";
+	$running = $1 if $2 eq "R";
+    }
+    print "-------------------------\n";
+    if($running){
+	$ids =~ s/ $running//; # remove running ID
+      QDEL:{
+	  # Delete all other jobs
+	  print "--- qdel $ids ---\n";
+	  `$qdel $ids`;
+	  # Check if the delete succeeded
+	  sleep 2;
+	  @results = `$qstat | grep $pattern`;
+	  $ids = "";
+	  foreach (@results){
+	      /^(\d+).*([A-Z]) +(\S+)/;
+	      print "id=$1: $_";
+	      $ids .= " $1" unless $1 eq $running;
+	  }
+	  # Delete jobs again if there are any jobs left
+	  redo QDEL if $ids;
+	}
+	last LOOP;
+    }
+    sleep 5;
+    redo;
 }
+
+print `$qstat`;
+
+print "Finished watch, job $running is running\n";
+
+close(STDOUT);
+close(STDERR);
 
 exit 0;
