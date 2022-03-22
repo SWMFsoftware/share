@@ -330,7 +330,14 @@ sub create_tree_check{
     }
 
     # Check the restart tree directory
-    die "$ERROR restart tree $RestartTree is in the way!\n" if -d $RestartTree;
+    if(-d $RestartTree){
+	if($WarnOnly){
+	    warn "$WARNING removing existing $RestartTree\n";
+	    `rm -rf $RestartTree`;
+	}else{
+	    die "$ERROR restart tree $RestartTree is in the way!\n";
+	}
+    }
 
     # Check output restart directories for all components
     my $Comp;
