@@ -204,17 +204,15 @@ def _main():
         ]
     if not args.no_write_f107:
         omni_lores = get_omni_data(*times, resolution='low')
-        f10_7 = np.average(omni_lores['f10_7'])
-        vprint(args, 'F10.7:', f10_7)
         iono_command = paramin.read_command('#IONOSPHERE', args.paramin)
         change = {}
-        iono_command[4] = str(f10_7)
+        iono_command[4] = '-1.0'  # Use Param/f107.txt
         change[iono_command[0]] = map(
             list,
             zip(iono_command[1:], iono_descriptions)
             )
         paramin.replace_command(change, args.paramin)
-        vprint(args, 'Wrote F10.7 to PARAM.in file')
+        vprint(args, 'F10.7 using Param/f107.txt in PARAM.in file')
 
 
 if __name__ == '__main__':
