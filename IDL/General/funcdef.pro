@@ -171,7 +171,11 @@ function funcdef,xx,w,func
      ['p33S1'    , '{pXXS1}*x3^2+{pyyS1}*y3^2+{pzzS1}*z3^2+2*({pxyS1}*x3*y3+{pxzS1}*x3*z3+{pyzS1}*y3*z3)'], $           ;
      ['p12S1'    , '{pXXS1}*x1*x2+{pyyS1}*y1*y2+{pzzS1}*z1*z2+{pxyS1}*(x1*y2+y1*x2)+{pxzS1}*(x1*z2+z1*x2)+{pyzS1}*(y1*z2+z1*y2)'], $ ;
      ['p13S1'    , '{pXXS1}*x1*x3+{pyyS1}*y1*y3+{pzzS1}*z1*z3+{pxyS1}*(x1*y3+y1*x3)+{pxzS1}*(x1*z3+z1*x3)+{pyzS1}*(y1*z3+z1*y3)'], $ ;
-     ['p23S1'    , '{pXXS1}*x2*x3+{pyyS1}*y2*y3+{pzzS1}*z2*z3+{pxyS1}*(x2*y3+y2*x3)+{pxzS1}*(x2*z3+z2*x3)+{pyzS1}*(y2*z3+z2*y3)']  $ ;
+     ['p23S1'    , '{pXXS1}*x2*x3+{pyyS1}*y2*y3+{pzzS1}*z2*z3+{pxyS1}*(x2*y3+y2*x3)+{pxzS1}*(x2*z3+z2*x3)+{pyzS1}*(y2*z3+z2*y3)'],  $ ;
+     ['dBn7'     , '{dBnmhd}+{dBnfac}+smooth({dBnhal}+{dBnped},7)'], $ ; dBn smooth 
+     ['dBe7'     , '{dBemhd}+{dBefac}+smooth({dBehal}+{dBeped},7)'], $ ; dBn smooth
+     ['dBh7'     , 'sqrt({dBn7}^2+{dBe7}^2)'], $  ; dB horizontal with smooth 5
+     ['dBh'      , 'sqrt({dBn}^2+{dBe}^2)']    $  ; dB horizontal
                           ]))
 
   common file_head
