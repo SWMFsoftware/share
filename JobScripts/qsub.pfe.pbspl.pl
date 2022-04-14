@@ -14,7 +14,7 @@ if(not @machine){
     if($script =~ /nvidia/){
 	@machine = ('sky_gpu', 'cas_gpu');
     }else{
-	@machine = ('Ivy', 'San', 'Has', 'Bro', 'Sky_ele', 'Bro_ele', 'Cas_ait');
+	@machine = ('Ivy', 'San', 'Has', 'Bro', 'Sky_ele', 'Bro_ele', 'Cas_ait', 'Rom_ait');
     }
 }
 
@@ -29,8 +29,8 @@ Use a unique NAME argument to identify the jobs.
 Only the first four characters of the NAME are used. Default NAME is the 
 last 4 characters of the directory name where the job is submitted from.
 
-If no machine is specified, then typically 7 jobs will be submitted for
-7 machine types: 'Ivy, San, Has, Bro, Bro_ele, Sky_ele, Cas_Ait'. 
+If no machine is specified, then typically 8 jobs will be submitted for
+8 machine types: 'Ivy, San, Has, Bro, Bro_ele, Sky_ele, Cas_Ait, Rom_ait'. 
 If the name of the script contains 'nvidia', then two jobs are submitted
 for 'sky_gpu' and 'cas_gpu'. The abbreviations stand for Ivybridge,
 Sandybridge, Haswell, Broadwell, Skylake, Cascadelake CPU names and

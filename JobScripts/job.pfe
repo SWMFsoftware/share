@@ -87,6 +87,9 @@
 # To run on the 40-core Aitken Cascade Lake nodes (192GB/node or 4.8GB/core)
 ### PBS -l select=16:ncpus=40:model=cas_ait
 
+# To run on the 128-core Aitken Rome nodes (512GB/node or 4GB/core) 
+### PBS -l select=10:ncpus=128:model=rom_ait 
+
 # To run on K40 GPU
 #!! PBS -l select=1:ncpus=16:model=san_gpu
 ### PBS -q k40
