@@ -795,7 +795,8 @@ pro plot_data
         else if multiplot eq -1 then !p.multi=[0,1,nplot     ,0,1] $
         else                         !p.multi=[0,1,-multiplot,0,1]
      endif else if n_elements(multiplot) eq 4 then $
-        !p.multi = [multiplot(0)*multiplot(1)-multiplot(3),multiplot(0:1),0,multiplot(2)] $
+        !p.multi = [multiplot(0)*multiplot(1)-multiplot(3), $
+                    multiplot(0:1),0,multiplot(2)] $
      else $
         !p.multi=[0,multiplot(0:1),0,multiplot(2)]
      multix=!p.multi(1)
@@ -814,7 +815,7 @@ pro plot_data
 
   plot_func
   
-  putbottom,1,1,0,0,bottomline,nx,it,time
+  putbottom,1,1,0,0,bottomline,nx,it,time,npict
   putheader,1,1,0,0,headerline,headline,nx
 
   print
@@ -1007,7 +1008,7 @@ pro animate_data
               if ifile eq nfile-1 then begin
                  if npict eq 0 then print,FORMAT='("ipict:    ",$)'
                  npict=npict+1
-                 print,FORMAT='(i4,$)',npict
+                 print,FORMAT='(i5,$)',npict
               endif
            endif
         endfor
@@ -1173,10 +1174,10 @@ pro animate_data
            plot_func
 
            if npict1 le 1 then begin
-              putbottom,multix,multiy,ifile,0,bottomline,nx,it,time
+              putbottom,multix,multiy,ifile,0,bottomline,nx,it,time,ipict
               putheader,nfile,1,ifile,0,headerline,headline,nx
            endif else begin
-              putbottom,multix,multiy,plotix,plotiy,bottomline,nx,it,time
+              putbottom,multix,multiy,plotix,plotiy,bottomline,nx,it,time,ipict
               if ipict1 eq 0 then $
                  putheader,nfile,1,ifile,0,headerline,headline,nx
            endelse
@@ -4553,7 +4554,7 @@ pro plot_func
 
 end
 ;===========================================================================
-pro putbottom,multix,multiy,ix,iy,info,nx,it,time
+pro putbottom,multix,multiy,ix,iy,info,nx,it,time,ipict
 
   common debug_param & on_error, onerror
 
