@@ -130,11 +130,37 @@ contains
 
   end subroutine CON_set_do_test
   !============================================================================
-  subroutine CON_stop(String, Value1, Value2, Value3, Value4)
-    !$acc routine seq
+#ifdef _OPENACC
+  subroutine CON_stop_acc(String, Value1, Value2, Value3, Value4, sBefore, sAfter)
+    !$acc routine seq nohost
+    character(len=*),  intent(in) :: String
+    class(*), optional, intent(in):: Value1, Value2, Value3, Value4 ! do not use them!
+    character(len=*), optional, intent(in):: sBefore, sAfter
+
+    ! overcomplicated conditionals, because OpenACC code cannot concatenate strings
+    if (present(sBefore)) then
+       if (present(sAfter)) then
+          write(*,*) 'ERROR: ', sBefore, String, sAfter
+       else
+          write(*,*) 'ERROR: ', sBefore, String
+       end if
+    else
+       if (present(sAfter)) then
+          write(*,*) 'ERROR: ', String, sAfter
+       else
+          write(*,*) 'ERROR: ', String
+       end if
+    end if
+    stop String  ! this will call the OpenACC error handler
+  end subroutine CON_stop_acc
+#endif
+  !============================================================================
+  subroutine CON_stop(String, Value1, Value2, Value3, Value4, sBefore, sAfter)
+    !$acc routine bind(CON_stop_acc)
 
     character(len=*), intent(in):: String
     class(*), optional, intent(in):: Value1, Value2, Value3, Value4
+    character(len=*), optional, intent(in):: sBefore, sAfter
 
     ! Stop execution after the following actions:
     !
@@ -148,16 +174,24 @@ contains
     logical:: IsMpiInitialized
     integer:: iProc=0, nError=1, iError
     !--------------------------------------------------------------------------
-#ifdef _OPENACC
-    stop String
-#else
     call MPI_initialized(IsMpiInitialized, iError)
 
     if(IsMpiInitialized) call MPI_comm_rank(MPI_COMM_WORLD, iProc, iError)
 
     write(*,*) 'ERROR: aborting execution on processor', iProc, &
          ' with message:'
-    write(*,'(a)') 'ERROR: '//String
+    ! The following code is to ensure the same interface as the OpenACC-specific version,
+    ! which accepts the `sBefore` and `sAfter` arguments
+    ! because OpenACC code is unable to concatenate strings.
+    write (*,'(a)', advance='NO') 'ERROR: '
+    if (present(sBefore)) write(*,'(a)', advance='NO') sBefore
+    if (present(sAfter)) then
+       write(*,'(a)') String//sAfter
+    else
+       write(*,'(a)') String
+    end if
+    ! write(*,'(a)') 'ERROR: '//String
+
     if(present(Value1)) call write_value(Value1)
     if(present(Value2)) call write_value(Value2)
     if(present(Value3)) call write_value(Value3)
@@ -175,7 +209,6 @@ contains
     ! Stop execution
     if(IsMpiInitialized) call MPI_abort(MPI_COMM_WORLD, nError, iError)
     stop
-#endif
 
   end subroutine CON_stop
   !============================================================================
@@ -1462,4 +1495,3 @@ subroutine CON_io_unit_tmp(iUnit)
   iUnit = UnitTMP_
 end subroutine CON_io_unit_tmp
 !==============================================================================
-
