@@ -928,11 +928,11 @@ contains
     elseif(abs(detA) > Limit*maxval(abs(a_DD)) )then
        b_DD = b_DD/DetA
     else
-#ifndef _OPENACC
+!#ifndef _OPENACC
        write(*,*)'Error in ',NameSub,' for matrix:'
        call show_rot_matrix(a_DD)
        write(*,*)'Determinant=', DetA
-#endif
+!#endif
        call CON_stop('Singular matrix in '//NameSub)
     end if
 
