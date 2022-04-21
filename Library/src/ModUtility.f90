@@ -138,6 +138,7 @@ contains
     character(len=*), optional, intent(in):: sBefore, sAfter
 
     ! overcomplicated conditionals, because OpenACC code cannot concatenate strings
+    !--------------------------------------------------------------------------
     if (present(sBefore)) then
        if (present(sAfter)) then
           write(*,*) 'ERROR: ', sBefore, String, sAfter
@@ -153,8 +154,8 @@ contains
     end if
     stop String  ! this will call the OpenACC error handler
   end subroutine CON_stop_acc
-#endif
   !============================================================================
+#endif
   subroutine CON_stop(String, Value1, Value2, Value3, Value4, sBefore, sAfter)
     !$acc routine bind(CON_stop_acc)
 

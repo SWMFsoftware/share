@@ -1057,12 +1057,13 @@ contains
   subroutine show_rot_matrix_acc(Matrix_DD)
     !$acc routine seq nohost
     real, intent(in) :: Matrix_DD(3,3)
+    !--------------------------------------------------------------------------
      write(*,*) Matrix_DD(1,1), Matrix_DD(1,2), Matrix_DD(1,3)
      write(*,*) Matrix_DD(2,1), Matrix_DD(2,2), Matrix_DD(2,3)
      write(*,*) Matrix_DD(3,1), Matrix_DD(3,2), Matrix_DD(3,3)
    end subroutine show_rot_matrix_acc
-#endif
   !============================================================================
+#endif
   subroutine show_rot_matrix(Matrix_DD)
     !$acc routine bind(show_rot_matrix_acc)
 
