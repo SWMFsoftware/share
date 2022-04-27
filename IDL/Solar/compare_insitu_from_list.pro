@@ -1,6 +1,7 @@
 pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   $
                               DoPlotTe=DoPlotTe, CharSizeLocal=CharSizeLocal,   $
-                              nyMaxLegend=nyMaxLegend,DoHighlight=DoHighlight
+                              nyMaxLegend=nyMaxLegend,DoHighlight=DoHighlight,  $
+                              DoStrictRange=DoStrictRange
 
   if (not keyword_set(filename_list)) then begin
      if (file_test('./filename_list.txt')) then begin
@@ -22,7 +23,8 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
   if (not keyword_set(nyMaxLegend))    then nyMaxLegend=3
   if (not keyword_set(DoHighlight))    then DoHighlight=0
   if (keyword_set(DoHighlight))        then $
-     openw, lun_opt, './output/avg_dist.txt',/get_lun 
+     openw, lun_opt, './output/avg_dist.txt',/get_lun
+  if (not keyword_set(DoStrictRange))  then DoStrictRange=0
   
   umax_plot = 900
   nmax_plot = 35
@@ -81,7 +83,7 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
            return
         endif
 
-        umax = max([umax,max(ut_swmf)*1.3])
+        umax = max([umax,max(ur_swmf)*1.3])
         nmax = max([nmax,max(n_swmf )*1.3])
         tmax = max([tmax,max(ti_swmf)*1.3])
         bmax = max([bmax,max(B_swmf )*1.3]*1e5)
@@ -123,10 +125,17 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
   endif
   
   ;; adjust again with the observation
-  umax_plot = min([umax_plot,max([umax,max(u_obs)*1.3])])
-  nmax_plot = min([nmax_plot,max([nmax,max(n_obs)*1.3])])
-  tmax_plot = min([tmax_plot,max([tmax,max(tem_obs)*1.3])])
-  bmax_plot = min([bmax_plot,max([bmax,max(mag_obs)*1.3])])
+  if DoStrictRange then begin
+     umax_plot = min([umax_plot,max([umax,max(u_obs)*1.3])])
+     nmax_plot = min([nmax_plot,max([nmax,max(n_obs)*1.3])])
+     tmax_plot = min([tmax_plot,max([tmax,max(tem_obs)*1.3])])
+     bmax_plot = min([bmax_plot,max([bmax,max(mag_obs)*1.3])])
+  endif else begin
+     umax_plot = max([umax,max(u_obs)*1.3])
+     nmax_plot = max([nmax,max(n_obs)*1.3])
+     tmax_plot = max([tmax,max(tem_obs)*1.3])
+     bmax_plot = max([bmax,max(mag_obs)*1.3])
+  endelse
 
   ;; set the filename for the output figure...
   fileplot = dir_plot + '/CR'+string(CR_number_plot,format='(i4)') +TypePlot $
