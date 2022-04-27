@@ -48,7 +48,7 @@
 module ModCoordTransform
 
   use ModNumConst, ONLY: cTwoPi, cHalfPi, cUnit_DD
-  use ModUtilities, ONLY: CON_stop
+  use ModUtilities, ONLY: CON_stop, CON_stop_simple
 
   implicit none
 
@@ -928,12 +928,10 @@ contains
     elseif(abs(detA) > Limit*maxval(abs(a_DD)) )then
        b_DD = b_DD/DetA
     else
-!#ifndef _OPENACC
        write(*,*)'Error in ',NameSub,' for matrix:'
        call show_rot_matrix(a_DD)
        write(*,*)'Determinant=', DetA
-!#endif
-       call CON_stop('Singular matrix in '//NameSub)
+       call CON_stop_simple('Singular matrix in '//NameSub)
     end if
 
   end function inverse_matrix33
