@@ -84,6 +84,11 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
         IsOverPlot = 0
         DoLegend   = 1
 
+        u_max = 0
+        n_max = 0
+        T_max = 0
+        B_max = 0
+
         for iFile=0, nFileAdaptOne-1 do begin
            file_sim_adapt=files_adapt_one[iFile]
 
@@ -98,6 +103,21 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
               continue
            endif
 
+           u_max = max([u_max, ur_swmf])
+           n_max = max([n_max, n_swmf])
+           T_max = max([T_max, ti_swmf])
+           B_max = max([B_max, B_swmf*1e5])
+        endfor
+
+        for iFile=0, nFileAdaptOne-1 do begin
+           file_sim_adapt=files_adapt_one[iFile]
+
+           read_swmf_sat, file_sim_adapt, time_swmf, n_swmf, ux_swmf, uy_swmf,        $
+                          uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf,       $
+                          ut_swmf, ur_swmf, B_swmf, DoContainData=DoContainData,      $
+                          TypeData=TypeData, TypePlot=TypePlot,                       $
+                          start_time=start_time, end_time=end_time
+
            get_insitu_data, start_time, end_time, TypeData, u_obs, n_obs, tem_obs,  $
                             mag_obs, time_obs, DoContainData=DoContainData
 
@@ -106,12 +126,17 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
               continue
            endif
 
+           u_max = max([u_max, u_obs])*1.3
+           n_max = max([n_max, n_obs])*1.3
+           T_max = max([T_max, tem_obs])*1.3
+           B_max = max([B_max, mag_obs])*1.3
+
            plot_insitu, time_obs, u_obs,  n_obs,  tem_obs, mag_obs,                 $
                         time_swmf, ur_swmf, n_swmf,  ti_swmf,  te_swmf, B_swmf,     $
                         start_time, end_time, typeData=typeData,                    $
                         charsize=CharSizeLocal, DoPlotTe = DoPlotTe,                $
                         legendNames=Model, DoShowDist=0, IsOverPlot=IsOverPlot,     $
-                        DoLegend=DoLegend,ymax_I=[900,35,1e6,25], DoLogT=1, linethick=5
+                        DoLegend=DoLegend,ymax_I=[u_max,n_max,T_max,B_max], DoLogT=1, linethick=5
 
            IsOverPlot = 1
            DoLegend   = 0
