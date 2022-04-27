@@ -41,6 +41,7 @@ module ModUtilities
   public:: check_allocate
   public:: greatest_common_divisor
   public:: CON_stop
+  public:: CON_stop_simple
   public:: CON_set_do_test
   public:: test_mod_utility
   public:: norm2
@@ -131,37 +132,56 @@ contains
   end subroutine CON_set_do_test
   !============================================================================
 #ifdef _OPENACC
-  subroutine CON_stop_acc(String, Value1, Value2, Value3, Value4, sBefore, sAfter)
+  subroutine CON_stop_acc(String1, String2, String3)
     !$acc routine seq nohost
-    character(len=*),  intent(in) :: String
-    class(*), optional, intent(in):: Value1, Value2, Value3, Value4 ! do not use them!
-    character(len=*), optional, intent(in):: sBefore, sAfter
+    character(len=*),  intent(in) :: String1
+    character(len=*), optional, intent(in) :: String2, String3
 
     ! overcomplicated conditionals, because OpenACC code cannot concatenate strings
     !--------------------------------------------------------------------------
-    if (present(sBefore)) then
-       if (present(sAfter)) then
-          write(*,*) 'ERROR: ', sBefore, String, sAfter
+    if (present(String2)) then
+       if (present(String3)) then
+          write (*,*) 'ERROR: ', String1, String2, String3
        else
-          write(*,*) 'ERROR: ', sBefore, String
+          write (*,*) 'ERROR: ', String1, String2
        end if
     else
-       if (present(sAfter)) then
-          write(*,*) 'ERROR: ', String, sAfter
+       if (present(String3)) then
+          write (*,*) 'ERROR: ', String1, String3
        else
-          write(*,*) 'ERROR: ', String
+          write (*,*) 'ERROR: ', String1
        end if
     end if
-    stop String  ! this will call the OpenACC error handler
+    stop String1  ! this will call the OpenACC error handler
   end subroutine CON_stop_acc
   !============================================================================
 #endif
-  subroutine CON_stop(String, Value1, Value2, Value3, Value4, sBefore, sAfter)
+  subroutine CON_stop_simple(String1, String2, String3)
     !$acc routine bind(CON_stop_acc)
+
+    character(len=*),  intent(in) :: String1
+    character(len=*), optional, intent(in) :: String2, String3
+    !--------------------------------------------------------------------------
+    if (present(String2)) then
+       if (present(String3)) then
+          call CON_stop(String1//String2//String3)
+       else
+          call CON_stop(String1//String2)
+       end if
+    else
+       if (present(String3)) then
+          call Con_stop(String1//String3)
+       else
+          call Con_stop(String1)
+       end if
+    end if
+    stop "UNREACHABLE CODE"
+  end subroutine CON_stop_simple
+  !============================================================================
+  subroutine CON_stop(String, Value1, Value2, Value3, Value4)
 
     character(len=*), intent(in):: String
     class(*), optional, intent(in):: Value1, Value2, Value3, Value4
-    character(len=*), optional, intent(in):: sBefore, sAfter
 
     ! Stop execution after the following actions:
     !
@@ -181,18 +201,7 @@ contains
 
     write(*,*) 'ERROR: aborting execution on processor', iProc, &
          ' with message:'
-    ! The following code is to ensure the same interface as the OpenACC-specific version,
-    ! which accepts the `sBefore` and `sAfter` arguments
-    ! because OpenACC code is unable to concatenate strings.
-    write (*,'(a)', advance='NO') 'ERROR: '
-    if (present(sBefore)) write(*,'(a)', advance='NO') sBefore
-    if (present(sAfter)) then
-       write(*,'(a)') String//sAfter
-    else
-       write(*,'(a)') String
-    end if
-    ! write(*,'(a)') 'ERROR: '//String
-
+    write(*,'(a)') 'ERROR: '//String
     if(present(Value1)) call write_value(Value1)
     if(present(Value2)) call write_value(Value2)
     if(present(Value3)) call write_value(Value3)
@@ -1089,7 +1098,7 @@ contains
              if(present(StringError)) write(*,*) NameSub, ': ', StringError
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
              write(*,*) NameSub,': Coord=', Coord
-             call CON_stop(NameSub//': normalized coordinate is too small!')
+             call CON_stop_simple(NameSub//': normalized coordinate is too small!')
           elseif(.not.DoExtrapolate)then
              ! Use lefttmost cell (first order accurate)
              dCoord = 0.0
@@ -1100,7 +1109,7 @@ contains
              if(present(StringError)) write(*,*) StringError
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
              write(*,*) NameSub,': Coord=', Coord
-             call CON_stop(NameSub//': normalized coordinate is too large!')
+             call CON_stop_simple(NameSub//': normalized coordinate is too large!')
           elseif(.not.DoExtrapolate)then
              ! Use rightmost cell (first order accurate)
              dCoord = 1.0
@@ -1120,7 +1129,7 @@ contains
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
              write(*,*) NameSub,': Coord, CoordMin, CoordMax=', &
                   Coord, Coord_I(MinCoord), Coord_I(MaxCoord)
-             call CON_stop(NameSub//': coordinate is too small!')
+             call CON_stop_simple(NameSub//': coordinate is too small!')
           elseif(DoExtrapolate)then
              iCoord = MinCoord
              dCoord = (Coord - Coord_I(iCoord)) &
@@ -1139,7 +1148,7 @@ contains
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
              write(*,*) NameSub,': Coord, CoordMin, CoordMax=', &
                   Coord, Coord_I(MinCoord), Coord_I(MaxCoord)
-             call CON_stop(NameSub//': coordinate is too large!')
+             call CON_stop_simple(NameSub//': coordinate is too large!')
           elseif(DoExtrapolate)then
              iCoord = MaxCoord - 1
              dCoord = (Coord - Coord_I(iCoord))  &
@@ -1184,7 +1193,7 @@ contains
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
              write(*,*) NameSub,': Coord, CoordMin, CoordMax=', &
                   Coord, Coord_I(MaxCoord), Coord_I(MinCoord)
-             call CON_stop(NameSub//': coordinate is too small!')
+             call CON_stop_simple(NameSub//': coordinate is too small!')
           elseif(DoExtrapolate)then
              iCoord = MaxCoord - 1
              dCoord = (Coord_I(iCoord) - Coord) &
@@ -1203,7 +1212,7 @@ contains
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
              write(*,*) NameSub,': Coord, CoordMin, CoordMax=', &
                   Coord, Coord_I(MaxCoord), Coord_I(MinCoord)
-             call CON_stop(NameSub//': coordinate is too large!')
+             call CON_stop_simple(NameSub//': coordinate is too large!')
           elseif(DoExtrapolate)then
              iCoord = MinCoord
              dCoord = (Coord_I(iCoord) - Coord)  &
@@ -1281,7 +1290,7 @@ contains
              if(present(StringError)) write(*,*) NameSub, ': ', StringError
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
              write(*,*) NameSub,': Coord=', Coord
-             call CON_stop(NameSub//': normalized coordinate is too small!')
+             call CON_stop_simple(NameSub//': normalized coordinate is too small!')
           elseif(.not.DoExtrapolate)then
              ! Use lefttmost cell (first order accurate)
              dCoord = 0.0
@@ -1292,7 +1301,7 @@ contains
              if(present(StringError)) write(*,*) StringError
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
              write(*,*) NameSub,': Coord=', Coord
-             call CON_stop(NameSub//': normalized coordinate is too large!')
+             call CON_stop_simple(NameSub//': normalized coordinate is too large!')
           elseif(.not.DoExtrapolate)then
              ! Use rightmost cell (first order accurate)
              dCoord = 1.0
@@ -1312,7 +1321,7 @@ contains
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
              write(*,*) NameSub,': Coord, CoordMin, CoordMax=', &
                   Coord, Coord_I(MinCoord), Coord_I(MaxCoord)
-             call CON_stop(NameSub//': coordinate is too small!')
+             call CON_stop_simple(NameSub//': coordinate is too small!')
           elseif(DoExtrapolate)then
              iCoord = MinCoord
              dCoord = (Coord - Coord_I(iCoord)) &
@@ -1331,7 +1340,7 @@ contains
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
              write(*,*) NameSub,': Coord, CoordMin, CoordMax=', &
                   Coord, Coord_I(MinCoord), Coord_I(MaxCoord)
-             call CON_stop(NameSub//': coordinate is too large!')
+             call CON_stop_simple(NameSub//': coordinate is too large!')
           elseif(DoExtrapolate)then
              iCoord = MaxCoord - 1
              dCoord = (Coord - Coord_I(iCoord))  &
@@ -1376,7 +1385,7 @@ contains
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
              write(*,*) NameSub,': Coord, CoordMin, CoordMax=', &
                   Coord, Coord_I(MaxCoord), Coord_I(MinCoord)
-             call CON_stop(NameSub//': coordinate is too small!')
+             call CON_stop_simple(NameSub//': coordinate is too small!')
           elseif(DoExtrapolate)then
              iCoord = MaxCoord - 1
              dCoord = (Coord_I(iCoord) - Coord) &
@@ -1395,7 +1404,7 @@ contains
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
              write(*,*) NameSub,': Coord, CoordMin, CoordMax=', &
                   Coord, Coord_I(MaxCoord), Coord_I(MinCoord)
-             call CON_stop(NameSub//': coordinate is too large!')
+             call CON_stop_simple(NameSub//': coordinate is too large!')
           elseif(DoExtrapolate)then
              iCoord = MinCoord
              dCoord = (Coord_I(iCoord) - Coord)  &
