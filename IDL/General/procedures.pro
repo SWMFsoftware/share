@@ -2719,11 +2719,12 @@ pro read_plot_param
 
   askstr,'func(s) (e.g. rho p ux;uz bx+by -T) ',func,doask
   if plotdim eq 1 then begin
+     if strmid(plotmode,0,4) ne 'plot' then plotmode='default'
      print,'1D plotmode: plot/plot_io/plot_oi/plot_oo'
      print,'1D +options: max,mean,log,noaxis,over,#c999,#ct999'
      askstr,'plotmode(s)                ',plotmode,doask
   endif else begin
-     if strmid(plotmode,0,4) eq 'plot' then plotmode='contbar'
+     if strmid(plotmode,0,4) eq 'plot' then plotmode='default'
      print,'2D plotmode: shade/surface/cont/tv/polar/lonlatn/lonlats/velovect/vector/stream/scatter'
      print,'2D +options: degree/radian/hour'
      print,'2D +options: bar,body,fill,grid,irr,label,max,mean,log,lgx,lgy'
