@@ -17,3 +17,4 @@ Library/src/mpif.h
 IDL/Solar/obsdata
 IDL/Solar/simdata
 IDL/Solar/output
+IDL/Solar/PutRsp.dat
