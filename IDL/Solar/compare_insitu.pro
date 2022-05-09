@@ -109,6 +109,19 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
            B_max = max([B_max, B_swmf*1e5])
         endfor
 
+        get_insitu_data, start_time, end_time, TypeData, u_obs, n_obs, tem_obs,  $
+                         mag_obs, time_obs, DoContainData=DoContainData
+
+        if DoContainData ne 1 then begin
+           print, " Error: no observational data are found."
+           continue
+        endif
+
+        u_max = max([u_max, u_obs])*1.3
+        n_max = max([n_max, n_obs])*1.3
+        T_max = max([T_max, tem_obs])*1.3
+        B_max = max([B_max, mag_obs])*1.3
+
         for iFile=0, nFileAdaptOne-1 do begin
            file_sim_adapt=files_adapt_one[iFile]
 
@@ -117,19 +130,6 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
                           ut_swmf, ur_swmf, B_swmf, DoContainData=DoContainData,      $
                           TypeData=TypeData, TypePlot=TypePlot,                       $
                           start_time=start_time, end_time=end_time
-
-           get_insitu_data, start_time, end_time, TypeData, u_obs, n_obs, tem_obs,  $
-                            mag_obs, time_obs, DoContainData=DoContainData
-
-           if DoContainData ne 1 then begin
-              print, " Error: no observational data are found."
-              continue
-           endif
-
-           u_max = max([u_max, u_obs])*1.3
-           n_max = max([n_max, n_obs])*1.3
-           T_max = max([T_max, tem_obs])*1.3
-           B_max = max([B_max, mag_obs])*1.3
 
            plot_insitu, time_obs, u_obs,  n_obs,  tem_obs, mag_obs,                 $
                         time_swmf, ur_swmf, n_swmf,  ti_swmf,  te_swmf, B_swmf,     $
