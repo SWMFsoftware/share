@@ -19,16 +19,17 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
   endif
 
   if (not keyword_set(dir_plot)) then begin
-     if (file_test('./output', /directory) eq 0) then file_mkdir, './output'
      dir_plot = './output'
      print, ' Saves into the default dir_plot = ./output'
   endif
 
   if (not keyword_set(dir_obs)) then begin
-     if (file_test('./obsdata', /directory) eq 0) then file_mkdir, './obsdata'
      dir_obs = './obsdata'
      print, ' Saves into the default dir_obs = ./obsdata'
   endif
+
+  if (file_test(dir_plot, /directory) eq 0) then file_mkdir, dir_plot
+  if (file_test(dir_obs,  /directory) eq 0) then file_mkdir, dir_obs
 
   if (not keyword_set(extra_plt_info)) then begin
      extra_plt_info = ''
@@ -62,6 +63,9 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
   if (not isa(EventTimeDist))  then EventTimeDist  = 'none'
   if (not isa(TimeWindowDist)) then TimeWindowDist = -7
 
+  ;; default is to save the observation
+  DoSaveObs = 1
+
   print, "+++++++++++++++++++++++++++++++++++++++++++++++++++++"
   print, "compare_remote: dir_obs    =", dir_obs
   print, "compare_remote: files_sim  =", files_sim
@@ -71,6 +75,9 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
      TypeADAPT_I = ['earth', 'sta', 'stb']
 
      for iType = 0, n_elements(TypeADAPT_I)-1 do begin
+        ;; for each directory and each type, reset the default value
+        DoSaveObs = 1
+
         TypeADAPT = TypeADAPT_I[iType]
         files_adapt_one = file_search(dirs_adapt+'/IH/*'+TypeADAPT+'*sat', $
                                       count = nFileAdaptOne)
@@ -150,11 +157,15 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
                                UseTimePlotName=UseTimePlotName,                           $
                                CharSizeLocal=CharSizeLocal, DoPlotTe=DoPlotTe,            $
                                Model=Model, dir_obs=dir_obs, dir_plot=dirs_adapt[iFile],  $
-                               DoSaveObs=0, DoLogT=1, EventTimeDist=EventTimeDist,        $
+                               DoSaveObs=DoSaveObs, DoLogT=1, EventTimeDist=EventTimeDist,$
                                TimeWindowDist=TimeWindowDist
+           DoSaveObs = 0
         endfor
      endfor
   endif
+
+  ;; reset the default value
+  DoSaveObs = 1
 
   for i = 0, nSimFile-1 do begin
      file_sim     = files_sim(i)
@@ -163,7 +174,7 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
                          UseTimePlotName=UseTimePlotName,                  $
                          CharSizeLocal=CharSizeLocal, DoPlotTe=DoPlotTe,   $
                          Model=Model, dir_obs=dir_obs, dir_plot=dir_plot,  $
-                         DoSaveObs=1, EventTimeDist=EventTimeDist,         $
+                         DoSaveObs=DoSaveObs, EventTimeDist=EventTimeDist, $
                          TimeWindowDist=TimeWindowDist
   endfor
 end
