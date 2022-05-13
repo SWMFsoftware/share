@@ -134,25 +134,25 @@ contains
 #ifdef _OPENACC
   subroutine CON_stop_acc(String1, String2, String3)
     !$acc routine seq nohost
+
+    ! Write out String1 (and String2 and String3 if present).
+    ! OpenAcc cannot handle arbitrary type of arguments.
+    ! It cannot handle string concatenation either, so we pass
+    ! string parts as individual arguments.
+    ! OpenACC does not understand the ADVANCE='NO' feature either.
+
     character(len=*),  intent(in) :: String1
     character(len=*), optional, intent(in) :: String2, String3
-
-    ! overcomplicated conditionals, because OpenACC code cannot concatenate strings
     !--------------------------------------------------------------------------
-    if (present(String2)) then
-       if (present(String3)) then
-          write (*,*) 'ERROR: ', String1, String2, String3
-       else
-          write (*,*) 'ERROR: ', String1, String2
-       end if
+    if (present(String3)) then
+       write (*,*) 'ERROR: ', String1, String2, String3
+    else if (present(String2)) then
+       write (*,*) 'ERROR: ', String1, String2
     else
-       if (present(String3)) then
-          write (*,*) 'ERROR: ', String1, String3
-       else
-          write (*,*) 'ERROR: ', String1
-       end if
+       write (*,*) 'ERROR: ', String1
     end if
     stop String1  ! this will call the OpenACC error handler
+
   end subroutine CON_stop_acc
   !============================================================================
 #endif
@@ -162,20 +162,15 @@ contains
     character(len=*),  intent(in) :: String1
     character(len=*), optional, intent(in) :: String2, String3
     !--------------------------------------------------------------------------
-    if (present(String2)) then
-       if (present(String3)) then
-          call CON_stop(String1//String2//String3)
-       else
-          call CON_stop(String1//String2)
-       end if
+    if (present(String3)) then
+       call CON_stop(String1//String2//String3)
+    elseif(present(String2)) then
+       call CON_stop(String1//String2)
     else
-       if (present(String3)) then
-          call Con_stop(String1//String3)
-       else
-          call Con_stop(String1)
-       end if
+       call Con_stop(String1)
     end if
     stop "UNREACHABLE CODE"
+
   end subroutine CON_stop_simple
   !============================================================================
   subroutine CON_stop(String, Value1, Value2, Value3, Value4)
