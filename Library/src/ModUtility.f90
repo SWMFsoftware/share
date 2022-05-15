@@ -50,7 +50,10 @@ module ModUtilities
      ! Single and double precision coordinates
      module procedure find_cell4, find_cell8
   end interface find_cell
-
+#ifdef _OPENACC
+  public:: init_gpu
+#endif
+  
   logical, public :: DoFlush = .true. ! parameter for flush_unit
   logical, public :: DoMakeDir = .true. ! parameter for make_dir
   logical, public :: DoWriteCallSequence = .false. ! parameter for CON_stop
@@ -1437,7 +1440,86 @@ contains
     end if
 
   end subroutine find_cell8
+#ifdef _OPENACC
   !============================================================================
+  subroutine init_gpu(iComm, iProc, nGpu, iGpu)
+
+    ! Return number of GPUs (nGPU) and the index of the selected GPU for
+    ! MPI process iProc. Each MPI process should get one GPU.
+
+    ! Call set_acc_error_handler so the code can stop all MPI processes
+
+    use openacc
+
+    integer, intent(in) :: iComm, iProc
+    integer, intent(out):: nGpu, iGpu
+
+    integer :: iLocalComm, iLocalProc, nLocalProc, iError
+
+    character(len=*), parameter:: NameSub = 'init_gpu'
+    !--------------------------------------------------------------------------
+
+    ! Get the node-local (shared-memory capable) communicator
+    call MPI_comm_split_type(iComm, MPI_COMM_TYPE_SHARED, iProc, &
+         MPI_INFO_NULL, iLocalComm, iError)
+
+    ! Determine the number of local processes and the local rank
+    call MPI_comm_size(iLocalComm, nLocalProc, iError)
+    call MPI_comm_rank(iLocalComm, iLocalProc, iError)
+
+    ! Determine the number of GPUs
+    nGpu = acc_get_num_devices(ACC_DEVICE_NVIDIA)
+
+    if (nGpu <= 0) call CON_stop(NameSub//': No GPUs detected on the node')
+
+    iGpu = iLocalProc
+    if (nLocalProc > nGpu) then ! we have more processes than GPUs
+       if (iLocalProc==0) write (*,*) NameSub, " WARNING:", &
+            ' iProc, nLocalProc > nGpu=', iProc, nLocalProc, nGpu
+       iGpu = mod(iLocalProc, nGpu)
+    end if
+
+    ! set the device number we will be operating on
+    !$acc set device_num(iGpu)
+    !$acc init device_num(iGpu)
+
+    call MPI_Comm_free(iLocalComm, iError)
+
+    ! Set the OpenACC error handler so it can stop all MPI processes
+    call set_acc_error_handler()
+
+  end subroutine init_gpu
+  !============================================================================
+  subroutine acc_error_handler() bind(C)
+
+    ! This routine is called by OpenACC when encountering stop.
+    ! It calls CON_stop, which calls MPI_abort.
+    !--------------------------------------------------------------------------
+    call CON_stop("OpenACC error!")
+
+  end subroutine acc_error_handler
+  !============================================================================
+  subroutine set_acc_error_handler()
+
+    use iso_c_binding, only: c_funloc ! , C_FUNPTR
+
+    ! Set "subroutine acc_error_handler" to be used by OpenACC
+
+    ! To be removed if not needed !
+    !    interface
+    !       subroutine acc_set_error_routine(FuncPtr) BIND(C)
+    !         use iso_c_binding, only: C_FUNPTR
+    !         type(C_FUNPTR), intent(in), value :: FuncPtr
+    !       end subroutine acc_set_error_routine
+    !    end interface
+    !    type(C_FUNPTR) :: FuncPtr
+    !--------------------------------------------------------------------------
+    call acc_set_error_routine(c_funloc(acc_error_handler))
+
+  end subroutine set_acc_error_handler
+  !============================================================================
+#endif
+
 end module ModUtilities
 !==============================================================================
 subroutine CON_set_do_test_ext(String,DoTest,DoTestMe)
