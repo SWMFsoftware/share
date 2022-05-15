@@ -13,8 +13,7 @@ module ModUtilities
   ! nvfortran does not compile ModInterpolateAMR if the ONLY is present below
   ! use ModKind, ONLY: Real4_, Real8_
   use ModKind
-  use ModMpi,  ONLY: MPI_wtime, MPI_initialized, MPI_abort, &
-       MPI_comm_rank, MPI_comm_world
+  use ModMpi
   use ModIoUnit, ONLY: UnitTmp_, io_unit_clean
   use iso_c_binding, ONLY: c_null_char
 
@@ -53,7 +52,7 @@ module ModUtilities
 #ifdef _OPENACC
   public:: init_gpu
 #endif
-  
+
   logical, public :: DoFlush = .true. ! parameter for flush_unit
   logical, public :: DoMakeDir = .true. ! parameter for make_dir
   logical, public :: DoWriteCallSequence = .false. ! parameter for CON_stop
@@ -1440,12 +1439,13 @@ contains
     end if
 
   end subroutine find_cell8
-#ifdef _OPENACC
   !============================================================================
+#ifdef _OPENACC
   subroutine init_gpu(iComm, iProc, nGpu, iGpu)
 
     ! Return number of GPUs (nGPU) and the index of the selected GPU for
     ! MPI process iProc. Each MPI process should get one GPU.
+    ! based on the node-local (shared-memory capable) MPI communicator
 
     ! Call set_acc_error_handler so the code can stop all MPI processes
 
@@ -1458,8 +1458,6 @@ contains
 
     character(len=*), parameter:: NameSub = 'init_gpu'
     !--------------------------------------------------------------------------
-
-    ! Get the node-local (shared-memory capable) communicator
     call MPI_comm_split_type(iComm, MPI_COMM_TYPE_SHARED, iProc, &
          MPI_INFO_NULL, iLocalComm, iError)
 
@@ -1501,18 +1499,16 @@ contains
   !============================================================================
   subroutine set_acc_error_handler()
 
-    use iso_c_binding, only: c_funloc ! , C_FUNPTR
+    use iso_c_binding, ONLY: c_funloc
 
     ! Set "subroutine acc_error_handler" to be used by OpenACC
 
-    ! To be removed if not needed !
-    !    interface
-    !       subroutine acc_set_error_routine(FuncPtr) BIND(C)
-    !         use iso_c_binding, only: C_FUNPTR
-    !         type(C_FUNPTR), intent(in), value :: FuncPtr
-    !       end subroutine acc_set_error_routine
-    !    end interface
-    !    type(C_FUNPTR) :: FuncPtr
+    interface
+       subroutine acc_set_error_routine(FuncPtr) BIND(C)
+         use iso_c_binding, only: C_FUNPTR
+         type(C_FUNPTR), intent(in), value :: FuncPtr
+       end subroutine acc_set_error_routine
+    end interface
     !--------------------------------------------------------------------------
     call acc_set_error_routine(c_funloc(acc_error_handler))
 
