@@ -1,7 +1,7 @@
 ;  Copyright (C) 2002 Regents of the University of Michigan,
 ;  portions used with permission 
 ;  For more information, see http://csem.engin.umich.edu/tools/swmf
-pro correct_imf,wIn,xIn,inputfile,outputfile,gsm=gsm
+pro correct_imf,wIn,xIn,inputfile,outputfile,gsm=gsm,decay=decay
 
 ; wIn contains the upstream data with 15 columns:
 ;    yr mo dy hr mn sc ms bx by bz ux uy uz rho T
@@ -10,6 +10,9 @@ pro correct_imf,wIn,xIn,inputfile,outputfile,gsm=gsm
 ; inputfile is the name of the original IMF file 
 ; outputfile is the name of the corrected IMF file
 ; if gsm=1 then convert from GSM to GSE before propagation and back afterward.
+; if decay is set, find shocks, calculate shock normal from ux,uy,uz
+;   change and use it for the propagation direction and time delay
+;   Decay the normal back to -X direction exponentially with "decay" (minutes)
 
 w = wIn
 x = xIn
@@ -30,12 +33,12 @@ endif
 
 if n_elements(x) ne nPoint then begin
     print,'ERROR: w and x arrays have different sizes:',$
-      nPoint,n_elements(x)
+      nPoint, n_elements(x)
     retall
 endif
 
 ; Calculate the time in seconds measured from the beginning of the day
-iyr=0 & imo=1 & idy = 2 & ihr = 3 & imn = 4 & isc = 5 & ims = 6
+iyr=0 & imo=1 & idy = 2 
 
 Time = log_time(w,['year','mo','dy','hr','mn','sc','msc'],'s')
 
@@ -56,11 +59,51 @@ if keyword_set(gsm) then begin
    gsm_gse, u, epoch
    w(*,10:12) = transpose(u)
 endif
-   
-; Calculate the time delay
+
 iux = 10
+
+; Calculate the simple time delay
 TimeDelay = -x/w(*,iux)
-NewTime   = Time+TimeDelay
+
+; If decay is set, look for shocks and recalculate it
+if decay gt 0 then begin
+   ;; indexes used
+   iuy  = iux + 1
+   iuz  = iuy + 1
+   irho = iuz + 1
+   ;; initial value of (shock) normal vector
+   normal = [-1., 0., 0.]
+   for i = 1, nPoint-2 do begin
+      ;; detect shocks: dux/dt < -10(km/s)/min and d(log rho)/dt > 0.1/min
+      dt      = (Time(i+1) - Time(i-1))/60.0 ; in minutes
+      dux     = w(i+1,iux) - w(i-1,iux)
+      dlogrho = alog(w(i+1,irho)/w(i-1,irho))
+      if dux/dt lt -10.0 and dlogrho/dt gt 0.1 then begin
+         duy = w(i+1,iuy) - w(i-1,iuy)
+         duz = w(i+1,iuz) - w(i-1,iuz)
+         ;; transverse components must increase through an inclined shock
+         if abs(w(i+1,iuy)) lt abs(w(i-1,iuy)) then duy = 0.0
+         if abs(w(i+1,iuz)) lt abs(w(i-1,iuz)) then duz = 0.0
+         normal = [ dux, duy, duz ]
+         normal /= norm(normal)
+         print,'Shock normal at time ',Time(i)/3600.,'h: ',normal
+      endif
+      ;; normalize the normal vector to unit length
+      normal /= norm(normal)
+      unormal = total(normal*w(i,iux:iuz))
+      TimeDelayOrig = TimeDelay(i)
+      TimeDelay(i) = -x(i)*normal(0)/unormal
+
+      if abs(normal(1)) gt 0.2 or abs(normal(2)) gt 0.2  then $
+         print,'TimeDelayOrig, TimeDelay=', TimeDelayOrig, TimeDelay(i), $
+               ', normal=', normal
+      
+      ;; Decay normal vector towards 1,0,0
+      normal(1:2) = exp(-dt/decay)*normal(1:2)
+   endfor
+endif
+
+NewTime = Time + TimeDelay
 
 ; Smooth out rarefaction waves
 ibx = 7
