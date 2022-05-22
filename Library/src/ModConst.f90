@@ -149,7 +149,7 @@ module ModConst
   real, parameter:: mSun              = 1.99E+30               ! [kg]
   real, parameter:: RotationPeriodSun = 25.38 * cSecondPerDay  ! [ s]
   ! Time conversion parameters:
-  ! Artificial epoch:  
+  ! Artificial epoch:
   ! iYearBase MUST follow : mod(iYearBase,4) == 1
   ! iYearBase MUST be AFTER 1900
   ! This particular value is required by the UA component GITM:
@@ -165,7 +165,7 @@ module ModConst
   ! Yeaar Base Jan,1 00:00:00
   real(Real8_), parameter:: tStartCarringtonRotation = (JulianDayCR0Start - &
        JulianDayBase)*cSecondPerDay ! = -3.509688826080018D+9 [s]
-  !    The expression used before       -3.509706400D+9 ! 
+  !    The expression used before       -3.509706400D+9 !
   real, parameter:: CarringtonSynodicPeriod = cSecondPerDay/&
        (1/25.38D0 - 1/365.2425D0)! 27.2753088381330642 days [s]
 

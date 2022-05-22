@@ -338,7 +338,6 @@ contains
 
   end function n_day_of_year
   !============================================================================
-  !============================================================================
   subroutine time_real_to_julian(Time, JulianDay)
     ! convert real time info into real julian time
     real, intent(in)  :: Time
@@ -364,8 +363,8 @@ contains
                iTime_I(3) + 1721013.5 +&
                (iTime_I(4)+iTime_I(5)/60.+iTime_I(6)/3600.)/24.
   end subroutine time_int_to_julian
-
   !============================================================================
+
   subroutine test_time
 
     integer, parameter :: iYearMax  = 2499
