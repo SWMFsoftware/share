@@ -65,7 +65,7 @@ public:
   ReadParam() { isVerbose = true; }
   ~ReadParam() {}
   ReadParam &operator=(const std::string &stringIn) {
-    // ss << stringIn;
+    ss.clear();
     ss.str(stringIn);
     return (*this);
   }
