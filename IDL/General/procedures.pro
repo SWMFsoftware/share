@@ -468,13 +468,13 @@ function limit_growth, a, factor
   
   n = n_elements(a)
   if n lt 2 then begin
-     print, "Warning in limit_growth: too few elements in array'
+     print, 'Warning in limit_growth: too few elements in array'
      help, a
      RETURN, a
   endif
 
   if size(a,/n_dim) ne 1 then begin
-     print, "Error in limit_growth: array is not one dimensional'
+     print, 'Error in limit_growth: array is not one dimensional'
      help, a
      RETALL
   endif
