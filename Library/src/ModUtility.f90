@@ -1448,6 +1448,7 @@ contains
     ! based on the node-local (shared-memory capable) MPI communicator
 
     ! Call set_acc_error_handler so the code can stop all MPI processes
+    ! unless the environment variable SWMF_NOACCERRORHANDLER is set to "Y".
 
     use openacc
 
@@ -1455,9 +1456,9 @@ contains
     integer, intent(out):: nGpu, iGpu
 
     integer :: iLocalComm, iLocalProc, nLocalProc, iError
-    character(len=1) :: sDoNotSetAccHandler
-    character(len=*), parameter :: sDoNotSetAccHandlerName= &
-         'SWMF_DEBUG_NOACCEHANDLER'
+
+    character(len=1) :: StringEnvVar
+    character(len=*), parameter :: NameEnvVar= 'SWMF_NOACCERRORHANDLER'
 
     character(len=*), parameter:: NameSub = 'init_gpu'
     !--------------------------------------------------------------------------
@@ -1488,10 +1489,9 @@ contains
 
     ! Set the OpenACC error handler so it can stop all MPI processes
     ! unless requested otherwise for debugging purposes
-    call get_environment_variable(sDoNotSetAccHandlerName,sDoNotSetAccHandler)
-    if (sDoNotSetAccHandler=="Y") then
-       write (*,*) 'WARNING: not setting OpenACC error handler'
-       write (*,*) 'WARNING: OpenACC errors may result in hanging processes!'
+    call get_environment_variable(NameEnvVar, StringEnvVar)
+    if (StringEnvVar == "Y") then
+       write (*,*) NameSub, ': WARNING not setting OpenACC error handler!'
     else
        call set_acc_error_handler()
     end if
