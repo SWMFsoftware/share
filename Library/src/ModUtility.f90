@@ -1455,6 +1455,9 @@ contains
     integer, intent(out):: nGpu, iGpu
 
     integer :: iLocalComm, iLocalProc, nLocalProc, iError
+    character(len=1) :: sDoNotSetAccHandler
+    character(len=*), parameter :: sDoNotSetAccHandlerName= &
+         'SWMF_DEBUG_NOACCEHANDLER'
 
     character(len=*), parameter:: NameSub = 'init_gpu'
     !--------------------------------------------------------------------------
@@ -1484,7 +1487,14 @@ contains
     call MPI_Comm_free(iLocalComm, iError)
 
     ! Set the OpenACC error handler so it can stop all MPI processes
-    call set_acc_error_handler()
+    ! unless requested otherwise for debugging purposes
+    call get_environment_variable(sDoNotSetAccHandlerName,sDoNotSetAccHandler)
+    if (sDoNotSetAccHandler=="Y") then
+       write (*,*) 'WARNING: not setting OpenACC error handler'
+       write (*,*) 'WARNING: OpenACC errors may result in hanging processes!'
+    else
+       call set_acc_error_handler()
+    end if
 
   end subroutine init_gpu
   !============================================================================
