@@ -157,7 +157,7 @@ contains
     ! Misc:
     ! Gyration in a uniform magnetic field, nQ numper of points
     ! for the momentum grid, nP is number of point over azimuthal angle
-    integer, parameter::  nQ = 30,  nP = 360
+    integer, parameter::  nQ = 300,  nP = 360
     ! Loop variables
     integer           ::  iQ, iStep
     ! Momentum max and min, in units of mc
@@ -208,12 +208,12 @@ contains
     end do
     call save_plot_file(NameFile='test_poisson.out', &
          TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
-         NameVarIn='Phi LogMomentum VDF'  , &
-         CoordMinIn_D=[0.50,      LogMomentum_I(1 )],&
-         CoordMaxIn_D=[nP - 0.50, LogMomentum_I(nQ)],&
-         StringFormatIn = '(4F10.3)'            ,&
-         Coord2In_I = LogMomentum_I(1:nQ)           ,&
-         VarIn_II = transpose(VDF_G(1:nQ,1:nP)))
+         NameVarIn='-p_y  p_x VDF'  , &
+         CoordMinIn_D=[10.0**LogMomentum_I(1 ), 0.50*DeltaPhi],&
+         CoordMaxIn_D=[10.0**LogMomentum_I(nQ), cTwoPi - 0.50*DeltaPhi],&
+         StringFormatIn = '(3F10.3)'            ,&
+         Coord1In_I = 10.0**LogMomentum_I(1:nQ)           ,&
+         VarIn_II = VDF_G(1:nQ,1:nP) )
   contains
     !==========================================================================
     real function Hamiltonian(P2)
@@ -223,6 +223,192 @@ contains
     end function Hamiltonian
     !==========================================================================
   end subroutine test_poisson_bracket
+  !============================================================================
+  subroutine test_energy_conservation(tFinal)
+    real, intent(in) :: tFinal
+    ! Misc:
+    ! Harmonic oscillators, nQ is the number of meshes over coordinate,
+    ! nP is number of meshes overr generalized momentum
+    integer, parameter::  nQ = 1200,  nP = 1200
+    ! Loop variables
+    integer           ::  iQ, iP, iStep
+    ! Mesh size
+    real, parameter   :: DeltaQ = 0.02, DeltaP = 0.02
+    real :: VDF_G(-1:nQ+2, -1:nP+2),VDFInitial_C(nQ,nP)
+    real :: Volume_G(0:nQ+1, 0:nP+1)
+    real :: Hamiltonian_N(-1:nQ+1, -1:nP+1)
+    real :: Energy_C(nQ, nP)
+    real :: Time, Dt, Source_C(nQ,nP)
+    real :: NormL2Init, NormL2, EnergyInit, Energy, qNode, pNode, Q, P
+    !--------------------------------------------------------------------------
+    ! Control volume, for a uniform rectangular grid
+    Volume_G = DeltaQ*DeltaP
+    ! Hamiltonian at the nodes
+    do iP = -1, nP+1
+       pNode = DeltaP*(iP - nP/2)
+       do iQ = -1, nQ+1
+          qNode = DeltaQ*(iQ - nQ/2)
+          Hamiltonian_N(iQ,iP) = 0.5*(qNode**2 + pNode**2)
+       end do
+    end do
+    ! Energy at the cell centers
+    do iP = 1, nP
+       P = DeltaP*(iP - nP/2 - 0.50)
+       do iQ = 1, nQ
+          Q = DeltaQ*(iQ - nQ/2  - 0.50)
+          Energy_C(iQ,iP) = 0.5*(Q**2 + P**2)
+       end do
+    end do
+    ! Initial distribution function
+    VDFInitial_C = 0.0; VDFInitial_C(551:650,101:1100) = 1.0
+    VDF_G = 0.0; VDF_G(1:nQ, 1:nP) = VDFInitial_C
+    Source_C = 0.0
+    ! Initial NormL2 and Energy
+    NormL2Init = sum(VDFInitial_C**2)
+    EnergyInit = sum(VDFInitial_C*Energy_C)
+    ! Compiutation
+    Time = 0.0; iStep = 0
+    ! write(*,*)'Time NormL2/NormL2Init Energy/EnergyInit-1'
+    do
+       call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
+            Hamiltonian_N,   &
+            CFLIn=0.99, DtOut = Dt)
+       iStep = iStep +1
+       if(Time + Dt >= tFinal)then
+          call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
+               Hamiltonian_N,   &
+               DtIn = tFinal - Time)
+          VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
+          NormL2 = sum( (VDF_G(1:nQ,1:nP) - VDFInitial_C)**2 )
+          Energy = sum(VDF_G(1:nQ,1:nP)*Energy_C)
+          write(*,*)tFinal, &
+               NormL2/NormL2Init,&
+               Energy/EnergyInit - 1.0
+          EXIT
+       else
+          Time = Time + Dt
+          VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
+          NormL2 = sum( (VDF_G(1:nQ,1:nP) - VDFInitial_C)**2 )
+          Energy = sum(VDF_G(1:nQ,1:nP)*Energy_C)
+          write(*,*)Time, &
+               NormL2/NormL2Init,&
+               Energy/EnergyInit - 1.0
+       end if
+    end do
+    call save_plot_file(NameFile='test_energy.out', &
+         TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
+         NameVarIn='Q    P VDF'  , &
+         CoordMinIn_D=[-11.99, -11.99],&
+         CoordMaxIn_D=[11.99, 11.99],&
+         StringFormatIn = '(3F10.3)'            ,&
+         VarIn_II = VDF_G(1:nQ,1:nP) )
+  end subroutine test_energy_conservation
+  !============================================================================
+  subroutine test_in_action_angle(tFinal)
+    real, intent(in) :: tFinal
+    ! Misc:
+    ! Harmonic oscillators, nQ is the number of meshes over coordinate,
+    ! nP is number of meshes overr generalized momentum
+    integer, parameter::  nJ = 300,  nPhi = 360
+    ! Loop variables
+    integer           ::  iJ, iPhi, iStep
+    ! Mesh size
+    ! Momentum max and min
+    real, parameter   :: JMax = 12.0, JMin = 0.01
+    ! Mesh size in \phi
+    real, parameter   :: DeltaPhi = cTwoPi/nPhi
+    real :: MomentumRatio, MomentumMin, MomentumMax
+    real :: VDF_G(-1:nJ+2, -1:nPhi+2), Volume_G(0:nJ+1, 0:nPhi+1)
+    real :: VDFInitial_C(nJ,nPhi)
+
+    real :: Hamiltonian_N(-1:nJ+1, -1:nPhi+1)
+    real :: LogMomentum_I(0:nJ+1), Momentum2_I(-1:nJ+1)
+
+    real :: Energy_C(nJ, nPhi)
+    real :: Time, Dt, Source_C(nJ,nPhi)
+    real :: NormL2Init, NormL2, EnergyInit, Energy, J, Phi, Q, P
+    !--------------------------------------------------------------------------
+    MomentumRatio = exp(log(JMax/JMin)/nJ)
+    MomentumMax =  JMin/MomentumRatio
+    Momentum2_I(-1) = MomentumMax**2
+    Hamiltonian_N(-1,:) = 0.50*Momentum2_I(-1)
+    do iJ = 0, nJ+1
+       MomentumMin = MomentumMax
+       MomentumMax = MomentumMin*MomentumRatio
+       Momentum2_I( iJ) = MomentumMax**2
+       Hamiltonian_N(iJ,:) = 0.50*Momentum2_I(iJ)
+       Volume_G(iJ,:) = 0.5*DeltaPhi*&
+            (Momentum2_I(iJ) - Momentum2_I(iJ-1))
+       LogMomentum_I(iJ)   = 0.50*log10(MomentumMin*MomentumMax)
+    end do
+    ! Energy at the cell centers,  and initial distribution
+    VDFInitial_C = 0.0
+    do iPhi = 1, nPhi
+       Phi = DeltaPhi*(iPhi - 0.50)
+       do iJ = 1, nJ
+          J = (Momentum2_I(iJ)*Momentum2_I(iJ-1))**0.250
+          Energy_C(iJ,iPhi) = 0.5*J**2
+          Q = J*cos(Phi)
+          P = J*sin(Phi)
+          ! Initial distribution function
+          if(Q < -1.0.or.Q > 1.0.or.P < -10.0.or.P > 10.0)CYCLE
+          VDFInitial_C(iJ,iPhi) = 1.0
+       end do
+    end do
+    VDF_G = 0.0; VDF_G(1:nJ, 1:nPhi) = VDFInitial_C
+    ! Periodic boundary conditions
+    VDF_G(1:nJ,-1:0 )   = VDF_G(1:nJ, nPhi-1:nPhi)
+    VDF_G(1:nJ, nPhi+1:nPhi+2 ) = VDF_G(1:nJ, 1:2)
+
+    Source_C = 0.0
+    ! Initial NormL2 and Energy
+    NormL2Init = sum(VDFInitial_C**2*Volume_G(1:nJ,1:nPhi))
+    EnergyInit = sum(VDFInitial_C*Energy_C*Volume_G(1:nJ,1:nPhi))
+    ! Compiutation
+    Time = 0.0; iStep = 0
+    ! write(*,*)'Time NormL2/NormL2Init Energy/EnergyInit-1'
+    do
+       call explicit(nJ, nPhi, VDF_G, Volume_G, Source_C, &
+            Hamiltonian_N,   &
+            CFLIn=0.99, DtOut = Dt)
+       iStep = iStep +1
+       if(Time + Dt >= tFinal)then
+          call explicit(nJ, nPhi, VDF_G, Volume_G, Source_C, &
+               Hamiltonian_N,   &
+               DtIn = tFinal - Time)
+          VDF_G(1:nJ, 1:nPhi) = VDF_G(1:nJ, 1:nPhi) + Source_C
+          NormL2 = sum( (VDF_G(1:nJ,1:nPhi) - VDFInitial_C)**2 &
+               *Volume_G(1:nJ,1:nPhi))
+          Energy = sum(VDF_G(1:nJ,1:nPhi)*Energy_C &
+               *Volume_G(1:nJ,1:nPhi))
+          write(*,*)tFinal, &
+               NormL2/NormL2Init,&
+               Energy/EnergyInit - 1.0
+          EXIT
+       else
+          Time = Time + Dt
+          VDF_G(1:nJ, 1:nPhi) = VDF_G(1:nJ, 1:nPhi) + Source_C
+          ! Periodic boundary conditions
+          VDF_G(1:nJ,-1:0 )   = VDF_G(1:nJ, nPhi-1:nPhi)
+          VDF_G(1:nJ, nPhi+1:nPhi+2 ) = VDF_G(1:nJ, 1:2)
+          NormL2 = sum( (VDF_G(1:nJ,1:nPhi) - VDFInitial_C)**2 &
+               *Volume_G(1:nJ,1:nPhi))
+          Energy = sum(VDF_G(1:nJ,1:nPhi)*Energy_C &
+               *Volume_G(1:nJ,1:nPhi))
+          write(*,*)Time, &
+               NormL2/NormL2Init,&
+               Energy/EnergyInit - 1.0
+       end if
+    end do
+    call save_plot_file(NameFile='test_action_angle.out', &
+         TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
+         NameVarIn='Q    P VDF'  , &
+         CoordMinIn_D=[10.0**LogMomentum_I(1 ), 0.50*DeltaPhi],&
+         CoordMaxIn_D=[10.0**LogMomentum_I(nJ), cTwoPi - 0.50*DeltaPhi],&
+         StringFormatIn = '(3F10.3)'            ,&
+         Coord1In_I = 10.0**LogMomentum_I(1:nJ)           ,&
+         VarIn_II = VDF_G(1:nJ,1:nPhi) )
+  end subroutine test_in_action_angle
   !============================================================================
   subroutine test_dsa_poisson
     use ModDiffusion
@@ -313,8 +499,9 @@ contains
        VDF_G(nX+2,    :) = VDF_G(nX,      :)
     end do
     ! do iP =1, nP
-    !   write(*,*)LogMomentum_I(iP),alog10(VDF_G(5000,iP))
+    !   write(*,*)LogMomentum_I(iP),alog10(VDF_G(5000,iP)*VolumeNew_G(5000,iP))
     ! end do
+    write(*,*)'Total weight=', sum(VDF_G(5000,1:nP)*VolumeNew_G(5000,1:nP))
     call save_plot_file(NameFile='test_dsa_poisson.out', &
          TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
          NameVarIn='LogMomentum VDF'  ,                  &
@@ -493,13 +680,15 @@ end module ModTestPoissonBracket
 !==============================================================================
 program test_program
   use ModTestPoissonBracket, ONLY: test_poisson_bracket, test_dsa_sa_mhd, &
-       test_dsa_poisson
+       test_dsa_poisson, test_energy_conservation, test_in_action_angle
   use ModNumConst,           ONLY: cTwoPi
   ! use ModTestPoissonBracketAndScatter, ONLY: test_scatter
   implicit none
 
   !----------------------------------------------------------------------------
   call test_poisson_bracket(cTwoPi)
+  ! call test_energy_conservation(cTwoPi)
+  !  call test_in_action_angle(cTwoPi)
   call test_dsa_poisson
   ! call test_dsa_sa_mhd ! for Fig5.Right Panel
   ! call test_multipoisson_bracket(50.0)
