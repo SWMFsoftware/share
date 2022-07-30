@@ -14,7 +14,6 @@ module ModHyperGeometric
   public :: l0_ext_inductance ! the external inductance of a ring current
   public :: calc_elliptic_int_1kind  ! Elliptic integral, of the first kind
   public :: calc_elliptic_int_2kind  ! Elliptic integral, of the second kind
-  public :: toroid_dp0du, toroid_dq0du ! Temporary
   real, parameter:: cTolerance_I(0:1) = [1.0e-7, 1.0e-15]
   real, parameter:: cEiler    = 0.57721566490
   real, parameter:: cSqrtPi   = 1.7724538509055159
@@ -274,29 +273,6 @@ contains
   !============================================================================
   !                           ^                  ^
   !===========================|Toroidal functions|=============================
-  !===================|Derivatives of toroidal functions|======================
-  !                   v                                 v
-  real function toroid_dp0du(Kappa2In, KappaPrime2In)
-    ! d\tilde{P}^{-1}_{0-1/2}/du  function, related to k(k^\prime)^2
-    real, optional, intent(in) :: Kappa2In, KappaPrime2In
-    real :: Kappa2
-    character(len=*), parameter:: NameSub = 'toroid_dp0du'
-    !--------------------------------------------------------------------------
-    toroid_dp0du = 3*toroid_p(1, Kappa2In, KappaPrime2In)
-  end function toroid_dp0du
-  !============================================================================
-  real function toroid_dq0du(KappaPrime2In, Kappa2In)
-    ! Derivative of \tilde{Q}^{-1}_{0-1/2} function over du
-    ! Related to \kappa(\kappa^\prime)^2
-    real, optional, intent(in) :: KappaPrime2In, Kappa2In
-
-    character(len=*), parameter:: NameSub = 'toroid_dq0du'
-    !--------------------------------------------------------------------------
-    toroid_dq0du = 3*toroid_q(1, KappaPrime2In, Kappa2In)
-  end function toroid_dq0du
-  !============================================================================
-  !                 ^                                 ^
-  !=================|Derivatives of toroidal functions|========================
   !==============================|Inductances|=================================
   !                              v           v
   real function scr_inductance(KappaPrime2)
