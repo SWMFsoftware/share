@@ -474,25 +474,42 @@ module ModCurrentFilament
   logical :: UseUniformCurrent = .false.
   ! 2. Surface current form-factor
   logical :: UseSurfaceCurrent = .false.
+  ! Inductunce  coefficient; in the SI units this is the ratio of the total
+  ! inductance of the filament normaalized by \mu_0 R_\infty
+  real :: Inductance
 contains
   !============================================================================
   subroutine set_filament_geometry(rMinor, rMajor)
     use ModUniformCurrentFilament, ONLY: set_uniform_current=>set_kappaprime0
     use ModSurfaceCurrentFilament, ONLY: set_surface_current=>set_kappaprime0
+    use ModHypergeometric, ONLY: l0_ext_inductance
+
     real, intent(in) :: rMinor, rMajor
     !--------------------------------------------------------------------------
     rInfty2 = rMajor**2 -  rMinor**2; rInfty = sqrt(rInfty2)
     KappaPrime0 = rMinor/(rMajor + rInfty)
     Kappa02  = -1.0
-    if(UseUniformCurrent)call set_uniform_current(KappaPrime0, Kappa02)
-    if(UseSurfaceCurrent)call set_surface_current(KappaPrime0, Kappa02)
+    if(UseUniformCurrent)then
+       call set_uniform_current(KappaPrime0, Kappa02)
+       ! Calculate inductance depending on the choice of the current form-factor
+       ! Inductance includes external and internal field iductances as well as
+       ! the torooidal field inductance:
+       !                      external               internal  toroidal
+       Inductance = l0_ext_inductance(KappaPrime0**2) + 0.250 + 0.50
+    end if
+    if(UseSurfaceCurrent)then
+       call set_surface_current(KappaPrime0, Kappa02)
+       ! Only external inductance matters:
+       Inductance = l0_ext_inductance(KappaPrime0**2)
+    end if
     if(Kappa02 <= 0.0) then
        ! With no foorm-factor, the field is always external, since for any
        ! \kappa one has \kappa^2 < Kappa_0^2=1
        Kappa02 = 1.0; rInfty = rMajor; rInfty2  = rInfty**2
-       ! Set \kappa^\prime = a/R_0, to apply approximate formula for
-       ! inductance in terms of this ratio
-       KappaPrime0 = rMinor / rMajor
+       ! Approximate formula expressed in terms of a/R0 ratio
+       Inductance =  log(8.0*rMajor/rMinor) - 1.250
+       ! Set \kappa^\prime = a/(2R_0)
+       KappaPrime0 = 0.5* rMinor / rMajor
     end if
   end subroutine set_filament_geometry
   !============================================================================
@@ -521,16 +538,12 @@ module ModFieldGS
   ! the toridal magnetic field, which may be either positive or negative
   ! everywhere
   real :: Helicity   = 1.0
-  ! Inductunce  coefficient; in the SI units this is the ratio of the total
-  ! inductance of the filament normaalized by \mu_0 R_\infty
-  real :: Inductance
   !  Strapping field. Its action on the filament current balances
   !  the hoop force.
   real :: BStrap_D(3)
 contains
   !============================================================================
   subroutine set_filament_field(BcIn, BDir_D)
-    use ModHypergeometric, ONLY: l0_ext_inductance
     use ModNumConst,       ONLY:  cTwoPi
     ! Inputs:
     ! Combined paraameter: its magnititude is Bc, the sign being helicity.
@@ -542,20 +555,7 @@ contains
     !--------------------------------------------------------------------------
     Bc = abs(BcIn); Helicity = sign(1.0, BcIn)
     Bc_D = BDir_D*Bc
-    ! Calculate inductance depending on the choice of the current form-factor
-    if(UseUniformCurrent) then
-       ! Inductance includes external and internal field iductances as well as
-       ! the torooidal field inductance:
-       !                      external               internal  toroidal
-       Inductance = l0_ext_inductance(KappaPrime0**2) + 0.250 + 0.50
-    elseif(UseSurfaceCurrent)then
-       ! Only external inductance matters:
-       Inductance = l0_ext_inductance(KappaPrime0**2)
-    else
-       ! Approximate formula expressed in terms of a/R0 ratio
-       Inductance =  log(8.0/KappaPrime0) - 1.250
-    end if
-    ! With thus calculated inductance, determine the strapping field:
+    ! With the earlier calculated inductance, determine the strapping field:
     BStrap_D = - (Inductance / cTwoPi)*Bc_D ! Eq. 57 in GS22
   end subroutine set_filament_field
   !============================================================================
@@ -638,7 +638,7 @@ contains
     ! Grid size
     real, parameter :: DGrid = ZMax/N
     !--------------------------------------------------------------------------
-    UseUniformCurrent = .true.
+    UseUniformCurrent = .true.;  UseSurfaceCurrent = .false.
     ! Set rInfty = 1 and KappaPrime  = 0.1
     call set_filament_geometry(0.20 / 0.990, 1.01 / 0.990)
     call set_filament_field(1.0, [1.0, 0.0, 0.0])
