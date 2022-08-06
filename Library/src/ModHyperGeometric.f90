@@ -380,8 +380,7 @@ contains
     CurrentE = -1/(3*KappaPrime02*Kappa0*toroid_q(1,KappaPrime2In=KappaPrime02))
     ! Constants determining toroidal field:
     ! Eq. 49 constant  torroidl field factor
-    Q2 = toroid_p(1,KappaPrime2In=KappaPrime02)  / &
-         (4*KappaPrime02*Kappa0*(toroid_q(1,KappaPrime2In=KappaPrime02))**2)
+    Q2 = -6*Q1*CurrentE
     ! Q^{-1}_{-1/2}(u_0):
     ToroidQ0AtU0 = Kappa03*toroid_q(0,KappaPrime2In=KappaPrime02)
   end subroutine set_kappaprime0
