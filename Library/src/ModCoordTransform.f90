@@ -62,6 +62,7 @@ module ModCoordTransform
   public:: rot_matrix_z   ! rotation matrix around Z axis (angle)
   public:: rot_xyz_sph    ! rotation matrix between Cartesian-spherical (dir)
   public:: rot_xyz_rlonlat! rotation matrix between rlonlat-Cartesian
+  public:: rot_xyz_mercator ! rotation matrix to local Mercator map on sphere
   public:: xyz_to_sph     ! convert Cartesian into spherical coordinates
   public:: sph_to_xyz     ! convert spherical into Cartesian coordinates
   public:: xyz_to_rlonlat ! convert Cartesian into Radius-Longitude-Latitude
@@ -109,6 +110,11 @@ module ModCoordTransform
      module procedure rot_xyz_rlonlat1, rot_xyz_rlonlat2, &
           rot_xyz_rlonlat3, rot_xyz_rlonlat4
   end interface rot_xyz_rlonlat
+
+  interface rot_xyz_mercator
+     module procedure rot_xyz_mercator1, rot_xyz_mercator2, &
+          rot_xyz_mercator3, rot_xyz_mercator4
+  end interface rot_xyz_mercator
 
   interface xyz_to_sph
      module procedure xyz_to_sph11, xyz_to_sph13, xyz_to_sph31, xyz_to_sph33
@@ -734,7 +740,7 @@ contains
     !--------------------------------------------------------------------------
     XyzSph_DD = reshape( [ &
          CosPhi*SinTheta, SinPhi*SinTheta,  CosTheta, &
-         CosPhi*CosTheta, SinPhi*CosTheta, -SinTheta, &
+          CosPhi*CosTheta, SinPhi*CosTheta, -SinTheta, &
          -SinPhi,         CosPhi,           0.0 ], &
          [3,3] )
 
@@ -798,7 +804,7 @@ contains
     real             :: SinTheta, CosTheta, SinPhi, CosPhi
     real             :: XyzSph_DD(3,3), XyzRlonlat_DD(3,3), &
          LonlatThetaphi_DD(3,3), ThetaphiXyz_DD(3,3)
-    ! An vector in the Rlonlat coordinate can be transformed into Xyz by
+    ! A vector in the Rlonlat components can be transformed into Xyz by
     ! vec_Xyz = matmul(XyzRlonlat, vec_Rlonlat)
     !         = matmul(ThetaphiXyz_DD, matmul(LonlatThetaphi_DD, vrc_Rlonlat))
     ! The inner matmul change the order of (r, lon, lat) to (r, theta, phi),
@@ -831,6 +837,91 @@ contains
          [3,3] )
 
   end function rot_xyz_rlonlat4
+  !============================================================================
+  function rot_xyz_mercator1(Xyz_D) result(Rot_DD)
+
+    real, intent(in) :: Xyz_D(3)
+    real             :: Rot_DD(3,3)
+
+    real             :: r, Lon, Lat
+    real :: SinLon, CosLon, SinLat, CosLat
+    !--------------------------------------------------------------------------
+    call xyz_to_rlonlat(Xyz_D,r,lon,lat)
+
+    SinLon = sin(Lon)
+    CosLon = cos(Lon)
+    SinLat = sin(Lat)
+    CosLat = cos(Lat)
+    Rot_DD = rot_xyz_mercator(SinLon,CosLon,SinLat,CosLat)
+
+  end function rot_xyz_mercator1
+  !============================================================================
+  function rot_xyz_mercator3(x,y,z) result(Rot_DD)
+
+    real, intent(in) :: x,y,z
+    real             :: Rot_DD(3,3)
+
+    real             :: r, Lon, Lat
+    real :: SinLon, CosLon, SinLat, CosLat
+    !--------------------------------------------------------------------------
+    call xyz_to_rlonlat(x,y,z,r,lon,lat)
+
+    SinLon = sin(Lon)
+    CosLon = cos(Lon)
+    SinLat = sin(Lat)
+    CosLat = cos(Lat)
+    Rot_DD = rot_xyz_mercator(SinLon,CosLon,SinLat,CosLat)
+
+  end function rot_xyz_mercator3
+  !============================================================================
+  function rot_xyz_mercator2(lon, lat) result(Rot_DD)
+
+    real, intent(in) :: Lon, Lat
+    real             :: Rot_DD(3,3)
+
+    real :: SinLon, CosLon, SinLat, CosLat
+    !--------------------------------------------------------------------------
+
+    SinLon = sin(Lon)
+    CosLon = cos(Lon)
+    SinLat = sin(Lat)
+    CosLat = cos(Lat)
+    Rot_DD = rot_xyz_mercator(SinLon,CosLon,SinLat,CosLat)
+
+  end function rot_xyz_mercator2
+  !============================================================================
+  function rot_xyz_mercator4(SinLon, CosLon, SinLat, CosLat) &
+       result(XyzMercator_DD)
+    real, intent(in) :: SinLon, CosLon, SinLat, CosLat
+    real :: XyzMercator_DD(3,3)
+    ! A vector on the local Mercator map on spherical surface with:
+    ! x-axis directed toward local direction to east
+    ! y-axis directed toward north
+    ! z-axis (usually false) directed upward
+    ! can be transformed into Xyz coordinate frame for which:
+    ! xy coordinate plane is equatorial plane,
+    ! x-axis direction intersects zeroth meridian
+    ! z-axis is directed from south to north pole.
+    ! Transformation can be done with the formula:
+    !
+    ! Vector_D in Xyz = matmul(XyzMercator_DD, Vector_D on Mercator map)
+    !
+    ! In terms of rotation matrices:
+    !
+    ! XyzMercator_DD = matmul(rot_matrix_z(cPi/2 + Lon),&
+    !                         rot_matrix_x(cPi/2 - Lat) )
+
+    ! It could be also obtained from the matrix XyzRLonLat_DD, once the
+    ! row/column for R component is passed from first to the third position
+    ! (in effect, XyzMercator_DD is (x,y,z) -> (Lon,Lat,R) conversion matrix)
+    ! Explicit computation:
+    !--------------------------------------------------------------------------
+    XyzMercator_DD = reshape ( [ &
+         -SinLon,        CosLon,         0.0,     &
+         -SinLat*CosLon, -SinLat*SinLon, CosLat,  &
+         CosLat*CosLon,  CosLat*SinLon,  SinLat ], &
+         [3,3] )
+  end function rot_xyz_mercator4
   !============================================================================
   function cross_product11(a_D, b_D) result(c_D)
     !$acc routine seq
@@ -1097,7 +1188,7 @@ contains
   end function atan2_check
   !============================================================================
   subroutine test_coord_transform
-
+    use ModNumConst, ONLY: cPi
     real, parameter      :: cTiny = 0.000001
     real, dimension(3)   :: Xyz_D, Sph_D, rLonLat_D, Xyz2_D
     real:: XyzSph_DD(3,3), XyzRlonlat_DD(3,3), aInv_II(5,5)
@@ -1219,6 +1310,17 @@ contains
     call show_nbyn_matrix(3,inverse_matrix_nn(3,XyzRlonlat_DD))
     write(*,'(a)')'For comparison: write the transposed XyzRlonlat_DD:'
     call show_nbyn_matrix(3,transpose(XyzRlonlat_DD))
+
+    ! Test rot_xyz_mercator()
+    write(*,*)
+    Xyz_D = [8.0, 0.1, 6.0]
+    write(*,'(a,3es16.8)')'Cartesian position=',Xyz_D
+    call xyz_to_rlonlat(Xyz_D, rLonLat_D)
+    write(*,'(a)')'XyzMercator_DD'; call show_rot_matrix(&
+         rot_xyz_mercator(Xyz_D))
+    write(*,'(a)')'Same, but calculated as a product of two rotation matrices:'
+    call show_rot_matrix(matmul(rot_matrix_z(cPi/2 + rLonLat_D(2)),&
+         rot_matrix_x(cPi/2 - rLonLat_D(3)) ))
 
   end subroutine test_coord_transform
   !============================================================================
