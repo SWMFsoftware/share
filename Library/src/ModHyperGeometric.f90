@@ -685,7 +685,7 @@ contains
           ! Radius vector:
           R_D = [DGrid*i, DGrid*j, 0.0]
           ! Add  strapping field of twoo magnetic charges
-          Field_DII(:, i, j) = Field_DII(:, i, j) + & 
+          Field_DII(:, i, j) = Field_DII(:, i, j) + &
                QCharge*(R_D - [LCharge, 0.0, 0.0])/&  ! Positive charge
                norm2(R_D - [LCharge, 0.0, 0.0])**3 &  ! field
                -QCharge*(R_D + [LCharge, 0.0, 0.0])/& ! Negative charge
@@ -698,7 +698,7 @@ contains
          CoordMinIn_D=[-0.5*ZMax, 0.1*ZMax],&
          CoordMaxIn_D=[ 0.5*ZMax,  ZMax],&
          StringFormatIn = '(6F12.5)',&
-         VarIn_VII = Field_DII(:,-N/2:N/2,JMin:N ) )  
+         VarIn_VII = Field_DII(:,-N/2:N/2,JMin:N ) )
 
   end subroutine test
   !============================================================================
