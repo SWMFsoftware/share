@@ -2,6 +2,10 @@
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 module ModHyperGeometric
+
+#ifdef _OPENACC
+  use ModUtilities, ONLY: norm2
+#endif
   use ModMpi, ONLY: &
        iRealPrec ! 1, if the code is compiled with double precision
   use ModNumConst, ONLY: cPi
@@ -629,13 +633,16 @@ contains
     ! Loop variables
     integer:: i, j
     ! Number of points = (2N+1)*(2N+1)
-    integer, parameter :: N = 300
+    integer, parameter :: N = 300, JMin = N/10
     ! Field to show:
     real :: Field_DII(Axial_:Toroidal_, -N:N, -N:N)
     ! Domain size (-ZMax to ZMax)
     real, parameter:: ZMax = 2.0
     ! Grid size
     real, parameter :: DGrid = ZMax/N
+    real, parameter :: LCharge = 0.7
+    real :: QCharge
+    real :: R_D(3)
     !--------------------------------------------------------------------------
     UseUniformCurrent = .true.;  UseSurfaceCurrent = .false.
     ! Set rInfty = 1 and KappaPrime  = 0.1
@@ -667,6 +674,31 @@ contains
          CoordMaxIn_D=[ ZMax,  ZMax],&
          StringFormatIn = '(6F12.5)',&
          VarIn_VII = Field_DII )
+    ! Express magnetic charge in terms of BStrap:
+    ! 2L/(L^2 +R_\infty^2)^{3/2}*QCharge = -BStrap
+    QCharge = norm2(BStrap_D)*0.50*(LCharge**2 + 1)**1.50/LCharge
+     ! Test the strapped field created by a pair of magnetic charges:
+    do j = JMin, N
+       do i = -N/2, N/2
+          ! Eliminate uniform BStrap
+          Field_DII(:, i, j) = Field_DII(:, i, j) - BStrap_D
+          ! Radius vector:
+          R_D = [DGrid*i, DGrid*j, 0.0]
+          ! Add  strapping field of twoo magnetic charges
+          Field_DII(:, i, j) = Field_DII(:, i, j) + & 
+               QCharge*(R_D - [LCharge, 0.0, 0.0])/&  ! Positive charge
+               norm2(R_D - [LCharge, 0.0, 0.0])**3 &  ! field
+               -QCharge*(R_D + [LCharge, 0.0, 0.0])/& ! Negative charge
+               norm2(R_D + [LCharge, 0.0, 0.0])**3    ! field
+       end do
+    end do
+    call save_plot_file(NameFile='charge_field.out', &
+         TypeFileIn='ascii', &
+         NameVarIn='z r Bz Br BPhi'  , &
+         CoordMinIn_D=[-0.5*ZMax, 0.1*ZMax],&
+         CoordMaxIn_D=[ 0.5*ZMax,  ZMax],&
+         StringFormatIn = '(6F12.5)',&
+         VarIn_VII = Field_DII(:,-N/2:N/2,JMin:N ) )  
 
   end subroutine test
   !============================================================================
