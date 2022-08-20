@@ -207,9 +207,6 @@ test_hypergeometric_check:
 	-@(${DIFFNUM} -b -r=1e-7 \
 		test_inductance.out test_inductance.ref \
 			> test_hypergeometric.diff)
-	-@(${DIFFNUM} -b -r=1e-7 \
-		test_fields.out test_fields.ref \
-                        >> test_hypergeometric.diff)
 
 test_hypergeometric:
 	@echo test_hypergeometric starting     >  test_hypergeometric.diff
