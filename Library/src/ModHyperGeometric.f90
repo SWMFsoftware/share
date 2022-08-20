@@ -2,10 +2,6 @@
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 module ModHyperGeometric
-
-#ifdef _OPENACC
-  use ModUtilities, ONLY: norm2
-#endif
   use ModMpi, ONLY: &
        iRealPrec ! 1, if the code is compiled with double precision
   use ModNumConst, ONLY: cPi
