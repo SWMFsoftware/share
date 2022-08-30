@@ -66,6 +66,7 @@ module ModLookupTable
      real, allocatable :: Index3_I(:)      ! non-uniform index 3
      real, allocatable :: Index4_I(:)      ! non-uniform index 4
      real, allocatable :: Index5_I(:)      ! non-uniform index 5
+     real :: Time                          ! time, if applicable
   end type TableType
 
   ! The array of tables
@@ -129,7 +130,7 @@ contains
        nIndex_I, IndexMin_I, IndexMax_I, &
        NameFile, TypeFile, StringDescription, nParam, Param_I, &
        Index1_I, Index2_I, Index3_I, Index4_I, Index5_I, &
-       Value1d_VC, Value2d_VC, Value3d_VC)
+       Value1d_VC, Value2d_VC, Value3d_VC,Time)
 
     ! Initialize a lookup table
     !
@@ -165,6 +166,7 @@ contains
     real,             optional, intent(in):: Value1d_VC(:,:)
     real,             optional, intent(in):: Value2d_VC(:,:,:)
     real,             optional, intent(in):: Value3d_VC(:,:,:,:)
+    real,             optional, intent(in):: Time
 
     integer :: iTable, iError
     type(TableType), pointer:: Ptr
@@ -334,7 +336,11 @@ contains
        Ptr%Index5_I = Index5_I
        call check_index(iTable, Ptr%Index5_I, 5)
     endif
-
+    if(present(Time))then
+       Ptr%Time = Time
+    else
+       Ptr%Time = 0.0
+    end if
   end subroutine init_lookup_table
   !============================================================================
   subroutine read_lookup_table_param
@@ -597,6 +603,7 @@ contains
          nVarOut         = Ptr%nValue,            &
          NameVarOut      = Ptr%NameVar,           &
          nParamOut       = Ptr%nParam,            &
+         TimeOut         = Ptr%Time,              &
          ParamOut_I      = TableParam_I)
 
     call allocate_table_index(Ptr)
@@ -814,7 +821,8 @@ contains
                   CoordMinIn_D   = Ptr%IndexMin_I,              &
                   CoordMaxIn_D   = Ptr%IndexMax_I,              &
                   Var4In_VI      = Ptr%Value4_VC(:,:,1,1,1,1),  &
-                  ParamIn_I      = Ptr%Param_I)
+                  ParamIn_I      = Ptr%Param_I,                 &
+                  TimeIn         = Ptr%Time)
           else
              call save_plot_file( &
                   Ptr%NameFile,                                 &
@@ -825,7 +833,8 @@ contains
                   CoordMinIn_D   = Ptr%IndexMin_I,              &
                   CoordMaxIn_D   = Ptr%IndexMax_I,              &
                   VarIn_VI      = Ptr%Value_VC(:,:,1,1,1,1),    &
-                  ParamIn_I      = Ptr%Param_I)
+                  ParamIn_I      = Ptr%Param_I,                 &
+                  TimeIn         = Ptr%Time)
           end if
        else
           if(Ptr%TypeFile == 'real4')then
@@ -837,7 +846,8 @@ contains
                   nDimIn         = Ptr%nIndex,                  &
                   CoordMinIn_D   = Ptr%IndexMin_I,              &
                   CoordMaxIn_D   = Ptr%IndexMax_I,              &
-                  Var4In_VI      = Ptr%Value4_VC(:,:,1,1,1,1))
+                  Var4In_VI      = Ptr%Value4_VC(:,:,1,1,1,1),  &
+                  TimeIn         = Ptr%Time)
           else
              call save_plot_file( &
                   Ptr%NameFile,                                 &
@@ -847,7 +857,8 @@ contains
                   nDimIn         = Ptr%nIndex,                  &
                   CoordMinIn_D   = Ptr%IndexMin_I,              &
                   CoordMaxIn_D   = Ptr%IndexMax_I,              &
-                  VarIn_VI       = Ptr%Value_VC(:,:,1,1,1,1))
+                  VarIn_VI       = Ptr%Value_VC(:,:,1,1,1,1),   &
+                  TimeIn         = Ptr%Time)
           end if
        end if
     end if
@@ -964,7 +975,8 @@ contains
                   CoordMinIn_D   = Ptr%IndexMin_I,              &
                   CoordMaxIn_D   = Ptr%IndexMax_I,              &
                   Var4In_VII     = Ptr%Value4_VC(:,:,:,1,1,1),  &
-                  ParamIn_I      = Ptr%Param_I)
+                  ParamIn_I      = Ptr%Param_I,                 &
+                  TimeIn         = Ptr%Time)
           else
              call save_plot_file( &
                   Ptr%NameFile,                                 &
@@ -975,7 +987,8 @@ contains
                   CoordMinIn_D   = Ptr%IndexMin_I,              &
                   CoordMaxIn_D   = Ptr%IndexMax_I,              &
                   VarIn_VII      = Ptr%Value_VC(:,:,:,1,1,1),   &
-                  ParamIn_I      = Ptr%Param_I)
+                  ParamIn_I      = Ptr%Param_I,                 &
+                  TimeIn         = Ptr%Time)
           end if
        else
           if(Ptr%TypeFile == 'real4')then
@@ -987,7 +1000,8 @@ contains
                   nDimIn         = Ptr%nIndex,                  &
                   CoordMinIn_D   = Ptr%IndexMin_I,              &
                   CoordMaxIn_D   = Ptr%IndexMax_I,              &
-                  Var4In_VII     = Ptr%Value4_VC(:,:,:,1,1,1))
+                  Var4In_VII     = Ptr%Value4_VC(:,:,:,1,1,1),  &
+                  TimeIn         = Ptr%Time)
           else
              call save_plot_file( &
                   Ptr%NameFile,                                 &
@@ -997,7 +1011,8 @@ contains
                   nDimIn         = Ptr%nIndex,                  &
                   CoordMinIn_D   = Ptr%IndexMin_I,              &
                   CoordMaxIn_D   = Ptr%IndexMax_I,              &
-                  VarIn_VII      = Ptr%Value_VC(:,:,:,1,1,1))
+                  VarIn_VII      = Ptr%Value_VC(:,:,:,1,1,1),   &
+                  TimeIn         = Ptr%Time)
           end if
        end if
     end if
@@ -1128,7 +1143,8 @@ contains
                   CoordMinIn_D   = Ptr%IndexMin_I,              &
                   CoordMaxIn_D   = Ptr%IndexMax_I,              &
                   Var4In_VIII    = Ptr%Value4_VC(:,:,:,:,1,1),  &
-                  ParamIn_I      = Ptr%Param_I)
+                  ParamIn_I      = Ptr%Param_I,                 &
+                  TimeIn         = Ptr%Time)
           else
              call save_plot_file( &
                   Ptr%NameFile,                                 &
@@ -1139,7 +1155,8 @@ contains
                   CoordMinIn_D   = Ptr%IndexMin_I,              &
                   CoordMaxIn_D   = Ptr%IndexMax_I,              &
                   VarIn_VIII     = Ptr%Value_VC(:,:,:,:,1,1),   &
-                  ParamIn_I      = Ptr%Param_I)
+                  ParamIn_I      = Ptr%Param_I,                 &
+                  TimeIn         = Ptr%Time)
           end if
        else
           if(Ptr%TypeFile == 'real4')then
@@ -1151,7 +1168,8 @@ contains
                   nDimIn         = Ptr%nIndex,                  &
                   CoordMinIn_D   = Ptr%IndexMin_I,              &
                   CoordMaxIn_D   = Ptr%IndexMax_I,              &
-                  Var4In_VIII    = Ptr%Value4_VC(:,:,:,:,1,1))
+                  Var4In_VIII    = Ptr%Value4_VC(:,:,:,:,1,1),  &
+                  TimeIn         = Ptr%Time)
           else
              call save_plot_file( &
                   Ptr%NameFile,                                 &
@@ -1161,7 +1179,8 @@ contains
                   nDimIn         = Ptr%nIndex,                  &
                   CoordMinIn_D   = Ptr%IndexMin_I,              &
                   CoordMaxIn_D   = Ptr%IndexMax_I,              &
-                  VarIn_VIII     = Ptr%Value_VC(:,:,:,:,1,1))
+                  VarIn_VIII     = Ptr%Value_VC(:,:,:,:,1,1),   &
+                  TimeIn         = Ptr%Time)
           end if
        end if
     end if
@@ -1541,7 +1560,7 @@ contains
        iParamIn, Param, nParam, Param_I, nValue, nIndex, nIndex_I, &
        IndexMin_I, IndexMax_I, IsLogIndex_I, &
        NameVar, StringDescription, &
-       Index1_I, Index2_I, Index3_I, Index4_I, Index5_I)
+       Index1_I, Index2_I, Index3_I, Index4_I, Index5_I, Time)
 
     integer,                    intent(in) :: iTable     ! table index
     integer,          optional, intent(in) :: iParamIn   ! index of a parameter
@@ -1561,6 +1580,7 @@ contains
     real,             optional, intent(out):: Index3_I(:)
     real,             optional, intent(out):: Index4_I(:)
     real,             optional, intent(out):: Index5_I(:)
+    real,             optional, intent(out):: Time
 
     ! Get various parameters of table iTable.
 
@@ -1586,7 +1606,7 @@ contains
     if(present(Index3_I))          Index3_I          = Ptr%Index3_I
     if(present(Index4_I))          Index4_I          = Ptr%Index4_I
     if(present(Index5_I))          Index5_I          = Ptr%Index5_I
-
+    if(present(Time))              Time              = Ptr%Time
     if(present(Param_I))then
        ! return an array of parameters
        if(Ptr%nParam == 0)then

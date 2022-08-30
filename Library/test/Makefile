@@ -437,7 +437,7 @@ test_lookup_table:
 	@echo test_lookup_table starting	>  test_lookup_table.diff
 	@make test_lookup_table_exe		>> test_lookup_table.diff
 	@echo ${MPIRUN} test_lookup_table.exe   >> test_lookup_table.diff
-	-@(${MPIRUN} test_lookup_table.exe > test_lookup_table.tmp)
+	-@(${MPIRUN} ./test_lookup_table.exe > test_lookup_table.tmp)
 	-@(diff test_lookup_table.tmp test_lookup_table.log \
 						>  test_lookup_table.diff)
 	@ls -l test_lookup_table.diff
