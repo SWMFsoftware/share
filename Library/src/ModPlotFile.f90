@@ -124,7 +124,7 @@ contains
 
     character(len=10)  :: TypePosition
     character(len=10)  :: TypeStatus
-    character(len=20), allocatable  :: NameVar_I(:)
+    character(len=20), allocatable  :: NameVar_I(:), NameUnits_I(:)
     character(len=20)  :: TypeFile
     character(len=lStringPlotFile) :: StringHeader
     character(len=40)  :: StringFormat, StringFormatParam
@@ -505,14 +505,41 @@ contains
                ' variables were not defined')
        end if
     end if
-
+    ! Treat unit names:
+    !
+    if(present(NameUnitsIn))then
+       select case(TypeFile)
+       case('hdf5')
+          ! NameUnits is a mandatory input
+          NameUnits = NameUnitsIn
+       case('tec')
+          ! Unit names should be merged with those for variables:
+          allocate(NameUnits_I(nDim + nVar))
+          call split_string(NameUnitsIn, NameUnits_I, i)
+          if(i /= nDim + nVar)then
+             write(*,*) NameSub,': NameFile=', trim(NameFile)
+             write(*,*) NameSub,': NameUnitsIn=', trim(NameUnitsIn)
+             write(*,*) NameSub,': number of substrings=', i
+             write(*,*) NameSub,': nDim, nVar, sum=',&
+                  nDim, nVar, nDim + nVar
+             call CON_stop(NameSub// &
+                  ': number of names in NameUnitsIn does not match'//&
+                  'nDim+nVar!')
+          end if
+          do i  = 1, nDim + nVar
+             NameVar_I(i) = trim(NameVar_I(i))//'_['//&
+                  trim(NameUnits_I(i))//']'
+          end do
+       case default
+          ! Just merge the units list to the header:
+          StringHeader = trim(StringHeader)//' Units: '//trim(NameUnitsIn)
+       end select
+    end if
     select case(TypeFile)
     case('hdf5')
-       if (present(NameUnitsIn)) then
-          NameUnits = NameUnitsIn
-       else
+       ! NameUnits is a mandatory input
+       if (.not.present(NameUnitsIn)) &
           NameUnits = repeat('normalized ', nVar)
-       end if
        call save_hdf5_file(NameFile,TypePosition, TypeStatus, StringHeader,&
             nStep, nBlock, Time, nDim, nParam, nVar,                       &
             nCell_D(1:nDim), NameVar_I(nDim+1:nDim+nVar), NameUnits,       &
@@ -651,6 +678,7 @@ contains
 
     if(allocated(Param_I))   deallocate(Param_I)
     if(allocated(NameVar_I)) deallocate(NameVar_I)
+    if(allocated(NameUnits_I)) deallocate(NameUnits_I)
     if(allocated(Coord_ID))  deallocate(Coord_ID)
     if(allocated(Var_IV))    deallocate(Var_IV)
     if(allocated(Var4_IV))   deallocate(Var4_IV)
