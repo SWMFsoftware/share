@@ -41,7 +41,6 @@ module ModMPiInterfaces
   public:: mpi_ssend
   public:: mpi_wait
   public:: mpi_waitall
-  public:: mpi_get_address
 
   interface
      subroutine mpi_abort(comm, errorcode, ierror)
@@ -412,8 +411,7 @@ module ModMPiInterfaces
     mpi_irecv_r4, &
     mpi_irecv_l0, &
     mpi_irecv_l1, &
-    mpi_irecv_l2, &
-    mpi_irecv_p
+    mpi_irecv_l2
   end interface
 
   interface mpi_irsend
@@ -454,8 +452,7 @@ module ModMPiInterfaces
     mpi_recv_l0, &
     mpi_recv_l1, &
     mpi_recv_s0, &
-    mpi_recv_s1, &
-    mpi_recv_p
+    mpi_recv_s1
   end interface
 
   interface mpi_reduce
@@ -517,8 +514,7 @@ module ModMPiInterfaces
     mpi_send_r3, &
     mpi_send_r4, &
     mpi_send_s0, &
-    mpi_send_s1, &
-    mpi_send_p
+    mpi_send_s1
   end interface
 
   interface mpi_ssend
@@ -546,74 +542,8 @@ module ModMPiInterfaces
      end subroutine mpi_waitall
   end interface
 
-  interface mpi_get_address
-     module procedure &
-          mpi_get_address_i, &
-          mpi_get_address_r, &
-          mpi_get_address_l,&
-          mpi_get_address_p
-  end interface mpi_get_address
-
 contains
   !============================================================================
-    subroutine mpi_get_address_i(Var,disp,iError)
-    use ModMpiOrig, only: MPI_ADDRESS_KIND
-    integer, intent(in) :: var
-    integer(KIND=MPI_ADDRESS_KIND), intent(in) :: disp
-    integer, intent(in) :: iError
-    external mpi_get_address
-
-    !--------------------------------------------------------------------------
-    call mpi_get_address(Var,disp,iError)
-  end subroutine mpi_get_address_i
-  !============================================================================
-
-  subroutine mpi_get_address_r(Var,disp,iError)
-    use ModMpiOrig, only: MPI_ADDRESS_KIND
-    real, intent(in) :: var
-    integer(KIND=MPI_ADDRESS_KIND), intent(in) :: disp
-    integer, intent(in) :: iError
-    external mpi_get_address
-
-    !--------------------------------------------------------------------------
-    call mpi_get_address(Var,disp,iError)
-  end subroutine mpi_get_address_r
-  !============================================================================
-
-  subroutine mpi_get_address_l(Var,disp,iError)
-    use ModMpiOrig, only: MPI_ADDRESS_KIND
-    logical, intent(in) :: var
-    integer(KIND=MPI_ADDRESS_KIND), intent(in) :: disp
-    integer, intent(in) :: iError
-    external mpi_get_address
-
-    !--------------------------------------------------------------------------
-    call mpi_get_address(Var,disp,iError)
-  end subroutine mpi_get_address_l
-  !============================================================================
-
-  subroutine mpi_get_address_p(Var,disp,iError)
-    use ModMpiOrig, only: MPI_ADDRESS_KIND
-    !--------------------------------------------------------------------------
-    type particle
-       sequence
-       integer :: iSpecies
-       integer :: iCell ! cell index for particle
-       real    :: vpar, vperp ! velocity in [cm/s]
-       real    :: Alt ! position in configurational space [cm]
-       real    :: NumPerParticle ! the weight of the particle (how many real
-       ! particles one macro particle represents).
-       logical :: IsOpen,IsPad   ! defines if particle is in domain or index is avail.
-    end type particle
-    type(particle), intent(in) :: var
-    integer(KIND=MPI_ADDRESS_KIND), intent(in) :: disp
-    integer, intent(in) :: iError
-    external mpi_get_address
-
-    call mpi_get_address(Var,disp,iError)
-  end subroutine mpi_get_address_p
-  !============================================================================
-
   subroutine mpi_allgather_i2(sendbuf, sendcount, sendtype, &
        recvbuf, recvcount, recvtype, comm, ierror)
     integer, intent(in) :: sendbuf(:,:)
@@ -3739,35 +3669,6 @@ contains
   end subroutine mpi_irecv_l2
   !============================================================================
 
-  subroutine mpi_irecv_p(buf, count, datatype, source, tag,      &
-       comm, request, ierror)
-    !--------------------------------------------------------------------------
-    type particle
-       sequence
-       integer :: iSpecies
-       integer :: iCell ! cell index for particle
-       real    :: vpar, vperp ! velocity in [cm/s]
-       real    :: Alt ! position in configurational space [cm]
-       real    :: NumPerParticle ! the weight of the particle (how many real
-       ! particles one macro particle represents).
-       logical :: IsOpen,IsPad   ! defines if particle is in domain or index is avail.
-    end type particle
-
-    type(particle), intent(out) :: buf(:)
-    integer, intent(in) :: count
-    integer, intent(in) :: datatype
-    integer, intent(in) :: source
-    integer, intent(in) :: tag
-    integer, intent(in) :: comm
-    integer, intent(out) :: request
-    integer, intent(out) :: ierror
-    external mpi_irecv
-
-    call mpi_irecv(buf, count, datatype, source, tag,      &
-         comm, request, ierror)
-  end subroutine mpi_irecv_p
-  !============================================================================
-
   subroutine mpi_irsend_r0(buf, count, datatype, dest, tag, comm, &
        request, ierror)
     real, intent(in) :: buf
@@ -4220,35 +4121,6 @@ contains
     call mpi_reduce(sendbuf, recvbuf, count, datatype, op, &
           root, comm, ierror)
   end subroutine mpi_reduce_i2
-  !============================================================================
-  subroutine mpi_recv_p(buf, count, datatype, source, tag, comm, &
-       status, ierror)
-    use ModMpiOrig, only: mpi_status_size
-    !--------------------------------------------------------------------------
-    type particle
-       sequence
-       integer :: iSpecies
-       integer :: iCell ! cell index for particle
-       real    :: vpar, vperp ! velocity in [cm/s]
-       real    :: Alt ! position in configurational space [cm]
-       real    :: NumPerParticle ! the weight of the particle (how many real
-       ! particles one macro particle represents).
-       logical :: IsOpen,IsPad   ! defines if particle is in domain or index is avail.
-    end type particle
-
-    type(particle), intent(out) :: buf(:)
-    integer, intent(in) :: count
-    integer, intent(in) :: datatype
-    integer, intent(in) :: source
-    integer, intent(in) :: tag
-    integer, intent(in) :: comm
-    integer, intent(out) :: status(mpi_status_size)
-    integer, intent(out) :: ierror
-    external mpi_recv
-
-    call mpi_recv(buf, count, datatype, source, tag, comm, &
-         status, ierror)
-  end subroutine mpi_recv_p
   !============================================================================
 
   subroutine mpi_reduce_i0_in_place(sendbuf, recvbuf, count, datatype, op, &
@@ -5018,31 +4890,6 @@ contains
   end subroutine mpi_send_s1
   !============================================================================
 
-  subroutine mpi_send_p(buf, count, datatype, dest, tag, comm, ierror)
-    !--------------------------------------------------------------------------
-    type particle
-       sequence
-       integer :: iSpecies
-       integer :: iCell ! cell index for particle
-       real    :: vpar, vperp ! velocity in [cm/s]
-       real    :: Alt ! position in configurational space [cm]
-       real    :: NumPerParticle ! the weight of the particle (how many real
-       ! particles one macro particle represents).
-       logical :: IsOpen,IsPad   ! defines if particle is in domain or index is avail.
-    end type particle
-
-    type(particle), intent(in) :: buf(:)
-    integer, intent(in) :: count
-    integer, intent(in) :: datatype
-    integer, intent(in) :: dest
-    integer, intent(in) :: tag
-    integer, intent(in) :: comm
-    integer, intent(out) :: ierror
-    external mpi_send
-
-    call mpi_send(buf, count, datatype, dest, tag, comm, ierror)
-  end subroutine mpi_send_p
-  !============================================================================
   subroutine mpi_ssend_r0(buf, count, datatype, dest, tag, comm, ierror)
     real, intent(in) :: buf
     integer, intent(in) :: count
