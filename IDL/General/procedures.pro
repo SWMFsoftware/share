@@ -7091,8 +7091,8 @@ pro save_log, filename, headline, varname, array, format=format
   if not keyword_set(format) then format = '(100(e13.5))'
 
   openw, unit, filename
-  printf, unit, headline
-  printf, unit, varname
+  for i = 0, n_elements(headline)-1 do printf, unit, headline(i)
+  printf, unit, strjoin(varname,' ')
   for i = 0, n-1 do printf, unit, array(i,*), format=format
   close, unit
 
