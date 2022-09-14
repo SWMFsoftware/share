@@ -3,9 +3,17 @@ Python Scripts
 
 Collection of Python scripts to make using [SWMF](https://gitlab.umich.edu/swmf_software/SWMF) easier. Note most of these require a recent version of Python __3__. Supercomputers typically have this already.
 
+Make sure [swmfpy](https://gitlab.umich.edu/swmf_software/swmfpy) is installed.
+
+```bash
+$ pip install swmfpy || pip install --user swmfpy
+```
+
 Table of Contents:
+------------------
 
 - [prepare_geospace.py](#prepare_geospacepy)
+- [plot_indeces.py](#plot_indeces)
 
 prepare_geospace.py
 -------------------
@@ -22,12 +30,6 @@ In the base directory of SWMF run:
 SWMF$ ./Config.pl -install
 # Compile then make the run directory if worked
 SWMF$ make -j test_swpc_compile && make rundir
-```
-
-Make sure [swmfpy](https://gitlab.umich.edu/swmf_software/swmfpy) is installed.
-
-```bash
-$ pip install swmfpy || pip install --user swmfpy
 ```
 
 ### Set up
@@ -67,3 +69,24 @@ To find out the options of `prepare_geospace.py` then run:
 ```
 
 Options can be useful to script this file with shell scripting, for example, when submitting jobs.
+
+plot_indeces.py
+---------------
+
+A script to plot the global indeces of your geospace run (SYM-H, cross polar cap
+potential, AL.. etc.). This uses `swmfpy` to get the observed indeces to
+compare.
+
+To run simply type on your command line:
+
+```bash
+python plot_indeces.py -h
+```
+
+A simply way of using this script is to make sure you know where your
+`log_****.log` and corresponding `geo_****.log` are and running:
+
+```bash
+# replace with your file names
+python plot_indeces.py log_YYYYMMMDD.log geo_YYYMMMDD.log
+```
