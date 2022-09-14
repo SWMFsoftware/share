@@ -95,3 +95,12 @@ Same, but calculated as a product of two rotation matrices:
   0.9999218842 -0.0074990392  0.0099995000
   0.0000000000  0.8000224974  0.5999700022
 
+
+For point 1  with longitude 30  deg and latitude 45 deg
+and point 2  with longitude 45  deg and latitude 30 deg
+routine twopoints_on_sph provides:
+Lon, Lat,  Orientation=     38.26     37.74    307.81
+For comparison, vector Xyz1_D+Xyz2_D has:
+Lon, Lat=     38.26     37.74
+Check orientation: in the rotated frame vector
+(Xyz2_D - Xyz1_D)/(2*HalfDist) (should be [1,0,0]) =  1.00000000E+00 -1.25597545E-16 -8.37316967E-17

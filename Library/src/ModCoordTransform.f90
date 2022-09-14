@@ -77,6 +77,7 @@ module ModCoordTransform
 
   public:: show_rot_matrix      ! write out matrix elements in a nice format
   public:: atan2_check          ! compute atan2 even if both x and y are zero
+  public:: twopoints_on_sph ! convert Long1,2, Lat1,2 to Long,Lat,Orientation
   public:: test_coord_transform ! unit tester
 
   ! revision history:
@@ -1187,11 +1188,81 @@ contains
 
   end function atan2_check
   !============================================================================
+  subroutine  twopoints_on_sph(Lon1, Lat1,  Lon2, Lat2, &
+       Lon, Lat, Orientation, HalfDist, Depth)
+    ! For a pair of points on sphere:
+    real, intent(in) :: Lon1, Lat1 ! Longitude and latitude of point 1
+    real, intent(in) :: Lon2, Lat2 ! Longitude and latitude of point 2
+    real, intent(out):: Lon,  Lat  ! Longitude and latitude of mid point
+    ! Angle of rotation from direction of local parallel to direction
+    ! from point 1 to point 2
+    real, intent(out):: Orientation
+    ! Half  of linear distance between two points, normalized  per  the
+    ! sphere radius:
+    real, optional, intent(out):: HalfDist
+    ! Depth of the midpoint below the  spherical surface, normalized per the
+    ! sphere  radius:
+    real, optional, intent(out):: Depth
+    ! Unit  vectors from the  sphere center  to points 1,2
+    real :: Dir1_D(0:2), Dir2_D(0:2)
+    ! Unit  direction vectors for mid point and  for Dir2_D  - Dir1_D
+    real :: DirMid_D(0:2), Dir12_D(0:2)
+    ! Unit dirrection  vectors for local parallel and meridian:
+    real ::  DirPar_D(0:2), DirMer_D(0:2)
+    ! Half distance  between points, squared:
+    real :: HalfDist2
+    ! Distance from the mid point to the sphere center
+    real :: rMidPoint
+    ! sin/cos:
+    ! For point 1:
+    real :: SinLon1, CosLon1, SinLat1,  CosLat1
+    ! For point 2:
+    real :: SinLon2, CosLon2, SinLat2,  CosLat2
+    ! For mid  point:
+    real :: SinLon, CosLon, SinLat,  CosLat
+    ! For orientation aangle
+    real :: CosOrientation, SinOrientation
+    !--------------------------------------------------------------------------
+    SinLon1 = sin(Lon1); CosLon1 = cos(Lon1)
+    SinLat1 = sin(Lat1); CosLat1 = cos(Lat1)
+    Dir1_D = [CosLat1*CosLon1, CosLat1*SinLon1, SinLat1]
+
+    SinLon2 = sin(Lon2); CosLon2 = cos(Lon2)
+    SinLat2 = sin(Lat2); CosLat2 = cos(Lat2)
+    Dir2_D = [CosLat2*CosLon2, CosLat2*SinLon2, SinLat2]
+
+    HalfDist2  = sin(0.50*(Lat2 - Lat1))**2 + &
+         CosLat1*CosLat2*sin(0.50*(Lon2 - Lon1))**2
+    rMidPoint = sqrt(1 - HalfDist2)
+
+    if(present(HalfDist))  HalfDist = sqrt(HalfDist2)
+    ! Depth = 1 - rMidPoint
+    if(present(Depth)) Depth = HalfDist2/(1 + rMidPoint)
+
+    ! Unit vector toward the mid point:
+    DirMid_D = (Dir2_D + Dir1_D)*0.50/rMidPoint
+    SinLat = DirMid_D(2); CosLat = sqrt(1 - SinLat**2)
+    CosLon = DirMid_D(0)/CosLat; SinLon = DirMid_D(1)/CosLat
+    Lat = asin(SinLat); Lon = acos(CosLon)
+    if(SinLon < 0.0) Lon = cTwoPi - Lon
+    ! Direction  vectors for parallel and meridian:
+    DirPar_D = [-SinLon, CosLon, 0.0]
+    DirMer_D = [-SinLat*CosLon, -SinLat*SinLon, CosLat]
+    ! Direction unit vector from point 1 to point 2:
+    Dir12_D = (Dir2_D - Dir1_D)*0.50/sqrt(HalfDist2)
+    ! Its projections on the parallel and  meridian  directions:
+    CosOrientation = sum(Dir12_D*DirPar_D)
+    SinOrientation = sum(Dir12_D*DirMer_D)
+    Orientation  = acos(CosOrientation)
+    if(SinOrientation < 0.0)  Orientation = cTwoPi - Orientation
+  end subroutine twopoints_on_sph
+  !============================================================================
   subroutine test_coord_transform
-    use ModNumConst, ONLY: cPi
+    use ModNumConst, ONLY: cPi, cDegToRad, cRadToDeg
     real, parameter      :: cTiny = 0.000001
     real, dimension(3)   :: Xyz_D, Sph_D, rLonLat_D, Xyz2_D
     real:: XyzSph_DD(3,3), XyzRlonlat_DD(3,3), aInv_II(5,5)
+    real:: Lon, Lat, Orientation, HalfDist
     real, parameter :: a_II(5,5)=reshape([ 3.0, 7.0, 5.0,21.0, 8.0,&
                                           16.0, 8.0,17.0,53.0, 7.0,&
                                           14.0, 6.0,35.0,18.0, 1.0,&
@@ -1322,6 +1393,25 @@ contains
     call show_rot_matrix(matmul(rot_matrix_z(cPi/2 + rLonLat_D(2)),&
          rot_matrix_x(cPi/2 - rLonLat_D(3)) ))
 
+    ! Test twopoints_on_sph
+    write(*,*)
+    write(*,'(a)')'For point 1  with longitude 30  deg and latitude 45 deg'
+    write(*,'(a)')'and point 2  with longitude 45  deg and latitude 30 deg'
+    write(*,'(a)')'routine twopoints_on_sph provides:'
+    call twopoints_on_sph(30*cDegToRad,45*cDegToRad,45*cDegToRad,30*cDegToRad,&
+         Lon, Lat,  Orientation, HalfDist)
+    write(*,'(a,3f10.2)')'Lon, Lat,  Orientation=',&
+         Lon*cRadToDeg,Lat*cRadToDeg,Orientation*cRadToDeg
+    call rlonlat_to_xyz([1.0,30*cDegToRad,45*cDegToRad],Xyz_D)
+    call rlonlat_to_xyz([1.0,45*cDegToRad,30*cDegToRad],Xyz2_D)
+    call xyz_to_rlonlat(Xyz_D+Xyz2_D,rlonlat_D)
+    write(*,'(a)')'For comparison, vector Xyz1_D+Xyz2_D has:'
+    write(*,'(a,2f10.2)')'Lon, Lat=',&
+         rlonlat_D(2:3)*cRadToDeg
+    write(*,'(a)')'Check orientation: in the rotated frame vector'
+    write(*,'(a,3es16.8)')'(Xyz2_D - Xyz1_D)/(2*HalfDist) (should be [1,0,0]) =',&
+         matmul(Xyz2_D  - Xyz_D, matmul(rot_xyz_mercator(Xyz_D+Xyz2_D),&
+         rot_matrix_z(Orientation) ) )/(2*HalfDist)
   end subroutine test_coord_transform
   !============================================================================
 end module ModCoordTransform
