@@ -998,16 +998,16 @@ contains
 
   end subroutine test_mod_utility
   !============================================================================
-  function norm2(x_I) result(norm)
+  function norm2(x_I) result(Norm)
     !$acc routine seq
 
     ! Does the same as the intrinsic norm2 function in Fortran 2008
     ! It is needed because nvfortran+ACC does not have norm2 implemented
 
-    real, intent(in) :: x_I(:)
-    real:: norm
+    real, intent(in):: x_I(:)
+    real:: Norm
     !--------------------------------------------------------------------------
-    norm = sqrt(sum(x_I**2))
+    Norm = sqrt(sum(x_I**2))
 
   end function norm2
   !============================================================================
@@ -1095,7 +1095,8 @@ contains
              if(present(StringError)) write(*,*) NameSub, ': ', StringError
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
              write(*,*) NameSub,': Coord=', Coord
-             call CON_stop_simple(NameSub//': normalized coordinate is too small!')
+             call CON_stop_simple(NameSub// &
+                  ': normalized coordinate is too small!')
           elseif(.not.DoExtrapolate)then
              ! Use lefttmost cell (first order accurate)
              dCoord = 0.0
@@ -1106,7 +1107,8 @@ contains
              if(present(StringError)) write(*,*) StringError
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
              write(*,*) NameSub,': Coord=', Coord
-             call CON_stop_simple(NameSub//': normalized coordinate is too large!')
+             call CON_stop_simple(NameSub// &
+                  ': normalized coordinate is too large!')
           elseif(.not.DoExtrapolate)then
              ! Use rightmost cell (first order accurate)
              dCoord = 1.0
@@ -1287,7 +1289,8 @@ contains
              if(present(StringError)) write(*,*) NameSub, ': ', StringError
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
              write(*,*) NameSub,': Coord=', Coord
-             call CON_stop_simple(NameSub//': normalized coordinate is too small!')
+             call CON_stop_simple(NameSub// &
+                  ': normalized coordinate is too small!')
           elseif(.not.DoExtrapolate)then
              ! Use lefttmost cell (first order accurate)
              dCoord = 0.0
@@ -1298,7 +1301,8 @@ contains
              if(present(StringError)) write(*,*) StringError
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
              write(*,*) NameSub,': Coord=', Coord
-             call CON_stop_simple(NameSub//': normalized coordinate is too large!')
+             call CON_stop_simple(NameSub// &
+                  ': normalized coordinate is too large!')
           elseif(.not.DoExtrapolate)then
              ! Use rightmost cell (first order accurate)
              dCoord = 1.0
