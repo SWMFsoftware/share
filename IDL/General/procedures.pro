@@ -7071,10 +7071,13 @@ pro save_pict, filename, headline, varname, w, x, $
 end
 
 ;=============================================================================
-pro save_log, filename, headline, varname, array, format=format
+pro save_log, filename, headline, varname, array, badvalue=badvalue, $
+              format=format
 
   common debug_param & on_error, onerror
 
+  if not keyword_set(badvalue) then badvalue = 0
+  
   unit=1
   close, unit
 
@@ -7093,7 +7096,9 @@ pro save_log, filename, headline, varname, array, format=format
   openw, unit, filename
   for i = 0, n_elements(headline)-1 do printf, unit, headline(i)
   printf, unit, strjoin(varname,' ')
-  for i = 0, n-1 do printf, unit, array(i,*), format=format
+  for i = 0, n-1 do if badvalue ne 0 and min(array(i,*)) gt badvalue then $
+     printf, unit, array(i,*), format=format
+
   close, unit
 
 end
