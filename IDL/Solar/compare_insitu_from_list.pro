@@ -25,6 +25,9 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
   if (keyword_set(DoHighlight))        then $
      openw, lun_opt, './output/avg_dist.txt',/get_lun
   if (not keyword_set(DoStrictRange))  then DoStrictRange=0
+
+  EventTimeDist  = 'none'
+  TimeWindowDist = -7
   
   umax_plot = 900
   nmax_plot = 35
@@ -103,7 +106,8 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
            dist_int = calc_dist_insitu(time_obs, u_obs,  n_obs, tem_obs, mag_obs, $
                                        time_swmf,ut_swmf,n_swmf,ti_swmf, B_swmf,  $
                                        dist_int_u, dist_int_t,                    $
-                                       dist_int_n, dist_int_b)
+                                       dist_int_n, dist_int_b,                    $
+                                       EventTimeDist, TimeWindowDist)
 
            print,filename_sat+' avg dist of n and u is: ', $
                  (dist_int_u+dist_int_n)/2.0
@@ -210,7 +214,8 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
            dist_int = calc_dist_insitu(time_obs, u_obs,  n_obs, tem_obs, mag_obs, $
                                        time_swmf,ut_swmf,n_swmf,ti_swmf, B_swmf,  $
                                        dist_int_u, dist_int_t,                    $
-                                       dist_int_n, dist_int_b)
+                                       dist_int_n, dist_int_b,                    $
+                                       EventTimeDist, TimeWindowDist)
 
            if abs(dist_un_min - (dist_int_n+dist_int_u)/2.0) le 1e-5 then begin
               time_swmf_h = time_swmf
@@ -237,7 +242,8 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
                      ymax_I=[umax_plot,nmax_plot,tmax_plot,bmax_plot],           $
                      IsOverPlot=IsOverPlot, DoLogT=1, linethick=linethickIn,     $
                      colorLocal=colorIn, DoLegend=DoLegendIn,                    $
-                     nLegendPlot=nLegendPlot,legendPosL=legendPosLIn
+                     nLegendPlot=nLegendPlot,legendPosL=legendPosLIn,            $
+                     EventTimeDist=EventTimeDist, TimeWindowDist=TimeWindowDist
 
         ;; nLegendPlot is the number of legend printed in plot_insitu
         nLegendPlotTotal = nLegendPlotTotal + nLegendPlot
