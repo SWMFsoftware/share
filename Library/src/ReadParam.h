@@ -55,8 +55,9 @@ inline double analyze_string(std::string &s) {
 }
 
 class ReadParam {
-public:
+private:
   std::stringstream ss;
+  std::string param;
   bool isVerbose;
 
   std::string commandSuffix = std::string();
@@ -65,11 +66,17 @@ public:
   ReadParam() { isVerbose = true; }
   ~ReadParam() {}
   ReadParam &operator=(const std::string &stringIn) {
+    param = stringIn;
     ss.clear();
-    ss.str(stringIn);
+    ss.str(param);
     return (*this);
   }
   ReadParam &operator=(const ReadParam &other) { return (*this); }
+
+  void roll_back() {
+    ss.clear();
+    ss.str(param);
+  }
 
   void set_verbose(bool in) { isVerbose = in; }
   //==========================================
