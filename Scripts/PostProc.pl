@@ -162,6 +162,11 @@ REPEAT:{
 	    }else{
 		&shell("./Preplot.pl",@files) if @files;
 	    }
+	}elsif( $Dir =~ /^PS/ ){
+	    my @files=glob("Output/dgcpm*.dat");
+	    if($Gzip){
+		&shell("gzip", @files) if @files;
+	    }
 	}elsif( $Dir =~ /^PW/ ){
 	    # PWOM output files cannot be gzipped while code is running
 	    # because it is appending to the files.
