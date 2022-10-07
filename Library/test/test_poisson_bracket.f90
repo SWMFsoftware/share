@@ -678,14 +678,162 @@ contains
   !============================================================================
 end module ModTestPoissonBracket
 !==============================================================================
+module ModHillVortex
+  use ModPoissonBracket, ONLY: explicit
+  use ModUtilities,      ONLY: CON_stop
+  use ModPlotFile,       ONLY: save_plot_file
+  use ModConst
+  implicit none
+  PRIVATE ! Except
+  public :: test_hill_vortex
+  ! Streamlines:
+  integer, parameter:: r_ = 2, Ur_ = 2, z_ = 1, Uz_  = 1
+  real, parameter :: Dx = 0.01
+  real :: z, r, Uz, Ur, Vel_VC(Uz_:Ur_,-500:500,-500:500), RSph
+  integer :: i, j
+  ! Grid in RSph-Theta variables
+  integer, parameter::  nR = 450,  nTheta = 1440
+  ! Loop variables
+  integer           ::  iR, iTheta, iStep, iPlot
+  ! Mesh size in \Theta
+  real, parameter   :: DeltaTheta = cTwoPi/nTheta
+  real :: VDF_G(-1:nR+2, -1:nTheta), Volume_G(0:nR+1, 0:nTheta/2+1)
+  real :: R_I(-1:nR+1), Theta, CosTheta_I(-1:nTheta/2+1)
+  real :: Hamiltonian_N(-1:nR+1, -1:nTheta/2+1)
+  real :: Time, Dt, Source_C(nR,nTheta/2), tFinal
+  logical :: DoExit
+  character(LEN=10)::NameFile
+  !----------------------------------------------------------------------------
+contains
+  !============================================================================
+  subroutine test_hill_vortex
+    !--------------------------------------------------------------------------
+    do j = -500,500
+       r = Dx*j
+       do i = -500,500
+          z = Dx*i
+          RSph = sqrt(z**2 + r**2)
+          if(RSph < 1.0)then
+             ! Inside the vortex
+             Uz =  1.50*(-1.0 + r**2 + RSph**2)
+             Ur = -1.50*r*z
+          else
+             Uz = 1.0 - 1.0/RSph**3 + 1.50*r**2/RSph**5
+             Ur = -1.50*r*z/RSph**5
+          end if
+          Vel_VC(Uz_:Ur_,i,j) = [Uz, Ur]
+       end do
+    end do
+    call save_plot_file(NameFile='streamlines.out', &
+         TypeFileIn='ascii', &
+         NameVarIn='z r Uz Ur'  ,                  &
+         CoordMinIn_D=[-5.0, -5.0],             &
+         CoordMaxIn_D=[ 5.0,  5.0 ],             &
+         StringFormatIn = '(4F16.4)',            &
+         VarIn_VII = Vel_VC)
+    ! Initialize coords
+    do iR = -1, nR +1
+       R_I(iR) = iR*Dx + 0.50
+    end do
+    do iTheta = 0, nTheta/2
+       Theta = iTheta*DeltaTheta
+       CosTheta_I(iTheta) = cos(Theta)
+    end do
+    CosTheta_I(nTheta/2+1) = CosTheta_I(nTheta/2-1)
+    CosTheta_I(-1) = CosTheta_I(1)
+    ! Calculate Hamiltonian
+    do iTheta = -1, nTheta/2+1
+       ! Calculate theta-dependent factor
+       Hamiltonian_N(:, iTheta) = cTwoPi*(1.0 - CosTheta_I(iTheta)**2)
+       do iR = -1, 50 ! Unit radius
+          Hamiltonian_N(iR,iTheta) = Hamiltonian_N(iR,iTheta)*0.750*&
+               R_I(iR)**2*(R_I(iR)**2 - 1.0)
+       end do
+       do iR = 51, nR+1
+          Hamiltonian_N(iR,iTheta) = Hamiltonian_N(iR,iTheta)*0.50*&
+               R_I(iR)**2*(1.0 - 1.0/R_I(iR)**3)
+       end do
+    end do
+    ! write(*,*)'Maxval(Hamiltonian)=',maxval(Hamiltonian_N)
+    ! Calculate volume
+    ! angle-dependent factor
+    do iTheta = 1, nTheta/2
+       Volume_G(0:nR+1,iTheta) = (CosTheta_I(iTheta-1) - CosTheta_I(iTheta))*&
+            (R_I(0:nR+1)**3 - R_I(-1:nR)**3)*cTwoPi/3
+    end do
+    Volume_G(0:nR+1,0) = (CosTheta_I(0) - CosTheta_I(-1))*&
+         (R_I(0:nR+1)**3 - R_I(-1:nR)**3)*cTwoPi/3
+    Volume_G(0:nR+1,nTheta/2+1) = (CosTheta_I(nTheta/2+1) - &
+         CosTheta_I(nTheta/2))*(R_I(0:nR+1)**3 - R_I(-1:nR)**3)*cTwoPi/3
+    ! write(*,*)'Minval(Volume)=',minval(Volume_G)
+    VDF_G = 0.0
+    ! Periodic boundary conditions
+    Source_C = 0.0
+    ! Initial NormL2 and Energy
+    ! Compiutation
+    Time = 0.0; iStep = 0
+    do iPlot = 1, 10
+       tFinal = real(iPlot)
+       DoExit = .false.
+       PLOT:do
+          ! Boundary condition for marking density in the band -6 < x-t < -5
+          do iTheta = -1, nTheta/2+2
+             do iR = nR+1,nR+2
+                z = (0.50 +(iR - 0.50)*Dx)*cos(DeltaTheta*(iTheta - 0.50))
+                if( -6.0 < z - Time.and.z - Time < -5.0)then
+                   VDF_G(iR,iTheta) = 1.0
+                else
+                   VDF_G(iR,iTheta) = 0.0
+                end if
+             end do
+          end do
+          call explicit(nR, nTheta/2, VDF_G(-1:nR+2,-1:nTheta/2+2), Volume_G,&
+               Source_C, Hamiltonian_N,   &
+               CFLIn=0.99, DtOut = Dt)
+          iStep = iStep +1
+          if(Time + Dt >= tFinal)then
+             call explicit(nR, nTheta/2, VDF_G(-1:nR+2,-1:nTheta/2+2),Volume_G,&
+                  Source_C, Hamiltonian_N,   &
+                  DtIn = tFinal - Time)
+             VDF_G(1:nR, 1:nTheta/2) = VDF_G(1:nR, 1:nTheta/2) + Source_C
+             Time = tFinal
+             DoExit = .true.
+          else
+             Time = Time + Dt
+             VDF_G(1:nR, 1:nTheta/2) = VDF_G(1:nR, 1:nTheta/2) + Source_C
+          end if
+          do iTheta = nTheta/2 + 1, nTheta
+             ! Symmetric prolongation
+             VDF_G(1:nR, iTheta) = VDF_G(1:nR, 1+nTheta-iTheta)
+          end do
+          ! Periodic prolongation
+          VDF_G(1:nR,-1:0) = VDF_G(1:nR, nTheta-1:nTheta)
+          write(*,*)'Time=',Time
+          if(DoExit) EXIT PLOT
+       end do PLOT
+       write(NameFile,'(a,i2.2,a)')'hill',iPlot,'.out'
+       call save_plot_file(NameFile=NameFile, &
+            TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
+            NameVarIn='z r VDF'  , &
+            CoordMinIn_D=[0.50 + 0.50*Dx, 180.0/nTheta],&
+            CoordMaxIn_D=[5.0 - 0.50*Dx, 360.0 - 180.0/nTheta],&
+            StringFormatIn = '(3F10.3)'            ,&
+            VarIn_II = VDF_G(1:nR,1:nTheta) )
+    end do
+  end subroutine test_hill_vortex
+  !============================================================================
+end module ModHillVortex
+!==============================================================================
 program test_program
   use ModTestPoissonBracket, ONLY: test_poisson_bracket, test_dsa_sa_mhd, &
        test_dsa_poisson, test_energy_conservation, test_in_action_angle
   use ModNumConst,           ONLY: cTwoPi
+  use ModHillVortex, ONLY: test_hill_vortex
   ! use ModTestPoissonBracketAndScatter, ONLY: test_scatter
   implicit none
 
   !----------------------------------------------------------------------------
+  ! call test_hill_vortex
   call test_poisson_bracket(cTwoPi)
   ! call test_energy_conservation(cTwoPi)
   !  call test_in_action_angle(cTwoPi)
