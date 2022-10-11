@@ -148,26 +148,28 @@ module ModConst
   real, parameter:: rSun              = 0.696E+9               ! [ m]
   real, parameter:: mSun              = 1.99E+30               ! [kg]
   real, parameter:: RotationPeriodSun = 25.38 * cSecondPerDay  ! [ s]
+
   ! Time conversion parameters:
-  ! Artificial epoch:
-  ! iYearBase MUST follow : mod(iYearBase,4) == 1
-  ! iYearBase MUST be AFTER 1900
-  ! This particular value is required by the UA component GITM:
-  integer, parameter :: iYearBase = 1965
+  ! mod(iYearBase,4) = 1 and iYearBase > 1582 (start of Gregorian calendar)
+  integer, parameter :: iYearBase = 1585
+
   ! Julian day of YearBase-01-01 UT00:00:
   ! General formula for Julian day may be found in ModTimeConvert:
   real(Real8_), parameter:: JulianDayBase = 367*iYearBase - &
        ((7*iYearBase)/4) + 1721044.5D0  ! = 0.24387615D+07
+
   ! Julian day for  0th Carrington Rotation start on
   ! 1853-Oct-13 14:26:17(approx)
   real(Real8_), parameter:: JulianDayCR0Start = 2398140.10155D0
+
   ! Time difference in seconds between 0th CR start and and the Julian day of
-  ! Yeaar Base Jan,1 00:00:00
-  real(Real8_), parameter:: tStartCarringtonRotation = (JulianDayCR0Start - &
-       JulianDayBase)*cSecondPerDay ! = -3.509688826080018D+9 [s]
-  !    The expression used before       -3.509706400D+9 !
+  ! Yeaar Base Jan,1 00:00:00 = -3.509688826080018D+9 [s]
+  real(Real8_), parameter:: tStartCarringtonRotation = cSecondPerDay* &
+       (JulianDayCR0Start - JulianDayBase)
+  
+  ! 27.2753088381330642 days [s]  
   real, parameter:: CarringtonSynodicPeriod = cSecondPerDay/&
-       (1/25.38D0 - 1/365.2425D0)! 27.2753088381330642 days [s]
+       (1/25.38D0 - 1/365.2425D0)   
 
 contains
   !============================================================================

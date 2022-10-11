@@ -65,10 +65,8 @@ module ModTimeConvert
 
   !PUBLIC DATA MEMBERS:
 
-  ! iYearBase MUST follow : mod(iYearBase,4) == 1
-  ! iYearBase MUST be AFTER 1900
-  ! This particular value is required by the UA component GITM:
-  ! Inherited from ModConst: iYearBase = 1965
+  ! iYearBase=1585 is inherited from ModConst. It used to be 1965.
+  ! UA/GITM may have to update its routines to correctly calculate the date.
 
   ! The earliest year which is already correctly handled
   integer, parameter :: iYearMin  = iYearBase
@@ -300,6 +298,10 @@ contains
   !============================================================================
 
   integer function n_leap_day(iYear)
+
+    ! Return the number of leap days from base year to the year preceeding iYear.
+    ! The leap day in iYear itself is not counted!
+
     integer, intent(in) :: iYear
 
     ! local variables
@@ -307,8 +309,6 @@ contains
     integer, parameter :: iYearBase100 = 100*(iYearBase/100) + 1
     integer, parameter :: iYearBase400 = 400*(iYearBase/400) + 1
 
-    ! Return the number of leap days from base year to the year preceeding iYear.
-    ! The leap day in iYear itself is not counted!
     character(len=*), parameter:: NameSub = 'n_leap_day'
     !--------------------------------------------------------------------------
     n_leap_day = &
@@ -317,19 +317,21 @@ contains
          + (iYear - iYearBase400)/400
   end function n_leap_day
   !============================================================================
-
   logical function is_leap_year(iYear)
+
     integer, intent(in) :: iYear
     !--------------------------------------------------------------------------
-    is_leap_year = mod(iYear,4)   == 0 .and. &
-         (mod(iYear,100) /= 0 .or. mod(iYear,400) == 0)
+    is_leap_year = modulo(iYear, 4) == 0 .and. &
+         (modulo(iYear, 100) /= 0 .or. modulo(iYear, 400) == 0)
+
   end function is_leap_year
   !============================================================================
-
   integer function n_day_of_year(iYear, iMonth, iDay)
-    integer, intent(in) :: iYear, iMonth, iDay
+
     ! Calculate the number of days since the beginning of iYear.
     ! January 1 returns 1. Leap years are taken into account.
+
+    integer, intent(in) :: iYear, iMonth, iDay
 
     character(len=*), parameter:: NameSub = 'n_day_of_year'
     !--------------------------------------------------------------------------
