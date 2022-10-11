@@ -82,7 +82,7 @@ contains
     real::Century,VL,G ! Miscellaneous
     real, parameter:: cDegToRadHere=1.0/57.295779513
     logical:: DoWarn = .true.
-    
+
     character(len=*), parameter:: NameSub = 'geopack_sun'
     !--------------------------------------------------------------------------
     if((iYear < 1901 .or. iYear > 2099) .and. DoWarn)then

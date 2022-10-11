@@ -166,10 +166,10 @@ module ModConst
   ! Yeaar Base Jan,1 00:00:00 = -3.509688826080018D+9 [s]
   real(Real8_), parameter:: tStartCarringtonRotation = cSecondPerDay* &
        (JulianDayCR0Start - JulianDayBase)
-  
-  ! 27.2753088381330642 days [s]  
+
+  ! 27.2753088381330642 days [s]
   real, parameter:: CarringtonSynodicPeriod = cSecondPerDay/&
-       (1/25.38D0 - 1/365.2425D0)   
+       (1/25.38D0 - 1/365.2425D0)
 
 contains
   !============================================================================
