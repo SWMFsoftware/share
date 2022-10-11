@@ -4,7 +4,6 @@
 module CON_geopack
 
   use ModNumConst, ONLY: cDegToRad, cHalfPi, cTwoPi
-  use ModUtilities, ONLY: CON_stop
 
   implicit none
 
@@ -82,12 +81,13 @@ contains
     double precision:: DJ,FDAY
     real::Century,VL,G ! Miscellaneous
     real, parameter:: cDegToRadHere=1.0/57.295779513
-
+    logical:: DoWarn = .true.
+    
     character(len=*), parameter:: NameSub = 'geopack_sun'
     !--------------------------------------------------------------------------
-    if(iYear < 1901 .or. iYear > 2099)then
-       write(*,*) NameSub,' ERROR: No ephemeris data for the year of ',iYear
-       call CON_stop('CON_geopack ERROR')
+    if((iYear < 1901 .or. iYear > 2099) .and. DoWarn)then
+       write(*,*) NameSub,' WARNING: No ephemeris data for the year of ',iYear
+       DoWarn = .false.
     end if
     FDAY=dble(IHOUR*3600+iMIN*60+ISEC)/86400.E0
     DJ=365*(IYear-1900)+(IYear-1901)/4+jDAY-0.5E0+FDAY
