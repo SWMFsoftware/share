@@ -1266,12 +1266,12 @@ contains
     logical,          intent(out), optional:: IsInside
 
     integer:: i, Di
+    real(Real8_):: Tolerance
 
     logical:: IsUniform
 
     character(len=*), parameter:: NameSub = 'find_cell8'
     !--------------------------------------------------------------------------
-
     if(present(Coord_I)) then
        IsUniform = size(Coord_I) < 2
     else
@@ -1283,8 +1283,9 @@ contains
 
        iCoord = min(MaxCoord-1, max(MinCoord, floor(Coord)))
        dCoord = Coord - iCoord
+       Tolerance = (MaxCoord - MinCoord)*1d-12
 
-       if(Coord < MinCoord)then
+       if(Coord < MinCoord - Tolerance)then
           if(.not. (present(DoExtrapolate))) then
              if(present(StringError)) write(*,*) NameSub, ': ', StringError
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
@@ -1296,7 +1297,7 @@ contains
              dCoord = 0.0
           end if
           if(present(IsInside)) IsInside = .false.
-       elseif(Coord > MaxCoord)then
+       elseif(Coord > MaxCoord + Tolerance)then
           if(.not. (present(DoExtrapolate))) then
              if(present(StringError)) write(*,*) StringError
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
@@ -1315,8 +1316,9 @@ contains
     elseif(Coord_I(MinCoord) < Coord_I(MaxCoord))then
 
        ! Monotone increasing coordinates
+       Tolerance = (Coord_I(MaxCoord) - Coord_I(MinCoord))*1d-12
 
-       if(Coord < Coord_I(MinCoord))then
+       if(Coord < Coord_I(MinCoord) - Tolerance)then
           if(.not. (present(DoExtrapolate))) then
              if(present(StringError)) write(*,*) StringError
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
@@ -1335,7 +1337,7 @@ contains
           RETURN
        end if
 
-       if(Coord > Coord_I(MaxCoord))then
+       if(Coord > Coord_I(MaxCoord) + Tolerance)then
           if(.not. (present(DoExtrapolate))) then
              if(present(StringError)) write(*,*) StringError
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
@@ -1379,8 +1381,9 @@ contains
     else
 
        ! Monotone decreasing coordinates
+       Tolerance = (Coord_I(MinCoord) - Coord_I(MaxCoord))*1d-12
 
-       if(Coord < Coord_I(MaxCoord))then
+       if(Coord < Coord_I(MaxCoord) - Tolerance)then
           if(.not. (present(DoExtrapolate))) then
              if(present(StringError)) write(*,*) StringError
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
@@ -1399,7 +1402,7 @@ contains
           RETURN
        end if
 
-       if(Coord > Coord_I(MinCoord))then
+       if(Coord > Coord_I(MinCoord) + Tolerance)then
           if(.not. (present(DoExtrapolate))) then
              if(present(StringError)) write(*,*) StringError
              write(*,*) NameSub,': MinIndex, MaxIndex=', MinCoord, MaxCoord
