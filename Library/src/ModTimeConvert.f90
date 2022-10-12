@@ -97,7 +97,7 @@ contains
     !--------------------------------------------------------------------------
     call fix_year(Time % iYear)
     is_valid_int_time = .false.
-    if(Time % iYear < iYearMin) RETURN
+!    if(Time % iYear < iYearMin) RETURN
     if(Time % iMonth > 12 .or. Time % iMonth < 1) RETURN
     if(Time % iMonth == 2) call fix_february(Time % iYear)
 !    if(Time % iDay < 1 .or. Time % iDay > nDayInMonth_I(Time % iMonth)) RETURN
