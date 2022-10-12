@@ -151,7 +151,7 @@ module ModConst
 
   ! Time conversion parameters:
   ! mod(iYearBase,4) = 1 and iYearBase > 1582 (start of Gregorian calendar)
-  integer, parameter :: iYearBase = 1585
+  integer, parameter :: iYearBase = 1965 !!! 1585
 
   ! Julian day of YearBase-01-01 UT00:00:
   ! General formula for Julian day may be found in ModTimeConvert:
