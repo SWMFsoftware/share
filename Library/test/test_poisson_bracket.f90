@@ -772,8 +772,8 @@ contains
     ! Initial NormL2 and Energy
     ! Compiutation
     Time = 0.0; iStep = 0
-    do iPlot = 1, 10
-       tFinal = real(iPlot)
+    do iPlot = 0, 99
+       tFinal = real(iPlot+1)*0.1
        DoExit = .false.
        PLOT:do
           ! Boundary condition for marking density in the band -6 < x-t < -5
@@ -813,8 +813,8 @@ contains
        end do PLOT
        write(NameFile,'(a,i2.2,a)')'hill',iPlot,'.out'
        call save_plot_file(NameFile=NameFile, &
-            TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
-            NameVarIn='z r VDF'  , &
+            TypeFileIn='real4', TimeIn=tFinal, nStepIn = iStep, &
+            NameVarIn='z r Rho'  , &
             CoordMinIn_D=[0.50 + 0.50*Dx, 180.0/nTheta],&
             CoordMaxIn_D=[5.0 - 0.50*Dx, 360.0 - 180.0/nTheta],&
             StringFormatIn = '(3F10.3)'            ,&
@@ -824,15 +824,153 @@ contains
   !============================================================================
 end module ModHillVortex
 !==============================================================================
+module ModStochastic
+  use ModPoissonBracket, ONLY: explicit
+  use ModUtilities,      ONLY: CON_stop
+  use ModPlotFile,       ONLY: save_plot_file
+  use ModConst
+  implicit none
+  PRIVATE ! Except
+  public :: test_stochastic
+  ! Streamlines:
+  integer, parameter :: nPointPer2Pi = 360
+  integer, parameter :: nJ = (4*nPointPer2Pi)/2, nTheta=nPointPer2Pi
+  real, parameter    :: Delta = cTwoPi/nPointPer2Pi
+  ! Loop variables
+  integer           ::  iJ, iTheta, iStep, iPlot
+  ! Mesh size in \Theta
+  real :: VDF_G(  -1:nTheta+2, -1-nJ:nJ+2)
+  real :: Volume_G(0:nTheta+1,   -nJ:nJ+1)
+  real :: Theta_I(-1:nTheta+1), Action_I(-1-nJ:nJ+1), Action
+  real :: HamiltonianFree_N(-1:nTheta+1, -1-nJ:nJ+1)
+  real :: HamiltonianPush_N(-1:nTheta+1, -1-nJ:nJ+1)
+  real :: Time, Dt, Source_C(nTheta,1-nJ:nJ), tFinal
+  logical :: DoAgain
+  character(LEN=11)::NameFile
+  !----------------------------------------------------------------------------
+contains
+  !============================================================================
+  subroutine test_stochastic(KChirikov)
+    real, intent(in) :: KChirikov ! Left hand side in the Chhirikov criterion
+    !--------------------------------------------------------------------------
+    ! Uniform Delta*Delta grid:
+    Volume_G = Delta**2
+    do iJ = -1-nJ, nJ+1
+       Action_I(iJ)  = iJ*Delta
+    end do
+    do iTheta = -1, nTheta+1
+       Theta_I(iTheta) = iTheta*Delta
+    end do
+    ! Free rotator:
+    do iJ = -1-nJ, nJ+1
+       HamiltonianFree_N(-1:nTheta+1, iJ) = 0.50*Action_I(iJ)**2
+    end do
+    ! Sinusoidal perturbation
+    do iTheta = -1, nTheta+1
+       HamiltonianPush_N(-iTheta, -1-nJ:nJ+1) = cos(Theta_I(iTheta))
+    end do
+    ! Account for:
+    ! 1. Amplitude factor, KChirikov
+    ! 2. Dirac delta-function, by dividing the amplitude by the short time
+    !    interval and apply the perturbation only within this interval
+    ! 3. Sum up both Hamiltonians:
+    HamiltonianPush_N = (KChirikov/0.10)*HamiltonianPush_N + HamiltonianFree_N
+    ! Initial distribution function: zero at high energies and in ghost cells:
+    VDF_G(-1:nTheta+2,-1-nJ:nJ+2) =  exp(-12.50)
+    do iJ  = 1, nJ
+       Action = 0.50*(Action_I(iJ-1) + Action_I(iJ))
+       if(Action < 1.0)then
+          VDF_G(:,iJ) = exp(-12.50*Action**2)
+       else
+          EXIT
+       end if
+    end do
+    do iJ  = 0, 1-nJ,-1
+       Action = 0.50*(Action_I(iJ-1) + Action_I(iJ))
+       if(abs(Action) < 1.0)then
+          VDF_G(:,iJ) = exp(-12.50*Action**2)
+       else
+          EXIT
+       end if
+    end do
+    Source_C = 0.0
+    tFinal  = 0.0
+    ! Compiutation
+    Time = 0.0; iStep = 0
+    call save_plot_file(NameFile='initial.out', &
+         TypeFileIn='real4', TimeIn=tFinal, nStepIn = iStep, &
+         NameVarIn='theta JT/2pi Log10VDF'  , &
+         CoordMinIn_D=[         0.50*Delta, -2.0 + 0.50/nPointPer2Pi],&
+         CoordMaxIn_D=[cTwoPi - 0.50*Delta,  2.0 - 0.50/nPointPer2Pi],&
+         VarIn_II = log10(VDF_G(1:nTheta,1-nJ:nJ)) )
+    do iPlot = 0, 249
+       tFinal = tFinal + 0.1
+       DoAgain = .true.
+       do while(DoAgain)
+          call explicit(nTheta,2*nJ, VDF_G, Volume_G,&
+               Source_C, HamiltonianPush_N,   &
+               CFLIn=0.99, DtOut = Dt)
+          iStep = iStep +1
+          if(Time + Dt >= tFinal)then
+             call explicit(nTheta,2*nJ,VDF_G,Volume_G,&
+                  Source_C, HamiltonianPush_N,   &
+                  DtIn = tFinal - Time)
+             VDF_G(1:nTheta,1-nJ:nJ) = VDF_G(1:nTheta,1-nJ:nJ) + Source_C
+             Time = tFinal
+             DoAgain = .false.
+          else
+             Time = Time + Dt
+             VDF_G(1:nTheta,1-nJ:nJ) = VDF_G(1:nTheta,1-nJ:nJ) + Source_C
+          end if
+          ! Periodic prolongation
+          VDF_G(-1:0,:) = VDF_G(nTheta-1:nTheta,:)
+          VDF_G(nTheta+1:nTheta+2,:) = VDF_G(1:2,:)
+          write(*,*)'Time=',Time
+       end do
+       tFinal = tFinal + 0.9
+       DoAgain = .true.
+       do while(DoAgain)
+          call explicit(nTheta,2*nJ, VDF_G, Volume_G,&
+               Source_C, HamiltonianFree_N,   &
+               CFLIn=0.99, DtOut = Dt)
+          iStep = iStep +1
+          if(Time + Dt >= tFinal)then
+             call explicit(nTheta,2*nJ,VDF_G,Volume_G,&
+                  Source_C, HamiltonianFree_N,   &
+                  DtIn = tFinal - Time)
+             VDF_G(1:nTheta,1-nJ:nJ) = VDF_G(1:nTheta,1-nJ:nJ) + Source_C
+             Time = tFinal
+             DoAgain = .false.
+          else
+             Time = Time + Dt
+             VDF_G(1:nTheta,1-nJ:nJ) = VDF_G(1:nTheta,1-nJ:nJ) + Source_C
+          end if
+          ! Periodic prolongation
+          VDF_G(-1:0,:) = VDF_G(nTheta-1:nTheta,:)
+          VDF_G(nTheta+1:nTheta+2,:) = VDF_G(1:2,:)
+          write(*,*)'Time=',Time
+       end do
+       write(NameFile,'(a,i3.3,a)')'stoc',iPlot,'.out'
+       call save_plot_file(NameFile=NameFile, &
+            TypeFileIn='real4', TimeIn=tFinal, nStepIn = iStep, &
+            NameVarIn='theta JT/2pi Log10VDF'  , &
+            CoordMinIn_D=[         0.50*Delta, -2.0 + 0.50/nPointPer2Pi],&
+            CoordMaxIn_D=[cTwoPi - 0.50*Delta,  2.0 - 0.50/nPointPer2Pi],&
+            VarIn_II = log10(VDF_G(1:nTheta,1-nJ:nJ)) )
+    end do
+  end subroutine test_stochastic
+end module ModStochastic
 program test_program
   use ModTestPoissonBracket, ONLY: test_poisson_bracket, test_dsa_sa_mhd, &
        test_dsa_poisson, test_energy_conservation, test_in_action_angle
   use ModNumConst,           ONLY: cTwoPi
   use ModHillVortex, ONLY: test_hill_vortex
+  use ModStochastic, ONLY: test_stochastic
   ! use ModTestPoissonBracketAndScatter, ONLY: test_scatter
   implicit none
 
   !----------------------------------------------------------------------------
+  ! call test_stochastic(1.2)
   ! call test_hill_vortex
   call test_poisson_bracket(cTwoPi)
   ! call test_energy_conservation(cTwoPi)
