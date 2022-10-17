@@ -522,7 +522,7 @@ test_process_var_name_check:
 	@ls -l test_process_var_name.diff
 
 #######################################################################
-test_poisson_exe:
+test_poisson_bracket_exe:
 	@(cd ../src; make LIB)
 	@make test_poisson_bracket.o
 	${LINK.f90} -o test_poisson.exe test_poisson_bracket.o \
@@ -531,7 +531,7 @@ test_poisson_exe:
 test_poisson_bracket:
 	rm -f test_poisson.out test_*poisson.ref.out test_multipoisson_0*.out
 	@echo test_poisson_bracket starting	>  test_poisson.diff
-	@make test_poisson_exe			>> test_poisson.diff
+	@make test_poisson_bracket_exe		>> test_poisson.diff
 	@echo './test_poisson.exe'		>> test_poisson.diff
 	-@(./test_poisson.exe >  test_poisson.diff)
 	-@(${SCRIPTDIR}/DiffNum.pl -b -a=1e-7 \
