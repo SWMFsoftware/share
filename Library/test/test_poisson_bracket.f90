@@ -679,39 +679,45 @@ contains
 end module ModTestPoissonBracket
 !==============================================================================
 module ModHillVortex
+
   use ModPoissonBracket, ONLY: explicit
   use ModUtilities,      ONLY: CON_stop
   use ModPlotFile,       ONLY: save_plot_file
   use ModConst
+
   implicit none
+
   PRIVATE ! Except
   public :: test_hill_vortex
-  ! Streamlines:
-  integer, parameter:: r_ = 2, Ur_ = 2, z_ = 1, Uz_  = 1
-  real :: z, r, Uz, Ur, Vel_VC(Uz_:Ur_,-500:500,-500:500), RSph
-  integer :: i, j
-  ! Grid in RSph-Theta variables
-  integer, parameter::  nR = 450,  nTheta = 1440
-  real,    parameter :: Dx = 4.50/nR
-  ! Loop variables
-  integer           ::  iR, iTheta, iStep, iPlot
-  ! Mesh size in \Theta
-  real, parameter   :: DeltaTheta = cTwoPi/nTheta
-  real :: VDF_G(-1:nR+2, -1:nTheta), Volume_G(0:nR+1, 0:nTheta/2+1)
-  real :: R_I(-1:nR+1), Theta, CosTheta_I(-1:nTheta/2+1)
-  real :: Hamiltonian_N(-1:nR+1, -1:nTheta/2+1)
-  real :: Time, Dt, Source_C(nR,nTheta/2), tFinal
-  logical :: DoExit
-  character(LEN=10)::NameFile
-  !----------------------------------------------------------------------------
+
 contains
   !============================================================================
   subroutine test_hill_vortex
+    ! Streamlines:
+    integer, parameter:: r_ = 2, Ur_ = 2, z_ = 1, Uz_  = 1
+    real :: x, z, r, Uz, Ur, Vel_VC(Uz_:Ur_,-500:500,-500:500), RSph
+
+    ! Grid in RSph-Theta variables
+    integer, parameter::  nR = 16*45,  nTheta = 16*90 ! 450, 1440
+    real,    parameter :: Dr = 4.50/nR
+
+    ! Loop variables
+    integer           ::  iR, iTheta, iStep, iPlot
+
+    ! Mesh size in Theta
+    real, parameter   :: dTheta = cTwoPi/nTheta
+    real :: VDF_G(-1:nR+2, -1:nTheta), Volume_G(0:nR+1, 0:nTheta/2+1)
+    real :: R_I(-1:nR+1), Theta, CosTheta_I(-1:nTheta/2+1)
+    real :: Hamiltonian_N(-1:nR+1, -1:nTheta/2+1)
+    real :: Time, Dt, Source_C(nR,nTheta/2), tFinal
+    logical :: DoExit
+
+    integer:: i, j
     !--------------------------------------------------------------------------
     do j = -500,500
-       r = Dx*j
+       r = 0.01*j
        do i = -500,500
-          z = Dx*i
+          z = 0.01*i
           RSph = sqrt(z**2 + r**2)
           if(RSph < 1.0)then
              ! Inside the vortex
@@ -724,19 +730,20 @@ contains
           Vel_VC(Uz_:Ur_,i,j) = [Uz, Ur]
        end do
     end do
-    call save_plot_file(NameFile='streamlines.out', &
-         TypeFileIn='ascii', &
-         NameVarIn='z r Uz Ur'  ,                  &
-         CoordMinIn_D=[-5.0, -5.0],             &
-         CoordMaxIn_D=[ 5.0,  5.0 ],             &
-         StringFormatIn = '(4F16.4)',            &
+    call save_plot_file( &
+         NameFile = 'streamlines.out',                &
+         StringHeaderIn='Hill vortex velocity field', &
+         NameVarIn='z r Uz Ur'  ,                     &
+         CoordMinIn_D=[-5.0, -5.0],                   &
+         CoordMaxIn_D=[ 5.0,  5.0 ],                  &
+         StringFormatIn = '(4F16.4)',                 &
          VarIn_VII = Vel_VC)
     ! Initialize coords
     do iR = -1, nR +1
-       R_I(iR) = iR*Dx + 0.50
+       R_I(iR) = iR*Dr + 0.50
     end do
     do iTheta = 0, nTheta/2
-       Theta = iTheta*DeltaTheta
+       Theta = iTheta*dTheta
        CosTheta_I(iTheta) = cos(Theta)
     end do
     CosTheta_I(nTheta/2+1) = CosTheta_I(nTheta/2-1)
@@ -770,18 +777,29 @@ contains
     ! Periodic boundary conditions
     Source_C = 0.0
     ! Initial NormL2 and Energy
-    ! Compiutation
+
+    call save_plot_file('hill.outs', 'rewind', 'real4', &
+         'Hill vortex', iStep, tFinal, &
+         NameVarIn='r Theta Rho'  , &
+         CoordMinIn_D=[0.50 + 0.50*Dr, 180.0/nTheta],&
+         CoordMaxIn_D=[5.0 - 0.50*Dr, 360.0 - 180.0/nTheta],&
+         StringFormatIn = '(3F10.3)'            ,&
+         VarIn_II = VDF_G(1:nR,1:nTheta) )
+    
+    ! Computation
     Time = 0.0; iStep = 0
     do iPlot = 0, 99
-       tFinal = real(iPlot+1)*0.1
+       tFinal = (iPlot + 1)*0.1
        DoExit = .false.
        PLOT:do
           ! Boundary condition for marking density in the band -6 < x-t < -5
           do iTheta = -1, nTheta/2+2
-             do iR = nR+1,nR+2
-                z = (0.50 +(iR - 0.50)*Dx)*cos(DeltaTheta*(iTheta - 0.50))
-                if( -6.0 < z - Time.and.z - Time < -5.0)then
-                   VDF_G(iR,iTheta) = 1.0
+             do iR = nR+1, nR+2
+                z = (0.50 + (iR - 0.50)*Dr)*cos(dTheta*(iTheta - 0.50))
+                x = 7 + z - Time
+                if(Time < 2 .and.  abs(x) < 2)then
+                   VDF_G(iR,iTheta) = cos(0.25*cPi*x)**2 &
+                        *cos(cPi*min(0.0, 1.5-Time))**2
                 else
                    VDF_G(iR,iTheta) = 0.0
                 end if
@@ -792,9 +810,8 @@ contains
                CFLIn=0.99, DtOut = Dt)
           iStep = iStep +1
           if(Time + Dt >= tFinal)then
-             call explicit(nR, nTheta/2, VDF_G(-1:nR+2,-1:nTheta/2+2),Volume_G,&
-                  Source_C, Hamiltonian_N,   &
-                  DtIn = tFinal - Time)
+             call explicit(nR, nTheta/2, VDF_G(-1:nR+2,-1:nTheta/2+2), &
+                  Volume_G, Source_C, Hamiltonian_N, DtIn = tFinal - Time)
              VDF_G(1:nR, 1:nTheta/2) = VDF_G(1:nR, 1:nTheta/2) + Source_C
              Time = tFinal
              DoExit = .true.
@@ -811,12 +828,11 @@ contains
           write(*,*)'Time=',Time
           if(DoExit) EXIT PLOT
        end do PLOT
-       write(NameFile,'(a,i2.2,a)')'hill',iPlot,'.out'
-       call save_plot_file(NameFile=NameFile, &
-            TypeFileIn='real4', TimeIn=tFinal, nStepIn = iStep, &
-            NameVarIn='z r Rho'  , &
-            CoordMinIn_D=[0.50 + 0.50*Dx, 180.0/nTheta],&
-            CoordMaxIn_D=[5.0 - 0.50*Dx, 360.0 - 180.0/nTheta],&
+       call save_plot_file('hill.outs', 'append', 'real4', &
+            'Hill vortex', iStep, tFinal, &
+            NameVarIn='r Theta Rho'  , &
+            CoordMinIn_D=[0.50 + 0.50*Dr, 180.0/nTheta],&
+            CoordMaxIn_D=[5.0 - 0.50*Dr, 360.0 - 180.0/nTheta],&
             StringFormatIn = '(3F10.3)'            ,&
             VarIn_II = VDF_G(1:nR,1:nTheta) )
     end do
@@ -971,11 +987,11 @@ program test_program
 
   !----------------------------------------------------------------------------
   ! call test_stochastic(1.2)
-  ! call test_hill_vortex
-  call test_poisson_bracket(cTwoPi)
+  call test_hill_vortex
+  ! call test_poisson_bracket(cTwoPi)
   ! call test_energy_conservation(cTwoPi)
   !  call test_in_action_angle(cTwoPi)
-  call test_dsa_poisson
+  ! call test_dsa_poisson
   ! call test_dsa_sa_mhd ! for Fig5.Right Panel
   ! call test_multipoisson_bracket(50.0)
 
