@@ -688,11 +688,11 @@ module ModHillVortex
   public :: test_hill_vortex
   ! Streamlines:
   integer, parameter:: r_ = 2, Ur_ = 2, z_ = 1, Uz_  = 1
-  real, parameter :: Dx = 0.01
   real :: z, r, Uz, Ur, Vel_VC(Uz_:Ur_,-500:500,-500:500), RSph
   integer :: i, j
   ! Grid in RSph-Theta variables
   integer, parameter::  nR = 450,  nTheta = 1440
+  real,    parameter :: Dx = 4.50/nR
   ! Loop variables
   integer           ::  iR, iTheta, iStep, iPlot
   ! Mesh size in \Theta
@@ -745,11 +745,11 @@ contains
     do iTheta = -1, nTheta/2+1
        ! Calculate theta-dependent factor
        Hamiltonian_N(:, iTheta) = cTwoPi*(1.0 - CosTheta_I(iTheta)**2)
-       do iR = -1, 50 ! Unit radius
+       do iR = -1, nR/9 ! Unit radius
           Hamiltonian_N(iR,iTheta) = Hamiltonian_N(iR,iTheta)*0.750*&
                R_I(iR)**2*(R_I(iR)**2 - 1.0)
        end do
-       do iR = 51, nR+1
+       do iR = nR/9+1, nR+1
           Hamiltonian_N(iR,iTheta) = Hamiltonian_N(iR,iTheta)*0.50*&
                R_I(iR)**2*(1.0 - 1.0/R_I(iR)**3)
        end do
