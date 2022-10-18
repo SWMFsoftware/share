@@ -208,11 +208,11 @@ contains
     end do
     call save_plot_file(NameFile='test_poisson.out', &
          TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
-         NameVarIn='-p_y  p_x VDF'  , &
-         CoordMinIn_D=[10.0**LogMomentum_I(1 ), 0.50*DeltaPhi],&
-         CoordMaxIn_D=[10.0**LogMomentum_I(nQ), cTwoPi - 0.50*DeltaPhi],&
-         StringFormatIn = '(3F10.3)'            ,&
-         Coord1In_I = 10.0**LogMomentum_I(1:nQ)           ,&
+         NameVarIn='-p_y  p_x VDF', &
+         CoordMinIn_D=[10.0**LogMomentum_I(1 ), 0.50*DeltaPhi], &
+         CoordMaxIn_D=[10.0**LogMomentum_I(nQ), cTwoPi - 0.50*DeltaPhi], &
+         StringFormatIn = '(3F10.3)', &
+         Coord1In_I = 10.0**LogMomentum_I(1:nQ), &
          VarIn_II = VDF_G(1:nQ,1:nP) )
   contains
     !==========================================================================
@@ -297,11 +297,12 @@ contains
     end do
     call save_plot_file(NameFile='test_energy.out', &
          TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
-         NameVarIn='Q    P VDF'  , &
-         CoordMinIn_D=[-11.99, -11.99],&
-         CoordMaxIn_D=[11.99, 11.99],&
-         StringFormatIn = '(3F10.3)'            ,&
+         NameVarIn='Q    P VDF', &
+         CoordMinIn_D=[-11.99, -11.99], &
+         CoordMaxIn_D=[11.99, 11.99], &
+         StringFormatIn = '(3F10.3)', &
          VarIn_II = VDF_G(1:nQ,1:nP) )
+
   end subroutine test_energy_conservation
   !============================================================================
   subroutine test_in_action_angle(tFinal)
@@ -402,11 +403,11 @@ contains
     end do
     call save_plot_file(NameFile='test_action_angle.out', &
          TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
-         NameVarIn='Q    P VDF'  , &
+         NameVarIn='Q    P VDF', &
          CoordMinIn_D=[10.0**LogMomentum_I(1 ), 0.50*DeltaPhi],&
-         CoordMaxIn_D=[10.0**LogMomentum_I(nJ), cTwoPi - 0.50*DeltaPhi],&
-         StringFormatIn = '(3F10.3)'            ,&
-         Coord1In_I = 10.0**LogMomentum_I(1:nJ)           ,&
+         CoordMaxIn_D=[10.0**LogMomentum_I(nJ), cTwoPi - 0.50*DeltaPhi], &
+         StringFormatIn = '(3F10.3)', &
+         Coord1In_I = 10.0**LogMomentum_I(1:nJ), &
          VarIn_II = VDF_G(1:nJ,1:nPhi) )
   end subroutine test_in_action_angle
   !============================================================================
@@ -695,19 +696,22 @@ contains
   subroutine test_hill_vortex
     ! Streamlines:
     integer, parameter:: r_ = 2, Ur_ = 2, z_ = 1, Uz_  = 1
-    real :: x, z, r, Uz, Ur, Vel_VC(Uz_:Ur_,-500:500,-500:500), RSph
+
+    real, parameter:: xCenter = -3.0, yCenter = 0.0, WidthX = 3.0, WidthY = 6.0
+    
+    real :: x, y, z, r, Uz, Ur, Vel_VC(Uz_:Ur_,-500:500,-500:500), RSph
 
     ! Grid in RSph-Theta variables
-    integer, parameter::  nR = 16*45,  nTheta = 16*90 ! 450, 1440
-    real,    parameter :: Dr = 4.50/nR
+    integer, parameter::  nR = 8*45, nTheta = 2*nR ! 450, 1440
+    real,    parameter :: Dr = 4.50/nR, Cfl = 40.0/nR
 
     ! Loop variables
     integer           ::  iR, iTheta, iStep, iPlot
 
     ! Mesh size in Theta
     real, parameter   :: dTheta = cTwoPi/nTheta
-    real :: VDF_G(-1:nR+2, -1:nTheta), Volume_G(0:nR+1, 0:nTheta/2+1)
-    real :: R_I(-1:nR+1), Theta, CosTheta_I(-1:nTheta/2+1)
+    real :: VDF_G(-1:nR+2,-1:nTheta), Volume_G(0:nR+1, 0:nTheta/2+1)
+    real :: R_I(-1:nR+1), Theta_I(-1:nTheta+1), CosTheta_I(-1:nTheta/2+1)
     real :: Hamiltonian_N(-1:nR+1, -1:nTheta/2+1)
     real :: Time, Dt, Source_C(nR,nTheta/2), tFinal
     logical :: DoExit
@@ -739,13 +743,16 @@ contains
          StringFormatIn = '(4F16.4)',                 &
          VarIn_VII = Vel_VC)
     ! Initialize coords
-    do iR = -1, nR +1
-       R_I(iR) = iR*Dr + 0.50
+    do iR = -1, nR + 1
+       R_I(iR) = iR*Dr + 0.5
     end do
-    do iTheta = 0, nTheta/2
-       Theta = iTheta*dTheta
-       CosTheta_I(iTheta) = cos(Theta)
+    do iTheta = -1, nTheta + 1
+       Theta_I(iTheta) = iTheta*dTheta
     end do
+    do iTheta = -1, nTheta/2+1
+       CosTheta_I(iTheta) = cos(Theta_I(iTheta))
+    end do
+    ! Overwrite ghost cell values
     CosTheta_I(nTheta/2+1) = CosTheta_I(nTheta/2-1)
     CosTheta_I(-1) = CosTheta_I(1)
     ! Calculate Hamiltonian
@@ -773,17 +780,24 @@ contains
     Volume_G(0:nR+1,nTheta/2+1) = (CosTheta_I(nTheta/2+1) - &
          CosTheta_I(nTheta/2))*(R_I(0:nR+1)**3 - R_I(-1:nR)**3)*cTwoPi/3
     ! write(*,*)'Minval(Volume)=',minval(Volume_G)
-    VDF_G = 0.0
     ! Periodic boundary conditions
     Source_C = 0.0
-    ! Initial NormL2 and Energy
 
+    ! Initial conditions: cos^2(kx*(x-xCenter))*cos^2(ky*(y-yCenter))
+    ! inside a WidthX*WidthY rectangle centered on xCenter,yCenter
+    VDF_G = 0.0
+    do iTheta = 1, nTheta; do iR = 1, nR
+       x = cos(Theta_I(iTheta))*R_I(iR) - xCenter
+       y = sin(Theta_I(iTheta))*R_I(iR) - yCenter
+       if(abs(x) < WidthX/2 .and. abs(y) < WidthY/2) &
+            VDF_G(iR,iTheta) = cos(cPi*x/WidthX)**2 * cos(cPi*y/WidthY)**2
+    end do; end do
+    
     call save_plot_file('hill.outs', 'rewind', 'real4', &
          'Hill vortex', iStep, tFinal, &
          NameVarIn='r Theta Rho'  , &
          CoordMinIn_D=[0.50 + 0.50*Dr, 180.0/nTheta],&
          CoordMaxIn_D=[5.0 - 0.50*Dr, 360.0 - 180.0/nTheta],&
-         StringFormatIn = '(3F10.3)'            ,&
          VarIn_II = VDF_G(1:nR,1:nTheta) )
     
     ! Computation
@@ -793,21 +807,21 @@ contains
        DoExit = .false.
        PLOT:do
           ! Boundary condition for marking density in the band -6 < x-t < -5
-          do iTheta = -1, nTheta/2+2
-             do iR = nR+1, nR+2
-                z = (0.50 + (iR - 0.50)*Dr)*cos(dTheta*(iTheta - 0.50))
-                x = 7 + z - Time
-                if(Time < 2 .and.  abs(x) < 2)then
-                   VDF_G(iR,iTheta) = cos(0.25*cPi*x)**2 &
-                        *cos(cPi*min(0.0, 1.5-Time))**2
-                else
-                   VDF_G(iR,iTheta) = 0.0
-                end if
-             end do
-          end do
+          !do iTheta = -1, nTheta/2+2
+          !   do iR = nR+1, nR+2
+          !      z = (0.50 + (iR - 0.50)*Dr)*cos(dTheta*(iTheta - 0.50))
+          !      x = 7 + z - Time
+          !      if(Time < 2 .and.  abs(x) < 2)then
+          !         VDF_G(iR,iTheta) = cos(0.25*cPi*x)**2 &
+          !              *cos(cPi*min(0.0, 1.5-Time))**2
+          !      else
+          !         VDF_G(iR,iTheta) = 0.0
+          !      end if
+          !   end do
+          !end do
           call explicit(nR, nTheta/2, VDF_G(-1:nR+2,-1:nTheta/2+2), Volume_G,&
                Source_C, Hamiltonian_N,   &
-               CFLIn=0.99, DtOut = Dt)
+               CFLIn=Cfl, DtOut = Dt)
           iStep = iStep +1
           if(Time + Dt >= tFinal)then
              call explicit(nR, nTheta/2, VDF_G(-1:nR+2,-1:nTheta/2+2), &
@@ -833,7 +847,6 @@ contains
             NameVarIn='r Theta Rho'  , &
             CoordMinIn_D=[0.50 + 0.50*Dr, 180.0/nTheta],&
             CoordMaxIn_D=[5.0 - 0.50*Dr, 360.0 - 180.0/nTheta],&
-            StringFormatIn = '(3F10.3)'            ,&
             VarIn_II = VDF_G(1:nR,1:nTheta) )
     end do
   end subroutine test_hill_vortex
@@ -990,7 +1003,7 @@ program test_program
   call test_hill_vortex
   ! call test_poisson_bracket(cTwoPi)
   ! call test_energy_conservation(cTwoPi)
-  !  call test_in_action_angle(cTwoPi)
+  ! call test_in_action_angle(cTwoPi)
   ! call test_dsa_poisson
   ! call test_dsa_sa_mhd ! for Fig5.Right Panel
   ! call test_multipoisson_bracket(50.0)
