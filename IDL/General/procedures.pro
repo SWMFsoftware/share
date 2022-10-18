@@ -36,7 +36,7 @@
 ; calculating cell corners and cell volumes for general 2D grids
 ;    gengrid
 ; comparing two w,x or wlog arrays for relative differences
-;    compare, rms_logfiles, rel_error
+;    compare, rms_logfiles, rel_error, rel_errors
 ; checking index ranges for functions quadruplet and triplet
 ;    checkdim
 ; procedure "quit" as an alias for "exit"
@@ -5798,11 +5798,12 @@ pro compare,w0,w1,wnames,scalar=scalar
 end
 
 ;=============================================================================
-function rel_error, w1, w2, iws, fd=fd
+function rel_error, w1, w2, iws, fd=fd, scalar=scalar
 
 ; Calculate relative errors of w1 with respect to w2.
 ; The 1 to ndim (=1,2, or 3) indexes are the spatial indexes. 
 ; The last index is assumed to be the variable index.
+; If /scalar is passed then there is no variable index.
 ; If w1 has more elements than w2, it is regarded as the "reference"
 ; solution, otherwise w2 is regarded as reference solution.
 ; The difference between w1 and w2 is normalized by the reference solution.
@@ -5813,7 +5814,7 @@ function rel_error, w1, w2, iws, fd=fd
 ; If the /fd keyword is set, use finite difference coarsening.
 
   common debug_param & on_error, onerror
-
+  
   if n_elements(w1) le n_elements(w2) then begin
      w     = w1
      wref  = w2
@@ -5824,15 +5825,20 @@ function rel_error, w1, w2, iws, fd=fd
 
   s     = size(w)
   sref  = size(wref)
-  ndim  = s(0) - 1
-  nw    = s(ndim+1)
-
-  if nw ne sref(ndim+1) then begin
-     print,'ERROR in rel_error: w1 and w2 have different number of variables'
-     help,w1,w2
-     retall
-  endif
-
+  if keyword_set(scalar) then begin
+     ndim = s(0)
+     nw = 1
+  endif else begin
+     ndim  = s(0) - 1
+     nw    = s(ndim+1)
+     if nw ne sref(ndim+1) then begin
+        print, $
+           'ERROR in rel_error: w1 and w2 have different number of variables'
+        help,w1,w2
+        retall
+     endif
+  end
+     
   if n_elements(iws) gt 0 then begin
      ; keep variable indexes iws only in w, wref
      nw = n_elements(iws)
@@ -5856,7 +5862,8 @@ function rel_error, w1, w2, iws, fd=fd
   nx    = s(1:ndim)
   nxref = sref(1:ndim)
 
-  if max(nxref gt nx) then wref = coarsen(wref, [round(float(nxref)/nx), 1], fd=fd)
+  if max(nxref gt nx) then $
+     wref = coarsen(wref, [round(float(nxref)/nx), 1], fd=fd)
 
   error = double(0.0)
   for iw = 0, nw-1 do begin
@@ -5875,17 +5882,20 @@ function rel_error, w1, w2, iws, fd=fd
 end
 
 ;=============================================================================
-function rel_errors, w0, w1, w2, w3, w4, w5, ivar=ivar, ratio=ratio, fd=fd
+function rel_errors, w0, w1, w2, w3, w4, w5, $
+                     ivar=ivar, scalar=scalar, ratio=ratio, fd=fd
 
-  ; Calculate relative errors for up to 6 arrays w0 ...
-  ; The arrays can have different sizes. The finer arrays are coarsened. 
-  ; The last array should be the reference solution.
-  ;
-  ; The ivar keyword lists the variables to be compared. Default is all.
-  ; If /ratio keyword is set and there are at least 3 arguments, 
-  ;    then print out the ratio of errors. Useful for convergence rate.
-  ; If /fd keyword is set, use finite difference style coarsening.
-  ;    The default is finite volume style coarsening.
+  ;; Calculate relative errors for up to 6 arrays w0 ...
+  ;; The arrays can have different sizes. The finer arrays are coarsened. 
+  ;; The last array should be the reference solution.
+
+  ;; The ivar keyword lists the variables to be compared. Default is all.
+  ;; If scalar is present then there is only one state variable in w arrays.
+  
+  ;; If /ratio keyword is set and there are at least 3 arguments, 
+  ;;    then print out the ratio of errors. Useful for convergence rate.
+  ;; If /fd keyword is set, use finite difference style coarsening.
+  ;;    The default is finite volume style coarsening.
 
 
   common debug_param & on_error, onerror
@@ -5920,11 +5930,11 @@ function rel_errors, w0, w1, w2, w3, w4, w5, ivar=ivar, ratio=ratio, fd=fd
 
   errors = dblarr(narray-1)
 
-  errors(0)                     = rel_error(w0, wref, ivar, fd=fd)
-  if narray gt 2 then errors(1) = rel_error(w1, wref, ivar, fd=fd)
-  if narray gt 3 then errors(2) = rel_error(w2, wref, ivar, fd=fd)
-  if narray gt 4 then errors(3) = rel_error(w3, wref, ivar, fd=fd)
-  if narray gt 5 then errors(4) = rel_error(w4, wref, ivar, fd=fd)
+  errors(0)                     = rel_error(w0,wref,ivar,fd=fd,scalar=scalar)
+  if narray gt 2 then errors(1) = rel_error(w1,wref,ivar,fd=fd,scalar=scalar)
+  if narray gt 3 then errors(2) = rel_error(w2,wref,ivar,fd=fd,scalar=scalar)
+  if narray gt 4 then errors(3) = rel_error(w3,wref,ivar,fd=fd,scalar=scalar)
+  if narray gt 5 then errors(4) = rel_error(w4,wref,ivar,fd=fd,scalar=scalar)
 
   if keyword_set(ratio) and narray gt 2 then $
      print,'ratio=',errors(0:narray-3)/(errors(1:narray-2) > 1d-25)
