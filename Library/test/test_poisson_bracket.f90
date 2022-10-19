@@ -694,19 +694,21 @@ module ModHillVortex
 contains
   !============================================================================
   subroutine test_hill_vortex
+
+    ! Grid in RSph-Theta variables
+    integer, parameter:: nR = 16*45, nTheta = 2*nR
+    real,    parameter:: Dr = 4.50/nR, Cfl = 0.9
+
     ! Streamlines:
     integer, parameter:: r_ = 2, Ur_ = 2, z_ = 1, Uz_  = 1
 
+    ! Position and width of the smooth bump
     real, parameter:: xCenter = -3.0, yCenter = 0.0, WidthX = 3.0, WidthY = 6.0
     
-    real :: x, y, z, r, Uz, Ur, Vel_VC(Uz_:Ur_,-500:500,-500:500), RSph
-
-    ! Grid in RSph-Theta variables
-    integer, parameter::  nR = 8*45, nTheta = 2*nR ! 450, 1440
-    real,    parameter :: Dr = 4.50/nR, Cfl = 40.0/nR
+    real:: x, y, z, r, Uz, Ur, Vel_VC(Uz_:Ur_,-500:500,-500:500), RSph
 
     ! Loop variables
-    integer           ::  iR, iTheta, iStep, iPlot
+    integer:: i, j, iR, iTheta, iStep, iPlot
 
     ! Mesh size in Theta
     real, parameter   :: dTheta = cTwoPi/nTheta
@@ -715,8 +717,6 @@ contains
     real :: Hamiltonian_N(-1:nR+1, -1:nTheta/2+1)
     real :: Time, Dt, Source_C(nR,nTheta/2), tFinal
     logical :: DoExit
-
-    integer:: i, j
     !--------------------------------------------------------------------------
     do j = -500,500
        r = 0.01*j
@@ -742,6 +742,7 @@ contains
          CoordMaxIn_D=[ 5.0,  5.0 ],                  &
          StringFormatIn = '(4F16.4)',                 &
          VarIn_VII = Vel_VC)
+
     ! Initialize coords
     do iR = -1, nR + 1
        R_I(iR) = iR*Dr + 0.5
@@ -755,6 +756,7 @@ contains
     ! Overwrite ghost cell values
     CosTheta_I(nTheta/2+1) = CosTheta_I(nTheta/2-1)
     CosTheta_I(-1) = CosTheta_I(1)
+
     ! Calculate Hamiltonian
     do iTheta = -1, nTheta/2+1
        ! Calculate theta-dependent factor
@@ -769,6 +771,7 @@ contains
        end do
     end do
     ! write(*,*)'Maxval(Hamiltonian)=',maxval(Hamiltonian_N)
+
     ! Calculate volume
     ! angle-dependent factor
     do iTheta = 1, nTheta/2
