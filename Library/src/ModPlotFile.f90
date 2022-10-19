@@ -6,12 +6,12 @@ module ModPlotFile
   ! Save or read VAC/IDL type plotfiles from 1 up to 3 dimensions.
   ! ASCII, single (real4), or double (real8) precision binary file formats
   ! can be used.
-  ! The plot file contains 5 header lines:
+  ! The plot file contains 4 or 5 header lines:
   !
   !    Header
   !    nStep Time nDim nParam nVar
   !    n1 .. nNDim
-  !    Param1 .. ParamNParam
+  !    Param1 .. ParamNParam       # this line is omitted if nParam=0
   !    NameVar
   !
   ! Header   (string) describes the plot. It is up to 500 characters.
@@ -20,7 +20,7 @@ module ModPlotFile
   ! nDim     (integer) number of dimensions. Negative for non-Cartesian grids.
   ! nParam   (integer) number of parameters (for example adiabatic index)
   ! n1 ..    (nDim integers) grid sizes in the nDim dimensions
-  ! Param1.. (nParam reals) parameter values
+  ! Param1.. (nParam reals) parameter values (omitted if nParam is zero)
   ! NameVar  (string) space separated list of names for the
   !                   nDim coordinates, nVar variables and nParam parameters
   !
