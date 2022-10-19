@@ -62,6 +62,8 @@ private:
 
   std::string commandSuffix = std::string();
 
+  std::string component = "PC";
+
 public:
   ReadParam() { isVerbose = true; }
   ~ReadParam() {}
@@ -79,9 +81,10 @@ public:
   }
 
   void set_verbose(bool in) { isVerbose = in; }
-  //==========================================
 
-  void set_command_suffix(std::string &in) { commandSuffix = in; }
+  void set_component(const std::string &in) { component = in; }
+
+  void set_command_suffix(const std::string &in) { commandSuffix = in; }
 
   inline bool get_next_command(std::string &id) {
     id.clear();
@@ -110,7 +113,8 @@ public:
       }
       if (isVerbose)
         std::cout << "\n"
-                  << "PC: " << id << " " << commandSuffix << std::endl;
+                  << component << ": " << id << " " << commandSuffix
+                  << std::endl;
       ss.ignore(INT_MAX, '\n');
       return true;
     }
@@ -124,8 +128,8 @@ public:
     read_var(description, sVar, false);
     var = analyze_string(sVar);
     if (isVerbose) {
-      std::cout << "PC: " << std::left << std::setw(40) << var << description
-                << std::endl;
+      std::cout << component << ": " << std::left << std::setw(40) << var
+                << description << std::endl;
       return;
     }
   }
@@ -153,8 +157,8 @@ public:
       // '\n' at the end of each line.
       ss.ignore(INT_MAX, '\n');
       if (isVerbose) {
-        std::cout << "PC: " << std::left << std::setw(40) << var << description
-                  << std::endl;
+        std::cout << component << ": " << std::left << std::setw(40) << var
+                  << description << std::endl;
         return;
       }
     } else {
@@ -178,8 +182,8 @@ public:
       if (text == "T")
         var = true;
       if (isVerbose) {
-        std::cout << "PC: " << std::left << std::setw(40) << text << description
-                  << std::endl;
+        std::cout << component << ": " << std::left << std::setw(40) << text
+                  << description << std::endl;
         return;
       }
     } else {
@@ -224,8 +228,8 @@ public:
           "23456789_=+-.~&*[]|{}@!#$%^()/?<>,;:";
       var = temp.substr(0, temp.find_last_of(char0) + 1);
       if (isVerbose && doAllowPrint) {
-        std::cout << "PC: " << std::left << std::setw(40) << var << description
-                  << std::endl;
+        std::cout << component << ": " << std::left << std::setw(40) << var
+                  << description << std::endl;
         return;
       }
     } else {
