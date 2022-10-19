@@ -38,7 +38,7 @@ public:
     }
   }
 
-  bool is_grid_new()const{return isNewGrid;}
+  bool is_grid_new() const { return isNewGrid; }
 
   int get_patch_size(int iDim) {
     int size = 1;
@@ -50,6 +50,7 @@ public:
       size = nPatch;
     return size;
   }
+
   void init(int nxIn, int nyIn, int nzIn, int nPatchIn) {
     nx = nxIn;
     ny = nyIn;
@@ -68,7 +69,7 @@ public:
     for (int i = 0; i < nInt; i++) {
       data[i] = 0;
     }
-    isNewGrid = true; 
+    isNewGrid = true;
   }
 
   // void reset() { reset_grid_info(data, nx, ny, nz); }
@@ -78,13 +79,28 @@ public:
   // }
 
   void set_status(int* statusIn) {
+    if (statusIn == nullptr) {
+      turn_on_all_cells();
+      return;
+    }
     const int nInt = ceil(nx * ny * nz / 8.0 / sizeof(int));
-    isNewGrid = false; 
+    isNewGrid = false;
     for (int i = 0; i < nInt; i++) {
       const int tmp = statusIn[i];
-      if(data[i] != tmp) isNewGrid = true; 
-      data[i] = tmp; 
+      if (data[i] != tmp)
+        isNewGrid = true;
+      data[i] = tmp;
     }
+  }
+
+  void turn_on_all_cells() {
+    int iOn = 1;
+    for (int i = 0; i < nx; i++)
+      for (int j = 0; j < ny; j++)
+        for (int k = 0; k < nz; k++) {
+          set_point_status(data, nx, ny, nz, i, j, k, iOn);
+        }
+    return;
   }
 
   int get_status(int i, int j, int k) {
