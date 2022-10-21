@@ -696,14 +696,16 @@ contains
   subroutine test_hill_vortex
 
     ! Grid in RSph-Theta variables
-    integer, parameter:: nR = 16*45, nTheta = 2*nR
+    ! Theta goes from 0 to 360 because it is mirrored over the pole for plots
+    integer, parameter:: nR = 54, nTheta = 2*nR
     real,    parameter:: Dr = 4.50/nR, Cfl = 0.9
 
     ! Streamlines:
     integer, parameter:: r_ = 2, Ur_ = 2, z_ = 1, Uz_  = 1
 
-    ! Position and width of the smooth bump
+    ! Position and width of the smooth bump or sharp ellipsoid
     real, parameter:: xCenter = -3.0, yCenter = 0.0, WidthX = 3.0, WidthY = 6.0
+    logical:: IsSmooth = .false.
     
     real:: x, y, z, r, Uz, Ur, Vel_VC(Uz_:Ur_,-500:500,-500:500), RSph
 
@@ -786,22 +788,35 @@ contains
     ! Periodic boundary conditions
     Source_C = 0.0
 
-    ! Initial conditions: cos^2(kx*(x-xCenter))*cos^2(ky*(y-yCenter))
-    ! inside a WidthX*WidthY rectangle centered on xCenter,yCenter
+    ! Initial conditions:
     VDF_G = 0.0
     do iTheta = 1, nTheta; do iR = 1, nR
        x = cos(Theta_I(iTheta))*R_I(iR) - xCenter
        y = sin(Theta_I(iTheta))*R_I(iR) - yCenter
-       if(abs(x) < WidthX/2 .and. abs(y) < WidthY/2) &
-            VDF_G(iR,iTheta) = cos(cPi*x/WidthX)**2 * cos(cPi*y/WidthY)**2
+       if(IsSmooth)then
+          ! inside a WidthX*WidthY rectangle centered on xCenter,yCenter
+          ! cos^2(kx*(x-xCenter))*cos^2(ky*(y-yCenter))
+          if(abs(x) < WidthX/2 .and. abs(y) < WidthY/2) &
+               VDF_G(iR,iTheta) = cos(cPi*x/WidthX)**2 * cos(cPi*y/WidthY)**2
+       else
+          if( (x/WidthX)**2 + (y/WidthY)**2 < 0.25) &
+               VDF_G(iR,iTheta) = 1.0
+       end if
     end do; end do
     
     call save_plot_file('hill.outs', 'rewind', 'real4', &
          'Hill vortex', iStep, tFinal, &
          NameVarIn='r Theta Rho'  , &
-         CoordMinIn_D=[0.50 + 0.50*Dr, 180.0/nTheta],&
-         CoordMaxIn_D=[5.0 - 0.50*Dr, 360.0 - 180.0/nTheta],&
+         CoordMinIn_D=[0.5 + 0.5*Dr, 180.0/nTheta],&
+         CoordMaxIn_D=[5.0 - 0.5*Dr, 360.0 - 180.0/nTheta],&
          VarIn_II = VDF_G(1:nR,1:nTheta) )
+
+    call save_plot_file('hillcut.outs', 'rewind', 'real4', &
+         'Hill vortex', iStep, tFinal, &
+         NameVarIn='r Theta Rho'  , &
+         CoordMinIn_D=[0.5 + 0.5*Dr, 180 + 180.0/nTheta],&
+         CoordMaxIn_D=[5.0 - 0.5*Dr, 360 - 180.0/nTheta],&
+         VarIn_II = VDF_G(1:nR,nTheta/2+1:nTheta) )
     
     ! Computation
     Time = 0.0; iStep = 0
@@ -851,6 +866,12 @@ contains
             CoordMinIn_D=[0.50 + 0.50*Dr, 180.0/nTheta],&
             CoordMaxIn_D=[5.0 - 0.50*Dr, 360.0 - 180.0/nTheta],&
             VarIn_II = VDF_G(1:nR,1:nTheta) )
+       call save_plot_file('hillcut.outs', 'append', 'real4', &
+            'Hill vortex', iStep, tFinal, &
+            NameVarIn='r Theta Rho'  , &
+            CoordMinIn_D=[0.5 + 0.5*Dr, 180 + 180.0/nTheta],&
+            CoordMaxIn_D=[5.0 - 0.5*Dr, 360 - 180.0/nTheta],&
+            VarIn_II = VDF_G(1:nR,nTheta/2+1:nTheta) )
     end do
   end subroutine test_hill_vortex
   !============================================================================
@@ -1003,11 +1024,11 @@ program test_program
 
   !----------------------------------------------------------------------------
   ! call test_stochastic(1.2)
-  call test_hill_vortex
-  ! call test_poisson_bracket(cTwoPi)
+  ! call test_hill_vortex
+  call test_poisson_bracket(cTwoPi)        ! nightly test1
   ! call test_energy_conservation(cTwoPi)
   ! call test_in_action_angle(cTwoPi)
-  ! call test_dsa_poisson
+  call test_dsa_poisson                    ! nightly test2
   ! call test_dsa_sa_mhd ! for Fig5.Right Panel
   ! call test_multipoisson_bracket(50.0)
 
