@@ -108,7 +108,7 @@ test_coord_transform:
 	@make test_coord_transform_exe         >> test_coord_transform.diff
 	@echo ./test_coord_transform.exe       >> test_coord_transform.diff
 	-@(./test_coord_transform.exe > test_coord_transform.tmp)
-	-@(${SCRIPTDIR}/DiffNum.pl -b -a=1e-12 \
+	-@(${DIFFNUM} -b -a=1e-12 \
 		test_coord_transform.tmp test_coord_transform.log \
 						> test_coord_transform.diff)
 	@ls -l test_coord_transform.diff
@@ -140,7 +140,7 @@ test_linear_solver:
 	@make test_linear_solver_exe		>> test_linear_solver.diff
 	@echo ./test_linear_solver.exe		>> test_linear_solver.diff
 	-@(./test_linear_solver.exe > test_linear_solver.tmp)
-	-@(${SCRIPTDIR}/DiffNum.pl -b -a=1e-9 \
+	-@(${DIFFNUM} -b -a=1e-9 \
 		test_linear_solver.tmp test_linear_solver.log \
 						>  test_linear_solver.diff)
 	@ls -l test_linear_solver.diff
@@ -174,7 +174,7 @@ test_linear_advection:
 	@make test_linear_advection_exe		>> test_linear_advection.diff
 	@echo ./test_linear_advection.exe	>> test_linear_advection.diff
 	-@(./test_linear_advection.exe)
-	-@(${SCRIPTDIR}/DiffNum.pl \
+	-@(${DIFFNUM} \
 		test_linear_advection.tmp \
 		test_linear_advection.log	>  test_linear_advection.diff)
 	@ls -l test_linear_advection.diff
@@ -308,7 +308,7 @@ test_initial_state:
 	@make test_initial_state_exe		 >> test_initial_state.diff
 	@echo ${MPIRUN} ./test_initial_state_exe >> test_initial_state.diff
 	-@(${MPIRUN} ./test_initial_state.exe > test_initial_state.tmp)
-	-@(${SCRIPTDIR}/DiffNum.pl -b \
+	-@(${DIFFNUM} -b \
 	    test_initial_state.out test_initial_state.ref.gz \
 						 >  test_initial_state.diff)
 	@ls -l test_initial_state.diff
@@ -341,7 +341,7 @@ test_ray_trace:
 	@make test_ray_trace_exe		>> test_ray_trace.diff
 	@echo ./test_ray_trace.exe		>> test_ray_trace.diff
 	-@(${SERIAL} ./test_ray_trace.exe > test_ray_trace.tmp)
-	-@(${SCRIPTDIR}/DiffNum.pl -t test_ray_trace.tmp test_ray_trace.log \
+	-@(${DIFFNUM} -t test_ray_trace.tmp test_ray_trace.log \
 						>  test_ray_trace.diff)
 	@ls -l test_ray_trace.diff
 
@@ -373,7 +373,7 @@ test_geopack:
 	@make test_geopack_exe				>> test_geopack.diff
 	@echo ./test_geopack.exe			>> test_geopack.diff
 	-@(./test_geopack.exe > test_geopack.tmp)
-	-@(${SCRIPTDIR}/DiffNum.pl -b -r=1e-8 \
+	-@(${DIFFNUM} -b -r=1e-8 \
 		test_geopack.tmp test_geopack.log	>  test_geopack.diff)
 	@ls -l test_geopack.diff
 
@@ -389,7 +389,7 @@ test_axes:
 	@make test_axes_exe				>> test_axes.diff
 	@echo ./test_axes.exe				>> test_axes.diff
 	-@(./test_axes.exe > test_axes.tmp)
-	-@(${SCRIPTDIR}/DiffNum.pl -b -a=1e-12 \
+	-@(${DIFFNUM} -b -a=1e-12 \
 		test_axes.tmp test_axes.log 		>  test_axes.diff)
 	@ls -l test_axes.diff
 
@@ -405,7 +405,7 @@ test_planet_field:
 	@make test_planet_field_exe		>> test_planet_field.diff
 	@echo ./test_planet_field.exe 		>> test_planet_field.diff
 	-@(./test_planet_field.exe > test_planet_field.tmp)
-	-@(${SCRIPTDIR}/DiffNum.pl -t -r=1e-6 \
+	-@(${DIFFNUM} -t -r=1e-6 \
 		test_planet_field.tmp test_planet_field.log \
 						>  test_planet_field.diff)
 	@ls -l test_planet_field.diff
@@ -533,13 +533,14 @@ test_poisson_bracket:
 	@echo test_poisson_bracket starting	>  test_poisson.diff
 	@make test_poisson_bracket_exe		>> test_poisson.diff
 	@echo './test_poisson.exe'		>> test_poisson.diff
-	-@(./test_poisson.exe >  test_poisson.diff)
-	-@(${SCRIPTDIR}/DiffNum.pl -b -a=1e-7 \
-		test_poisson.out test_poisson.ref.out.gz \
-						> test_poisson.diff)
-	-@(${SCRIPTDIR}/DiffNum.pl -b -a=1e-7 \
-		test_dsa_poisson.out test_dsa_poisson.ref \
-                                                >> test_poisson.diff)
+	-@(./test_poisson.exe > test_poisson.diff)
+	@make test_poisson_bracket_check
+
+test_poisson_bracket_check:
+	-@(${DIFFNUM} -b -a=1e-7 \
+		test_poisson.out test_poisson.ref.out.gz > test_poisson.diff)
+	-@(${DIFFNUM} -b -a=1e-7 \
+		test_dsa_poisson.out test_dsa_poisson.ref >> test_poisson.diff)
 	@ls -l test_poisson.diff
 
 #######################################################################
