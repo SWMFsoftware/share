@@ -1522,7 +1522,7 @@ function calc_dist_insitu,time_obs, u_obs, n_obs, T_obs,  B_obs,    $
 
   ;;time in units of t_norm days, initially in milliseconds
   time_simu_local = time_simu_local/(24.*60.*60.*1e3)/t_norm
-  time_obs_local  = time_obs       /(24.*60.*60.*1e3)/t_norm
+  time_obs_local  = time_obs_local /(24.*60.*60.*1e3)/t_norm
 
   dist_int_u=curve_int_distance(time_obs_local(index_u), u_obs_local(index_u)/u_norm,   $
                                 time_simu_local, u_simu_local/u_norm)
