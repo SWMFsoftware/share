@@ -68,7 +68,7 @@ contains
     end if
     SignDeltaF = sign(1.0, DeltaF); AbsDeltaF = abs(DeltaF)
     triple_superbee = SignDeltaF*min(&
-         0.50*max(AbsDeltaF, SignDeltaF*UpwindDeltaF),& 
+         0.50*max(AbsDeltaF, SignDeltaF*UpwindDeltaF),&
          abs(DownwindDeltaMinusF),abs(UpwindDeltaMinusF))
     if(abs(triple_superbee)<1.0e-31)triple_superbee = 0.0
   end function triple_superbee
@@ -82,7 +82,7 @@ contains
     real, intent(in) :: UpwindDeltaF     ! f - f_j^\prime at the opposite face
     real :: SignDeltaF, AbsDeltaF
     !--------------------------------------------------------------------------
-    !if(DownwindDeltaMinusF*DeltaF<= 0.0   &
+    ! if(DownwindDeltaMinusF*DeltaF<= 0.0   &
          ! Nullify second order correction if at the level of machine zero
     ! .or.min(abs(DeltaF),abs(DownwindDeltaMinusF)) < 1.0e-31)then
     if(abs(DeltaF)< 1.0e-31)then
@@ -237,7 +237,7 @@ contains
     real :: Dt, CFL
     ! Group Limiter:
     real    :: SignDeltaMinusF, SumMajorDeltaF, VDF
-    real    :: DownwindReduction_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK) 
+    real    :: DownwindReduction_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
     integer :: nMajorFlux, iFlux
     real    :: SumDeltaHPlusDeltaMinusF, SumMajorFlux, Limiter, Flux
     character(len=*), parameter:: NameSub = 'explicit3'
@@ -345,7 +345,7 @@ contains
        VDF = VDF_G(i,j,k)
        DeltaMinusF_G(i,j,k) = DeltaMinusF_G(i,j,k)           &
             /max(-SumDeltaHMinus_G(i,j,k), 1.0e-31) + VDF
-       
+
        if(DeltaMinusF_G(i,j,k)==0.0)then
           DownwindReduction_G(i,j,k) = 0.0
        else
@@ -454,7 +454,7 @@ contains
        SumFlux_C = 0.0
        ! Calculate Face-X fluxes.
        do k=1, nK; do j = 1, nJ; do i = 0, nI
-          if(DeltaH_FX(i,j,k) > 0.0)then 
+          if(DeltaH_FX(i,j,k) > 0.0)then
              if(i > 0)then
                 Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*                &
                      (1.0 - CFLCoef_G(i,j,k))*group_superbee(     &
@@ -472,7 +472,7 @@ contains
                      UpwindDeltaF=VDF_G(i,j,k) - VDF_G(i-1,j,k),  &
                      UpwindDeltaMinusF=DeltaMinusF_G(i,j,k))
              end if
-          else 
+          else
              if(i < nI)then
                 Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*                &
                      (1.0 - CFLCoef_G(i+1,j,k))*group_superbee(   &
@@ -638,14 +638,14 @@ contains
     else
        ! Calculate Face-X fluxes.
        do k=1, nK; do j = 1, nJ; do i = 0, nI
-          if(DeltaH_FX(i,j,k) > 0.0)then 
+          if(DeltaH_FX(i,j,k) > 0.0)then
              Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*                &
                   (1.0 - CFLCoef_G(i,j,k))*triple_superbee(    &
                   DownwindDeltaMinusF=DeltaMinusF_G(i+1,j,k),  &
                   DeltaF=VDF_G(i+1,j,k)  - VDF_G(i  ,j,k),     &
                   UpwindDeltaF=VDF_G(i,j,k) - VDF_G(i-1,j,k),  &
                   UpwindDeltaMinusF=DeltaMinusF_G(i,j,k))
-          else 
+          else
              Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*                &
                   (1.0 - CFLCoef_G(i+1,j,k))*triple_superbee(  &
                   DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),    &
