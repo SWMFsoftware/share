@@ -707,7 +707,7 @@ contains
     ! Position and width of the smooth bump or sharp ellipsoid
     real, parameter:: xCenter = -3.0, yCenter = 0.0, WidthX = 3.0, WidthY = 6.0
     logical:: IsSmooth = .false.
-    
+
     real:: x, y, z, r, Uz, Ur, Vel_VC(Uz_:Ur_,-500:500,-500:500), RSph
 
     ! Loop variables
@@ -747,6 +747,8 @@ contains
          VarIn_VII = Vel_VC)
 
     ! Initialize coords
+    ! These are cell face coordinates:
+    ! iR is the face at iR+1/2, iTheta at iTheta+1/2.
     do iR = -1, nR + 1
        R_I(iR) = iR*Dr + 0.5
     end do
@@ -774,16 +776,18 @@ contains
        end do
     end do
     ! write(*,*)'Maxval(Hamiltonian)=',maxval(Hamiltonian_N)
+
     ! Calculate volume
     ! angle-dependent factor
     do iTheta = 1, nTheta/2
        Volume_G(0:nR+1,iTheta) = (CosTheta_I(iTheta-1) - CosTheta_I(iTheta))*&
             (R_I(0:nR+1)**3 - R_I(-1:nR)**3)*cTwoPi/3
     end do
-    Volume_G(0:nR+1,0) = (CosTheta_I(0) - CosTheta_I(-1))*&
-         (R_I(0:nR+1)**3 - R_I(-1:nR)**3)*cTwoPi/3
-    Volume_G(0:nR+1,nTheta/2+1) = (CosTheta_I(nTheta/2+1) - &
-         CosTheta_I(nTheta/2))*(R_I(0:nR+1)**3 - R_I(-1:nR)**3)*cTwoPi/3
+    Volume_G(0:nR+1,0) = (CosTheta_I(0) - CosTheta_I(-1)) &
+         *(R_I(0:nR+1)**3 - R_I(-1:nR)**3)*cTwoPi/3
+    Volume_G(0:nR+1,nTheta/2+1) = &
+         (CosTheta_I(nTheta/2+1) - CosTheta_I(nTheta/2)) &
+         *(R_I(0:nR+1)**3 - R_I(-1:nR)**3)*cTwoPi/3
     ! write(*,*)'Minval(Volume)=',minval(Volume_G)
     ! Periodic boundary conditions
     Source_C = 0.0
@@ -791,8 +795,8 @@ contains
     ! Initial conditions:
     VDF_G = 0.0
     do iTheta = 1, nTheta; do iR = 1, nR
-       x = cos(Theta_I(iTheta))*R_I(iR) - xCenter
-       y = sin(Theta_I(iTheta))*R_I(iR) - yCenter
+       x = cos(Theta_I(iTheta) - dTheta/2)*(R_I(iR) - dR/2) - xCenter
+       y = sin(Theta_I(iTheta) - dTheta/2)*(R_I(iR) - dR/2) - yCenter
        if(IsSmooth)then
           ! inside a WidthX*WidthY rectangle centered on xCenter,yCenter
           ! cos^2(kx*(x-xCenter))*cos^2(ky*(y-yCenter))
@@ -803,16 +807,19 @@ contains
                VDF_G(iR,iTheta) = 1.0
        end if
     end do; end do
-    Time = 0.0; iStep = 0; tFinal = 0.0
+    
+    Time = 0.0; iStep = 0
+
+    ! Save initial conditions
     call save_plot_file('hill.outs', 'rewind', 'real4', &
-         'Hill vortex', iStep, tFinal, &
+         'Hill vortex', iStep, Time, &
          NameVarIn='r Theta Rho'  , &
          CoordMinIn_D=[0.5 + 0.5*Dr, 180.0/nTheta],&
          CoordMaxIn_D=[5.0 - 0.5*Dr, 360.0 - 180.0/nTheta],&
          VarIn_II = VDF_G(1:nR,1:nTheta) )
 
     call save_plot_file('hillcut.outs', 'rewind', 'real4', &
-         'Hill vortex', iStep, tFinal, &
+         'Hill vortex', iStep, Time, &
          NameVarIn='r Theta Rho'  , &
          CoordMinIn_D=[0.5 + 0.5*Dr, 180 + 180.0/nTheta],&
          CoordMaxIn_D=[5.0 - 0.5*Dr, 360 - 180.0/nTheta],&
