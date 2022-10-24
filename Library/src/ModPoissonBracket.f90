@@ -30,29 +30,69 @@ module ModPoissonBracket
   ! If DtIn results in CFL>CflMax, the time step is reduced
   real, parameter :: CflMax = 0.990
   character(LEN=*), parameter:: NameMod = 'ModPoissonBracket'
-  logical, parameter :: UseTripleSuperBee = .true.
+  logical, parameter :: UseGroupSuperbee = .true.
+  logical, parameter :: UseSimpleTvd = .false.
+  type RealPointer
+     real, pointer :: Ptr
+  end type RealPointer
+  type(RealPointer) :: MajorFlux_I(6)
 contains
   !============================================================================
   ! A choice of limiter functions
-  real function triple_superbee(Arg1, Arg2, Arg3, UpWindReduction)
-    !  Used to limit only two distribution function variations
-    !  \delta^-f in the neighboring cells
-    real, intent(in):: Arg1, Arg2, Arg3
-    real, optional, intent(in) :: UpWindReduction
-    real :: AbsArg1, AbsArg2, AbsArg3
+  real function minmod(Arg1, Arg2)
+    real, intent(in) :: Arg1, Arg2
+    real :: MinAbs
     !--------------------------------------------------------------------------
-    if(Arg1*Arg2 <= 0.0.or.Arg2*Arg3<=0.0)then
-       triple_superbee = 0.0
-       if(Arg1*Arg3 > 0.0.and.present(UpWindReduction))&
-            triple_superbee = Arg2*UpWindReduction*0.50
+    minmod = (sign(0.50,Arg1) + sign(0.50,Arg2))*min(abs(Arg1), abs(Arg2))
+  end function minmod
+  !============================================================================
+  real function triple_superbee(DownwindDeltaMinusF,DeltaF, &
+       UpwindDeltaF, UpwindDeltaMinusF)
+    !  \delta^-f in the neighboring cells
+    real, intent(in):: DownwindDeltaMinusF   ! Downwind \delta^-f
+    real, intent(in):: DeltaF                ! f_j -f
+    real, intent(in) :: UpwindDeltaF     ! f - f_j^\prime at the opposite face
+    real, intent(in):: UpwindDeltaMinusF     ! Upwind \delta^-f
+    real :: SignDeltaF, AbsDeltaF
+    !--------------------------------------------------------------------------
+    if(UseSimpleTvd)then
+       triple_superbee = pair_superbee(DeltaF, UpwindDeltaF)
        RETURN
     end if
-    AbsArg1 = abs(Arg1); AbsArg2 = abs(Arg2); AbsArg3 = abs(Arg3)
-    triple_superbee = &
-         sign(min(AbsArg1, 0.50*AbsArg2, AbsArg3), &
-         ! 0.50*max(AbsArg1,AbsArg2,AbsArg3)), &
-         Arg2)
+    if(DownwindDeltaMinusF*DeltaF<= 0.0 .or. DeltaF*UpwindDeltaMinusF<=0.0   &
+         ! Nullify second order correction if at the level of machine zero
+         .or.min(abs(DeltaF),abs(UpwindDeltaMinusF),abs(DownwindDeltaMinusF))&
+         <1.0e-31)then
+       triple_superbee = 0.0
+       RETURN
+    end if
+    SignDeltaF = sign(1.0, DeltaF); AbsDeltaF = abs(DeltaF)
+    triple_superbee = SignDeltaF*min(&
+         0.50*max(AbsDeltaF, SignDeltaF*UpwindDeltaF),& 
+         abs(DownwindDeltaMinusF),abs(UpwindDeltaMinusF))
+    if(abs(triple_superbee)<1.0e-31)triple_superbee = 0.0
   end function triple_superbee
+  !============================================================================
+  real function group_superbee(DownwindDeltaMinusF, ReductionCoef, DeltaF, &
+       UpwindDeltaF)
+    !  \delta^-f in the neighboring cells
+    real, intent(in):: DownwindDeltaMinusF   ! Downwind \delta^-f
+    real, intent(in):: ReductionCoef
+    real, intent(in):: DeltaF                ! f_j -f
+    real, intent(in) :: UpwindDeltaF     ! f - f_j^\prime at the opposite face
+    real :: SignDeltaF, AbsDeltaF
+    !--------------------------------------------------------------------------
+    !if(DownwindDeltaMinusF*DeltaF<= 0.0   &
+         ! Nullify second order correction if at the level of machine zero
+    ! .or.min(abs(DeltaF),abs(DownwindDeltaMinusF)) < 1.0e-31)then
+    if(abs(DeltaF)< 1.0e-31)then
+       group_superbee = 0.0
+       RETURN
+    end if
+    SignDeltaF = sign(1.0, DeltaF); AbsDeltaF = abs(DeltaF)
+    group_superbee = SignDeltaF*min(&
+         0.50*max(AbsDeltaF, SignDeltaF*UpwindDeltaF), ReductionCoef*AbsDeltaF)
+  end function group_superbee
   !============================================================================
   real function pair_superbee(Arg1, Arg2)
     !  Used to limit only two distribution function variations
@@ -179,8 +219,6 @@ contains
     ! Variations of VDF (one layer of ghost cell values):
     real :: DeltaMinusF_G(0:nI+1, 0:nJ+1, 0:nK+1)
     !
-    real :: UpWindReduction_G(0:nI+1, 0:nJ+1, 0:nK+1)
-    real :: UpWindHxDeltaF, DownWindHxDeltaF, DeltaF, DeltaHPlus
     ! face-centered vriations of Hamiltonian functions.
     ! one layer of ghost faces
     real :: DeltaH_FX(-1:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
@@ -189,13 +227,19 @@ contains
     real, dimension(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK) :: &
          SumDeltaHPlus_G, SumDeltaHMinus_G
     ! Fluxes:
-    real :: Flux_FX(0:nI,1:nJ,1:nK)
-    real :: Flux_FY(1:nI,0:nJ,1:nK)
-    real :: Flux_FZ(1:nI,1:nJ,0:nK)
+    real,target :: Flux_FX(0:nI,1:nJ,1:nK)
+    real,target :: Flux_FY(1:nI,0:nJ,1:nK)
+    real,target :: Flux_FZ(1:nI,1:nJ,0:nK)
+    real :: SumFlux_C(1:nI,1:nJ,1:nK)
     ! Local CFL number:
     real :: CFLCoef_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
     ! Time step
     real :: Dt, CFL
+    ! Group Limiter:
+    real    :: SignDeltaMinusF, SumMajorDeltaF, VDF
+    real    :: DownwindReduction_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK) 
+    integer :: nMajorFlux, iFlux
+    real    :: SumDeltaHPlusDeltaMinusF, SumMajorFlux, Limiter, Flux
     character(len=*), parameter:: NameSub = 'explicit3'
     !--------------------------------------------------------------------------
     if(present(DtIn))then
@@ -211,6 +255,11 @@ contains
     DeltaH_FX = 0.0; DeltaH_FY = 0.0; DeltaH_FZ = 0.0
     Flux_FX   = 0.0; Flux_FY   = 0.0; Flux_FZ   = 0.0
     SumDeltaHPlus_G = 0.0;     SumDeltaHMinus_G = 0.0
+    if(UseGroupSuperbee)then
+       do iFlux=1,6
+          nullify(MajorFlux_I(iFlux)%Ptr)
+       end do
+    end if
     ! Bracket {F,H12}_{x,y}   Bracket {F,H13}_{x,z}    Bracket {F,H23}_{y,z}
     ! Hamiltonian 12 (xy)     Hamiltonian 13 (xz)      Hamiltonian 23 (yz)
     ! y                       z                        z
@@ -269,8 +318,7 @@ contains
                                 max(0.0,-DeltaH_FX(i-1,j,  k)) +&
                                 max(0.0,-DeltaH_FY(i,j-1,  k))
 
-       if(UseTimeDependentVolume)SumDeltaHMinus_G(i,j,k) =      &
-                                min(0.0, DeltaH_FX(i,  j,  k)) +&
+       SumDeltaHMinus_G(i,j,k) =min(0.0, DeltaH_FX(i,  j,  k)) +&
                                 min(0.0, DeltaH_FY(i,  j,  k)) +&
                                 min(0.0,-DeltaH_FX(i-1,j,  k)) +&
                                 min(0.0,-DeltaH_FY(i,j-1,  k))
@@ -286,8 +334,7 @@ contains
                                     max(0.0, DeltaH_FZ(i,j,k)) +&
                                     max(0.0,-DeltaH_FZ(i,j,k-1))
 
-          if(UseTimeDependentVolume)SumDeltaHMinus_G(i,j,k) =   &
-                                    SumDeltaHMinus_G(i,j,k)    +&
+          SumDeltaHMinus_G(i,j,k) = SumDeltaHMinus_G(i,j,k)    +&
                                     min(0.0, DeltaH_FZ(i,j,k)) +&
                                     min(0.0,-DeltaH_FZ(i,j,k-1))
 
@@ -295,14 +342,38 @@ contains
                min(0.0, DeltaH_FZ(i,   j,   k))*VDF_G(i,j,k+1) +&
                min(0.0,-DeltaH_FZ(i,   j, k-1))*VDF_G(i,j,k-1)
        end if
+       VDF = VDF_G(i,j,k)
+       DeltaMinusF_G(i,j,k) = DeltaMinusF_G(i,j,k)           &
+            /max(-SumDeltaHMinus_G(i,j,k), 1.0e-31) + VDF
+       
+       if(DeltaMinusF_G(i,j,k)==0.0)then
+          DownwindReduction_G(i,j,k) = 0.0
+       else
+          SignDeltaMinusF = sign(1.0,DeltaMinusF_G(i,j,k))
+          SumMajorDeltaF = &
+               min(0.0, DeltaH_FX(i,   j,   k))*&
+               max((VDF - VDF_G(i+1,j,k))*SignDeltaMinusF,0.0) +&
+               min(0.0, DeltaH_FY(i,   j,   k))*&
+               max((VDF -VDF_G(i,j+1,k))*SignDeltaMinusF,0.0) +&
+               min(0.0,-DeltaH_FX(i-1, j,   k))*&
+               max((VDF -VDF_G(i-1,j,k))*SignDeltaMinusF,0.0) +&
+               min(0.0,-DeltaH_FY(i, j-1,   k))*&
+               max((VDF -VDF_G(i,j-1,k))*SignDeltaMinusF,0.0)
+          if(nK>1)then
+             ! Add three-dimensional effects.
+             SumMajorDeltaF = SumMajorDeltaF + &
+                  min(0.0, DeltaH_FZ(i,   j,   k))*&
+                  max((VDF - VDF_G(i,j,k+1))*SignDeltaMinusF,0.0) +&
+                  min(0.0,-DeltaH_FZ(i,   j, k-1))*&
+                  max((VDF - VDF_G(i,j,k-1))*SignDeltaMinusF,0.0)
+          end if
+          DownwindReduction_G(i,j,k) = SignDeltaMinusF*DeltaMinusF_G(i,j,k)*&
+               SumDeltaHMinus_G(i,j,k)/min(SumMajorDeltaF,-1.0e-31)
+       end if
        if(UseTimeDependentVolume)then
-          ! Local CFL and \delta^-f are expressed via SumDeltaHMinus
-          DeltaMinusF_G(i,j,k) = DeltaMinusF_G(i,j,k)           &
-               /max(-SumDeltaHMinus_G(i,j,k), 1.0e-31) + VDF_G(i,j,k)
+          ! Local CFLs are expressed via SumDeltaHMinus
           CFLCoef_G(i,j,k) = -SumDeltaHMinus_G(i,j,k)
        else
-          DeltaMinusF_G(i,j,k) = DeltaMinusF_G(i,j,k)           &
-               /max(  SumDeltaHPlus_G(i,j,k), 1.0e-31) + VDF_G(i,j,k)
           CFLCoef_G(i,j,k) = vInv_G(i,j,k)*SumDeltaHPlus_G(i,j,k)
        end if
     end do; end do; end do
@@ -378,231 +449,263 @@ contains
     !
     ! First order monotone scheme
     Source_C = -CFLCoef_G(1:nI,1:nJ,1:nK)*DeltaMinusF_G(1:nI,1:nJ,1:nK)
-    if(UseTripleSuperbee)then
-       do k=iKStart, iKLast; do j = 0, nJ+1; do i = 0, nI+1
-          DownWindHxDeltaF = 0.0; UpWindHxDeltaF = 0.0
-          if(DeltaH_FX(i, j, k) > 0.0.and.&
-               DeltaMinusF_G(i,j,k)*DeltaMinusF_G(i+1,j,k) > 0.0)then
-             ! This is \delta H^+ face, contributing to second order flux
-             DeltaHPlus = DeltaH_FX(i, j, k)
-             DeltaF  = VDF_G(i+1,j,k) - VDF_G(i,j,k)
-             if(DeltaMinusF_G(i,j,k)*DeltaF > 0.0)then
-                ! All DeltaF have same sign. Limit DeltaF:
-                DownWindHxDeltaF = DownWindHxDeltaF + &
-                     DeltaHPlus*2*triple_superbee(&
-                     DeltaMinusF_G(i,j,k), DeltaF, DeltaMinusF_G(i+1,j,k))
-             else
-                ! Sum upwind gradients:
-                UpWindHxDeltaF = UpWindHxDeltaF + &
-                     DeltaHPlus*DeltaF
-             end if
-          end if
-          if(DeltaH_FY(i,   j,   k) > 0.0.and.&
-               DeltaMinusF_G(i,j,k)*DeltaMinusF_G(i,j+1,k) > 0.0)then
-             ! This is \delta H^+ face, contributing to second order flux
-             DeltaHPlus = DeltaH_FY(i, j, k)
-             DeltaF  = VDF_G(i,j+1,k) - VDF_G(i,j,k)
-             if(DeltaMinusF_G(i,j,k)*DeltaF > 0.0)then
-                ! All DeltaF have same sign. Limit DeltaF:
-                DownWindHxDeltaF = DownWindHxDeltaF + &
-                     DeltaHPlus*2*triple_superbee(&
-                     DeltaMinusF_G(i,j,k), DeltaF, DeltaMinusF_G(i,j+1,k))
-             else
-                ! Sum upwind gradients:
-                UpWindHxDeltaF = UpWindHxDeltaF + &
-                     DeltaHPlus*DeltaF
-             end if
-          end if
-          if(-DeltaH_FX(i-1, j, k) > 0.0.and.&
-               DeltaMinusF_G(i,j,k)*DeltaMinusF_G(i-1,j,k) > 0.0)then
-             ! This is \delta H^+ face, contributing to second order flux
-             DeltaHPlus = -DeltaH_FX(i-1, j, k)
-             DeltaF  = VDF_G(i-1,j,k) - VDF_G(i,j,k)
-             if(DeltaMinusF_G(i,j,k)*DeltaF > 0.0)then
-                ! All DeltaF have same sign. Limit DeltaF:
-                DownWindHxDeltaF = DownWindHxDeltaF + &
-                     DeltaHPlus*2*triple_superbee(&
-                     DeltaMinusF_G(i,j,k), DeltaF, DeltaMinusF_G(i-1,j,k))
-             else
-                ! Sum upwind gradients:
-                UpWindHxDeltaF = UpWindHxDeltaF + &
-                     DeltaHPlus*DeltaF
-             end if
-          end if
-          if(-DeltaH_FY(i,   j-1,   k) > 0.0.and.&
-               DeltaMinusF_G(i,j,k)*DeltaMinusF_G(i,j-1,k) > 0.0)then
-             ! This is \delta H^+ face, contributing to second order flux
-             DeltaHPlus = -DeltaH_FY(i, j-1, k)
-             DeltaF  = VDF_G(i,j-1,k) - VDF_G(i,j,k)
-             if(DeltaMinusF_G(i,j,k)*DeltaF > 0.0)then
-                ! All DeltaF have same sign. Limit DeltaF:
-                DownWindHxDeltaF = DownWindHxDeltaF + &
-                     DeltaHPlus*2*triple_superbee(&
-                     DeltaMinusF_G(i,j,k), DeltaF, DeltaMinusF_G(i,j-1,k))
-             else
-                ! Sum upwind gradients:
-                UpWindHxDeltaF = UpWindHxDeltaF + &
-                     DeltaHPlus*DeltaF
-             end if
-          end if
-          if(nK > 1)then
-             if(DeltaH_FZ(i,   j,   k) > 0.0.and.&
-                  DeltaMinusF_G(i,j,k)*DeltaMinusF_G(i,j,k+1) > 0.0)then
-                ! This is \delta H^+ face, contributing to second order flux
-                DeltaHPlus = DeltaH_FZ(i, j, k)
-                DeltaF  = VDF_G(i,j,k+1) - VDF_G(i,j,k)
-                if(DeltaMinusF_G(i,j,k)*DeltaF > 0.0)then
-                   ! All DeltaF have same sign. Limit DeltaF:
-                   DownWindHxDeltaF = DownWindHxDeltaF + &
-                        DeltaHPlus*2*triple_superbee(&
-                        DeltaMinusF_G(i,j,k), DeltaF, DeltaMinusF_G(i,j,k+1))
-                else
-                   ! Sum upwind gradients:
-                   UpWindHxDeltaF = UpWindHxDeltaF + &
-                        DeltaHPlus*DeltaF
-                end if
-             end if
-             if(-DeltaH_FZ(i,   j,   k-1) > 0.0.and.&
-                  DeltaMinusF_G(i,j,k)*DeltaMinusF_G(i,j,k-1) > 0.0)then
-                ! This is \delta H^+ face, contributing to second order flux
-                DeltaHPlus = -DeltaH_FZ(i, j, k-1)
-                DeltaF  = VDF_G(i,j,k-1) - VDF_G(i,j,k)
-                if(DeltaMinusF_G(i,j,k)*DeltaF > 0.0)then
-                   ! All DeltaF have same sign. Limit DeltaF:
-                   DownWindHxDeltaF = DownWindHxDeltaF + &
-                        DeltaHPlus*2*triple_superbee(&
-                        DeltaMinusF_G(i,j,k), DeltaF, DeltaMinusF_G(i,j,k-1))
-                else
-                   ! Sum upwind gradients:
-                   UpWindHxDeltaF = UpWindHxDeltaF + &
-                        DeltaHPlus*DeltaF
-                end if
-             end if
-          end if
-          if(abs(DownWindHxDeltaF)==0)then
-             ! No upwind gradients are allowed:
-             UpWindReduction_G(i,j,k) = 0.0
-          elseif(abs(DownWindHxDeltaF) > abs(UpWindHxDeltaF))then
-             ! Any upwind gradients are allowed:
-             UpWindReduction_G(i,j,k) = 1.0
-          else
-             ! Upwind gradients should be limited
-             UpWindReduction_G(i,j,k) = abs(DownWindHxDeltaF/UpWindHxDeltaF)
-          end if
-       end do; end do; end do
+    ! Second order correction
+    if(UseGroupSuperbee)then
+       SumFlux_C = 0.0
        ! Calculate Face-X fluxes.
        do k=1, nK; do j = 1, nJ; do i = 0, nI
-          if(DeltaH_FX(i,j,k) > 0.0)then
-             Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*               &
-                  (1.0 - CFLCoef_G(i,j,k))*triple_superbee(     &
-                  DeltaMinusF_G(i,j,k),          &
-                  VDF_G(i+1,j,k)  - VDF_G(i,j,k), &
-                  DeltaMinusF_G(i+1,j,k),&
-                  UpWindReduction_G(i,j,k))
-          else
-             Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*               &
-                  (1.0 - CFLCoef_G(i+1,j,k))*triple_superbee(   &
-                  DeltaMinusF_G(i,j,k),           &
-                  VDF_G(i,j,k)  - VDF_G(i+1,j,k), &
-                  DeltaMinusF_G(i+1,j,k),&
-                  UpWindReduction_G(i+1,j,k))
+          if(DeltaH_FX(i,j,k) > 0.0)then 
+             if(i > 0)then
+                Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*                &
+                     (1.0 - CFLCoef_G(i,j,k))*group_superbee(     &
+                     DownwindDeltaMinusF=DeltaMinusF_G(i+1,j,k),  &
+                     ReductionCoef=DownwindReduction_G(i+1,j,k),  &
+                     DeltaF=VDF_G(i+1,j,k)  - VDF_G(i  ,j,k),     &
+                     UpwindDeltaF=VDF_G(i,j,k) - VDF_G(i-1,j,k))
+                SumFlux_C(i,j,k) = SumFlux_C(i,j,k) +             &
+                     Flux_FX(i,j,k)
+             else
+                Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*                &
+                     (1.0 - CFLCoef_G(i,j,k))*triple_superbee(    &
+                     DownwindDeltaMinusF=DeltaMinusF_G(i+1,j,k),  &
+                     DeltaF=VDF_G(i+1,j,k)  - VDF_G(i  ,j,k),     &
+                     UpwindDeltaF=VDF_G(i,j,k) - VDF_G(i-1,j,k),  &
+                     UpwindDeltaMinusF=DeltaMinusF_G(i,j,k))
+             end if
+          else 
+             if(i < nI)then
+                Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*                &
+                     (1.0 - CFLCoef_G(i+1,j,k))*group_superbee(   &
+                     DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),    &
+                     ReductionCoef=DownwindReduction_G(i,j,k),    &
+                     DeltaF=VDF_G(i,j,k)  - VDF_G(i+1,j,k),       &
+                     UpwindDeltaF=VDF_G(i+1,j,k) - VDF_G(i+2,j,k))
+                SumFlux_C(i+1,j,k) = SumFlux_C(i+1,j,k) -         &
+                     Flux_FX(i,j,k)
+             else
+                Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*                &
+                     (1.0 - CFLCoef_G(i+1,j,k))*triple_superbee(  &
+                     DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),    &
+                     DeltaF=VDF_G(i,j,k)  - VDF_G(i+1,j,k),       &
+                     UpwindDeltaF=VDF_G(i+1,j,k) - VDF_G(i+2,j,k),&
+                     UpwindDeltaMinusF=DeltaMinusF_G(i+1  ,j,k))
+             end if
           end if
        end do; end do; end do
        ! Calculate Face-Y fluxes.
        do k=1, nK; do j = 0, nJ; do i = 1, nI
           if(DeltaH_FY(i,j,k) > 0.0)then
-             Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*             &
-                  (1.0 - CFLCoef_G(i,j,k))*triple_superbee(     &
-                  DeltaMinusF_G(i,j,k), &
-                  VDF_G(i,j+1,k)  - VDF_G(i,j,k), &
-                  DeltaMinusF_G(i,j+1,k),&
-                  UpWindReduction_G(i,j,k))
+             if(j > 0)then
+                Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*                &
+                     (1.0 - CFLCoef_G(i,j,k))*group_superbee(     &
+                     DownwindDeltaMinusF=DeltaMinusF_G(i,j+1,k),  &
+                     ReductionCoef=DownwindReduction_G(i,j+1,k),  &
+                     DeltaF=VDF_G(i,j+1,k)  - VDF_G(i,j  ,k),     &
+                     UpwindDeltaF=VDF_G(i,j  ,k) - VDF_G(i,j-1,k))
+                SumFlux_C(i,j,k) = SumFlux_C(i,j,k) +             &
+                     Flux_FY(i,j,k)
+             else
+                Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*                &
+                     (1.0 - CFLCoef_G(i,j,k))*triple_superbee(    &
+                     DownwindDeltaMinusF=DeltaMinusF_G(i,j+1,k),  &
+                     DeltaF=VDF_G(i,j+1,k)  - VDF_G(i,j  ,k),     &
+                     UpwindDeltaF=VDF_G(i,j  ,k) - VDF_G(i,j-1,k),&
+                     UpwindDeltaMinusF=DeltaMinusF_G(i,j,k))
+             end if
           else
-             Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*               &
-                  (1.0 - CFLCoef_G(i,j+1,k))*triple_superbee(   &
-                  DeltaMinusF_G(i,j,k), &
-                  VDF_G(i,j,k)  - VDF_G(i,j+1,k), &
-                  DeltaMinusF_G(i,j+1,k),&
-                  UpWindReduction_G(i,j+1,k))
+             if(j < nJ)then
+                Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*                &
+                     (1.0 - CFLCoef_G(i,j+1,k))*group_superbee(   &
+                     DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),    &
+                     ReductionCoef=DownwindReduction_G(i,j,k),    &
+                     DeltaF=VDF_G(i,j,k)  - VDF_G(i,j+1 ,k),      &
+                     UpwindDeltaF=VDF_G(i,j+1,k) - VDF_G(i,j+2,k))
+                SumFlux_C(i,j+1,k) = SumFlux_C(i,j+1,k) -         &
+                     Flux_FY(i,j,k)
+             else
+                Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*                &
+                     (1.0 - CFLCoef_G(i,j+1,k))*triple_superbee(  &
+                     DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),    &
+                     DeltaF=VDF_G(i,j,k)  - VDF_G(i,j+1 ,k),      &
+                     UpwindDeltaF=VDF_G(i,j+1,k) - VDF_G(i,j+2,k),&
+                     UpwindDeltaMinusF=DeltaMinusF_G(i,j+1,k))
+             end if
           end if
        end do; end do; end do
-       if(nK==1)then
-          ! Two-dimensional formulation
-          Source_C(1:nI,1:nJ,1) = Source_C(1:nI,1:nJ,1) + (&
-               Flux_FX(0:nI-1, 1:nJ  , 1) - Flux_FX(1:nI, 1:nJ, 1)  + &
-               Flux_FY(1:nI  , 0:nJ-1, 1) - Flux_FY(1:nI, 1:nJ, 1)) * &
-               Dt*vInv_G(1:nI,1:nJ,1)
-          RETURN
+       if(nK>1)then
+          ! Calculate Face-Z fluxes.
+          do k=0, nK; do j = 1, nJ; do i = 1, nI
+             if(DeltaH_FZ(i,j,k) > 0.0)then
+                if(k > 0)then
+                   Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*                &
+                        (1.0 - CFLCoef_G(i,j,k))*group_superbee(     &
+                        DownwindDeltaMinusF=DeltaMinusF_G(i,j,k+1),  &
+                        ReductionCoef=DownwindReduction_G(i,j,k+1),  &
+                        DeltaF=VDF_G(i,j,k+1)  - VDF_G(i,j  ,k),     &
+                        UpwindDeltaF=VDF_G(i,j  ,k) - VDF_G(i,j,k-1))
+                   SumFlux_C(i,j,k) = SumFlux_C(i,j,k) +             &
+                        Flux_FZ(i,j,k)
+                else
+                   Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*                &
+                        (1.0 - CFLCoef_G(i,j,k))*triple_superbee(    &
+                        DownwindDeltaMinusF=DeltaMinusF_G(i,j,k+1),  &
+                        DeltaF=VDF_G(i,j,k+1)  - VDF_G(i,j  ,k),     &
+                        UpwindDeltaF=VDF_G(i,j  ,k) - VDF_G(i,j,k-1),&
+                        UpwindDeltaMinusF=DeltaMinusF_G(i,j  ,k))
+                end if
+             else
+                if(k < nK)then
+                   Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*                &
+                        (1.0 - CFLCoef_G(i,j,k+1))*group_superbee(   &
+                        DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),    &
+                        ReductionCoef=DownwindReduction_G(i,j,k),    &
+                        DeltaF=VDF_G(i,j,k)  - VDF_G(i,j ,k+1),      &
+                        UpwindDeltaF=VDF_G(i,j,k+1) - VDF_G(i,j,k+2))
+                   SumFlux_C(i,j,k+1) = SumFlux_C(i,j,k+1) -         &
+                        Flux_FZ(i,j,k)
+                else
+                   Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*                &
+                        (1.0 - CFLCoef_G(i,j,k+1))*triple_superbee(  &
+                        DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),    &
+                        DeltaF=VDF_G(i,j,k)  - VDF_G(i,j ,k+1),      &
+                        UpwindDeltaF=VDF_G(i,j,k+1) - VDF_G(i,j,k+2),&
+                        UpwindDeltaMinusF=DeltaMinusF_G(i,j,k+1))
+                end if
+             end if
+          end do; end do; end do
        end if
-       ! Calculate Face-Z fluxes.
-       do k=0, nK; do j = 1, nJ; do i = 1, nI
-          if(DeltaH_FZ(i,j,k) > 0.0)then
-             Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*               &
-                  (1.0 - CFLCoef_G(i,j,k))*triple_superbee(     &
-                  DeltaMinusF_G(i,j,k), &
-                  VDF_G(i,j,k+1)  - VDF_G(i,j,k), &
-                  DeltaMinusF_G(i,j,k+1),&
-                  UpWindReduction_G(i,j,k))
-          else
-             Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*               &
-                  (1.0 - CFLCoef_G(i,j,k+1))*triple_superbee(   &
-                  DeltaMinusF_G(i,j,k), &
-                  VDF_G(i,j,k)  - VDF_G(i,j,k+1), &
-                  DeltaMinusF_G(i,j,k+1),&
-                  UpWindReduction_G(i,j,k+1))
+       do k=1, nK; do j = 1, nJ; do i = 1, nI
+          ! Compare sum of fluxes with \delta^-f
+          SumDeltaHPlusDeltaMinusF = DeltaMinusF_G(i,j,k)*&
+               SumDeltaHPlus_G(i,j,k)*(1.0 - CFLCoef_G(i,j,k))
+          if(SumFlux_C(i,j,k)*DeltaMinusF_G(i,j,k)>=0.0.and.&
+               abs(SumFlux_C(i,j,k))<=abs(SumDeltaHPlusDeltaMinusF))&
+               CYCLE
+          SumDeltaHPlusDeltaMinusF = minmod(SumDeltaHPlusDeltaMinusF, &
+               SumFlux_C(i,j,k) )
+          nMajorFlux = 0
+          SumMajorFlux = 0.0
+          if(DeltaH_FX(i, j, k) > 0.0)then
+             ! This is \delta H^+ face, contributing to second order flux
+             Flux = Flux_FX(i,j,k)
+             if(Flux*SumFlux_C(i,j,k) > 0.0)then
+                ! This is the major flux, having the same sign as their sum
+                SumMajorFlux  = SumMajorFlux  + Flux
+                nMajorFlux = nMajorFlux + 1
+                MajorFlux_I(nMajorFlux)%Ptr=>Flux_FX(i,j,k)
+             end if
           end if
+          if(DeltaH_FY(i,   j,   k) > 0.0)then
+             Flux = Flux_FY(i,j,k)
+             if(Flux*SumFlux_C(i,j,k) > 0.0)then
+                ! This is the major flux, having the same sign as their sum
+                SumMajorFlux  = SumMajorFlux  + Flux
+                nMajorFlux = nMajorFlux + 1
+                MajorFlux_I(nMajorFlux)%Ptr=>Flux_FY(i,j,k)
+             end if
+          end if
+          if(-DeltaH_FX(i-1, j, k) > 0.0)then
+             ! This is \delta H^+ face, contributing to second order flux
+             Flux = -Flux_FX(i-1,j,k)
+             if(Flux*SumFlux_C(i,j,k) > 0.0)then
+                ! This is the major flux, having the same sign as their sum
+                SumMajorFlux  = SumMajorFlux  + Flux
+                nMajorFlux = nMajorFlux + 1
+                MajorFlux_I(nMajorFlux)%Ptr=>Flux_FX(i-1,j,k)
+             end if
+          end if
+          if(-DeltaH_FY(i,   j-1,   k) > 0.0)then
+             ! This is \delta H^+ face, contributing to second order flux
+             Flux = -Flux_FY(i,j-1,k)
+             if(Flux*SumFlux_C(i,j,k) > 0.0)then
+                ! This is the major flux, having the same sign as their sum
+                SumMajorFlux  = SumMajorFlux  + Flux
+                nMajorFlux = nMajorFlux + 1
+                MajorFlux_I(nMajorFlux)%Ptr=>Flux_FY(i,j-1,k)
+             end if
+          end if
+          if(nK>1)then
+             call CON_stop('group_superbee is not implemented for nK>1')
+          end if
+          Limiter = 1.0 + (SumDeltaHPlusDeltaMinusF - SumFlux_C(i,j,k))&
+               /SumMajorFlux
+          do iFlux = 1, nMajorFlux
+             MajorFlux_I(iFlux)%Ptr = MajorFlux_I(iFlux)%Ptr *&
+                  Limiter
+             nullify(MajorFlux_I(iFlux)%Ptr)
+          end do
        end do; end do; end do
     else
        ! Calculate Face-X fluxes.
        do k=1, nK; do j = 1, nJ; do i = 0, nI
-          if(DeltaH_FX(i,j,k) > 0.0)then
-             Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*               &
-                  (1.0 - CFLCoef_G(i,j,k))*pair_superbee(     &
-                  DeltaMinusF_G(i,j,k), DeltaMinusF_G(i+1,j,k))
-          else
-             Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*               &
-                  (1.0 - CFLCoef_G(i+1,j,k))*pair_superbee(   &
-                  DeltaMinusF_G(i,j,k), DeltaMinusF_G(i+1,j,k))
+          if(DeltaH_FX(i,j,k) > 0.0)then 
+             Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*                &
+                  (1.0 - CFLCoef_G(i,j,k))*triple_superbee(    &
+                  DownwindDeltaMinusF=DeltaMinusF_G(i+1,j,k),  &
+                  DeltaF=VDF_G(i+1,j,k)  - VDF_G(i  ,j,k),     &
+                  UpwindDeltaF=VDF_G(i,j,k) - VDF_G(i-1,j,k),  &
+                  UpwindDeltaMinusF=DeltaMinusF_G(i,j,k))
+          else 
+             Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*                &
+                  (1.0 - CFLCoef_G(i+1,j,k))*triple_superbee(  &
+                  DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),    &
+                  DeltaF=VDF_G(i,j,k)  - VDF_G(i+1,j,k),       &
+                  UpwindDeltaF=VDF_G(i+1,j,k) - VDF_G(i+2,j,k),&
+                  UpwindDeltaMinusF=DeltaMinusF_G(i+1  ,j,k))
           end if
        end do; end do; end do
        ! Calculate Face-Y fluxes.
        do k=1, nK; do j = 0, nJ; do i = 1, nI
           if(DeltaH_FY(i,j,k) > 0.0)then
-             Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*             &
-                  (1.0 - CFLCoef_G(i,j,k))*pair_superbee(     &
-                  DeltaMinusF_G(i,j,k), DeltaMinusF_G(i,j+1,k))
+             Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*                &
+                  (1.0 - CFLCoef_G(i,j,k))*triple_superbee(    &
+                  DownwindDeltaMinusF=DeltaMinusF_G(i,j+1,k),  &
+                  DeltaF=VDF_G(i,j+1,k)  - VDF_G(i,j  ,k),     &
+                  UpwindDeltaF=VDF_G(i,j  ,k) - VDF_G(i,j-1,k),&
+                  UpwindDeltaMinusF=DeltaMinusF_G(i,j,k))
           else
-             Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*               &
-                  (1.0 - CFLCoef_G(i,j+1,k))*pair_superbee(   &
-                  DeltaMinusF_G(i,j,k), DeltaMinusF_G(i,j+1,k))
+             Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*                &
+                  (1.0 - CFLCoef_G(i,j+1,k))*triple_superbee(  &
+                  DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),    &
+                  DeltaF=VDF_G(i,j,k)  - VDF_G(i,j+1 ,k),      &
+                  UpwindDeltaF=VDF_G(i,j+1,k) - VDF_G(i,j+2,k),&
+                  UpwindDeltaMinusF=DeltaMinusF_G(i,j+1,k))
           end if
        end do; end do; end do
-       if(nK==1)then
-          ! Two-dimensional formulation
-          Source_C(1:nI,1:nJ,1) = Source_C(1:nI,1:nJ,1) + (&
-               Flux_FX(0:nI-1, 1:nJ  , 1) - Flux_FX(1:nI, 1:nJ, 1)  + &
-               Flux_FY(1:nI  , 0:nJ-1, 1) - Flux_FY(1:nI, 1:nJ, 1)) * &
-               Dt*vInv_G(1:nI,1:nJ,1)
-          RETURN
+       if(nK>1)then
+          ! Calculate Face-Z fluxes.
+          do k=0, nK; do j = 1, nJ; do i = 1, nI
+             if(DeltaH_FZ(i,j,k) > 0.0)then
+                Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*                &
+                     (1.0 - CFLCoef_G(i,j,k))*triple_superbee(    &
+                     DownwindDeltaMinusF=DeltaMinusF_G(i,j,k+1),  &
+                     DeltaF=VDF_G(i,j,k+1)  - VDF_G(i,j  ,k),     &
+                     UpwindDeltaF=VDF_G(i,j  ,k) - VDF_G(i,j,k-1),&
+                     UpwindDeltaMinusF=DeltaMinusF_G(i,j  ,k))
+             else
+                Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*                &
+                     (1.0 - CFLCoef_G(i,j,k+1))*triple_superbee(  &
+                     DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),    &
+                     DeltaF=VDF_G(i,j,k)  - VDF_G(i,j ,k+1),      &
+                     UpwindDeltaF=VDF_G(i,j,k+1) - VDF_G(i,j,k+2),&
+                     UpwindDeltaMinusF=DeltaMinusF_G(i,j,k+1))
+             end if
+          end do; end do; end do
        end if
-       ! Calculate Face-Z fluxes.
-       do k=0, nK; do j = 1, nJ; do i = 1, nI
-          if(DeltaH_FZ(i,j,k) > 0.0)then
-             Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*               &
-                  (1.0 - CFLCoef_G(i,j,k))*pair_superbee(     &
-                  DeltaMinusF_G(i,j,k), DeltaMinusF_G(i,j,k+1))
-          else
-             Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*               &
-                  (1.0 - CFLCoef_G(i,j,k+1))*pair_superbee(   &
-                  DeltaMinusF_G(i,j,k), DeltaMinusF_G(i,j,k+1))
-          end if
-       end do; end do; end do
     end if
-    Source_C = Source_C + (&
-         Flux_FX(0:nI-1, 1:nJ, 1:nK) - Flux_FX(1:nI, 1:nJ, 1:nK) + &
-         Flux_FY(1:nI, 0:nJ-1, 1:nK) - Flux_FY(1:nI, 1:nJ, 1:nK) + &
-         Flux_FZ(1:nI, 1:nJ, 0:nK-1) - Flux_FZ(1:nI, 1:nJ, 1:nK))* &
-         Dt*vInv_G(1:nI,1:nJ,1:nK)
+    if(nK==1)then
+       ! Two-dimensional formulation
+       Source_C(1:nI,1:nJ,1) = Source_C(1:nI,1:nJ,1) + (&
+            Flux_FX(0:nI-1, 1:nJ  , 1) - Flux_FX(1:nI, 1:nJ, 1)  + &
+            Flux_FY(1:nI  , 0:nJ-1, 1) - Flux_FY(1:nI, 1:nJ, 1)) * &
+            Dt*vInv_G(1:nI,1:nJ,1)
+    else
+       Source_C = Source_C + (&
+            Flux_FX(0:nI-1, 1:nJ, 1:nK) - Flux_FX(1:nI, 1:nJ, 1:nK) + &
+            Flux_FY(1:nI, 0:nJ-1, 1:nK) - Flux_FY(1:nI, 1:nJ, 1:nK) + &
+            Flux_FZ(1:nI, 1:nJ, 0:nK-1) - Flux_FZ(1:nI, 1:nJ, 1:nK))* &
+            Dt*vInv_G(1:nI,1:nJ,1:nK)
+    end if
   end subroutine explicit3
   !============================================================================
 end module ModPoissonBracket
