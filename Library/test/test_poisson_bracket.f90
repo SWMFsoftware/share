@@ -211,7 +211,6 @@ contains
          NameVarIn='-p_y  p_x VDF', &
          CoordMinIn_D=[10.0**LogMomentum_I(1 ), 0.50*DeltaPhi], &
          CoordMaxIn_D=[10.0**LogMomentum_I(nQ), cTwoPi - 0.50*DeltaPhi], &
-         StringFormatIn = '(3F10.3)', &
          Coord1In_I = 10.0**LogMomentum_I(1:nQ), &
          VarIn_II = VDF_G(1:nQ,1:nP) )
   contains
@@ -234,7 +233,7 @@ contains
     integer           ::  iQ, iP, iStep
     ! Mesh size
     real, parameter   :: DeltaQ = 0.02, DeltaP = 0.02
-    real :: VDF_G(-1:nQ+2, -1:nP+2),VDFInitial_C(nQ,nP)
+    real :: VDF_G(-1:nQ+2, -1:nP+2),VDFInitial_C(nQ,nP),PlotVar_VC(2,nQ,nP)
     real :: Volume_G(0:nQ+1, 0:nP+1)
     real :: Hamiltonian_N(-1:nQ+1, -1:nP+1)
     real :: Energy_C(nQ, nP)
@@ -295,12 +294,14 @@ contains
                Energy/EnergyInit - 1.0
        end if
     end do
+    PlotVar_VC(1,:,:) = VDF_G(1:nQ,1:nP)
+    PlotVar_VC(2,:,:) = VDFInitial_C
     call save_plot_file(NameFile='test_energy.out', &
          TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
-         NameVarIn='Q    P VDF', &
+         NameVarIn='Q    P VDF VDFIni ErrorL2 EnergyDefect', &
+         ParamIn_I=[NormL2/NormL2Init, Energy/EnergyInit - 1.0],&
          CoordMinIn_D=[-11.99, -11.99], &
          CoordMaxIn_D=[11.99, 11.99], &
-         StringFormatIn = '(3F10.3)', &
          VarIn_II = VDF_G(1:nQ,1:nP) )
 
   end subroutine test_energy_conservation
@@ -773,7 +774,6 @@ contains
        end do
     end do
     ! write(*,*)'Maxval(Hamiltonian)=',maxval(Hamiltonian_N)
-
     ! Calculate volume
     ! angle-dependent factor
     do iTheta = 1, nTheta/2
@@ -803,7 +803,7 @@ contains
                VDF_G(iR,iTheta) = 1.0
        end if
     end do; end do
-    
+    Time = 0.0; iStep = 0; tFinal = 0.0
     call save_plot_file('hill.outs', 'rewind', 'real4', &
          'Hill vortex', iStep, tFinal, &
          NameVarIn='r Theta Rho'  , &
@@ -819,7 +819,6 @@ contains
          VarIn_II = VDF_G(1:nR,nTheta/2+1:nTheta) )
     
     ! Computation
-    Time = 0.0; iStep = 0
     do iPlot = 0, 99
        tFinal = (iPlot + 1)*0.1
        DoExit = .false.
