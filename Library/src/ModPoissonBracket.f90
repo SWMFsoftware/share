@@ -30,31 +30,43 @@ module ModPoissonBracket
   ! If DtIn results in CFL>CflMax, the time step is reduced
   real, parameter :: CflMax = 0.990
   character(LEN=*), parameter:: NameMod = 'ModPoissonBracket'
-  logical, parameter :: UseGroupSuperbee = .true.
-  logical, parameter :: UseSimpleTvd = .false.
+  logical, parameter :: UseLimiter = .true. ! false: switch off limiters
+  logical, parameter :: UseGroupSuperbee = .true.  .and. UseLimiter
+  logical, parameter :: UseSimpleTvd = .false.     .or. .not. UseLimiter
+
   type RealPointer
      real, pointer :: Ptr
   end type RealPointer
   type(RealPointer) :: MajorFlux_I(6)
+
 contains
   !============================================================================
-  ! A choice of limiter functions
   real function minmod(Arg1, Arg2)
+
     real, intent(in) :: Arg1, Arg2
-    real :: MinAbs
     !--------------------------------------------------------------------------
-    minmod = (sign(0.50,Arg1) + sign(0.50,Arg2))*min(abs(Arg1), abs(Arg2))
+    if(UseLimiter)then
+       minmod = (sign(0.5, Arg1) + sign(0.5, Arg2))*min(abs(Arg1), abs(Arg2))
+    else
+       minmod = 0.5*(Arg1 + Arg2)
+    end if
   end function minmod
   !============================================================================
   real function triple_superbee(DownwindDeltaMinusF,DeltaF, &
        UpwindDeltaF, UpwindDeltaMinusF)
+
     !  \delta^-f in the neighboring cells
+
     real, intent(in):: DownwindDeltaMinusF   ! Downwind \delta^-f
     real, intent(in):: DeltaF                ! f_j -f
     real, intent(in) :: UpwindDeltaF     ! f - f_j^\prime at the opposite face
     real, intent(in):: UpwindDeltaMinusF     ! Upwind \delta^-f
     real :: SignDeltaF, AbsDeltaF
     !--------------------------------------------------------------------------
+    if(.not.UseLimiter)then
+       triple_superbee = 0.5*(DeltaF + UpwindDeltaF)
+       RETURN
+    end if
     if(UseSimpleTvd)then
        triple_superbee = pair_superbee(DeltaF, UpwindDeltaF)
        RETURN
@@ -69,13 +81,16 @@ contains
     SignDeltaF = sign(1.0, DeltaF); AbsDeltaF = abs(DeltaF)
     triple_superbee = SignDeltaF*min(&
          0.50*max(AbsDeltaF, SignDeltaF*UpwindDeltaF),& 
-         abs(DownwindDeltaMinusF),abs(UpwindDeltaMinusF))
-    if(abs(triple_superbee)<1.0e-31)triple_superbee = 0.0
+         abs(DownwindDeltaMinusF), abs(UpwindDeltaMinusF))
+    if(abs(triple_superbee) < 1e-31)triple_superbee = 0.0
+
   end function triple_superbee
   !============================================================================
   real function group_superbee(DownwindDeltaMinusF, ReductionCoef, DeltaF, &
        UpwindDeltaF)
+
     !  \delta^-f in the neighboring cells
+
     real, intent(in):: DownwindDeltaMinusF   ! Downwind \delta^-f
     real, intent(in):: ReductionCoef
     real, intent(in):: DeltaF                ! f_j -f
@@ -84,22 +99,29 @@ contains
     !--------------------------------------------------------------------------
     !if(DownwindDeltaMinusF*DeltaF<= 0.0   &
          ! Nullify second order correction if at the level of machine zero
-    ! .or.min(abs(DeltaF),abs(DownwindDeltaMinusF)) < 1.0e-31)then
-    if(abs(DeltaF)< 1.0e-31)then
+    ! .or.min(abs(DeltaF),abs(DownwindDeltaMinusF)) < 1e-31)then
+    if(abs(DeltaF) < 1e-31)then
        group_superbee = 0.0
        RETURN
     end if
     SignDeltaF = sign(1.0, DeltaF); AbsDeltaF = abs(DeltaF)
     group_superbee = SignDeltaF*min(&
-         0.50*max(AbsDeltaF, SignDeltaF*UpwindDeltaF), ReductionCoef*AbsDeltaF)
+         0.5*max(AbsDeltaF, SignDeltaF*UpwindDeltaF), ReductionCoef*AbsDeltaF)
+
   end function group_superbee
   !============================================================================
   real function pair_superbee(Arg1, Arg2)
+
     !  Used to limit only two distribution function variations
     !  \delta^-f in the neighboring cells
+
     real, intent(in):: Arg1, Arg2
     real :: AbsArg1, AbsArg2
     !--------------------------------------------------------------------------
+    if(.not.UseLimiter)then
+       pair_superbee = 0.5*(Arg1 + Arg2)
+       RETURN
+    end if
     if(Arg1*Arg2 <= 0.0)then
        pair_superbee = 0.0
        RETURN
@@ -107,25 +129,32 @@ contains
     AbsArg1 = abs(Arg1); AbsArg2 = abs(Arg2)
     pair_superbee = &
          sign(min(AbsArg1, AbsArg2, 0.50*max(AbsArg1, AbsArg2)), Arg1)
+
   end function pair_superbee
   !============================================================================
   subroutine explicit2(nI, nJ, VDF_G, Volume_G, Source_C,    &
        Hamiltonian12_N, dHamiltonian01_FX, dHamiltonian02_FY,&
        DVolumeDt_G,                                          &
        DtIn, CFLIn, DtOut, CFLOut, DtRecommend)
+
     ! solve the contribution to the
     ! numerical flux from a single Poisson bracket,
     ! df/dq_l dH/dp_l - df/dp_l dH/dq_l
+
     integer, intent(in) :: nI    !# of cells along coordinate 1
     integer, intent(in) :: nJ    !# of cells along coord. 2 (momentum)
+
     ! Distribution function with gc. Two layers of face ghostcels
     ! and one level of corner ghost cells are used
     real, intent(in) :: VDF_G(-1:nI+2,-1:nJ+2)
+
     ! Hamiltonian function in nodes. One layer of ghost nodes is used
     real, optional, intent(in) :: Hamiltonian12_N(-1:nI+1,-1:nJ+1)
+
     ! Increment in the Hamiltonian function for the Poisson bracket
     ! with respect to time, \{f,H_{01}\}_{t,x}. Is face-X centered.
     ! One layer of the ghost faces is needed.
+
     real, optional, intent(in) :: dHamiltonian01_FX(-1:nI+1, 0:nJ+1)
     ! Increment in the Hamiltonian function for the Poisson bracket
     ! with respect to time, \{f,H_{02}\}_{t,y}. Is face-Y centered.
@@ -134,9 +163,11 @@ contains
 
     ! Cell volume. One layer of face ghost cells is used
     real,           intent(in) :: Volume_G(0:nI+1,0:nJ+1)
+
     ! If non-canonical variables are used with time-dependent Jacobian,
     ! the cell volume changes in time. Need the volume derivative
     real, optional, intent(in) :: DVolumeDt_G(0:nI+1,0:nJ+1)
+
     ! Contribution to the conservative source (flux divergence) from
     ! the Poisson Bracket:
     !
@@ -146,6 +177,7 @@ contains
     real, optional, intent(in) :: DtIn, CFLIn   ! Options to set time step
     real, optional, intent(out):: DtOut, CFLOut ! Options to report time step
     real, optional, intent(out):: DtRecommend   ! Calculated for given CflIn
+
     character(len=*), parameter:: NameSub = 'explicit2'
     !--------------------------------------------------------------------------
     call explicit3(nI, nJ, 1, VDF_G, Volume_G, Source_C,     &
@@ -158,6 +190,7 @@ contains
        DtOut=DtOut,                                          &
        CFLOut=CFLOut,                                        &
        DtRecommend=DtRecommend)
+
   end subroutine explicit2
   !============================================================================
   subroutine explicit3(nI, nJ, nK, VDF_G, Volume_G, Source_C,            &
@@ -165,26 +198,32 @@ contains
        dHamiltonian01_FX, dHamiltonian02_FY, dHamiltonian03_FZ,          &
        DVolumeDt_G,                                                      &
        DtIn, CFLIn, DtOut, CFLOut, DtRecommend)
+
     ! solve the contribution to the numerical flux from multiple Poisson
     ! brackets, 1,2,3 enumerate phase coordinates,  0 relating to time.
+
     integer, intent(in) :: nI     !# of cells along coordinate 1
     integer, intent(in) :: nJ     !# of cells along coordinate 2
     integer, intent(in) :: nK     !# of cells along coordinate 3
     integer :: iKStart , iKLast
+
     ! Distribution function with gc. Two layers of face ghostcels
     ! and one level of corner ghost cells are used
     real, intent(in) :: VDF_G(-1:nI+2,-1:nJ+2,&
          -1 + 2*(1/nK):nK + 2*(1 - 1/nK))
+
     ! Hamiltonian functions in nodes. One layer of ghost nodes is used.
     ! 1. Hamiltonian function for the Poisson bracket \{f,H_{12}}_{x,y}
     !    Node-centered at XY plane, cell-centered with respect to Z
     !    (In other words, Z-aligned-edge-centered)
     real, optional, intent(in) :: Hamiltonian12_N(-1:nI+1,-1:nJ+1,&
          1/nK:nK+1-1/nK)
+
     ! 2. Hamiltonian function for the Poisson bracket \{f,H_{13}}_{x,z}
     !    Node-centered at XZ plane, cell-centered with respect to Y
     !    (In other words, Y-aligned-edge-centered)
     real, optional, intent(in) :: Hamiltonian13_N(-1:nI+1,0:nJ+1,-1:nK+1)
+
     ! 3. Hamiltonian function for the Poisson bracket \{f,H_{23}}_{y,z}
     !    Node-centered at YZ plane, cell-centered with respect to X
     !    (In other words, X-aligned-edge-centered)
@@ -198,22 +237,28 @@ contains
 
     ! Total Volume. One layer of face ghost cells is used
     real, intent(in) :: Volume_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
+
     ! If non-canonical variables are used with time-dependent Jacobian,
     ! the cell volume changes in time. Need the volume derivative
     real, optional, intent(in) :: DVolumeDt_G(0:nI+1,0:nJ+1,&
          1/nK:nK+1-1/nK)
-    logical :: UseTimeDependentVolume = .false. !=present(DVolumeDt_G)
-    ! Inverse volume. One layer of face ghost cells is used
-    real :: vInv_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
+
     ! Contribution to the conservative source (flux divergence) for
     ! the Poisson Bracket:
     ! send the source_c back to the main code
     real, intent(out) :: Source_C(1:nI, 1:nJ, 1:nK)
+
     !OPTIONAL PARAMETERS:
     real, optional, intent(in) :: DtIn, CFLIn   ! Options to set time step
     real, optional, intent(out):: DtOut, CFLOut ! Options to report time step
     real, optional, intent(out):: DtRecommend   ! Calculated for given CflIn
+
     ! Local variables
+    logical :: UseTimeDependentVolume = .false. !=present(DVolumeDt_G)
+
+    ! Inverse volume. One layer of face ghost cells is used
+    real :: vInv_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
+
     ! Loop variables:
     integer :: i, j, k
     ! Variations of VDF (one layer of ghost cell values):
@@ -251,6 +296,7 @@ contains
     UseTimeDependentVolume = present(DVolumeDt_G)
     iKStart  = 1/nK ;  iKLast  = nK + 1 - 1/nK
     vInv_G = 1.0/Volume_G
+
     ! Nullify arrays:
     DeltaH_FX = 0.0; DeltaH_FY = 0.0; DeltaH_FZ = 0.0
     Flux_FX   = 0.0; Flux_FY   = 0.0; Flux_FZ   = 0.0
@@ -260,6 +306,7 @@ contains
           nullify(MajorFlux_I(iFlux)%Ptr)
        end do
     end if
+
     ! Bracket {F,H12}_{x,y}   Bracket {F,H13}_{x,z}    Bracket {F,H23}_{y,z}
     ! Hamiltonian 12 (xy)     Hamiltonian 13 (xz)      Hamiltonian 23 (yz)
     ! y                       z                        z
@@ -293,6 +340,7 @@ contains
              Hamiltonian23_N( 0:nI+1,-1:nJ  ,-1:nK+1) - &
              Hamiltonian23_N( 0:nI+1, 0:nJ+1,-1:nK+1)
     end if
+
     ! Bracket {F,H01}_t,x    Bracket {F,H02}_t,y      Bracket {F,H03}_t,z
     ! Hamiltonian 01 (tx)    Hamiltonian 02 (ty)      Hamiltonian 03 (tz)
     ! x                      y                        z
@@ -308,6 +356,7 @@ contains
          DeltaH_FY = DeltaH_FY + dHamiltonian02_FY
     if (present(dHamiltonian03_FZ))&
          DeltaH_FZ = DeltaH_FZ + dHamiltonian03_FZ
+
     ! Now, for each cell the value of DeltaH for face in positive
     ! directions of i and j may be found in the arrays, for
     ! negative directions the should be taken with opposite sign
@@ -377,6 +426,7 @@ contains
           CFLCoef_G(i,j,k) = vInv_G(i,j,k)*SumDeltaHPlus_G(i,j,k)
        end if
     end do; end do; end do
+
     ! Set CFL and time step
     if(UseTimeDependentVolume)then
        if(present(DtRecommend))then
@@ -408,7 +458,8 @@ contains
              ! CFLMax = \Delta t*(-\sum\delta^-H)/(\Delta t*dV/dt + V)
              CFL = CFLMax
              Dt = CFL/maxval(vInv_G(1:nI,1:nJ,1:nK)*&
-                  (CFLCoef_G(1:nI,1:nJ,1:nK) - CFL*DVolumeDt_G(1:nI,1:nJ,1:nK)))
+                  ( CFLCoef_G(1:nI,1:nJ,1:nK) &
+                  - CFL*DVolumeDt_G(1:nI,1:nJ,1:nK)))
 
              ! Calculate the CFL factor with given Dt:
              vInv_G = 1.0/(Volume_G + Dt*DVolumeDt_G)
@@ -419,6 +470,7 @@ contains
           ! CFLIn = \Delta t*(-\sum\delta^-H)/(\Delta t*dV/dt + V)
           Dt = CFLIn/maxval(vInv_G(1:nI,1:nJ,1:nK)*&
                (CFLCoef_G(1:nI,1:nJ,1:nK) - CFLIn*DVolumeDt_G(1:nI,1:nJ,1:nK)))
+
           ! Calculate the volume at upper time level
           ! V(+\Delta t):
           vInv_G = 1.0/(Volume_G + Dt*DVolumeDt_G)
@@ -437,18 +489,18 @@ contains
        if(CFLOut > CFLMax*0.99 + 0.01)call CON_stop('CFL is too large')
     end if
     if(present(DtOut ))DtOut  = Dt
-    !
+
     ! By now, calculated are:
     ! 1. DeltaH_FX, DeltaH_FY, and, for nK > 1, Delta_FZ
     ! 2. Inverse volume. For time-dependent Jacobian, it is calculated at
     !    the end of time step (at t+Dt).
     ! 3. Time step, Dt.
     ! 4. CGL local, at each cell including one laayer of GC
-    !
+
     ! Calculate source = f(t+Dt) - f(t):
-    !
     ! First order monotone scheme
     Source_C = -CFLCoef_G(1:nI,1:nJ,1:nK)*DeltaMinusF_G(1:nI,1:nJ,1:nK)
+
     ! Second order correction
     if(UseGroupSuperbee)then
        SumFlux_C = 0.0
