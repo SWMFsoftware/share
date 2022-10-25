@@ -64,7 +64,7 @@ contains
     real :: SignDeltaF, AbsDeltaF
     !--------------------------------------------------------------------------
     if(.not.UseLimiter)then
-       triple_superbee = 0.5*(DeltaF + UpwindDeltaF)
+       triple_superbee = DeltaF
        RETURN
     end if
     if(UseSimpleTvd)then
