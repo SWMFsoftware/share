@@ -297,12 +297,12 @@ contains
     PlotVar_VC(1,:,:) = VDF_G(1:nQ,1:nP)
     PlotVar_VC(2,:,:) = VDFInitial_C
     call save_plot_file(NameFile='test_energy.out', &
-         TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
+         TypeFileIn='real4', TimeIn=tFinal, nStepIn = iStep, &
          NameVarIn='Q    P VDF VDFIni ErrorL2 EnergyDefect', &
          ParamIn_I=[NormL2/NormL2Init, Energy/EnergyInit - 1.0],&
          CoordMinIn_D=[-11.99, -11.99], &
          CoordMaxIn_D=[11.99, 11.99], &
-         VarIn_II = VDF_G(1:nQ,1:nP) )
+         VarIn_VII = PlotVar_VC)
 
   end subroutine test_energy_conservation
   !============================================================================
@@ -321,7 +321,7 @@ contains
     real, parameter   :: DeltaPhi = cTwoPi/nPhi
     real :: MomentumRatio, MomentumMin, MomentumMax
     real :: VDF_G(-1:nJ+2, -1:nPhi+2), Volume_G(0:nJ+1, 0:nPhi+1)
-    real :: VDFInitial_C(nJ,nPhi)
+    real :: VDFInitial_C(nJ,nPhi), PlotVar_VC(2,nJ,nPhi)
 
     real :: Hamiltonian_N(-1:nJ+1, -1:nPhi+1)
     real :: LogMomentum_I(0:nJ+1), Momentum2_I(-1:nJ+1)
@@ -402,14 +402,16 @@ contains
                Energy/EnergyInit - 1.0
        end if
     end do
+    PlotVar_VC(1,:,:) = VDF_G(1:nJ,1:nPhi)
+    PlotVar_VC(2,:,:) = VDFInitial_C
     call save_plot_file(NameFile='test_action_angle.out', &
          TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
-         NameVarIn='Q    P VDF', &
+         NameVarIn='Q    P VDF VDFIni ErrorL2 EnergyDefect', &
          CoordMinIn_D=[10.0**LogMomentum_I(1 ), 0.50*DeltaPhi],&
          CoordMaxIn_D=[10.0**LogMomentum_I(nJ), cTwoPi - 0.50*DeltaPhi], &
-         StringFormatIn = '(3F10.3)', &
+         ParamIn_I=[NormL2/NormL2Init, Energy/EnergyInit - 1.0],&
          Coord1In_I = 10.0**LogMomentum_I(1:nJ), &
-         VarIn_II = VDF_G(1:nJ,1:nPhi) )
+         VarIn_VII = PlotVar_VC)
   end subroutine test_in_action_angle
   !============================================================================
   subroutine test_dsa_poisson
