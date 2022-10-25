@@ -698,7 +698,7 @@ contains
 
     ! Grid in RSph-Theta variables
     ! Theta goes from 0 to 360 because it is mirrored over the pole for plots
-    integer, parameter:: nR = 50, nTheta = 2*nR
+    integer, parameter:: nR = 54, nTheta = 2*nR
     real,    parameter:: Dr = 4.50/nR, Cfl = 0.9
 
     ! Streamlines:
@@ -748,7 +748,7 @@ contains
 
     ! Initialize coords
     ! These are cell face coordinates:
-    ! iR is the face at iR+1/2, iTheta at iTheta+1/2.
+    ! r_I(iR) is the radius at iR+1/2, Theta_I(iTheta) is at iTheta+1/2.
     do iR = -1, nR + 1
        R_I(iR) = iR*Dr + 0.5
     end do
@@ -758,9 +758,6 @@ contains
     do iTheta = -1, nTheta/2+1
        CosTheta_I(iTheta) = cos(Theta_I(iTheta))
     end do
-    !write(*,*)'R_I=',R_I
-    !write(*,*)'Theta_I=', Theta_I
-    !write(*,*)'CosTheta_I=', CosTheta_I
     ! Overwrite ghost cell values
     CosTheta_I(nTheta/2+1) = CosTheta_I(nTheta/2-1)
     CosTheta_I(-1) = CosTheta_I(1)
