@@ -30,7 +30,7 @@ module ModPoissonBracket
   ! If DtIn results in CFL>CflMax, the time step is reduced
   real, parameter :: CflMax = 0.990
   character(LEN=*), parameter:: NameMod = 'ModPoissonBracket'
-  logical, parameter :: UseLimiter = .true. ! false: switch off limiters
+  logical, parameter :: UseLimiter = .false. ! false: switch off limiters
   logical, parameter :: UseGroupSuperbee = .true.  .and. UseLimiter
   logical, parameter :: UseSimpleTvd = .false.     .or. .not. UseLimiter
 
@@ -45,12 +45,8 @@ contains
 
     real, intent(in) :: Arg1, Arg2
     !--------------------------------------------------------------------------
-    if(UseLimiter)then
        minmod = (sign(0.5, Arg1) + sign(0.5, Arg2))*min(abs(Arg1), abs(Arg2))
-    else
-       minmod = 0.5*(Arg1 + Arg2)
-    end if
-  end function minmod
+     end function minmod
   !============================================================================
   real function triple_superbee(DownwindDeltaMinusF,DeltaF, &
        UpwindDeltaF, UpwindDeltaMinusF)
@@ -118,10 +114,6 @@ contains
     real, intent(in):: Arg1, Arg2
     real :: AbsArg1, AbsArg2
     !--------------------------------------------------------------------------
-    if(.not.UseLimiter)then
-       pair_superbee = 0.5*(Arg1 + Arg2)
-       RETURN
-    end if
     if(Arg1*Arg2 <= 0.0)then
        pair_superbee = 0.0
        RETURN
