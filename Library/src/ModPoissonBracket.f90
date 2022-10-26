@@ -30,7 +30,7 @@ module ModPoissonBracket
   ! If DtIn results in CFL>CflMax, the time step is reduced
   real, parameter :: CflMax = 0.990
   character(LEN=*), parameter:: NameMod = 'ModPoissonBracket'
-  logical, parameter :: UseLimiter = .false. ! false: switch off limiters
+  logical, parameter :: UseLimiter = .true. ! false: switch off limiters
   logical, parameter :: UseGroupSuperbee = .true.  .and. UseLimiter
   logical, parameter :: UseSimpleTvd = .false.     .or. .not. UseLimiter
 
