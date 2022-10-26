@@ -708,7 +708,7 @@ contains
 
     ! Position and width of the smooth bump or sharp ellipsoid
     real, parameter:: xCenter = -3.0, yCenter = 0.0, WidthX = 3.0, WidthY = 6.0
-    logical:: IsSmooth = .false.
+    logical:: IsSmooth = .true.
 
     real:: x, y, z, r, Uz, Ur, Vel_VC(Uz_:Ur_,-500:500,-500:500), RSph
 
@@ -721,6 +721,7 @@ contains
     real :: R_I(-1:nR+1), Theta_I(-1:nTheta+1), CosTheta_I(-1:nTheta/2+1)
     real :: Hamiltonian_N(-1:nR+1, -1:nTheta/2+1)
     real :: Time, Dt, Source_C(nR,nTheta/2), tFinal
+    real :: PlotVar_VC(3,nR,nTheta), DfDt_C(nR,nTheta), Error
     logical :: DoExit
     !--------------------------------------------------------------------------
     do j = -500,500
@@ -795,15 +796,24 @@ contains
     Source_C = 0.0
 
     ! Initial conditions:
-    VDF_G = 0.0
+    VDF_G = 0.0; DfDt_C = 0
     do iTheta = 1, nTheta; do iR = 1, nR
        x = cos(Theta_I(iTheta) - dTheta/2)*(R_I(iR) - dR/2) - xCenter
        y = sin(Theta_I(iTheta) - dTheta/2)*(R_I(iR) - dR/2) - yCenter
        if(IsSmooth)then
           ! inside a WidthX*WidthY rectangle centered on xCenter,yCenter
           ! cos^2(kx*(x-xCenter))*cos^2(ky*(y-yCenter))
-          if(abs(x) < WidthX/2 .and. abs(y) < WidthY/2) &
-               VDF_G(iR,iTheta) = cos(cPi*x/WidthX)**2 * cos(cPi*y/WidthY)**2
+          if(abs(x) < WidthX/2 .and. abs(y) < WidthY/2) then
+             VDF_G(iR,iTheta) = cos(cPi*x/WidthX)**4 * cos(cPi*y/WidthY)**4
+             z = x + xCenter; r = y + yCenter
+             RSph = sqrt(z**2 + r**2)
+             Uz = 1.0 - 1.0/RSph**3 + 1.50*r**2/RSph**5
+             Ur = -1.50*r*z/RSph**5
+             ! Anaylitical (- df/dt), to compare with numeric source
+             DfDt_C(iR,iTheta) =cos(cPi*x/WidthX)**3 *cos(cPi*y/WidthY)**3&
+                  *(Uz*cPi/WidthX*sin(cPi*x/WidthX)*cos(cPi*y/WidthY) + &
+                  Ur*cPi/WidthY*cos(cPi*x/WidthX)*sin(cPi*y/WidthY))*4.0
+          end if
        else
           if( (x/WidthX)**2 + (y/WidthY)**2 < 0.25) &
                VDF_G(iR,iTheta) = 1.0
@@ -826,25 +836,37 @@ contains
          CoordMinIn_D=[0.5 + 0.5*Dr, 180 + 180.0/nTheta],&
          CoordMaxIn_D=[5.0 - 0.5*Dr, 360 - 180.0/nTheta],&
          VarIn_II = VDF_G(1:nR,nTheta/2+1:nTheta) )
-    
+    if(IsSmooth)then
+       ! Calculate source for small time step, to compare with
+       ! analytical DfDt
+       call explicit(nR, nTheta/2, VDF_G(-1:nR+2,-1:nTheta/2+2), Volume_G,&
+            Source_C, Hamiltonian_N,   &
+            CFLIn=1.0e-6, DtOut = Dt)
+       PlotVar_VC(1,:,:) = VDF_G(1:nR,1:nTheta)
+       PlotVar_VC(2,:,:) = DfDt_C(1:nR,1:nTheta)
+       PlotVar_VC(3,:,1:nTheta/2) = Source_C/Dt
+       Error = sum(abs(PlotVar_VC(2,:,1:nTheta/2) - &
+            PlotVar_VC(3,:,1:nTheta/2))*&
+            Volume_G(1:nR,1:nTheta/2))/&
+            sum(Volume_G(1:nR,1:nTheta/2))
+       do iTheta = nTheta/2 + 1, nTheta
+          ! Symmetric prolongation for visualization
+          PlotVar_VC(3,:, iTheta) = PlotVar_VC(3,:, 1+nTheta-iTheta)
+       end do
+       call save_plot_file('InitialSource.out', 'rewind','real4', &
+            'Hill vortex', iStep, Time, &
+            NameVarIn='r Theta Rho DfDt Source Error'  , &
+            CoordMinIn_D=[0.5 + 0.5*Dr, 180.0/nTheta],&
+            CoordMaxIn_D=[5.0 - 0.5*Dr, 360.0 - 180.0/nTheta],&
+            ParamIn_I=[Error],&
+            VarIn_VII = PlotVar_VC )
+       write(*,*)'Error=',Error
+    end if
     ! Computation
     do iPlot = 0, 99
        tFinal = (iPlot + 1)*0.1
        DoExit = .false.
        PLOT:do
-          ! Boundary condition for marking density in the band -6 < x-t < -5
-          !do iTheta = -1, nTheta/2+2
-          !   do iR = nR+1, nR+2
-          !      z = (0.50 + (iR - 0.50)*Dr)*cos(dTheta*(iTheta - 0.50))
-          !      x = 7 + z - Time
-          !      if(Time < 2 .and.  abs(x) < 2)then
-          !         VDF_G(iR,iTheta) = cos(0.25*cPi*x)**2 &
-          !              *cos(cPi*min(0.0, 1.5-Time))**2
-          !      else
-          !         VDF_G(iR,iTheta) = 0.0
-          !      end if
-          !   end do
-          !end do
           call explicit(nR, nTheta/2, VDF_G(-1:nR+2,-1:nTheta/2+2), Volume_G,&
                Source_C, Hamiltonian_N,   &
                CFLIn=Cfl, DtOut = Dt)
