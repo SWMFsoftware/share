@@ -32,7 +32,7 @@ module ModPoissonBracket
   character(LEN=*), parameter:: NameMod = 'ModPoissonBracket'
   logical, parameter :: UseLimiter = .true. ! false: switch off limiters
   logical, parameter :: UseGroupSuperbee = .true.  .and. UseLimiter
-  
+
   type RealPointer
      real, pointer :: Ptr
   end type RealPointer
@@ -41,7 +41,7 @@ module ModPoissonBracket
 contains
   !============================================================================
   real function minmod(Arg1, Arg2)
-    
+
     real, intent(in) :: Arg1, Arg2
     !--------------------------------------------------------------------------
     minmod = (sign(0.5, Arg1) + sign(0.5, Arg2))*min(abs(Arg1), abs(Arg2))
@@ -699,7 +699,7 @@ contains
                   DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),    &
                   DeltaF=VDF_G(i,j,k)  - VDF_G(i+1,j,k),       &
                   UpwindDeltaMinusF=DeltaMinusF_G(i+1  ,j,k)) )
-                  
+
           end if
        end do; end do; end do
        ! Calculate Face-Y fluxes.
@@ -715,7 +715,7 @@ contains
                   DownwindDeltaMinusF=DeltaMinusF_G(i,j+1,k),  &
                   DeltaF=VDF_G(i,j+1,k)  - VDF_G(i,j  ,k),     &
                   UpwindDeltaMinusF=DeltaMinusF_G(i,j,k)) )
-                  
+
           else
              Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*                &
                   (triple_superbee(  &
@@ -727,7 +727,7 @@ contains
                   DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),    &
                   DeltaF=VDF_G(i,j,k)  - VDF_G(i,j+1 ,k),      &
                   UpwindDeltaMinusF=DeltaMinusF_G(i,j+1,k)) )
-                  
+
           end if
        end do; end do; end do
        if(nK>1)then
@@ -754,7 +754,7 @@ contains
                      0.50*CFLCoef_G(i,j,k+1)*minmod3( &
                      DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),    &
                      DeltaF=VDF_G(i,j,k)  - VDF_G(i,j ,k+1),      &
-                     UpwindDeltaMinusF=DeltaMinusF_G(i,j,k+1))) 
+                     UpwindDeltaMinusF=DeltaMinusF_G(i,j,k+1)))
              end if
           end do; end do; end do
        end if
