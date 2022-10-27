@@ -721,7 +721,8 @@ contains
     real :: R_I(-1:nR+1), Theta_I(-1:nTheta+1), CosTheta_I(-1:nTheta/2+1)
     real :: Hamiltonian_N(-1:nR+1, -1:nTheta/2+1)
     real :: Time, Dt, Source_C(nR,nTheta/2), tFinal
-    real :: PlotVar_VC(3,nR,nTheta), DfDt_C(nR,nTheta), Error
+    real :: PlotVar_VC(5,nR,nTheta), DfDt_C(nR,nTheta), DfDt2_C(nR,nTheta)
+    real :: Error, Error2, URSph, UTheta
     logical :: DoExit
     !--------------------------------------------------------------------------
     do j = -500,500
@@ -796,7 +797,7 @@ contains
     Source_C = 0.0
 
     ! Initial conditions:
-    VDF_G = 0.0; DfDt_C = 0
+    VDF_G = 0.0; DfDt_C = 0.0; DfDt2_C = 0.0
     do iTheta = 1, nTheta; do iR = 1, nR
        x = cos(Theta_I(iTheta) - dTheta/2)*(R_I(iR) - dR/2) - xCenter
        y = sin(Theta_I(iTheta) - dTheta/2)*(R_I(iR) - dR/2) - yCenter
@@ -809,7 +810,7 @@ contains
              RSph = sqrt(z**2 + r**2)
              Uz = 1.0 - 1.0/RSph**3 + 1.50*r**2/RSph**5
              Ur = -1.50*r*z/RSph**5
-             ! Anaylitical (- df/dt), to compare with numeric source
+             ! Anaylitical (df/dt=-u.grad f), to compare with numeric source
              DfDt_C(iR,iTheta) =cos(cPi*x/WidthX)**3 *cos(cPi*y/WidthY)**3&
                   *(Uz*cPi/WidthX*sin(cPi*x/WidthX)*cos(cPi*y/WidthY) + &
                   Ur*cPi/WidthY*cos(cPi*x/WidthX)*sin(cPi*y/WidthY))*4.0
@@ -819,7 +820,29 @@ contains
                VDF_G(iR,iTheta) = 1.0
        end if
     end do; end do
-    
+    if(IsSmooth)then
+       do iTheta = 1, nTheta; do iR = 1, nR
+          x = cos(Theta_I(iTheta) - dTheta/2)*(R_I(iR) - dR/2) - xCenter
+          y = sin(Theta_I(iTheta) - dTheta/2)*(R_I(iR) - dR/2) - yCenter
+          if(abs(x) < WidthX/2 .and. abs(y) < WidthY/2) then
+             VDF_G(iR,iTheta) = cos(cPi*x/WidthX)**4 * cos(cPi*y/WidthY)**4
+             z = x + xCenter; r = y + yCenter
+             RSph = sqrt(z**2 + r**2)
+             Uz = 1.0 - 1.0/RSph**3 + 1.50*r**2/RSph**5
+             Ur = -1.50*r*z/RSph**5
+             URsph = (Uz*z + Ur*r)/RSph
+             UTheta = (-Uz*r + Ur*z)/RSph
+             ! By differentiating  df/dt=-u.grad f, the second order derivative
+             ! may be evaluated: d2f/dt2=-u.grad(df/dt), so that analytical
+             ! df/dt may be differentiated numerically:
+             DfDt2_C(iR,iTheta) =-0.50*(&
+                  URsph*(DfDt_C(iR+1,iTheta) - DfDt_C(iR-1,iTheta))/Dr + &
+                  UTheta*(DfDt_C(iR,iTheta+1) - DfDt_C(iR,iTheta-1))/&
+                  (RSph*dTheta) )
+          end if
+       end do; end do
+    end if
+
     Time = 0.0; iStep = 0
 
     ! Save initial conditions
@@ -849,18 +872,31 @@ contains
             PlotVar_VC(3,:,1:nTheta/2))*&
             Volume_G(1:nR,1:nTheta/2))/&
             sum(Volume_G(1:nR,1:nTheta/2))
+       call explicit(nR, nTheta/2, VDF_G(-1:nR+2,-1:nTheta/2+2), Volume_G,&
+            Source_C, Hamiltonian_N,   &
+            CFLIn=CFL, DtOut = Dt)
+       PlotVar_VC(4,:,:) = 0.50*Dt*DfDt2_C(1:nR,1:nTheta)
+       PlotVar_VC(5,:,1:nTheta/2) = Source_C/Dt
+       Error2 = sum(abs(&
+            PlotVar_VC(2,:,1:nTheta/2) + PlotVar_VC(4,:,1:nTheta/2) - &
+            PlotVar_VC(5,:,1:nTheta/2))*&
+            Volume_G(1:nR,1:nTheta/2))/&
+            sum(Volume_G(1:nR,1:nTheta/2))
        do iTheta = nTheta/2 + 1, nTheta
           ! Symmetric prolongation for visualization
           PlotVar_VC(3,:, iTheta) = PlotVar_VC(3,:, 1+nTheta-iTheta)
+          PlotVar_VC(5,:, iTheta) = PlotVar_VC(5,:, 1+nTheta-iTheta)
        end do
        call save_plot_file('InitialSource.out', 'rewind','real4', &
             'Hill vortex', iStep, Time, &
-            NameVarIn='r Theta Rho DfDt Source Error'  , &
+            NameVarIn=&
+            'z r Rho DfDt Source DfDt2 Source2 Error Error2', &
             CoordMinIn_D=[0.5 + 0.5*Dr, 180.0/nTheta],&
             CoordMaxIn_D=[5.0 - 0.5*Dr, 360.0 - 180.0/nTheta],&
-            ParamIn_I=[Error],&
+            ParamIn_I=[Error, Error2],&
             VarIn_VII = PlotVar_VC )
-       write(*,*)'Error=',Error
+       write(*,*)'Error=', Error, ' Error2=', Error2
+       stop
     end if
     ! Computation
     do iPlot = 0, 99
@@ -1042,7 +1078,9 @@ contains
             VarIn_II = log10(VDF_G(1:nTheta,1-nJ:nJ)) )
     end do
   end subroutine test_stochastic
+  !============================================================================
 end module ModStochastic
+!==============================================================================
 program test_program
   use ModTestPoissonBracket, ONLY: test_poisson_bracket, test_dsa_sa_mhd, &
        test_dsa_poisson, test_energy_conservation, test_in_action_angle
@@ -1052,9 +1090,9 @@ program test_program
   ! use ModTestPoissonBracketAndScatter, ONLY: test_scatter
   implicit none
 
-  !----------------------------------------------------------------------------
   ! call test_stochastic(1.2)
   ! call test_hill_vortex
+  !----------------------------------------------------------------------------
   call test_poisson_bracket(cTwoPi)        ! nightly test1
   ! call test_energy_conservation(cTwoPi)
   ! call test_in_action_angle(cTwoPi)
