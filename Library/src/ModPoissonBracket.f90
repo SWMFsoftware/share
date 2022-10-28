@@ -31,7 +31,7 @@ module ModPoissonBracket
   real, parameter :: CflMax = 0.990
   character(LEN=*), parameter:: NameMod = 'ModPoissonBracket'
   logical, parameter :: UseLimiter = .true. ! false: switch off limiters
-  logical, parameter :: UseGroupSuperbee = .true.  .and. UseLimiter
+  logical, parameter :: UseGroupSuperbee = .true.
 
   type RealPointer
      real, pointer :: Ptr
@@ -248,9 +248,10 @@ contains
 
     ! Loop variables:
     integer :: i, j, k
+
     ! Variations of VDF (one layer of ghost cell values):
     real :: DeltaMinusF_G(0:nI+1, 0:nJ+1, 0:nK+1)
-    !
+
     ! face-centered vriations of Hamiltonian functions.
     ! one layer of ghost faces
     real :: DeltaH_FX(-1:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
@@ -263,15 +264,19 @@ contains
     real,target :: Flux_FY(1:nI,0:nJ,1:nK)
     real,target :: Flux_FZ(1:nI,1:nJ,0:nK)
     real :: SumFlux_C(1:nI,1:nJ,1:nK)
+
     ! Local CFL number:
     real :: CFLCoef_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
+
     ! Time step
     real :: Dt, CFL
+
     ! Group Limiter:
     real    :: SignDeltaMinusF, SumMajorDeltaF, VDF
     real    :: DownwindReduction_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
     integer :: nMajorFlux, iFlux
     real    :: SumDeltaHPlusDeltaMinusF, SumMajorFlux, Limiter, Flux
+
     character(len=*), parameter:: NameSub = 'explicit3'
     !--------------------------------------------------------------------------
     if(present(DtIn))then
