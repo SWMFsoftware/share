@@ -9,27 +9,34 @@ module ModDiffusion
   ! Adapted for the use in MFLAMPA (Dist_I is an input paramater,
   ! fixed contributions to M_I in the end points)-D.Borovikov, 2017
   ! Updated (identation, comments):  I.Sokolov, Dec.17, 2017
+
   implicit none
+
   PRIVATE
   public:: advance_diffusion1,tridiag
+
 contains
   !============================================================================
-  ! This routine solves the diffusion equation:
-  !         f_t-D_outer(D_inner*f_x)_x=0,
-  ! with zero Neumann boundary condition. The solution is advanced in time
-  ! using fully implicit scheme.
-  subroutine advance_diffusion1(Dt,n,Dist_I,F_I,DOuter_I,DInner_I)
+  subroutine advance_diffusion1(Dt, n, Dist_I, F_I, DOuter_I, DInner_I)
+
+    ! Solve the diffusion equation:
+    !         f_t-D_outer(D_inner*f_x)_x=0,
+    ! with zero Neumann boundary condition. The solution is advanced in time
+    ! using fully implicit scheme.
+
     use ModNumConst, ONLY: cTiny
 
     real,   intent(in   ):: Dt     ! Time step
     integer,intent(in   ):: n      ! Number of meshes along the x-coordinate
     real,   intent(in   ):: Dist_I(n) ! Distance to the next mesh
     real,   intent(inout):: F_I(n) ! In:sol.to be advanced; Out:advanced sol
+
     ! Laplace multiplier and diffusion coefficient.
     real,   intent(in   ):: DOuter_I(n), DInner_I(n)
 
     ! Mesh spacing and face spacing.
     real                 :: DsMesh_I(2:n), DsFace_I(2:n-1)
+
     ! Main, upper, and lower diagonals.
     real, dimension(n)   :: Main_I,Upper_I,Lower_I, R_I
     integer:: i
@@ -97,14 +104,16 @@ contains
     call tridiag(n,Lower_I,Main_I,Upper_I,R_I,F_I)
   end subroutine advance_diffusion1
   !============================================================================
-  ! This routine solves three-diagonal system of equations:
-  !  ||m_1 u_1  0....        || ||w_1|| ||r_1||
-  !  ||l_2 m_2 u_2...        || ||w_2|| ||r_2||
-  !  || 0  l_3 m_3 u_3       ||.||w_3||=||r_3||
-  !  ||...                   || ||...|| ||...||
-  !  ||.............0 l_n m_n|| ||w_n|| ||r_n||
-  ! From: Numerical Recipes, Chapter 2.6, p.40.
   subroutine tridiag(n, L_I, M_I, U_I, R_I, W_I)
+
+    ! Solve tri-diagonal system of equations:
+    !  ||m_1 u_1  0....        || ||w_1|| ||r_1||
+    !  ||l_2 m_2 u_2...        || ||w_2|| ||r_2||
+    !  || 0  l_3 m_3 u_3       ||.||w_3||=||r_3||
+    !  ||...                   || ||...|| ||...||
+    !  ||.............0 l_n m_n|| ||w_n|| ||r_n||
+    ! From: Numerical Recipes, Chapter 2.6, p.40.
+
     ! input parameters
     integer,            intent(in):: n
     real, dimension(n), intent(in):: L_I, M_I ,U_I ,R_I
@@ -151,17 +160,21 @@ module ModTestPoissonBracket
   real ::  VDFOld_G(-1:nX+2, -1:nP+2)
 contains
   !============================================================================
-
   subroutine test_poisson_bracket(tFinal)
+
     real, intent(in) :: tFinal
+
     ! Misc:
     ! Gyration in a uniform magnetic field, nQ numper of points
     ! for the momentum grid, nP is number of point over azimuthal angle
     integer, parameter::  nQ = 300,  nP = 360
+
     ! Loop variables
     integer           ::  iQ, iStep
+
     ! Momentum max and min, in units of mc
     real, parameter   :: qMax = 10.0, qMin = 0.01
+
     ! Mesh size in \phi
     real, parameter   :: DeltaPhi = cTwoPi/nP
     real :: MomentumRatio, MomentumMin, MomentumMax
@@ -224,13 +237,17 @@ contains
   end subroutine test_poisson_bracket
   !============================================================================
   subroutine test_energy_conservation(tFinal)
+
     real, intent(in) :: tFinal
+
     ! Misc:
     ! Harmonic oscillators, nQ is the number of meshes over coordinate,
     ! nP is number of meshes overr generalized momentum
     integer, parameter::  nQ = 1200,  nP = 1200
+
     ! Loop variables
     integer           ::  iQ, iP, iStep
+
     ! Mesh size
     real, parameter   :: DeltaQ = 0.02, DeltaP = 0.02
     real :: VDF_G(-1:nQ+2, -1:nP+2),VDFInitial_C(nQ,nP),PlotVar_VC(2,nQ,nP)
@@ -307,16 +324,21 @@ contains
   end subroutine test_energy_conservation
   !============================================================================
   subroutine test_in_action_angle(tFinal)
+
     real, intent(in) :: tFinal
+
     ! Misc:
     ! Harmonic oscillators, nQ is the number of meshes over coordinate,
     ! nP is number of meshes overr generalized momentum
     integer, parameter::  nJ = 300,  nPhi = 360
+
     ! Loop variables
     integer           ::  iJ, iPhi, iStep
+
     ! Mesh size
     ! Momentum max and min
     real, parameter   :: JMax = 12.0, JMin = 0.01
+
     ! Mesh size in \phi
     real, parameter   :: DeltaPhi = cTwoPi/nPhi
     real :: MomentumRatio, MomentumMin, MomentumMax
@@ -415,7 +437,9 @@ contains
   end subroutine test_in_action_angle
   !============================================================================
   subroutine test_dsa_poisson
+
     use ModDiffusion
+
     real,    parameter :: pMax = 100, pMin = 1
     real,    parameter :: tFinal = 6000.00
     real,    parameter :: DtTrial = 1.0
@@ -438,15 +462,19 @@ contains
     integer :: iX, iP, iStep
     !--------------------------------------------------------------------------
     Source_C(nX,nP) = 0.0
+
     ! Logarithmic grid in momentum. pMin is the value at the left face
     ! of the first physical cell, pMax is the value at the right face
     ! off the last cell. The momentum ratio at the faces of each cell is:
     MomentumRatio   = exp(log(pMax/pMin)/nP)
+
     ! The momentum at the left fface of 0th ghost cell is:
     MomentumMax     = pMin/MomentumRatio
+
     ! Calculate the generalized variable p^3/3 at each face, starting from
     ! the left fface of 0th cell
     Momentum3_I(-1) = MomentumMax**3/3
+
     ! For cells from 0 to nP+1 calculate face values and volume factor:
     do iP = 0, nP + 1
        MomentumMin = MomentumMax
@@ -551,7 +579,9 @@ contains
   end subroutine test_dsa_poisson
   !============================================================================
   subroutine test_dsa_sa_mhd
+
     use ModDiffusion
+
     real,    parameter :: pMax = 100, pMin = 1
     real,    parameter :: tFinal = 6000.00
     real ::  MomentumRatio, MomentumMin, MomentumMax
@@ -643,6 +673,7 @@ contains
   contains
     !==========================================================================
     subroutine update_coords(Time)
+
       real, intent(in):: Time
 
       ! Effective width of the shock wave, in cell size
@@ -676,6 +707,7 @@ contains
          Hamiltonian_N(-1:nX+1, iP)= -0.50*Momentum3_I(iP)*&
               (VolumeX_I(-1:nX+1) + VolumeX_I(0:nX+2))
       end do
+
     end subroutine update_coords
     !==========================================================================
   end subroutine test_dsa_sa_mhd
@@ -896,7 +928,7 @@ contains
             ParamIn_I=[Error, Error2],&
             VarIn_VII = PlotVar_VC )
        write(*,*)'Error=', Error, ' Error2=', Error2
-       stop
+       !!! stop
     end if
     ! Computation
     do iPlot = 0, 99
@@ -1088,15 +1120,17 @@ program test_program
   use ModHillVortex, ONLY: test_hill_vortex
   use ModStochastic, ONLY: test_stochastic
   ! use ModTestPoissonBracketAndScatter, ONLY: test_scatter
-  implicit none
 
+  implicit none
+  !----------------------------------------------------------------------------
+  write(*,*)' Start poisson bracket tests'
+
+  call test_poisson_bracket(cTwoPi)        ! nightly test1
+  call test_dsa_poisson                    ! nightly test2
   ! call test_stochastic(1.2)
   ! call test_hill_vortex
-  !----------------------------------------------------------------------------
-  call test_poisson_bracket(cTwoPi)        ! nightly test1
   ! call test_energy_conservation(cTwoPi)
   ! call test_in_action_angle(cTwoPi)
-  call test_dsa_poisson                    ! nightly test2
   ! call test_dsa_sa_mhd ! for Fig5.Right Panel
   ! call test_multipoisson_bracket(50.0)
 
@@ -1104,5 +1138,7 @@ program test_program
   ! Diffuornot = 0 or 1
 
   ! call test_scatter(50.0)
+  write(*,*)' Finish poisson bracket tests'
+  
 end program test_program
 !==============================================================================
