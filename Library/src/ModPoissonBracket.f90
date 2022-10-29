@@ -35,13 +35,16 @@ module ModPoissonBracket
      real, pointer :: Ptr
   end type RealPointer
   type(RealPointer) :: MajorFlux_I(6)
+  real, parameter :: cTol = 1.0e-12
 
 contains
   !============================================================================
   real function minmod(Arg1, Arg2)
     real, intent(in) :: Arg1, Arg2
     !--------------------------------------------------------------------------
-    if(.not.UseLimiter)then
+    if(abs(Arg1)<=cTol)then
+       minmod = 0.0
+    elseif(.not.UseLimiter)then
        minmod = Arg1
     else
        minmod = (sign(0.5, Arg1) + sign(0.5, Arg2))*min(abs(Arg1), abs(Arg2))
@@ -55,17 +58,15 @@ contains
     real, intent(in) :: UpwindDeltaF     ! f - f_j^\prime at the opposite face
     real :: SignDeltaF, AbsDeltaF
     !--------------------------------------------------------------------------
-    if(abs(DeltaF) < 1e-31)then
+    if(abs(DeltaF) <=cTol)then
        limiter = 0.0
-       RETURN
-    end if
-    if(.not.UseLimiter)then
+    elseif(.not.UseLimiter)then
        limiter = 0.50*DeltaF
-       RETURN
+    else
+       SignDeltaF = sign(1.0, DeltaF); AbsDeltaF = abs(DeltaF)
+       limiter = SignDeltaF*min( 0.5*max(AbsDeltaF, SignDeltaF*UpwindDeltaF),&
+            ReductionCoef*AbsDeltaF)
     end if
-    SignDeltaF = sign(1.0, DeltaF); AbsDeltaF = abs(DeltaF)
-    limiter = SignDeltaF*min(&
-         0.5*max(AbsDeltaF, SignDeltaF*UpwindDeltaF), ReductionCoef*AbsDeltaF)
   end function limiter
   !============================================================================
   subroutine explicit2(nI, nJ, VDF_G, Volume_G, Source_C,    &
@@ -198,15 +199,14 @@ contains
     ! Loop variables:
     integer :: i, j, k
     ! Variations of VDF (one layer of ghost cell values):
-    real :: DeltaMinusF_G(0:nI+1, 0:nJ+1, 0:nK+1)
+    real,dimension(0:nI+1, 0:nJ+1, 0:nK+1) :: DeltaMinusF_G, DeltaMinusFLim_G
     !
     ! face-centered vriations of Hamiltonian functions.
     ! one layer of ghost faces
     real :: DeltaH_FX(-1:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
     real :: DeltaH_FY(0:nI+1,-1:nJ+1,1/nK:nK+1-1/nK)
     real :: DeltaH_FZ(0:nI+1,0:nJ+1,-1:nK+1)
-    real, dimension(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK) :: &
-         SumDeltaHPlus_G, SumDeltaHMinus_G
+    real :: SumDeltaHPlus_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK), SumDeltaHMinus
     ! Fluxes:
     real,target :: Flux_FX(0:nI,1:nJ,1:nK)
     real,target :: Flux_FY(1:nI,0:nJ,1:nK)
@@ -221,8 +221,9 @@ contains
     real    :: DownwindReduction_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
     ! Group Limiter:
     integer :: nMajorFlux, iFlux
-    real    :: TimeOrderCorrection_I(6), BoundaryFlux
+    real    :: TimeOrderCorrection_I(6), DeltaFLimited, BoundaryFlux
     real    :: DeltaPlusFLimited, SumMajorFlux, ReductionCoef, Flux
+    logical :: IsNotTVD_C(1:nI,1:nJ,1:nK)
     character(len=*), parameter:: NameSub = 'explicit3'
     !--------------------------------------------------------------------------
     if(present(DtIn))then
@@ -238,8 +239,7 @@ contains
     ! Nullify arrays:
     DeltaH_FX = 0.0; DeltaH_FY = 0.0; DeltaH_FZ = 0.0
     Flux_FX   = 0.0; Flux_FY   = 0.0; Flux_FZ   = 0.0
-    SumDeltaHPlus_G = 0.0;     SumDeltaHMinus_G = 0.0
-    TimeOrderCorrection_I = 0.0
+    SumDeltaHPlus_G = 0.0; TimeOrderCorrection_I = 0.0
     do iFlux=1,6
        nullify(MajorFlux_I(iFlux)%Ptr)
     end do
@@ -293,7 +293,12 @@ contains
          DeltaH_FY = DeltaH_FY + dHamiltonian02_FY
     if (present(dHamiltonian03_FZ))&
          DeltaH_FZ = DeltaH_FZ + dHamiltonian03_FZ
-
+    ! Cleanup
+    where(abs(DeltaH_FX)<cTol)DeltaH_FX = 0.0
+    where(abs(DeltaH_FY)<cTol)DeltaH_FY = 0.0
+    if(nK>1)then
+       where(abs(DeltaH_FZ)<cTol)DeltaH_FZ = 0.0
+    end if
     ! Now, for each cell the value of DeltaH for face in positive
     ! directions of i and j may be found in the arrays, for
     ! negative directions the should be taken with opposite sign
@@ -304,7 +309,7 @@ contains
                                 max(0.0,-DeltaH_FX(i-1,j,  k)) +&
                                 max(0.0,-DeltaH_FY(i,j-1,  k))
 
-       SumDeltaHMinus_G(i,j,k) =min(0.0, DeltaH_FX(i,  j,  k)) +&
+       SumDeltaHMinus          =min(0.0, DeltaH_FX(i,  j,  k)) +&
                                 min(0.0, DeltaH_FY(i,  j,  k)) +&
                                 min(0.0,-DeltaH_FX(i-1,j,  k)) +&
                                 min(0.0,-DeltaH_FY(i,j-1,  k))
@@ -320,7 +325,7 @@ contains
                                     max(0.0, DeltaH_FZ(i,j,k)) +&
                                     max(0.0,-DeltaH_FZ(i,j,k-1))
 
-          SumDeltaHMinus_G(i,j,k) = SumDeltaHMinus_G(i,j,k)    +&
+          SumDeltaHMinus         = SumDeltaHMinus              +&
                                     min(0.0, DeltaH_FZ(i,j,k)) +&
                                     min(0.0,-DeltaH_FZ(i,j,k-1))
 
@@ -328,11 +333,15 @@ contains
                min(0.0, DeltaH_FZ(i,   j,   k))*VDF_G(i,j,k+1) +&
                min(0.0,-DeltaH_FZ(i,   j, k-1))*VDF_G(i,j,k-1)
        end if
+       if(abs(SumDeltaHPlus_G(i,j,k)) < cTol)SumDeltaHPlus_G(i,j,k) = 0.0
        VDF = VDF_G(i,j,k)
-       DeltaMinusF_G(i,j,k) = DeltaMinusF_G(i,j,k)           &
-            /max(-SumDeltaHMinus_G(i,j,k), 1.0e-31) + VDF
-
-       if(DeltaMinusF_G(i,j,k)==0.0)then
+       if(SumDeltaHMinus==0.0)then
+          DeltaMinusF_G(i,j,k) = 0.0
+       else
+          DeltaMinusF_G(i,j,k) = VDF - DeltaMinusF_G(i,j,k)/SumDeltaHMinus
+       end if
+       if(abs(DeltaMinusF_G(i,j,k))<cTol)then
+          DeltaMinusF_G(i,j,k) = 0.0
           DownwindReduction_G(i,j,k) = 0.0
        else
           SignDeltaMinusF = sign(1.0,DeltaMinusF_G(i,j,k))
@@ -354,16 +363,15 @@ contains
                   max((VDF - VDF_G(i,j,k-1))*SignDeltaMinusF,0.0)
           end if
           DownwindReduction_G(i,j,k) = SignDeltaMinusF*DeltaMinusF_G(i,j,k)*&
-               SumDeltaHMinus_G(i,j,k)/min(SumMajorDeltaF,-1.0e-31)
+               SumDeltaHMinus/SumMajorDeltaF
        end if
        if(UseTimeDependentVolume)then
           ! Local CFLs are expressed via SumDeltaHMinus
-          CFLCoef_G(i,j,k) = -SumDeltaHMinus_G(i,j,k)
+          CFLCoef_G(i,j,k) = -SumDeltaHMinus
        else
           CFLCoef_G(i,j,k) = vInv_G(i,j,k)*SumDeltaHPlus_G(i,j,k)
        end if
     end do; end do; end do
-
     ! Set CFL and time step
     if(UseTimeDependentVolume)then
        if(present(DtRecommend))then
@@ -444,7 +452,7 @@ contains
     do k=1, nK; do j = 1, nJ; do i = 0, nI
        if(DeltaH_FX(i,j,k) > 0.0)then
           if(i > 0)then
-             Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*limiter( &
+             Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*limiter(        &
                   ReductionCoef=DownwindReduction_G(i+1,j,k),  &
                   DeltaF=VDF_G(i+1,j,k)  - VDF_G(i  ,j,k),     &
                   UpwindDeltaF=VDF_G(i,j,k) - VDF_G(i-1,j,k))
@@ -463,7 +471,7 @@ contains
                   (BoundaryFlux - CFLCoef_G(i,j,k)*minmod(&
                   BoundaryFlux,DeltaMinusF_G(i+1,j,k) ))
           end if
-       else
+       elseif(DeltaH_FX(i,j,k) < 0.0 )then
           if(i < nI)then
              Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*limiter( &
                   ReductionCoef=DownwindReduction_G(i,j,k),    &
@@ -509,7 +517,7 @@ contains
                   (BoundaryFlux - CFLCoef_G(i,j,k)*minmod(     &
                   BoundaryFlux, DeltaMinusF_G(i,j+1,k)))
           end if
-       else
+       elseif(DeltaH_FY(i,j,k) < 0.0)then
           if(j < nJ)then
              Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*limiter( &
                   ReductionCoef=DownwindReduction_G(i,j,k),    &
@@ -664,7 +672,7 @@ contains
                      CFLLocal*minmod(DeltaPlusFLimited,DeltaMinusF_G(i-1,j,k))
              end if
           end if
-          if(-DeltaH_FY(i,   j-1,   k) > 0.0)then
+          if(DeltaH_FY(i,   j-1,   k) < 0.0)then
              ! This is \delta H^+ face, contributing to second order flux
              Flux = -Flux_FY(i,j-1,k)
              if(Flux*SumFlux_C(i,j,k) > 0.0)then
@@ -697,7 +705,7 @@ contains
                         DeltaPlusFLimited,DeltaMinusF_G(i,j,k+1))
                 end if
              end if
-             if(-DeltaH_FZ(i,j,k-1) > 0.0)then
+             if(DeltaH_FZ(i,j,k-1) < 0.0)then
                 ! This is \delta H^+ face, contributing to second order flux
                 Flux = -Flux_FZ(i,j,k-1)
                 if(Flux*SumFlux_C(i,j,k) > 0.0)then
