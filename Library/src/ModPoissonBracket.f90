@@ -68,7 +68,7 @@ contains
   subroutine explicit2(nI, nJ, VDF_G, Volume_G, Source_C,    &
        Hamiltonian12_N, dHamiltonian01_FX, dHamiltonian02_FY,&
        DVolumeDt_G,                                          &
-       DtIn, CFLIn, DtOut, CFLOut, DtRecommend)
+       DtIn, CFLIn, DtOut, CFLOut, DtRecommend, IsPeriodicIn_D)
 
     ! solve the contribution to the
     ! numerical flux from a single Poisson bracket,
@@ -110,7 +110,7 @@ contains
     real, optional, intent(in) :: DtIn, CFLIn   ! Options to set time step
     real, optional, intent(out):: DtOut, CFLOut ! Options to report time step
     real, optional, intent(out):: DtRecommend   ! Calculated for given CflIn
-
+    logical, optional, intent(in) :: IsPeriodicIn_D(:)
     character(len=*), parameter:: NameSub = 'explicit2'
     !--------------------------------------------------------------------------
     call explicit3(nI, nJ, 1, VDF_G, Volume_G, Source_C,     &
@@ -122,15 +122,15 @@ contains
        CFLIn=CFLIn,                                          &
        DtOut=DtOut,                                          &
        CFLOut=CFLOut,                                        &
-       DtRecommend=DtRecommend)
-
+       DtRecommend=DtRecommend,                              &
+       IsPeriodicIn_D=IsPeriodicIn_D)
   end subroutine explicit2
   !============================================================================
   subroutine explicit3(nI, nJ, nK, VDF_G, Volume_G, Source_C,            &
        Hamiltonian12_N, Hamiltonian13_N, Hamiltonian23_N,                &
        dHamiltonian01_FX, dHamiltonian02_FY, dHamiltonian03_FZ,          &
        DVolumeDt_G,                                                      &
-       DtIn, CFLIn, DtOut, CFLOut, DtRecommend)
+       DtIn, CFLIn, DtOut, CFLOut, DtRecommend, IsPeriodicIn_D)
 
     ! solve the contribution to the numerical flux from multiple Poisson
     ! brackets, 1,2,3 enumerate phase coordinates,  0 relating to time.
@@ -185,13 +185,14 @@ contains
     real, optional, intent(in) :: DtIn, CFLIn   ! Options to set time step
     real, optional, intent(out):: DtOut, CFLOut ! Options to report time step
     real, optional, intent(out):: DtRecommend   ! Calculated for given CflIn
-
+    logical, optional, intent(in) :: IsPeriodicIn_D(:)
     ! Local variables
     logical :: UseTimeDependentVolume = .false. !=present(DVolumeDt_G)
 
     ! Inverse volume. One layer of face ghost cells is used
     real :: vInv_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
-
+    ! Boundary conddition:
+    logical :: IsPeriodic_D(3) = .false.
     ! Loop variables:
     integer :: i, j, k
     ! Variations of VDF (one layer of ghost cell values):
@@ -236,6 +237,9 @@ contains
        if(.not.present(CflIn))call CON_stop(&
             'Either CflIn or DtIn should be provided in '//NameSub)
     end if
+    IsPeriodic_D = .false.
+    if(present(IsPeriodicIn_D))&
+         IsPeriodic_D(1:size(IsPeriodicIn_D)) = IsPeriodicIn_D
     UseTimeDependentVolume = present(DVolumeDt_G)
     iKStart  = 1/nK ;  iKLast  = nK + 1 - 1/nK
     vInv_G = 1.0/Volume_G
@@ -455,7 +459,7 @@ contains
              SumFluxPlus_C(i,j,k) = SumFluxPlus_C(i,j,k) + Flux_FX(i,j,k)
              DeltaMinusFLim_C(i,j,k) = minmod(DeltaMinusFLim_C(i,j,k),&
                   DeltaMinusF_G(i+1,j,k))
-          else
+          elseif(.not.IsPeriodic_D(1))then
              ! Limit both spatial and temporal corrections
              DeltaFLimited = minmod(DeltaFLimited, DeltaMinusF_G(i,j,k))
              SumFlux2_G(i+1,j,k) = SumFlux2_G(i+1,j,k) + &
@@ -472,7 +476,7 @@ contains
              SumFluxPlus_C(i+1,j,k) = SumFluxPlus_C(i+1,j,k) - Flux_FX(i,j,k)
              DeltaMinusFLim_C(i+1,j,k) = minmod(DeltaMinusFLim_C(i+1,j,k),&
                   DeltaMinusF_G(i,j,k))
-          else
+          elseif(.not.IsPeriodic_D(1))then
              ! Limit both spatial and temporal corrections
              DeltaFLimited = minmod(DeltaFLimited, DeltaMinusF_G(i+1,j,k))
              ! Extra limitation for temporal correction
@@ -494,7 +498,7 @@ contains
              SumFluxPlus_C(i,j,k) = SumFluxPlus_C(i,j,k) + Flux_FY(i,j,k)
              DeltaMinusFLim_C(i,j,k) = minmod(DeltaMinusFLim_C(i,j,k),&
                   DeltaMinusF_G(i,j+1,k))
-          else
+          elseif(.not.IsPeriodic_D(2))then
              ! Limit both spatial and temporal corrections
              DeltaFLimited = minmod(DeltaFLimited, DeltaMinusF_G(i,j,k))
              ! Extra limitation for temporal correction
@@ -512,7 +516,7 @@ contains
              SumFluxPlus_C(i,j+1,k) = SumFluxPlus_C(i,j+1,k) - Flux_FY(i,j,k)
              DeltaMinusFLim_C(i,j+1,k) = minmod(DeltaMinusFLim_C(i,j+1,k),&
                   DeltaMinusF_G(i,j,k))
-          else
+          elseif(.not.IsPeriodic_D(2))then
              ! Limit both spatial and temporal corrections
              DeltaFLimited = minmod(DeltaFLimited, DeltaMinusF_G(i,j+1,k))
              ! Extra limitation for temporal correction
@@ -535,7 +539,7 @@ contains
                 SumFluxPlus_C(i,j,k) = SumFluxPlus_C(i,j,k) + Flux_FZ(i,j,k)
                 DeltaMinusFLim_C(i,j,k) = minmod(DeltaMinusFLim_C(i,j,k),&
                      DeltaMinusF_G(i,j,k+1))
-             else
+             elseif(.not.IsPeriodic_D(3))then
                 ! Limit both spatial and temporal corrections
                 DeltaFLimited = minmod(DeltaFLimited, DeltaMinusF_G(i,j,k))
                 ! Extra limitation for temporal correction
@@ -554,7 +558,7 @@ contains
                      Flux_FZ(i,j,k)
                 DeltaMinusFLim_C(i,j,k+1) = minmod(DeltaMinusFLim_C(i,j,k+1),&
                      DeltaMinusF_G(i,j,k))
-             else
+             elseif(.not.IsPeriodic_D(3))then
                 ! Limit both spatial and temporal corrections
                 DeltaFLimited = minmod(DeltaFLimited, &
                      DeltaMinusF_G(i,j,k+1))
@@ -722,6 +726,24 @@ contains
           end do
        end if
     end do; end do; end do
+    if(IsPeriodic_D(1))then
+       SumFlux2_G(1,1:nJ,1:nK) = &
+            SumFlux2_G(1,1:nJ,1:nK) + SumFlux2_G(nI+1,1:nJ,1:nK)
+       SumFlux2_G(nI,1:nJ,1:nK) = &
+            SumFlux2_G(nI,1:nJ,1:nK) + SumFlux2_G(0,1:nJ,1:nK)
+    end if
+    if(IsPeriodic_D(2))then
+       SumFlux2_G(1:nI,1,1:nK) = &
+            SumFlux2_G(1:nI,1,1:nK) + SumFlux2_G(1:nI,nJ+1,1:nK)
+       SumFlux2_G(1:nI,nJ,1:nK) = &
+            SumFlux2_G(1:nI,nJ,1:nK) + SumFlux2_G(1:nI,0,1:nK)
+    end if
+    if(IsPeriodic_D(3))then
+       SumFlux2_G(1:nI,1:nJ,1) = &
+            SumFlux2_G(1:nI,1:nJ,1) + SumFlux2_G(1:nI,1:nJ,nK+1)
+       SumFlux2_G(1:nI,1:nJ,nK) = &
+            SumFlux2_G(1:nI,1:nJ,nK) + SumFlux2_G(1:nI,1:nJ,0)
+    end if
     Source_C = Source_C + Dt*vInv_G(1:nI,1:nJ,1:nK)*SumFlux2_G(1:nI,1:nJ,1:nK)
   end subroutine explicit3
   !============================================================================
