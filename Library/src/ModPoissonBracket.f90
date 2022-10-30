@@ -446,7 +446,7 @@ contains
 
     ! Second order correction
     SumFlux2_G = 0.0; SumFluxPlus_C = 0.0
-    DeltaMinusFLim_C = DeltaMinusF_G(1:nI,1:nJ,1:nK) 
+    DeltaMinusFLim_C = DeltaMinusF_G(1:nI,1:nJ,1:nK)
     ! Calculate Face-X fluxes.
     do k=1, nK; do j = 1, nJ; do i = 0, nI
        if(DeltaH_FX(i,j,k) > 0.0)then
@@ -606,7 +606,7 @@ contains
                   + DeltaH_FZ(i,j,k-1)*CFLLocal*DeltaPlusFLimited
           end if
           SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) - &
-               (1 - CFLLocal)*SumFluxPlus_C(i,j,k) 
+               (1 - CFLLocal)*SumFluxPlus_C(i,j,k)
        else
           ! Limit DeltaPlus
           DeltaPlusFLimited = minmod(DeltaPlusFLimited,DeltaMinusFLim_C(i,j,k))
