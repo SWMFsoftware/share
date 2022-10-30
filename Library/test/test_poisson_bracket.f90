@@ -203,12 +203,12 @@ contains
     do
        call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
             Hamiltonian_N,   &
-            CFLIn=0.99, DtOut = Dt)
+            CFLIn=0.99, DtOut = Dt, IsPeriodicIn_D=[.false.,.true.])
        iStep = iStep +1
        if(Time + Dt >= tFinal)then
           call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
                Hamiltonian_N,   &
-               DtIn = tFinal - Time)
+               DtIn = tFinal - Time, IsPeriodicIn_D=[.false.,.true.])
           VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
           EXIT
        else
