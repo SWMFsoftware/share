@@ -203,7 +203,7 @@ contains
     real :: DeltaH_FX(-1:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
     real :: DeltaH_FY(0:nI+1,-1:nJ+1,1/nK:nK+1-1/nK)
     real :: DeltaH_FZ(0:nI+1,0:nJ+1,-1:nK+1)
-    real :: SumDeltaHPlus_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK), SumDeltaHMinus
+    real :: SumDeltaHPlus_C(1:nI,1:nJ,1:nK), SumDeltaHMinus
     ! Fluxes:
     real :: Flux_FX(0:nI,1:nJ,1:nK)
     real :: Flux_FY(1:nI,0:nJ,1:nK)
@@ -247,7 +247,7 @@ contains
     ! Nullify arrays:
     DeltaH_FX = 0.0; DeltaH_FY = 0.0; DeltaH_FZ = 0.0
     Flux_FX   = 0.0; Flux_FY   = 0.0; Flux_FZ   = 0.0
-    SumDeltaHPlus_G = 0.0
+    SumDeltaHPlus_C = 0.0
 
     ! Bracket {F,H12}_{x,y}   Bracket {F,H13}_{x,z}    Bracket {F,H23}_{y,z}
     ! Hamiltonian 12 (xy)     Hamiltonian 13 (xz)      Hamiltonian 23 (yz)
@@ -309,11 +309,6 @@ contains
     ! negative directions the should be taken with opposite sign
     ! Calculate DeltaMinusF and SumDeltaH
     do k=iKStart, iKLast; do j = 0, nJ+1; do i = 0, nI+1
-       SumDeltaHPlus_G(i,j,k) = max(0.0, DeltaH_FX(i,  j,  k)) +&
-                                max(0.0, DeltaH_FY(i,  j,  k)) +&
-                                max(0.0,-DeltaH_FX(i-1,j,  k)) +&
-                                max(0.0,-DeltaH_FY(i,j-1,  k))
-
        SumDeltaHMinus          =min(0.0, DeltaH_FX(i,  j,  k)) +&
                                 min(0.0, DeltaH_FY(i,  j,  k)) +&
                                 min(0.0,-DeltaH_FX(i-1,j,  k)) +&
@@ -326,10 +321,6 @@ contains
                min(0.0,-DeltaH_FY(i, j-1,   k))*VDF_G(i,j-1,k)
        if(nK>1)then
           ! Add three-dimensional effects.
-          SumDeltaHPlus_G(i,j,k) = SumDeltaHPlus_G(i,j,k)      +&
-                                    max(0.0, DeltaH_FZ(i,j,k)) +&
-                                    max(0.0,-DeltaH_FZ(i,j,k-1))
-
           SumDeltaHMinus         = SumDeltaHMinus              +&
                                     min(0.0, DeltaH_FZ(i,j,k)) +&
                                     min(0.0,-DeltaH_FZ(i,j,k-1))
@@ -338,7 +329,6 @@ contains
                min(0.0, DeltaH_FZ(i,   j,   k))*VDF_G(i,j,k+1) +&
                min(0.0,-DeltaH_FZ(i,   j, k-1))*VDF_G(i,j,k-1)
        end if
-       if(abs(SumDeltaHPlus_G(i,j,k)) < cTol)SumDeltaHPlus_G(i,j,k) = 0.0
        VDF = VDF_G(i,j,k)
        if(SumDeltaHMinus==0.0)then
           DeltaMinusF_G(i,j,k) = 0.0
@@ -374,7 +364,7 @@ contains
           ! Local CFLs are expressed via SumDeltaHMinus
           CFLCoef_G(i,j,k) = -SumDeltaHMinus
        else
-          CFLCoef_G(i,j,k) = vInv_G(i,j,k)*SumDeltaHPlus_G(i,j,k)
+          CFLCoef_G(i,j,k) = -SumDeltaHMinus*vInv_G(i,j,k)
        end if
     end do; end do; end do
     ! Set CFL and time step
@@ -391,7 +381,6 @@ contains
                (CFLCoef_G(1:nI,1:nJ,1:nK) - CFL*DVolumeDt_G(1:nI,1:nJ,1:nK)))
        end if
        if(present(DtIn))then
-
           ! Calculate the CFL factor with given Dt:
           vInv_G = 1.0/(Volume_G + Dt*DVolumeDt_G)
           CFLCoef_G = Dt*vInv_G*CFLCoef_G
@@ -457,6 +446,8 @@ contains
           if(i > 0)then
              Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*DeltaFLimited
              SumFluxPlus_C(i,j,k) = SumFluxPlus_C(i,j,k) + Flux_FX(i,j,k)
+             SumDeltaHPlus_C(i,j,k) = SumDeltaHPlus_C(i,j,k) + &
+                  DeltaH_FX(i,j,k)
              DeltaMinusFLim_C(i,j,k) = minmod(DeltaMinusFLim_C(i,j,k),&
                   DeltaMinusF_G(i+1,j,k))
           elseif(.not.IsPeriodic_D(1))then
@@ -474,6 +465,8 @@ contains
           if(i < nI)then
              Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*DeltaFLimited
              SumFluxPlus_C(i+1,j,k) = SumFluxPlus_C(i+1,j,k) - Flux_FX(i,j,k)
+             SumDeltaHPlus_C(i+1,j,k) = SumDeltaHPlus_C(i+1,j,k) - &
+                  DeltaH_FX(i,j,k)
              DeltaMinusFLim_C(i+1,j,k) = minmod(DeltaMinusFLim_C(i+1,j,k),&
                   DeltaMinusF_G(i,j,k))
           elseif(.not.IsPeriodic_D(1))then
@@ -496,6 +489,8 @@ contains
           if(j > 0)then
              Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*DeltaFLimited
              SumFluxPlus_C(i,j,k) = SumFluxPlus_C(i,j,k) + Flux_FY(i,j,k)
+             SumDeltaHPlus_C(i,j,k) = SumDeltaHPlus_C(i,j,k) + &
+                  DeltaH_FY(i,j,k)
              DeltaMinusFLim_C(i,j,k) = minmod(DeltaMinusFLim_C(i,j,k),&
                   DeltaMinusF_G(i,j+1,k))
           elseif(.not.IsPeriodic_D(2))then
@@ -514,6 +509,8 @@ contains
           if(j < nJ)then
              Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*DeltaFLimited
              SumFluxPlus_C(i,j+1,k) = SumFluxPlus_C(i,j+1,k) - Flux_FY(i,j,k)
+             SumDeltaHPlus_C(i,j+1,k) = SumDeltaHPlus_C(i,j+1,k) - &
+                  DeltaH_FY(i,j,k)
              DeltaMinusFLim_C(i,j+1,k) = minmod(DeltaMinusFLim_C(i,j+1,k),&
                   DeltaMinusF_G(i,j,k))
           elseif(.not.IsPeriodic_D(2))then
@@ -537,6 +534,8 @@ contains
              if(k > 0)then
                 Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*DeltaFLimited
                 SumFluxPlus_C(i,j,k) = SumFluxPlus_C(i,j,k) + Flux_FZ(i,j,k)
+                SumDeltaHPlus_C(i,j,k) = SumDeltaHPlus_C(i,j,k) + &
+                     DeltaH_FZ(i,j,k)
                 DeltaMinusFLim_C(i,j,k) = minmod(DeltaMinusFLim_C(i,j,k),&
                      DeltaMinusF_G(i,j,k+1))
              elseif(.not.IsPeriodic_D(3))then
@@ -556,6 +555,8 @@ contains
                 Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*DeltaFLimited
                 SumFluxPlus_C(i,j,k+1) = SumFluxPlus_C(i,j,k+1) - &
                      Flux_FZ(i,j,k)
+                SumDeltaHPlus_C(i,j,k+1) = SumDeltaHPlus_C(i,j,k+1) - &
+                     DeltaH_FZ(i,j,k)
                 DeltaMinusFLim_C(i,j,k+1) = minmod(DeltaMinusFLim_C(i,j,k+1),&
                      DeltaMinusF_G(i,j,k))
              elseif(.not.IsPeriodic_D(3))then
@@ -571,10 +572,10 @@ contains
        end do; end do; end do
     end if
     do k=1, nK; do j = 1, nJ; do i = 1, nI
-       if(SumDeltaHPlus_G(i,j,k)==0.0)CYCLE
+       if(SumDeltaHPlus_C(i,j,k)==0.0)CYCLE
        CFLLocal = CFLCoef_G(i,j,k)
        ! Calculate \delta^+\Psi(f_j-f)
-       DeltaPlusFLimited  = SumFluxPlus_C(i,j,k)/SumDeltaHPlus_G(i,j,k)
+       DeltaPlusFLimited  = SumFluxPlus_C(i,j,k)/SumDeltaHPlus_C(i,j,k)
        if( (DeltaPlusFLimited*DeltaMinusFLim_C(i,j,k)>=0.0.and.&
             abs(DeltaPlusFLimited)<=abs(DeltaMinusFLim_C(i,j,k)))&
             .or.(.not.UseLimiter))then
@@ -612,7 +613,7 @@ contains
           DeltaPlusFLimited = minmod(DeltaPlusFLimited,DeltaMinusFLim_C(i,j,k))
           ! Att the total limited flux in the given cell
           SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) - &
-               (1.0 - CFLLocal)*DeltaPlusFLimited*SumDeltaHPlus_G(i,j,k)
+               (1.0 - CFLLocal)*DeltaPlusFLimited*SumDeltaHPlus_C(i,j,k)
           nMajorFlux = 0; SumMajor = 0.0
           if(DeltaH_FX(i, j, k) > 0.0)then
              ! This is \delta H^+ face, contributing to second order flux
@@ -717,7 +718,7 @@ contains
                 end if
              end if
           end if
-          UpwindReduction = 1.0 + (DeltaPlusFLimited*SumDeltaHPlus_G(i,j,k) - &
+          UpwindReduction = 1.0 + (DeltaPlusFLimited*SumDeltaHPlus_C(i,j,k) - &
                SumFluxPlus_C(i,j,k))/SumMajor
           do iFlux = 1, nMajorFlux
              SumFlux2_G(iMajor_I(iFlux),jMajor_I(iFlux),kMajor_I(iFlux)) =   &
