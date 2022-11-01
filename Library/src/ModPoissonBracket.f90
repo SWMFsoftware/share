@@ -225,8 +225,7 @@ contains
     real    :: SignDeltaMinusF, VDF
     ! Limiter with downwind reduction coefficient:
     real    :: DeltaFLimited
-    ! Upwind limitater
-    real    :: DeltaMinusFLim_C(1:nI,1:nJ,1:nK)
+    ! Upwind limiter
     integer :: nMajorFlux, iFlux, iMajor_I(6), jMajor_I(6), kMajor_I(6)
     real    :: DeltaPlusFLimited, UpwindReduction, Flux, MajorFlux_I(6)
     character(len=*), parameter:: NameSub = 'explicit3'
@@ -246,8 +245,6 @@ contains
 
     ! Nullify arrays:
     DeltaH_FX = 0.0; DeltaH_FY = 0.0; DeltaH_FZ = 0.0
-    Flux_FX   = 0.0; Flux_FY   = 0.0; Flux_FZ   = 0.0
-    SumDeltaHPlus_C = 0.0
 
     ! Bracket {F,H12}_{x,y}   Bracket {F,H13}_{x,z}    Bracket {F,H23}_{y,z}
     ! Hamiltonian 12 (xy)     Hamiltonian 13 (xz)      Hamiltonian 23 (yz)
@@ -357,7 +354,7 @@ contains
                   min(0.0,-DeltaH_FZ(i,   j, k-1))*&
                   max((VDF - VDF_G(i,j,k-1))*SignDeltaMinusF,0.0)
           end if
-          DownwindReduction_G(i,j,k) = SignDeltaMinusF*DeltaMinusF_G(i,j,k)*&
+          DownwindReduction_G(i,j,k) = SignDeltaMinusF*&
                SumDeltaHMinus/SumMajor
        end if
        if(UseTimeDependentVolume)then
@@ -432,15 +429,26 @@ contains
     ! Calculate source = f(t+Dt) - f(t):
     ! First order monotone scheme
     Source_C = -CFLCoef_G(1:nI,1:nJ,1:nK)*DeltaMinusF_G(1:nI,1:nJ,1:nK)
-
+    if(UseLimiter)then
+       where(DeltaMinusF_G(1:nI+1,1:nJ,1:nK)*DeltaMinusF_G(0:nI,1:nJ,1:nK)&
+            <=0.0)DeltaH_FX(0:nI,1:nJ,1:nK) = 0.0
+       where(DeltaMinusF_G(1:nI,1:nJ+1,1:nK)*DeltaMinusF_G(1:nI,0:nJ,1:nK)&
+            <=0.0)DeltaH_FY(1:nI,0:nJ,1:nK) = 0.0
+       if(nK>1)then
+          where(DeltaMinusF_G(1:nI,1:nJ,1:nK+1)*DeltaMinusF_G(1:nI,1:nJ,0:nK)&
+               <=0.0)DeltaH_FZ(1:nI,1:nJ,0:nK) = 0.0
+       end if
+    end if
     ! Second order correction
-    SumFlux2_G = 0.0; SumFluxPlus_C = 0.0
-    DeltaMinusFLim_C = DeltaMinusF_G(1:nI,1:nJ,1:nK)
+    SumFlux2_G = 0.0; SumFluxPlus_C = 0.0; SumDeltaHPlus_C = 0.0
+    Flux_FX = 0.0; Flux_FY = 0.0; Flux_FZ   = 0.0
     ! Calculate Face-X fluxes.
     do k=1, nK; do j = 1, nJ; do i = 0, nI
        if(DeltaH_FX(i,j,k) > 0.0)then
           DeltaFLimited = limiter(        &
-               ReductionCoef=DownwindReduction_G(i+1,j,k),  &
+               ReductionCoef=minmod(DeltaMinusF_G(i+1,j,k), &
+               DeltaMinusF_G(i,j,k))*                       &
+               DownwindReduction_G(i+1,j,k),                &
                DeltaF=VDF_G(i+1,j,k)  - VDF_G(i  ,j,k),     &
                UpwindDeltaF=VDF_G(i,j,k) - VDF_G(i-1,j,k))
           if(i > 0)then
@@ -448,34 +456,27 @@ contains
              SumFluxPlus_C(i,j,k) = SumFluxPlus_C(i,j,k) + Flux_FX(i,j,k)
              SumDeltaHPlus_C(i,j,k) = SumDeltaHPlus_C(i,j,k) + &
                   DeltaH_FX(i,j,k)
-             DeltaMinusFLim_C(i,j,k) = minmod(DeltaMinusFLim_C(i,j,k),&
-                  DeltaMinusF_G(i+1,j,k))
           elseif(.not.IsPeriodic_D(1))then
-             ! Limit both spatial and temporal corrections
-             DeltaFLimited = minmod(DeltaFLimited, DeltaMinusF_G(i,j,k))
              SumFlux2_G(i+1,j,k) = SumFlux2_G(i+1,j,k) + &
                   DeltaH_FX(i,j,k)*(1.0 - CFLCoef_G(i,j,k))*&
-                  minmod(DeltaFLimited,DeltaMinusF_G(i+1,j,k))
+                  minmod(DeltaFLimited,DeltaMinusF_G(i,j,k))
           end if
        elseif(DeltaH_FX(i,j,k) < 0.0 )then
           DeltaFLimited = limiter( &
-               ReductionCoef=DownwindReduction_G(i,j,k),    &
-               DeltaF=VDF_G(i,j,k)  - VDF_G(i+1,j,k),       &
+               ReductionCoef=minmod(DeltaMinusF_G(i+1,j,k),&
+               DeltaMinusF_G(i,j,k))*                         &
+               DownwindReduction_G(i,j,k),                    &
+               DeltaF=VDF_G(i,j,k)  - VDF_G(i+1,j,k),         &
                UpwindDeltaF=VDF_G(i+1,j,k) - VDF_G(i+2,j,k))
           if(i < nI)then
              Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*DeltaFLimited
              SumFluxPlus_C(i+1,j,k) = SumFluxPlus_C(i+1,j,k) - Flux_FX(i,j,k)
              SumDeltaHPlus_C(i+1,j,k) = SumDeltaHPlus_C(i+1,j,k) - &
                   DeltaH_FX(i,j,k)
-             DeltaMinusFLim_C(i+1,j,k) = minmod(DeltaMinusFLim_C(i+1,j,k),&
-                  DeltaMinusF_G(i,j,k))
           elseif(.not.IsPeriodic_D(1))then
-             ! Limit both spatial and temporal corrections
-             DeltaFLimited = minmod(DeltaFLimited, DeltaMinusF_G(i+1,j,k))
-             ! Extra limitation for temporal correction
              SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) - DeltaH_FX(i,j,k)*&
                   (1.0 - CFLCoef_G(i+1,j,k))*minmod(DeltaFLimited,&
-                  DeltaMinusF_G(i,j,k))
+                  DeltaMinusF_G(i+1,j,k))
           end if
        end if
     end do; end do; end do
@@ -483,7 +484,9 @@ contains
     do k=1, nK; do j = 0, nJ; do i = 1, nI
        if(DeltaH_FY(i,j,k) > 0.0)then
           DeltaFLimited = limiter( &
-               ReductionCoef=DownwindReduction_G(i,j+1,k),  &
+               ReductionCoef=minmod(DeltaMinusF_G(i,j,k),&
+               DeltaMinusF_G(i,j+1,k))*&
+               DownwindReduction_G(i,j+1,k),  &
                DeltaF=VDF_G(i,j+1,k)  - VDF_G(i,j  ,k),     &
                UpwindDeltaF=VDF_G(i,j  ,k) - VDF_G(i,j-1,k))
           if(j > 0)then
@@ -491,35 +494,27 @@ contains
              SumFluxPlus_C(i,j,k) = SumFluxPlus_C(i,j,k) + Flux_FY(i,j,k)
              SumDeltaHPlus_C(i,j,k) = SumDeltaHPlus_C(i,j,k) + &
                   DeltaH_FY(i,j,k)
-             DeltaMinusFLim_C(i,j,k) = minmod(DeltaMinusFLim_C(i,j,k),&
-                  DeltaMinusF_G(i,j+1,k))
           elseif(.not.IsPeriodic_D(2))then
-             ! Limit both spatial and temporal corrections
-             DeltaFLimited = minmod(DeltaFLimited, DeltaMinusF_G(i,j,k))
-             ! Extra limitation for temporal correction
              SumFlux2_G(i,j+1,k) = SumFlux2_G(i,j+1,k) + DeltaH_FY(i,j,k)*&
                   (1.0 - CFLCoef_G(i,j,k))*minmod( &
-                  DeltaFLimited, DeltaMinusF_G(i,j+1,k))
+                  DeltaFLimited, DeltaMinusF_G(i,j,k))
           end if
        elseif(DeltaH_FY(i,j,k) < 0.0)then
           DeltaFLimited = limiter( &
-               ReductionCoef=DownwindReduction_G(i,j,k),    &
-               DeltaF=VDF_G(i,j,k)  - VDF_G(i,j+1 ,k),      &
+               ReductionCoef=minmod(DeltaMinusF_G(i,j+1,k),&
+               DeltaMinusF_G(i,j,k))*                         &
+               DownwindReduction_G(i,j,k),                    &
+               DeltaF=VDF_G(i,j,k)  - VDF_G(i,j+1 ,k),        &
                UpwindDeltaF=VDF_G(i,j+1,k) - VDF_G(i,j+2,k))
           if(j < nJ)then
              Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*DeltaFLimited
              SumFluxPlus_C(i,j+1,k) = SumFluxPlus_C(i,j+1,k) - Flux_FY(i,j,k)
              SumDeltaHPlus_C(i,j+1,k) = SumDeltaHPlus_C(i,j+1,k) - &
                   DeltaH_FY(i,j,k)
-             DeltaMinusFLim_C(i,j+1,k) = minmod(DeltaMinusFLim_C(i,j+1,k),&
-                  DeltaMinusF_G(i,j,k))
           elseif(.not.IsPeriodic_D(2))then
-             ! Limit both spatial and temporal corrections
-             DeltaFLimited = minmod(DeltaFLimited, DeltaMinusF_G(i,j+1,k))
-             ! Extra limitation for temporal correction
              SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) - DeltaH_FY(i,j,k)*&
                   (1.0 - CFLCoef_G(i,j+1,k))*minmod(  &
-                  DeltaFLimited, DeltaMinusF_G(i,j,k))
+                  DeltaFLimited, DeltaMinusF_G(i,j+1,k))
           end if
        end if
     end do; end do; end do
@@ -528,28 +523,27 @@ contains
        do k=0, nK; do j = 1, nJ; do i = 1, nI
           if(DeltaH_FZ(i,j,k) > 0.0)then
              DeltaFLimited = limiter( &
-                  ReductionCoef=DownwindReduction_G(i,j,k+1),  &
-                  DeltaF=VDF_G(i,j,k+1)  - VDF_G(i,j  ,k),     &
+                  ReductionCoef= minmod(DeltaMinusF_G(i,j,k),&
+                  DeltaMinusF_G(i,j,k+1))*                      &
+                  DownwindReduction_G(i,j,k+1),                 &
+                  DeltaF=VDF_G(i,j,k+1)  - VDF_G(i,j  ,k),      &
                   UpwindDeltaF=VDF_G(i,j  ,k) - VDF_G(i,j,k-1))
              if(k > 0)then
                 Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*DeltaFLimited
                 SumFluxPlus_C(i,j,k) = SumFluxPlus_C(i,j,k) + Flux_FZ(i,j,k)
                 SumDeltaHPlus_C(i,j,k) = SumDeltaHPlus_C(i,j,k) + &
                      DeltaH_FZ(i,j,k)
-                DeltaMinusFLim_C(i,j,k) = minmod(DeltaMinusFLim_C(i,j,k),&
-                     DeltaMinusF_G(i,j,k+1))
              elseif(.not.IsPeriodic_D(3))then
-                ! Limit both spatial and temporal corrections
-                DeltaFLimited = minmod(DeltaFLimited, DeltaMinusF_G(i,j,k))
-                ! Extra limitation for temporal correction
                 SumFlux2_G(i,j,k+1) = SumFlux2_G(i,j,k+1) + DeltaH_FZ(i,j,k)*&
                      (1.0 - CFLCoef_G(i,j,k))*minmod( &
-                     DeltaFLimited, DeltaMinusF_G(i,j,k+1))
+                     DeltaFLimited, DeltaMinusF_G(i,j,k))
              end if
           elseif(DeltaH_FZ(i,j,k) < 0.0)then
              DeltaFLimited = limiter( &
-                  ReductionCoef=DownwindReduction_G(i,j,k),    &
-                  DeltaF=VDF_G(i,j,k)  - VDF_G(i,j ,k+1),      &
+                  ReductionCoef=minmod(DeltaMinusF_G(i,j,k+1),&
+                  DeltaMinusF_G(i,j,k))*                         &
+                  DownwindReduction_G(i,j,k),                    &
+                  DeltaF=VDF_G(i,j,k)  - VDF_G(i,j ,k+1),        &
                   UpwindDeltaF=VDF_G(i,j,k+1) - VDF_G(i,j,k+2))
              if(k < nK)then
                 Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*DeltaFLimited
@@ -557,16 +551,10 @@ contains
                      Flux_FZ(i,j,k)
                 SumDeltaHPlus_C(i,j,k+1) = SumDeltaHPlus_C(i,j,k+1) - &
                      DeltaH_FZ(i,j,k)
-                DeltaMinusFLim_C(i,j,k+1) = minmod(DeltaMinusFLim_C(i,j,k+1),&
-                     DeltaMinusF_G(i,j,k))
              elseif(.not.IsPeriodic_D(3))then
-                ! Limit both spatial and temporal corrections
-                DeltaFLimited = minmod(DeltaFLimited, &
-                     DeltaMinusF_G(i,j,k+1))
-                ! Extra limitation for temporal correction
                 SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) - DeltaH_FZ(i,j,k)*&
                      (1.0 - CFLCoef_G(i,j,k+1))*minmod( &
-                     DeltaFLimited ,DeltaMinusF_G(i,j,k))
+                     DeltaFLimited ,DeltaMinusF_G(i,j,k+1))
              end if
           end if
        end do; end do; end do
@@ -576,8 +564,8 @@ contains
        CFLLocal = CFLCoef_G(i,j,k)
        ! Calculate \delta^+\Psi(f_j-f)
        DeltaPlusFLimited  = SumFluxPlus_C(i,j,k)/SumDeltaHPlus_C(i,j,k)
-       if( (DeltaPlusFLimited*DeltaMinusFLim_C(i,j,k)>=0.0.and.&
-            abs(DeltaPlusFLimited)<=abs(DeltaMinusFLim_C(i,j,k)))&
+       if( (DeltaPlusFLimited*DeltaMinusF_G(i,j,k)>=0.0.and.&
+            abs(DeltaPlusFLimited)<=abs(DeltaMinusF_G(i,j,k)))&
             .or.(.not.UseLimiter))then
           ! There is no need to limit DeltaPlus with DeltaMinus_G(i,j,k)
           if(DeltaH_FX(i, j, k) > 0.0)&
@@ -610,8 +598,8 @@ contains
                (1 - CFLLocal)*SumFluxPlus_C(i,j,k)
        else
           ! Limit DeltaPlus
-          DeltaPlusFLimited = minmod(DeltaPlusFLimited,DeltaMinusFLim_C(i,j,k))
-          ! Att the total limited flux in the given cell
+          DeltaPlusFLimited = minmod(DeltaPlusFLimited,DeltaMinusF_G(i,j,k))
+          ! Add the total limited flux in the given cell
           SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) - &
                (1.0 - CFLLocal)*DeltaPlusFLimited*SumDeltaHPlus_C(i,j,k)
           nMajorFlux = 0; SumMajor = 0.0
