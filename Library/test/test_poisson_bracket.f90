@@ -226,15 +226,81 @@ contains
          CoordMaxIn_D=[10.0**LogMomentum_I(nQ), cTwoPi - 0.50*DeltaPhi], &
          Coord1In_I = 10.0**LogMomentum_I(1:nQ), &
          VarIn_II = VDF_G(1:nQ,1:nP) )
-  contains
-    !==========================================================================
-    real function Hamiltonian(P2)
-      real, intent(in) :: P2 ! momentum squared
-      !------------------------------------------------------------------------
-      Hamiltonian = sqrt(1.0 + P2)
-    end function Hamiltonian
-    !==========================================================================
   end subroutine test_poisson_bracket
+  !==========================================================================
+  real function Hamiltonian(P2)
+    real, intent(in) :: P2 ! momentum squared
+    !------------------------------------------------------------------------
+    Hamiltonian = sqrt(1.0 + P2)
+  end function Hamiltonian
+  !============================================================================
+  subroutine test_poisson_2d(tFinal)
+
+    real, intent(in) :: tFinal
+
+    ! Misc:
+    ! Harmonic oscillators, nQ is the number of meshes over coordinate,
+    ! nP is number of meshes overr generalized momentum
+    integer, parameter::  nQ = 1200,  nP = 1200
+
+    ! Loop variables
+    integer           ::  iQ, iP, iStep
+
+    ! Mesh size
+    real, parameter   :: DeltaQ = 0.02, DeltaP = 0.02
+    real :: VDF_G(-1:nQ+2, -1:nP+2)
+    real :: Volume_G(0:nQ+1, 0:nP+1)
+    real :: Hamiltonian_N(-1:nQ+1, -1:nP+1)
+    real :: Time, Dt, Source_C(nQ,nP)
+    real :: NormL2Init, NormL2, EnergyInit, Energy, qNode, pNode, Q, P
+    !--------------------------------------------------------------------------
+    ! Control volume, for a uniform rectangular grid
+    Volume_G = DeltaQ*DeltaP
+    ! Hamiltonian at the nodes
+    do iP = -1, nP+1
+       pNode = DeltaP*(iP - nP/2)
+       do iQ = -1, nQ+2
+          qNode = DeltaQ*(iQ - nQ/2)
+          Hamiltonian_N(iQ,iP) = hamiltonian(qNode**2 + pNode**2)
+       end do
+    end do
+    ! Initial distribution function
+    VDF_G = 0.0
+    do iP = -1, nP+2
+       P = DeltaP*(iP - nP/2 - 0.50)
+       do iQ = -1, nQ+2
+          Q = DeltaQ*(iQ - nQ/2 - 0.50)
+          if(abs(P) < -Q*tan(cPi/20.0).and.P**2+Q**2<=100)VDF_G(iQ,iP) = 1.0
+       end do
+    end do
+    Source_C = 0.0
+    ! Compiutation
+    Time = 0.0; iStep = 0
+    do
+       call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
+            Hamiltonian_N,   &
+            CFLIn=0.99, DtOut = Dt)
+       iStep = iStep +1
+       if(Time + Dt >= tFinal)then
+          call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
+               Hamiltonian_N,   &
+               DtIn = tFinal - Time)
+          VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
+          EXIT
+       else
+          Time = Time + Dt
+          VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
+          write(*,*)Time
+       end if
+    end do
+    call save_plot_file(NameFile='test_poisson2d.out', &
+         TypeFileIn='real4', TimeIn=tFinal, nStepIn = iStep, &
+         NameVarIn='-Py    Px VDF', &
+         CoordMinIn_D=[-11.99, -11.99], &
+         CoordMaxIn_D=[11.99, 11.99], &
+         VarIn_II = VDF_G(1:nQ,1:nP))
+
+  end subroutine test_poisson_2d
   !============================================================================
   subroutine test_energy_conservation(tFinal)
 
@@ -284,7 +350,6 @@ contains
     EnergyInit = sum(VDFInitial_C*Energy_C)
     ! Compiutation
     Time = 0.0; iStep = 0
-    ! write(*,*)'Time NormL2/NormL2Init Energy/EnergyInit-1'
     do
        call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
             Hamiltonian_N,   &
@@ -1115,7 +1180,8 @@ end module ModStochastic
 !==============================================================================
 program test_program
   use ModTestPoissonBracket, ONLY: test_poisson_bracket, test_dsa_sa_mhd, &
-       test_dsa_poisson, test_energy_conservation, test_in_action_angle
+       test_dsa_poisson, test_energy_conservation, test_in_action_angle,  &
+       test_poisson_2d
   use ModNumConst,           ONLY: cTwoPi
   use ModHillVortex, ONLY: test_hill_vortex
   use ModStochastic, ONLY: test_stochastic
@@ -1127,6 +1193,7 @@ program test_program
 
   call test_poisson_bracket(cTwoPi)        ! nightly test1
   call test_dsa_poisson                    ! nightly test2
+  ! call test_poisson_2d(cTwoPi)  ! Fig 1 (right panel)
   ! call test_stochastic(1.2)
   ! call test_hill_vortex
   ! call test_energy_conservation(cTwoPi)
