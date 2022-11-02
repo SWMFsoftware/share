@@ -31,6 +31,10 @@ module ModPoissonBracket
   real, parameter :: CflMax = 0.990
   character(LEN=*), parameter:: NameMod = 'ModPoissonBracket'
   logical, parameter :: UseLimiter = .true. ! false: switch off limiters
+  !  If UseMinmodBeta is .false. beta-parameter  is fully determined by
+  !  \delta^-f in  the downwind cell, otherwise it is proportional to
+  !  minmod of \delta^-f in the given cell and in the downwind cell
+  logical, parameter ::  UseMinmodBeta  = .false.
   real, parameter :: cTol = 1.0e-12
 
 contains
@@ -47,23 +51,36 @@ contains
     end if
   end function minmod
   !============================================================================
-  real function limiter(ReductionCoef, DeltaF, UpwindDeltaF)
+  real function minmodbeta(DownwindDeltaMinusF, UpwindDeltaMinusF)
+    !  To switch between two choices of beta-parameter:
+    !  1. minmod, if UseMinmodBeta=.true.
+    !  2. DownwindDeltaMinusF  otherwise
+    real, intent(in) :: DownwindDeltaMinusF, UpwindDeltaMinusF
+    !--------------------------------------------------------------------------
+    if(UseMinmodBeta)then
+       minmodbeta = minmod(DownwindDeltaMinusF, UpwindDeltaMinusF)
+    else
+       minmodbeta = DownwindDeltaMinusF
+    end if
+  end function minmodbeta
+  !============================================================================
+  real function betalimiter(HalfBeta, DeltaF, UpwindDeltaF)
     !  \delta^-f in the neighboring cells
-    real, intent(in) :: ReductionCoef
+    real, intent(in) :: HalfBeta
     real, intent(in) :: DeltaF                ! f_j -f
     real, intent(in) :: UpwindDeltaF     ! f - f_j^\prime at the opposite face
     real :: SignDeltaF, AbsDeltaF
     !--------------------------------------------------------------------------
     if(abs(DeltaF) <=cTol)then
-       limiter = 0.0
+       betalimiter = 0.0
     elseif(.not.UseLimiter)then
-       limiter = 0.50*DeltaF
+       betalimiter = 0.50*DeltaF
     else
        SignDeltaF = sign(1.0, DeltaF); AbsDeltaF = abs(DeltaF)
-       limiter = SignDeltaF*min( 0.5*max(AbsDeltaF, SignDeltaF*UpwindDeltaF),&
-            ReductionCoef*AbsDeltaF)
+       betalimiter = SignDeltaF*min(HalfBeta*AbsDeltaF,&
+            0.5*max(AbsDeltaF, SignDeltaF*UpwindDeltaF))
     end if
-  end function limiter
+  end function betalimiter
   !============================================================================
   subroutine explicit2(nI, nJ, VDF_G, Volume_G, Source_C,    &
        Hamiltonian12_N, dHamiltonian01_FX, dHamiltonian02_FY,&
@@ -219,15 +236,16 @@ contains
     ! Misc:
     ! Sum of major contributions
     real    :: SumMajor
-    ! Downwind limiter:
-    real    :: DownwindReduction_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
-    ! Misc: used to calculate downwind reduction coef:
+    ! Beta-limiter:
+    real    :: OneOverHatDeltaMinusF_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
+    real    :: HalfBeta
+    ! Misc:
     real    :: SignDeltaMinusF, VDF
-    ! Limiter with downwind reduction coefficient:
+    ! Beta-limited delta f:
     real    :: DeltaFLimited
-    ! Upwind limiter
+    ! Gamma-limiter
     integer :: nMajorFlux, iFlux, iMajor_I(6), jMajor_I(6), kMajor_I(6)
-    real    :: DeltaPlusFLimited, UpwindReduction, Flux, MajorFlux_I(6)
+    real    :: DeltaPlusFLimited, Gamma, Flux, MajorFlux_I(6)
     character(len=*), parameter:: NameSub = 'explicit3'
     !--------------------------------------------------------------------------
     if(present(DtIn))then
@@ -334,7 +352,7 @@ contains
        end if
        if(abs(DeltaMinusF_G(i,j,k))<cTol)then
           DeltaMinusF_G(i,j,k) = 0.0
-          DownwindReduction_G(i,j,k) = 0.0
+          OneOverHatDeltaMinusF_G(i,j,k) = 0.0
        else
           SignDeltaMinusF = sign(1.0,DeltaMinusF_G(i,j,k))
           SumMajor = &
@@ -354,7 +372,7 @@ contains
                   min(0.0,-DeltaH_FZ(i,   j, k-1))*&
                   max((VDF - VDF_G(i,j,k-1))*SignDeltaMinusF,0.0)
           end if
-          DownwindReduction_G(i,j,k) = SignDeltaMinusF*&
+          OneOverHatDeltaMinusF_G(i,j,k) = SignDeltaMinusF*&
                SumDeltaHMinus/SumMajor
        end if
        if(UseTimeDependentVolume)then
@@ -429,7 +447,7 @@ contains
     ! Calculate source = f(t+Dt) - f(t):
     ! First order monotone scheme
     Source_C = -CFLCoef_G(1:nI,1:nJ,1:nK)*DeltaMinusF_G(1:nI,1:nJ,1:nK)
-    if(UseLimiter)then
+    if(UseMinmodBeta.and.UseLimiter)then
        where(DeltaMinusF_G(1:nI+1,1:nJ,1:nK)*DeltaMinusF_G(0:nI,1:nJ,1:nK)&
             <=0.0)DeltaH_FX(0:nI,1:nJ,1:nK) = 0.0
        where(DeltaMinusF_G(1:nI,1:nJ+1,1:nK)*DeltaMinusF_G(1:nI,0:nJ,1:nK)&
@@ -445,11 +463,13 @@ contains
     ! Calculate Face-X fluxes.
     do k=1, nK; do j = 1, nJ; do i = 0, nI
        if(DeltaH_FX(i,j,k) > 0.0)then
-          DeltaFLimited = limiter(        &
-               ReductionCoef=minmod(DeltaMinusF_G(i+1,j,k), &
-               DeltaMinusF_G(i,j,k))*                       &
-               DownwindReduction_G(i+1,j,k),                &
-               DeltaF=VDF_G(i+1,j,k)  - VDF_G(i  ,j,k),     &
+          HalfBeta=minmodbeta(                              &
+               DownwindDeltaMinusF=DeltaMinusF_G(i+1,j,k),  &
+               UpwindDeltaMinusF  =DeltaMinusF_G(i,j,k))*   &
+               OneOverHatDeltaMinusF_G(i+1,j,k)
+          DeltaFLimited = betalimiter(                      &
+               HalfBeta=HalfBeta,                           &
+               DeltaF=VDF_G(i+1,j,k) - VDF_G(i  ,j,k),      &
                UpwindDeltaF=VDF_G(i,j,k) - VDF_G(i-1,j,k))
           if(i > 0)then
              Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*DeltaFLimited
@@ -462,11 +482,13 @@ contains
                   minmod(DeltaFLimited,DeltaMinusF_G(i,j,k))
           end if
        elseif(DeltaH_FX(i,j,k) < 0.0 )then
-          DeltaFLimited = limiter( &
-               ReductionCoef=minmod(DeltaMinusF_G(i+1,j,k),&
-               DeltaMinusF_G(i,j,k))*                         &
-               DownwindReduction_G(i,j,k),                    &
-               DeltaF=VDF_G(i,j,k)  - VDF_G(i+1,j,k),         &
+          HalfBeta = minmodbeta(                           &
+               DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),   &
+               UpwindDeltaMinusF  =DeltaMinusF_G(i+1,j,k))*&
+               OneOverHatDeltaMinusF_G(i,j,k)
+          DeltaFLimited = betalimiter(                     &
+               HalfBeta=HalfBeta,                          &
+               DeltaF=VDF_G(i,j,k)  - VDF_G(i+1,j,k),      &
                UpwindDeltaF=VDF_G(i+1,j,k) - VDF_G(i+2,j,k))
           if(i < nI)then
              Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*DeltaFLimited
@@ -483,11 +505,13 @@ contains
     ! Calculate Face-Y fluxes.
     do k=1, nK; do j = 0, nJ; do i = 1, nI
        if(DeltaH_FY(i,j,k) > 0.0)then
-          DeltaFLimited = limiter( &
-               ReductionCoef=minmod(DeltaMinusF_G(i,j,k),&
-               DeltaMinusF_G(i,j+1,k))*&
-               DownwindReduction_G(i,j+1,k),  &
-               DeltaF=VDF_G(i,j+1,k)  - VDF_G(i,j  ,k),     &
+          HalfBeta  = minmodbeta(                         &
+               DownwindDeltaMinusF=DeltaMinusF_G(i,j+1,k),&
+               UpwindDeltaMinusF = DeltaMinusF_G(i,j,k))* &
+               OneOverHatDeltaMinusF_G(i,j+1,k)
+          DeltaFLimited = betalimiter(                    &
+               HalfBeta=HalfBeta,                         &
+               DeltaF=VDF_G(i,j+1,k)  - VDF_G(i,j  ,k),   &
                UpwindDeltaF=VDF_G(i,j  ,k) - VDF_G(i,j-1,k))
           if(j > 0)then
              Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*DeltaFLimited
@@ -500,11 +524,13 @@ contains
                   DeltaFLimited, DeltaMinusF_G(i,j,k))
           end if
        elseif(DeltaH_FY(i,j,k) < 0.0)then
-          DeltaFLimited = limiter( &
-               ReductionCoef=minmod(DeltaMinusF_G(i,j+1,k),&
-               DeltaMinusF_G(i,j,k))*                         &
-               DownwindReduction_G(i,j,k),                    &
-               DeltaF=VDF_G(i,j,k)  - VDF_G(i,j+1 ,k),        &
+          HalfBeta  = minmodbeta(                         &
+               DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),  &
+               UpwindDeltaMinusF=DeltaMinusF_G(i,j+1,k))* &
+               OneOverHatDeltaMinusF_G(i,j,k)
+          DeltaFLimited = betalimiter(                    &
+               HalfBeta=HalfBeta,                         &
+               DeltaF=VDF_G(i,j,k)  - VDF_G(i,j+1 ,k),    &
                UpwindDeltaF=VDF_G(i,j+1,k) - VDF_G(i,j+2,k))
           if(j < nJ)then
              Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*DeltaFLimited
@@ -522,16 +548,18 @@ contains
        ! Calculate Face-Z fluxes.
        do k=0, nK; do j = 1, nJ; do i = 1, nI
           if(DeltaH_FZ(i,j,k) > 0.0)then
-             DeltaFLimited = limiter( &
-                  ReductionCoef= minmod(DeltaMinusF_G(i,j,k),&
-                  DeltaMinusF_G(i,j,k+1))*                      &
-                  DownwindReduction_G(i,j,k+1),                 &
-                  DeltaF=VDF_G(i,j,k+1)  - VDF_G(i,j  ,k),      &
+             HalfBeta   =  minmodbeta(                                       &
+                  DownwindDeltaMinusF=DeltaMinusF_G(i,j,k+1),                &
+                  UpwindDeltaMinusF  =DeltaMinusF_G(i,j,k))*                 &
+                  OneOverHatDeltaMinusF_G(i,j,k+1)
+             DeltaFLimited = betalimiter(                                    &
+                  HalfBeta=HalfBeta,                                         &
+                  DeltaF=VDF_G(i,j,k+1)  - VDF_G(i,j  ,k),                   &
                   UpwindDeltaF=VDF_G(i,j  ,k) - VDF_G(i,j,k-1))
              if(k > 0)then
                 Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*DeltaFLimited
                 SumFluxPlus_C(i,j,k) = SumFluxPlus_C(i,j,k) + Flux_FZ(i,j,k)
-                SumDeltaHPlus_C(i,j,k) = SumDeltaHPlus_C(i,j,k) + &
+                SumDeltaHPlus_C(i,j,k) = SumDeltaHPlus_C(i,j,k) +            &
                      DeltaH_FZ(i,j,k)
              elseif(.not.IsPeriodic_D(3))then
                 SumFlux2_G(i,j,k+1) = SumFlux2_G(i,j,k+1) + DeltaH_FZ(i,j,k)*&
@@ -539,17 +567,19 @@ contains
                      DeltaFLimited, DeltaMinusF_G(i,j,k))
              end if
           elseif(DeltaH_FZ(i,j,k) < 0.0)then
-             DeltaFLimited = limiter( &
-                  ReductionCoef=minmod(DeltaMinusF_G(i,j,k+1),&
-                  DeltaMinusF_G(i,j,k))*                         &
-                  DownwindReduction_G(i,j,k),                    &
-                  DeltaF=VDF_G(i,j,k)  - VDF_G(i,j ,k+1),        &
+             HalfBeta=minmodbeta(                                          &
+                  DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),                &
+                  UpwindDeltaMinusF  =DeltaMinusF_G(i,j,k+1))*             &
+                  OneOverHatDeltaMinusF_G(i,j,k)
+             DeltaFLimited = betalimiter(                                  &
+                  HalfBeta= HalfBeta,                                      &
+                  DeltaF=VDF_G(i,j,k)  - VDF_G(i,j ,k+1),                  &
                   UpwindDeltaF=VDF_G(i,j,k+1) - VDF_G(i,j,k+2))
              if(k < nK)then
                 Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*DeltaFLimited
-                SumFluxPlus_C(i,j,k+1) = SumFluxPlus_C(i,j,k+1) - &
+                SumFluxPlus_C(i,j,k+1) = SumFluxPlus_C(i,j,k+1) -          &
                      Flux_FZ(i,j,k)
-                SumDeltaHPlus_C(i,j,k+1) = SumDeltaHPlus_C(i,j,k+1) - &
+                SumDeltaHPlus_C(i,j,k+1) = SumDeltaHPlus_C(i,j,k+1) -      &
                      DeltaH_FZ(i,j,k)
              elseif(.not.IsPeriodic_D(3))then
                 SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) - DeltaH_FZ(i,j,k)*&
@@ -706,12 +736,12 @@ contains
                 end if
              end if
           end if
-          UpwindReduction = 1.0 + (DeltaPlusFLimited*SumDeltaHPlus_C(i,j,k) - &
+          Gamma = 1.0 + (DeltaPlusFLimited*SumDeltaHPlus_C(i,j,k) - &
                SumFluxPlus_C(i,j,k))/SumMajor
           do iFlux = 1, nMajorFlux
              SumFlux2_G(iMajor_I(iFlux),jMajor_I(iFlux),kMajor_I(iFlux)) =   &
                   SumFlux2_G(iMajor_I(iFlux),jMajor_I(iFlux),kMajor_I(iFlux))&
-                  + MajorFlux_I(iFlux)*UpwindReduction
+                  + MajorFlux_I(iFlux)*Gamma
           end do
        end if
     end do; end do; end do
