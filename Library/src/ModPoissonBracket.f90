@@ -35,6 +35,7 @@ module ModPoissonBracket
   !  \delta^-f in  the downwind cell, otherwise it is proportional to
   !  minmod of \delta^-f in the given cell and in the downwind cell
   logical, parameter ::  UseMinmodBeta  = .false.
+  logical, parameter ::  UseMC3 = .false.
   real, parameter :: cTol = 1.0e-12
 
 contains
@@ -58,9 +59,13 @@ contains
     real, intent(in) :: DownwindDeltaMinusF, UpwindDeltaMinusF
     !--------------------------------------------------------------------------
     if(UseMinmodBeta)then
-       minmodbeta = minmod(DownwindDeltaMinusF, UpwindDeltaMinusF)
+       if(UpwindDeltaMinusF==0.0)then
+          minmodbeta  =  0.0
+       else
+          minmodbeta = minmod(DownwindDeltaMinusF/UpwindDeltaMinusF,1.0)
+       end if
     else
-       minmodbeta = DownwindDeltaMinusF
+       minmodbeta = 1.0
     end if
   end function minmodbeta
   !============================================================================
@@ -69,7 +74,7 @@ contains
     real, intent(in) :: HalfBeta
     real, intent(in) :: DeltaF                ! f_j -f
     real, intent(in) :: UpwindDeltaF     ! f - f_j^\prime at the opposite face
-    real :: SignDeltaF, AbsDeltaF
+    real :: SignDeltaF, AbsDeltaF, AbsDeltaFLimited
     !--------------------------------------------------------------------------
     if(abs(DeltaF) <=cTol)then
        betalimiter = 0.0
@@ -77,8 +82,13 @@ contains
        betalimiter = 0.50*DeltaF
     else
        SignDeltaF = sign(1.0, DeltaF); AbsDeltaF = abs(DeltaF)
-       betalimiter = SignDeltaF*min(HalfBeta*AbsDeltaF,&
-            0.5*max(AbsDeltaF, SignDeltaF*UpwindDeltaF))
+       if(UseMC3)then
+          AbsDeltaFLimited = (1/6.0)*(2*AbsDeltaF + max(0.0, &
+               SignDeltaF*UpwindDeltaF))
+       else
+          AbsDeltaFLimited = 0.5*max(AbsDeltaF, SignDeltaF*UpwindDeltaF)
+       end if
+       betalimiter = SignDeltaF*min(AbsDeltaF*HalfBeta,AbsDeltaFLimited)
     end if
   end function betalimiter
   !============================================================================
@@ -237,10 +247,9 @@ contains
     ! Sum of major contributions
     real    :: SumMajor
     ! Beta-limiter:
-    real    :: OneOverHatDeltaMinusF_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
     real    :: HalfBeta
     ! Misc:
-    real    :: SignDeltaMinusF, VDF
+    real    :: VDF
     ! Beta-limited delta f:
     real    :: DeltaFLimited
     ! Gamma-limiter
@@ -328,12 +337,12 @@ contains
                                 min(0.0, DeltaH_FY(i,  j,  k)) +&
                                 min(0.0,-DeltaH_FX(i-1,j,  k)) +&
                                 min(0.0,-DeltaH_FY(i,j-1,  k))
-
+       VDF = VDF_G(i,j,k)
        DeltaMinusF_G(i, j, k) = &
-               min(0.0, DeltaH_FX(i,   j,   k))*VDF_G(i+1,j,k) +&
-               min(0.0, DeltaH_FY(i,   j,   k))*VDF_G(i,j+1,k) +&
-               min(0.0,-DeltaH_FX(i-1, j,   k))*VDF_G(i-1,j,k) +&
-               min(0.0,-DeltaH_FY(i, j-1,   k))*VDF_G(i,j-1,k)
+               min(0.0, DeltaH_FX(i,   j,   k))*(VDF_G(i+1,j,k) - VDF) +&
+               min(0.0, DeltaH_FY(i,   j,   k))*(VDF_G(i,j+1,k) - VDF) +&
+               min(0.0,-DeltaH_FX(i-1, j,   k))*(VDF_G(i-1,j,k) - VDF) +&
+               min(0.0,-DeltaH_FY(i, j-1,   k))*(VDF_G(i,j-1,k) - VDF)
        if(nK>1)then
           ! Add three-dimensional effects.
           SumDeltaHMinus         = SumDeltaHMinus              +&
@@ -341,39 +350,13 @@ contains
                                     min(0.0,-DeltaH_FZ(i,j,k-1))
 
           DeltaMinusF_G(i, j, k) = DeltaMinusF_G(i, j, k)      +&
-               min(0.0, DeltaH_FZ(i,   j,   k))*VDF_G(i,j,k+1) +&
-               min(0.0,-DeltaH_FZ(i,   j, k-1))*VDF_G(i,j,k-1)
+               min(0.0, DeltaH_FZ(i,   j,   k))*(VDF_G(i,j,k+1) - VDF) +&
+               min(0.0,-DeltaH_FZ(i,   j, k-1))*(VDF_G(i,j,k-1) - VDF)
        end if
-       VDF = VDF_G(i,j,k)
        if(SumDeltaHMinus==0.0)then
           DeltaMinusF_G(i,j,k) = 0.0
        else
-          DeltaMinusF_G(i,j,k) = VDF - DeltaMinusF_G(i,j,k)/SumDeltaHMinus
-       end if
-       if(abs(DeltaMinusF_G(i,j,k))<cTol)then
-          DeltaMinusF_G(i,j,k) = 0.0
-          OneOverHatDeltaMinusF_G(i,j,k) = 0.0
-       else
-          SignDeltaMinusF = sign(1.0,DeltaMinusF_G(i,j,k))
-          SumMajor = &
-               min(0.0, DeltaH_FX(i,   j,   k))*&
-               max((VDF - VDF_G(i+1,j,k))*SignDeltaMinusF,0.0) +&
-               min(0.0, DeltaH_FY(i,   j,   k))*&
-               max((VDF -VDF_G(i,j+1,k))*SignDeltaMinusF,0.0) +&
-               min(0.0,-DeltaH_FX(i-1, j,   k))*&
-               max((VDF -VDF_G(i-1,j,k))*SignDeltaMinusF,0.0) +&
-               min(0.0,-DeltaH_FY(i, j-1,   k))*&
-               max((VDF -VDF_G(i,j-1,k))*SignDeltaMinusF,0.0)
-          if(nK>1)then
-             ! Add three-dimensional effects.
-             SumMajor = SumMajor + &
-                  min(0.0, DeltaH_FZ(i,   j,   k))*&
-                  max((VDF - VDF_G(i,j,k+1))*SignDeltaMinusF,0.0) +&
-                  min(0.0,-DeltaH_FZ(i,   j, k-1))*&
-                  max((VDF - VDF_G(i,j,k-1))*SignDeltaMinusF,0.0)
-          end if
-          OneOverHatDeltaMinusF_G(i,j,k) = SignDeltaMinusF*&
-               SumDeltaHMinus/SumMajor
+          DeltaMinusF_G(i,j,k) = - DeltaMinusF_G(i,j,k)/SumDeltaHMinus
        end if
        if(UseTimeDependentVolume)then
           ! Local CFLs are expressed via SumDeltaHMinus
@@ -447,26 +430,16 @@ contains
     ! Calculate source = f(t+Dt) - f(t):
     ! First order monotone scheme
     Source_C = -CFLCoef_G(1:nI,1:nJ,1:nK)*DeltaMinusF_G(1:nI,1:nJ,1:nK)
-    if(UseMinmodBeta.and.UseLimiter)then
-       where(DeltaMinusF_G(1:nI+1,1:nJ,1:nK)*DeltaMinusF_G(0:nI,1:nJ,1:nK)&
-            <=0.0)DeltaH_FX(0:nI,1:nJ,1:nK) = 0.0
-       where(DeltaMinusF_G(1:nI,1:nJ+1,1:nK)*DeltaMinusF_G(1:nI,0:nJ,1:nK)&
-            <=0.0)DeltaH_FY(1:nI,0:nJ,1:nK) = 0.0
-       if(nK>1)then
-          where(DeltaMinusF_G(1:nI,1:nJ,1:nK+1)*DeltaMinusF_G(1:nI,1:nJ,0:nK)&
-               <=0.0)DeltaH_FZ(1:nI,1:nJ,0:nK) = 0.0
-       end if
-    end if
+
     ! Second order correction
     SumFlux2_G = 0.0; SumFluxPlus_C = 0.0; SumDeltaHPlus_C = 0.0
     Flux_FX = 0.0; Flux_FY = 0.0; Flux_FZ   = 0.0
     ! Calculate Face-X fluxes.
     do k=1, nK; do j = 1, nJ; do i = 0, nI
        if(DeltaH_FX(i,j,k) > 0.0)then
-          HalfBeta=minmodbeta(                              &
-               DownwindDeltaMinusF=DeltaMinusF_G(i+1,j,k),  &
-               UpwindDeltaMinusF  =DeltaMinusF_G(i,j,k))*   &
-               OneOverHatDeltaMinusF_G(i+1,j,k)
+          HalfBeta = 1.0 - CFLCoef_G(i,j,k)*(1.0 - minmodbeta( &
+               DownwindDeltaMinusF=DeltaMinusF_G(i+1,j,k)*CFLCoef_G(i+1,j,k),&
+               UpwindDeltaMinusF  =DeltaMinusF_G(i,j,k)*CFLCoef_G(i,j,k)))
           DeltaFLimited = betalimiter(                      &
                HalfBeta=HalfBeta,                           &
                DeltaF=VDF_G(i+1,j,k) - VDF_G(i  ,j,k),      &
@@ -482,10 +455,9 @@ contains
                   minmod(DeltaFLimited,DeltaMinusF_G(i,j,k))
           end if
        elseif(DeltaH_FX(i,j,k) < 0.0 )then
-          HalfBeta = minmodbeta(                           &
-               DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),   &
-               UpwindDeltaMinusF  =DeltaMinusF_G(i+1,j,k))*&
-               OneOverHatDeltaMinusF_G(i,j,k)
+          HalfBeta = 1.0 - CFLCoef_G(i+1,j,k)*(1.0 -  minmodbeta(&
+               DownwindDeltaMinusF=DeltaMinusF_G(i,j,k)*CFLCoef_G(i,j,k),   &
+               UpwindDeltaMinusF  =DeltaMinusF_G(i+1,j,k)*CFLCoef_G(i+1,j,k)))
           DeltaFLimited = betalimiter(                     &
                HalfBeta=HalfBeta,                          &
                DeltaF=VDF_G(i,j,k)  - VDF_G(i+1,j,k),      &
@@ -505,10 +477,9 @@ contains
     ! Calculate Face-Y fluxes.
     do k=1, nK; do j = 0, nJ; do i = 1, nI
        if(DeltaH_FY(i,j,k) > 0.0)then
-          HalfBeta  = minmodbeta(                         &
-               DownwindDeltaMinusF=DeltaMinusF_G(i,j+1,k),&
-               UpwindDeltaMinusF = DeltaMinusF_G(i,j,k))* &
-               OneOverHatDeltaMinusF_G(i,j+1,k)
+          HalfBeta  = 1.0 - CFLCoef_G(i,j,k)*(1.0 - minmodbeta( &
+               DownwindDeltaMinusF=DeltaMinusF_G(i,j+1,k)*CFLCoef_G(i,j+1,k),&
+               UpwindDeltaMinusF = DeltaMinusF_G(i,j,k)))*CFLCoef_G(i,j,k)
           DeltaFLimited = betalimiter(                    &
                HalfBeta=HalfBeta,                         &
                DeltaF=VDF_G(i,j+1,k)  - VDF_G(i,j  ,k),   &
@@ -524,10 +495,9 @@ contains
                   DeltaFLimited, DeltaMinusF_G(i,j,k))
           end if
        elseif(DeltaH_FY(i,j,k) < 0.0)then
-          HalfBeta  = minmodbeta(                         &
-               DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),  &
-               UpwindDeltaMinusF=DeltaMinusF_G(i,j+1,k))* &
-               OneOverHatDeltaMinusF_G(i,j,k)
+          HalfBeta  = 1.0 - CFLCoef_G(i,j+1,k)*(1.0 - minmodbeta(&
+               DownwindDeltaMinusF=DeltaMinusF_G(i,j,k)*CFLCoef_G(i,j,k),  &
+               UpwindDeltaMinusF=DeltaMinusF_G(i,j+1,k)*CFLCoef_G(i,j+1,k)))
           DeltaFLimited = betalimiter(                    &
                HalfBeta=HalfBeta,                         &
                DeltaF=VDF_G(i,j,k)  - VDF_G(i,j+1 ,k),    &
@@ -548,10 +518,9 @@ contains
        ! Calculate Face-Z fluxes.
        do k=0, nK; do j = 1, nJ; do i = 1, nI
           if(DeltaH_FZ(i,j,k) > 0.0)then
-             HalfBeta   =  minmodbeta(                                       &
-                  DownwindDeltaMinusF=DeltaMinusF_G(i,j,k+1),                &
-                  UpwindDeltaMinusF  =DeltaMinusF_G(i,j,k))*                 &
-                  OneOverHatDeltaMinusF_G(i,j,k+1)
+             HalfBeta   =  1.0 - CFLCoef_G(i,j,k)*(1.0 - minmodbeta(         &
+                  DownwindDeltaMinusF=DeltaMinusF_G(i,j,k+1)*CFLCoef_G(i,j,k+1),&
+                  UpwindDeltaMinusF  =DeltaMinusF_G(i,j,k)*CFLCoef_G(i,j,k)))
              DeltaFLimited = betalimiter(                                    &
                   HalfBeta=HalfBeta,                                         &
                   DeltaF=VDF_G(i,j,k+1)  - VDF_G(i,j  ,k),                   &
@@ -567,10 +536,9 @@ contains
                      DeltaFLimited, DeltaMinusF_G(i,j,k))
              end if
           elseif(DeltaH_FZ(i,j,k) < 0.0)then
-             HalfBeta=minmodbeta(                                          &
-                  DownwindDeltaMinusF=DeltaMinusF_G(i,j,k),                &
-                  UpwindDeltaMinusF  =DeltaMinusF_G(i,j,k+1))*             &
-                  OneOverHatDeltaMinusF_G(i,j,k)
+             HalfBeta  = 1.0 - CFLCoef_G(i,j,k+1)*(1.0 - minmodbeta(       &
+                  DownwindDeltaMinusF=DeltaMinusF_G(i,j,k)*CFLCoef_G(i,j,k),&
+                  UpwindDeltaMinusF  =DeltaMinusF_G(i,j,k+1)*CFLCoef_G(i,j,k+1)))
              DeltaFLimited = betalimiter(                                  &
                   HalfBeta= HalfBeta,                                      &
                   DeltaF=VDF_G(i,j,k)  - VDF_G(i,j ,k+1),                  &
