@@ -309,7 +309,7 @@ contains
     ! Misc:
     ! Harmonic oscillators, nQ is the number of meshes over coordinate,
     ! nP is number of meshes overr generalized momentum
-    integer, parameter::  nQ = 600,  nP = 600
+    integer, parameter::  nQ = 360,  nP = 360
 
     ! Loop variables
     integer           ::  iQ, iP, iStep
@@ -322,6 +322,7 @@ contains
     real :: Energy_C(nQ, nP)
     real :: Time, Dt, Source_C(nQ,nP)
     real :: NormL2Init, NormL2, EnergyInit, Energy, qNode, pNode, Q, P
+    real, parameter :: CFL =0.99
     !--------------------------------------------------------------------------
     ! Control volume, for a uniform rectangular grid
     Volume_G = DeltaQ*DeltaP
@@ -353,7 +354,7 @@ contains
     do
        call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
             Hamiltonian_N,   &
-            CFLIn=0.99, DtOut = Dt)
+            CFLIn=CFL, DtOut = Dt)
        iStep = iStep +1
        if(Time + Dt >= tFinal)then
           call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
