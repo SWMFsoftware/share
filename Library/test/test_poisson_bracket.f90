@@ -241,13 +241,13 @@ contains
     ! Misc:
     ! Harmonic oscillators, nQ is the number of meshes over coordinate,
     ! nP is number of meshes overr generalized momentum
-    integer, parameter::  nQ = 1200,  nP = 1200
+    integer, parameter::  nQ = 300,  nP = 300
 
     ! Loop variables
     integer           ::  iQ, iP, iStep
 
     ! Mesh size
-    real, parameter   :: DeltaQ = 0.02, DeltaP = 0.02
+    real, parameter   :: DeltaQ = 24.0/nQ, DeltaP = 24.0/nP
     real :: VDF_G(-1:nQ+2, -1:nP+2)
     real :: Volume_G(0:nQ+1, 0:nP+1)
     real :: Hamiltonian_N(-1:nQ+1, -1:nP+1)
@@ -296,8 +296,8 @@ contains
     call save_plot_file(NameFile='test_poisson2d.out', &
          TypeFileIn='real4', TimeIn=tFinal, nStepIn = iStep, &
          NameVarIn='-Py    Px VDF', &
-         CoordMinIn_D=[-11.99, -11.99], &
-         CoordMaxIn_D=[11.99, 11.99], &
+         CoordMinIn_D=[-12.0 + 0.50*DeltaQ, -12.0 +  0.50*DeltaP], &
+         CoordMaxIn_D=[12.0 - 0.50*DeltaQ, 12.0 - 0.50*DeltaP], &
          VarIn_II = VDF_G(1:nQ,1:nP))
 
   end subroutine test_poisson_2d
@@ -309,13 +309,13 @@ contains
     ! Misc:
     ! Harmonic oscillators, nQ is the number of meshes over coordinate,
     ! nP is number of meshes overr generalized momentum
-    integer, parameter::  nQ = 1200,  nP = 1200
+    integer, parameter::  nQ = 600,  nP = 600
 
     ! Loop variables
     integer           ::  iQ, iP, iStep
 
     ! Mesh size
-    real, parameter   :: DeltaQ = 0.02, DeltaP = 0.02
+    real, parameter   :: DeltaQ = 24.0/nQ, DeltaP = 24.0/nP
     real :: VDF_G(-1:nQ+2, -1:nP+2),VDFInitial_C(nQ,nP),PlotVar_VC(2,nQ,nP)
     real :: Volume_G(0:nQ+1, 0:nP+1)
     real :: Hamiltonian_N(-1:nQ+1, -1:nP+1)
@@ -342,7 +342,7 @@ contains
        end do
     end do
     ! Initial distribution function
-    VDFInitial_C = 0.0; VDFInitial_C(551:650,101:1100) = 1.0
+    VDFInitial_C = 0.0; VDFInitial_C(nQ/24*11+1:nQ/24*13,nQ/12+1:nQ/12*11) = 1.0
     VDF_G = 0.0; VDF_G(1:nQ, 1:nP) = VDFInitial_C
     Source_C = 0.0
     ! Initial NormL2 and Energy
@@ -382,8 +382,8 @@ contains
          TypeFileIn='real4', TimeIn=tFinal, nStepIn = iStep, &
          NameVarIn='Q    P VDF VDFIni ErrorL2 EnergyDefect', &
          ParamIn_I=[NormL2/NormL2Init, Energy/EnergyInit - 1.0],&
-         CoordMinIn_D=[-11.99, -11.99], &
-         CoordMaxIn_D=[11.99, 11.99], &
+         CoordMinIn_D=[-12.0 + 0.5*DeltaQ, -12.0 + 0.5*DeltaP], &
+         CoordMaxIn_D=[12.0 - 0.5*DeltaQ, 12.0 - 0.5*DeltaP], &
          VarIn_VII = PlotVar_VC)
 
   end subroutine test_energy_conservation
