@@ -31,12 +31,18 @@ module ModPoissonBracket
   real, parameter :: CflMax = 0.990
   character(LEN=*), parameter:: NameMod = 'ModPoissonBracket'
   logical, parameter :: UseLimiter = .true. ! false: switch off limiters
-  !  If UseMinmodBeta is .false. beta-parameter  is fully determined by
-  !  \delta^-f in  the downwind cell, otherwise it is proportional to
-  !  minmod of \delta^-f in the given cell and in the downwind cell
+  ! 1. The second order in time scheme is TVD only with  UseMinmodBeta=.true.,
+  ! which scheme produces an extra dissipation  noticeable at 0.5<CFL<1
+  ! With UseMinmodBeta=.false. the TVD property is proved only at invititesimal
+  ! timestep.
+  ! 2. The most advanced and better tested ooptions:
+  ! UseFluxLimiter=.true., UseKoren = .true. Koren's flux limiter
+  ! UseFluxLimiter=.false., UseKoren = .false.  - superbee applied to the
+  ! differences across the opposite faces.
   logical, parameter ::  UseMinmodBeta  = .false.
-  logical, parameter ::  UseMC3 = .false.
-  real, parameter :: cTol = 1.0e-12
+  logical, parameter ::  UseKoren = .false.
+  logical, parameter ::  UseFluxLimiter = .false.
+  real, parameter :: cTol = 1.0e-14
 
 contains
   !============================================================================
@@ -51,6 +57,21 @@ contains
        minmod = (sign(0.5, Arg1) + sign(0.5, Arg2))*min(abs(Arg1), abs(Arg2))
     end if
   end function minmod
+  !============================================================================
+    real function flux_limiter(DeltaPlusF, DeltaMinusF)
+    real, intent(in) :: DeltaPlusF, DeltaMinusF
+    real :: SignDeltaPlusF
+    !---------------------------------------------------------
+    if(abs(DeltaPlusF) <=cTol)then
+       flux_limiter = 0.0
+    elseif(UseKoren)then
+       flux_limiter  = (1.0/6.0)*(DeltaMinusF - DeltaPlusF)
+    else
+       SignDeltaPlusF = sign(1.0,DeltaPlusF)
+       flux_limiter = 0.5*SignDeltaPlusF*max(0.0,&
+            SignDeltaPlusF*DeltaMinusF - abs(DeltaPlusF))
+    end if
+  end function flux_limiter
   !============================================================================
   real function minmodbeta(DownwindDeltaMinusF, UpwindDeltaMinusF)
     !  To switch between two choices of beta-parameter:
@@ -83,7 +104,9 @@ contains
        betalimiter = 0.50*DeltaF
     else
        SignDeltaF = sign(1.0, DeltaF); AbsDeltaF = abs(DeltaF)
-       if(UseMC3)then
+       if(UseFluxLimiter)then
+          AbsDeltaFLimited =  max(0.50*AbsDeltaF + SignDeltaF*FluxLimiter,0.0)
+       elseif(UseKoren)then
           AbsDeltaFLimited = (1/6.0)*(2*AbsDeltaF + max(0.0, &
                SignDeltaF*UpwindDeltaF))
        else
@@ -379,7 +402,8 @@ contains
        else
           DeltaPlusF_G(i,j,k) = DeltaPlusF_G(i,j,k)/SumDeltaHPlus_G(i,j,k)
        end if
-       FluxLimiter_G(i,j,k)  = 0.0
+       FluxLimiter_G(i,j,k)  = &
+            flux_limiter(DeltaPlusF_G(i,j,k), DeltaMinusF_G(i,j,k))
        if(UseTimeDependentVolume)then
           ! Local CFLs are expressed via SumDeltaHMinus
           CFLCoef_G(i,j,k) = -SumDeltaHMinus
@@ -452,7 +476,6 @@ contains
     ! Calculate source = f(t+Dt) - f(t):
     ! First order monotone scheme
     Source_C = -CFLCoef_G(1:nI,1:nJ,1:nK)*DeltaMinusF_G(1:nI,1:nJ,1:nK)
-
     ! Second order correction
     SumFlux2_G = 0.0; SumFluxPlus_C = 0.0
     Flux_FX = 0.0; Flux_FY = 0.0; Flux_FZ   = 0.0
@@ -471,9 +494,11 @@ contains
              Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*DeltaFLimited
              SumFluxPlus_C(i,j,k) = SumFluxPlus_C(i,j,k) + Flux_FX(i,j,k)
           elseif(.not.IsPeriodic_D(1))then
+             if(.not.UseFluxLimiter)&
+                  DeltaFLimited = minmod(DeltaFLimited,DeltaMinusF_G(i,j,k))
              SumFlux2_G(i+1,j,k) = SumFlux2_G(i+1,j,k) + &
                   DeltaH_FX(i,j,k)*(1.0 - CFLCoef_G(i,j,k))*&
-                  minmod(DeltaFLimited,DeltaMinusF_G(i,j,k))
+                  DeltaFLimited
           end if
        elseif(DeltaH_FX(i,j,k) < 0.0 )then
           HalfBeta = 1.0 - CFLCoef_G(i+1,j,k)*(1.0 -  minmodbeta(&
@@ -488,9 +513,11 @@ contains
              Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*DeltaFLimited
              SumFluxPlus_C(i+1,j,k) = SumFluxPlus_C(i+1,j,k) - Flux_FX(i,j,k)
           elseif(.not.IsPeriodic_D(1))then
-             SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) - DeltaH_FX(i,j,k)*&
-                  (1.0 - CFLCoef_G(i+1,j,k))*minmod(DeltaFLimited,&
+             if(.not.UseFluxLimiter)&
+                  DeltaFLimited = minmod(DeltaFLimited,&
                   DeltaMinusF_G(i+1,j,k))
+             SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) - DeltaH_FX(i,j,k)*&
+                  (1.0 - CFLCoef_G(i+1,j,k))*DeltaFLimited
           end if
        end if
     end do; end do; end do
@@ -509,9 +536,11 @@ contains
              Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*DeltaFLimited
              SumFluxPlus_C(i,j,k) = SumFluxPlus_C(i,j,k) + Flux_FY(i,j,k)
           elseif(.not.IsPeriodic_D(2))then
-             SumFlux2_G(i,j+1,k) = SumFlux2_G(i,j+1,k) + DeltaH_FY(i,j,k)*&
-                  (1.0 - CFLCoef_G(i,j,k))*minmod( &
+             if(.not.UseFluxLimiter)&
+                  DeltaFLimited =minmod( &
                   DeltaFLimited, DeltaMinusF_G(i,j,k))
+             SumFlux2_G(i,j+1,k) = SumFlux2_G(i,j+1,k) + DeltaH_FY(i,j,k)*&
+                  (1.0 - CFLCoef_G(i,j,k))*DeltaFLimited
           end if
        elseif(DeltaH_FY(i,j,k) < 0.0)then
           HalfBeta  = 1.0 - CFLCoef_G(i,j+1,k)*(1.0 - minmodbeta(&
@@ -526,9 +555,11 @@ contains
              Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*DeltaFLimited
              SumFluxPlus_C(i,j+1,k) = SumFluxPlus_C(i,j+1,k) - Flux_FY(i,j,k)
           elseif(.not.IsPeriodic_D(2))then
-             SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) - DeltaH_FY(i,j,k)*&
-                  (1.0 - CFLCoef_G(i,j+1,k))*minmod(  &
+             if(.not.UseFluxLimiter)&
+                  DeltaFLimited = minmod(  &
                   DeltaFLimited, DeltaMinusF_G(i,j+1,k))
+             SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) - DeltaH_FY(i,j,k)*&
+                  (1.0 - CFLCoef_G(i,j+1,k))*DeltaFLimited
           end if
        end if
     end do; end do; end do
@@ -548,9 +579,11 @@ contains
                 Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*DeltaFLimited
                 SumFluxPlus_C(i,j,k) = SumFluxPlus_C(i,j,k) + Flux_FZ(i,j,k)
              elseif(.not.IsPeriodic_D(3))then
-                SumFlux2_G(i,j,k+1) = SumFlux2_G(i,j,k+1) + DeltaH_FZ(i,j,k)*&
-                     (1.0 - CFLCoef_G(i,j,k))*minmod( &
+                if(.not.UseFluxLimiter)&
+                     DeltaFLimited = minmod( &
                      DeltaFLimited, DeltaMinusF_G(i,j,k))
+                SumFlux2_G(i,j,k+1) = SumFlux2_G(i,j,k+1) + DeltaH_FZ(i,j,k)*&
+                     (1.0 - CFLCoef_G(i,j,k))*DeltaFLimited
              end if
           elseif(DeltaH_FZ(i,j,k) < 0.0)then
              HalfBeta  = 1.0 - CFLCoef_G(i,j,k+1)*(1.0 - minmodbeta(       &
@@ -566,9 +599,11 @@ contains
                 SumFluxPlus_C(i,j,k+1) = SumFluxPlus_C(i,j,k+1) -          &
                      Flux_FZ(i,j,k)
              elseif(.not.IsPeriodic_D(3))then
-                SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) - DeltaH_FZ(i,j,k)*&
-                     (1.0 - CFLCoef_G(i,j,k+1))*minmod( &
+                if(.not.UseFluxLimiter)&
+                     DeltaFLimited = minmod( &
                      DeltaFLimited ,DeltaMinusF_G(i,j,k+1))
+                SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) - DeltaH_FZ(i,j,k)*&
+                     (1.0 - CFLCoef_G(i,j,k+1))*DeltaFLimited
              end if
           end if
        end do; end do; end do
