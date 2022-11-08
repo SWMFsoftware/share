@@ -61,7 +61,7 @@ contains
     real function flux_limiter(DeltaPlusF, DeltaMinusF)
     real, intent(in) :: DeltaPlusF, DeltaMinusF
     real :: SignDeltaPlusF
-    !---------------------------------------------------------
+    !--------------------------------------------------------------------------
     if(abs(DeltaPlusF) <=cTol)then
        flux_limiter = 0.0
     elseif(UseKoren)then
