@@ -65,7 +65,7 @@ contains
     if(abs(DeltaPlusF) <=cTol)then
        flux_limiter = 0.0
     elseif(UseKoren)then
-       flux_limiter = (1.0/6.0)*(DeltaMinusF - DeltaPlusF)  
+       flux_limiter = (1.0/6.0)*(DeltaMinusF - DeltaPlusF)
     else
        SignDeltaPlusF = sign(1.0,DeltaPlusF)
        flux_limiter = 0.5*SignDeltaPlusF*max(0.0,&
