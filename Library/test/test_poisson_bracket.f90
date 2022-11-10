@@ -599,7 +599,6 @@ contains
     ! do iP =1, nP
     !   write(*,*)LogMomentum_I(iP),alog10(VDF_G(5000,iP)*VolumeNew_G(5000,iP))
     ! end do
-    write(*,*)'Total weight=', sum(VDF_G(5000,1:nP)*VolumeNew_G(5000,1:nP))
     call save_plot_file(NameFile='test_dsa_poisson.out', &
          TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
          NameVarIn='LogMomentum VDF'  ,                  &
