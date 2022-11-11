@@ -32,7 +32,7 @@ module ModPoissonBracket
   character(LEN=*), parameter:: NameMod = 'ModPoissonBracket'
   logical, parameter :: UseLimiter = .true. ! false: switch off limiters
   ! The second order in time scheme is TVD only with  UseMinmodBeta=.true.,
-  ! which scheme produces an extra dissipation  noticeable at 0.5<CFL<1, 
+  ! which scheme produces an extra dissipation  noticeable at 0.5<CFL<1,
   ! where \delta^-f changes sign. With UseMinmodBeta=.false. the TVD
   ! property is proved only at infinitesimal timestep.
   logical, parameter ::  UseMinmodBeta  = .false.
