@@ -309,7 +309,7 @@ contains
     ! Misc:
     ! Harmonic oscillators, nQ is the number of meshes over coordinate,
     ! nP is number of meshes overr generalized momentum
-    integer, parameter::  nQ = 360,  nP = 360
+    integer, parameter::  nQ = 90,  nP = 90
 
     ! Loop variables
     integer           ::  iQ, iP, iStep
@@ -323,6 +323,9 @@ contains
     real :: Time, Dt, Source_C(nQ,nP)
     real :: NormL2Init, NormL2, EnergyInit, Energy, qNode, pNode, Q, P
     real, parameter :: CFL =0.5
+    real, parameter:: pWidth = 10.0, qWidth = 2.0
+    integer, parameter:: nPower = 4
+    logical, parameter:: IsSmooth = .true.
     !--------------------------------------------------------------------------
     ! Control volume, for a uniform rectangular grid
     Volume_G = DeltaQ*DeltaP
@@ -343,7 +346,20 @@ contains
        end do
     end do
     ! Initial distribution function
-    VDFInitial_C = 0.0; VDFInitial_C(nQ/24*11+1:nQ/24*13,nQ/12+1:nQ/12*11) = 1.0
+    VDFInitial_C = 0.0
+    do iP = 1, nP; do iQ = 1, nQ
+       P = DeltaP*(iP - nP/2 - 0.5)
+       Q = DeltaQ*(iQ - nQ/2 - 0.5)
+       if(abs(Q) < qWidth .and. abs(P) < pWidth)then
+          if(IsSmooth)then
+             VDFInitial_C(iQ,iP) = cos(0.5*cPi*Q/qWidth)**nPower &
+                  *                cos(0.5*cPi*P/pWidth)**nPower
+          else
+             VDFInitial_C(iQ,iP) = 1.0
+          endif
+       end if
+    end do; end do
+
     VDF_G = 0.0; VDF_G(1:nQ, 1:nP) = VDFInitial_C
     Source_C = 0.0
     ! Initial NormL2 and Energy
