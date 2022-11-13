@@ -37,7 +37,7 @@ module ModPoissonBracket
   ! property is proved only at infinitesimal timestep.
   logical, parameter ::  UseMinmodBeta  = .false.
   logical, parameter ::  UseKoren = .false.
-  logical, parameter ::  UseFaceFactor = .false. 
+  logical, parameter ::  Use1DLimiter=.false. ! For test_hill
   real, parameter :: cTol = 1.0e-14
 
 contains
@@ -71,12 +71,11 @@ contains
     end if
   end function minmodbeta
   !============================================================================
-  real function betalimiter(HalfBeta, DeltaF, UpwindDeltaF, FaceFactor)
+  real function betalimiter(HalfBeta, DeltaF, UpwindDeltaF)
     !  \delta^-f in the neighboring cells
     real, intent(in) :: HalfBeta
     real, intent(in) :: DeltaF                ! f_j -f
     real, intent(in) :: UpwindDeltaF     ! f - f_j^\prime at the opposite face
-    real, intent(in) :: FaceFactor
     real :: SignDeltaF, AbsDeltaF, AbsDeltaFLimited
     !--------------------------------------------------------------------------
     if(abs(DeltaF) <=cTol)then
@@ -86,9 +85,10 @@ contains
     else
        SignDeltaF = sign(1.0, DeltaF); AbsDeltaF = abs(DeltaF)
        if(UseKoren)then
-          if(UseFaceFactor)then
-             AbsDeltaFLimited = max(3*AbsDeltaF + &
-                  (SignDeltaF*UpwindDeltaF - AbsDeltaF)*FaceFactor,0.0)/6.0
+          if(Use1DLimiter)then
+             AbsDeltaFLimited = min((2*AbsDeltaF + &
+                  SignDeltaF*UpwindDeltaF)/6.0,    &
+                  max(0.0,SignDeltaF*UpwindDeltaF))
           else
              AbsDeltaFLimited = max(2*AbsDeltaF + &
                   SignDeltaF*UpwindDeltaF,0.0)/6.0
@@ -473,8 +473,7 @@ contains
           DeltaFLimited = betalimiter(                      &
                HalfBeta=HalfBeta,                           &
                DeltaF=VDF_G(i+1,j,k) - VDF_G(i  ,j,k),      &
-               UpwindDeltaF=VDF_G(i,j,k) - VDF_G(i-1,j,k),  &
-               FaceFactor=minmod(1.0,DeltaH_FX(i-1,j,k)/DeltaH_FX(i,j,k)))
+               UpwindDeltaF=VDF_G(i,j,k) - VDF_G(i-1,j,k))
           if(i > 0)then
              Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*DeltaFLimited
              SumFluxPlus_C(i,j,k) = SumFluxPlus_C(i,j,k) + Flux_FX(i,j,k)
@@ -491,8 +490,7 @@ contains
           DeltaFLimited = betalimiter(                     &
                HalfBeta=HalfBeta,                          &
                DeltaF=VDF_G(i,j,k)  - VDF_G(i+1,j,k),      &
-               UpwindDeltaF=VDF_G(i+1,j,k) - VDF_G(i+2,j,k),  &
-               FaceFactor=minmod(1.0,DeltaH_FX(i+1,j,k)/DeltaH_FX(i,j,k)))
+               UpwindDeltaF=VDF_G(i+1,j,k) - VDF_G(i+2,j,k))
           if(i < nI)then
              Flux_FX(i,j,k) = DeltaH_FX(i,j,k)*DeltaFLimited
              SumFluxPlus_C(i+1,j,k) = SumFluxPlus_C(i+1,j,k) - Flux_FX(i,j,k)
@@ -513,8 +511,7 @@ contains
           DeltaFLimited = betalimiter(                    &
                HalfBeta=HalfBeta,                         &
                DeltaF=VDF_G(i,j+1,k)  - VDF_G(i,j  ,k),   &
-               UpwindDeltaF=VDF_G(i,j  ,k) - VDF_G(i,j-1,k),  &
-               FaceFactor=minmod(1.0,DeltaH_FY(i,j-1,k)/DeltaH_FY(i,j,k)))
+               UpwindDeltaF=VDF_G(i,j  ,k) - VDF_G(i,j-1,k))
           if(j > 0)then
              Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*DeltaFLimited
              SumFluxPlus_C(i,j,k) = SumFluxPlus_C(i,j,k) + Flux_FY(i,j,k)
@@ -531,8 +528,7 @@ contains
           DeltaFLimited = betalimiter(                    &
                HalfBeta=HalfBeta,                         &
                DeltaF=VDF_G(i,j,k)  - VDF_G(i,j+1 ,k),    &
-               UpwindDeltaF=VDF_G(i,j+1,k) - VDF_G(i,j+2,k),  &
-               FaceFactor=minmod(1.0,DeltaH_FY(i,j+1,k)/DeltaH_FY(i,j,k)))
+               UpwindDeltaF=VDF_G(i,j+1,k) - VDF_G(i,j+2,k))
           if(j < nJ)then
              Flux_FY(i,j,k) = DeltaH_FY(i,j,k)*DeltaFLimited
              SumFluxPlus_C(i,j+1,k) = SumFluxPlus_C(i,j+1,k) - Flux_FY(i,j,k)
@@ -555,8 +551,7 @@ contains
              DeltaFLimited = betalimiter(                                    &
                   HalfBeta=HalfBeta,                                         &
                   DeltaF=VDF_G(i,j,k+1)  - VDF_G(i,j  ,k),                   &
-                  UpwindDeltaF=VDF_G(i,j  ,k) - VDF_G(i,j,k-1),              &
-                  FaceFactor=minmod(1.0,DeltaH_FZ(i,j,k-1)/DeltaH_FZ(i,j,k)))
+                  UpwindDeltaF=VDF_G(i,j  ,k) - VDF_G(i,j,k-1))
              if(k > 0)then
                 Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*DeltaFLimited
                 SumFluxPlus_C(i,j,k) = SumFluxPlus_C(i,j,k) + Flux_FZ(i,j,k)
@@ -574,8 +569,7 @@ contains
              DeltaFLimited = betalimiter(                                  &
                   HalfBeta= HalfBeta,                                      &
                   DeltaF=VDF_G(i,j,k)  - VDF_G(i,j ,k+1),                  &
-                  UpwindDeltaF=VDF_G(i,j,k+1) - VDF_G(i,j,k+2),  &
-                  FaceFactor=minmod(1.0,DeltaH_FZ(i,j,k+1)/DeltaH_FZ(i,j,k)))
+                  UpwindDeltaF=VDF_G(i,j,k+1) - VDF_G(i,j,k+2))
              if(k < nK)then
                 Flux_FZ(i,j,k) = DeltaH_FZ(i,j,k)*DeltaFLimited
                 SumFluxPlus_C(i,j,k+1) = SumFluxPlus_C(i,j,k+1) -          &
@@ -596,7 +590,7 @@ contains
        DeltaPlusFBetaLimited  = SumFluxPlus_C(i,j,k)/SumDeltaHPlus_G(i,j,k)
        if((DeltaPlusFBetaLimited*DeltaMinusF_G(i,j,k)>=0.0.and.&
             abs(DeltaPlusFBetaLimited)<=abs(DeltaMinusF_G(i,j,k)))&
-            .or.(.not.UseLimiter))then
+            .or.(.not.UseLimiter).or.Use1DLimiter)then
           ! There is no need to limit DeltaPlus with DeltaMinus_G(i,j,k)
           if(DeltaH_FX(i, j, k) > 0.0)&
                ! This is \delta H^+ face, contributing to second order flux
