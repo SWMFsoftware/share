@@ -983,8 +983,7 @@ contains
        PlotVar_VC(3,:,1:nTheta/2) = Source_C/Dt
        Error = sum(abs(PlotVar_VC(2,:,1:nTheta/2) - &
             PlotVar_VC(3,:,1:nTheta/2))*&
-            Volume_G(1:nR,1:nTheta/2))/&
-            sum(Volume_G(1:nR,1:nTheta/2))
+            Volume_G(1:nR,1:nTheta/2))/(4/3.0*cPi*5.0**3)
        call explicit(nR, nTheta/2, VDF_G(-1:nR+2,-1:nTheta/2+2), Volume_G,&
             Source_C, Hamiltonian_N,   &
             CFLIn=CFL, DtOut = Dt)
@@ -993,8 +992,7 @@ contains
        Error2 = sum(abs(&
             PlotVar_VC(2,:,1:nTheta/2) + PlotVar_VC(4,:,1:nTheta/2) - &
             PlotVar_VC(5,:,1:nTheta/2))*&
-            Volume_G(1:nR,1:nTheta/2))/&
-            sum(Volume_G(1:nR,1:nTheta/2))
+            Volume_G(1:nR,1:nTheta/2))/(4/3.0*cPi*5.0**3)
        do iTheta = nTheta/2 + 1, nTheta
           ! Symmetric prolongation for visualization
           PlotVar_VC(3,:, iTheta) = PlotVar_VC(3,:, 1+nTheta-iTheta)
