@@ -37,7 +37,6 @@ module ModPoissonBracket
   ! property is proved only at infinitesimal timestep.
   logical, parameter ::  UseMinmodBeta  = .false.
   logical, parameter ::  UseKoren = .false.
-  logical, parameter ::  Use1DLimiter=.false. ! For test_hill
   real, parameter :: cTol = 1.0e-14
 
 contains
@@ -85,14 +84,8 @@ contains
     else
        SignDeltaF = sign(1.0, DeltaF); AbsDeltaF = abs(DeltaF)
        if(UseKoren)then
-          if(Use1DLimiter)then
-             AbsDeltaFLimited = min((2*AbsDeltaF + &
-                  SignDeltaF*UpwindDeltaF)/6.0,    &
-                  max(0.0,SignDeltaF*UpwindDeltaF))
-          else
-             AbsDeltaFLimited = max(2*AbsDeltaF + &
-                  SignDeltaF*UpwindDeltaF,0.0)/6.0
-          end if
+          AbsDeltaFLimited = max(2*AbsDeltaF + &
+               SignDeltaF*UpwindDeltaF,0.0)/6.0
        else
           AbsDeltaFLimited = 0.5*max(AbsDeltaF, SignDeltaF*UpwindDeltaF)
        end if
@@ -590,7 +583,7 @@ contains
        DeltaPlusFBetaLimited  = SumFluxPlus_C(i,j,k)/SumDeltaHPlus_G(i,j,k)
        if((DeltaPlusFBetaLimited*DeltaMinusF_G(i,j,k)>=0.0.and.&
             abs(DeltaPlusFBetaLimited)<=abs(DeltaMinusF_G(i,j,k)))&
-            .or.(.not.UseLimiter).or.Use1DLimiter)then
+            .or.(.not.UseLimiter))then
           ! There is no need to limit DeltaPlus with DeltaMinus_G(i,j,k)
           if(DeltaH_FX(i, j, k) > 0.0)&
                ! This is \delta H^+ face, contributing to second order flux
