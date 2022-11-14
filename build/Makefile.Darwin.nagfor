@@ -80,7 +80,7 @@ BLAS  = lapack.o blas.o
 	rm -f $*.f9
 
 .f.o:
-	${COMPILE.f77} ${Cflag3} -132 $<
+	${COMPILE.f77} ${Cflag3} -132 -dusty $<
 
 .for.o:
 	${COMPILE.f77} ${Cflag3} -132 $<
