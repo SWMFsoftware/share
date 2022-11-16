@@ -6894,6 +6894,15 @@ pro plot_color_bar, pos, maxmin
 end
 
 ;============================================================================
+pro loadct_bw, color
+  common colors
+
+  loadct,color
+  r_orig(0)=0 & g_orig(0)=0 & b_orig(0)=0
+  r_orig(255)=255 & g_orig(255)=255 & b_orig(255)=255
+  tvlct,r_orig,g_orig,b_orig
+end
+;============================================================================
 pro makect, color
 
   ;; Create color table corresponding to color='mid','blue','red','rwb','bwr'
