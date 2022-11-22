@@ -509,7 +509,7 @@ contains
     PlotVar_VC(1,:,:) = VDF_G(1:nJ,1:nPhi)
     PlotVar_VC(2,:,:) = VDFInitial_C
     call save_plot_file(NameFile='test_action_angle.out', &
-         TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
+         TypeFileIn='real4', TimeIn=tFinal, nStepIn = iStep, &
          NameVarIn='Q    P VDF VDFIni ErrorL2 EnergyDefect', &
          CoordMinIn_D=[10.0**LogMomentum_I(1 ), 0.50*DeltaPhi],&
          CoordMaxIn_D=[10.0**LogMomentum_I(nJ), cTwoPi - 0.50*DeltaPhi], &
@@ -1063,7 +1063,7 @@ module ModStochastic
   PRIVATE ! Except
   public :: test_stochastic
   ! Streamlines:
-  integer, parameter :: nPointPer2Pi = 360
+  integer, parameter :: nPointPer2Pi = 180
   integer, parameter :: nJ = (4*nPointPer2Pi)/2, nTheta=nPointPer2Pi
   real, parameter    :: Delta = cTwoPi/nPointPer2Pi
   ! Loop variables
@@ -1097,7 +1097,7 @@ contains
     end do
     ! Sinusoidal perturbation
     do iTheta = -1, nTheta+1
-       HamiltonianPush_N(-iTheta, -1-nJ:nJ+1) = cos(Theta_I(iTheta))
+       HamiltonianPush_N(iTheta, -1-nJ:nJ+1) = cos(Theta_I(iTheta))
     end do
     ! Account for:
     ! 1. Amplitude factor, KChirikov
@@ -1133,18 +1133,18 @@ contains
          CoordMinIn_D=[         0.50*Delta, -2.0 + 0.50/nPointPer2Pi],&
          CoordMaxIn_D=[cTwoPi - 0.50*Delta,  2.0 - 0.50/nPointPer2Pi],&
          VarIn_II = log10(VDF_G(1:nTheta,1-nJ:nJ)) )
-    do iPlot = 0, 249
+    do iPlot = 0, 999
        tFinal = tFinal + 0.1
        DoAgain = .true.
        do while(DoAgain)
           call explicit(nTheta,2*nJ, VDF_G, Volume_G,&
                Source_C, HamiltonianPush_N,   &
-               CFLIn=0.99, DtOut = Dt)
+               CFLIn=0.5, DtOut = Dt,IsPeriodicIn_D=[.true.,.false.])
           iStep = iStep +1
           if(Time + Dt >= tFinal)then
              call explicit(nTheta,2*nJ,VDF_G,Volume_G,&
                   Source_C, HamiltonianPush_N,   &
-                  DtIn = tFinal - Time)
+                  DtIn = tFinal - Time,IsPeriodicIn_D=[.true.,.false.])
              VDF_G(1:nTheta,1-nJ:nJ) = VDF_G(1:nTheta,1-nJ:nJ) + Source_C
              Time = tFinal
              DoAgain = .false.
@@ -1162,12 +1162,12 @@ contains
        do while(DoAgain)
           call explicit(nTheta,2*nJ, VDF_G, Volume_G,&
                Source_C, HamiltonianFree_N,   &
-               CFLIn=0.99, DtOut = Dt)
+               CFLIn=0.99, DtOut = Dt,IsPeriodicIn_D=[.true.,.false.])
           iStep = iStep +1
           if(Time + Dt >= tFinal)then
              call explicit(nTheta,2*nJ,VDF_G,Volume_G,&
                   Source_C, HamiltonianFree_N,   &
-                  DtIn = tFinal - Time)
+                  DtIn = tFinal - Time,IsPeriodicIn_D=[.true.,.false.])
              VDF_G(1:nTheta,1-nJ:nJ) = VDF_G(1:nTheta,1-nJ:nJ) + Source_C
              Time = tFinal
              DoAgain = .false.
