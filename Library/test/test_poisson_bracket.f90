@@ -301,6 +301,115 @@ contains
          VarIn_II = VDF_G(1:nQ,1:nP))
 
   end subroutine test_poisson_2d
+  !===================================================================
+  subroutine test_poisson_2d_smooth(tFinal)
+    real, intent(in) :: tFinal
+
+    ! Misc:
+    ! Anharmonic oscillators, nQ is the number of meshes over coordinate,
+    ! nP is number of meshes overr generalized momentum
+    integer, parameter::  nQ = 300,  nP = 300
+
+    ! Loop variables
+    integer           ::  iQ, iP, iStep
+
+    ! Mesh size
+    real, parameter   :: DeltaQ = 24.0/nQ, DeltaP = 24.0/nP
+    real :: VDF_G(-1:nQ+2, -1:nP+2), VDFFinal_G(-1:nQ+2,-1:nP+2)
+    real :: Plot_VC(3,1:nQ,1:nP)
+    real :: Volume_G(0:nQ+1, 0:nP+1)
+    real :: Hamiltonian_N(-1:nQ+1, -1:nP+1)
+    real :: Time, Dt, Source_C(nQ,nP), Error
+    real :: NormL2Init, NormL2, EnergyInit, Energy, qNode, pNode, Q, P
+    real, parameter :: WidthX = 6.0, WidthY = 6.0
+    !--------------------------------------------------------------------------
+    ! Control volume, for a uniform rectangular grid
+    Volume_G = DeltaQ*DeltaP
+    ! Hamiltonian at the nodes
+    do iP = -1, nP+1
+       pNode = DeltaP*(iP - nP/2)
+       do iQ = -1, nQ+2
+          qNode = DeltaQ*(iQ - nQ/2)
+          Hamiltonian_N(iQ,iP) = hamiltonian(qNode**2 + pNode**2)
+       end do
+    end do
+    ! Initial distribution function
+    VDF_G = 0.0
+    do iP = -1, nP+2
+       P = DeltaP*(iP - nP/2 - 0.50)
+       do iQ = -1, nQ+2
+          Q = DeltaQ*(iQ - nQ/2 - 0.50)
+          VDF_G(     iQ,iP) = initial_cap(Q,P)
+          VDFFinal_G(iQ,iP) = final_cap(  Q,P)
+       end do
+    end do
+    Plot_VC(1,:,:) = VDF_G(     1:nQ,1:nP)
+    Plot_VC(2,:,:) = VDFFinal_G(1:nQ,1:nP)
+    Source_C = 0.0
+    ! Compiutation
+    Time = 0.0; iStep = 0
+    do
+       call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
+            Hamiltonian_N,   &
+            CFLIn=0.50, DtOut = Dt)
+       iStep = iStep +1
+       if(Time + Dt >= tFinal)then
+          call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
+               Hamiltonian_N,   &
+               DtIn = tFinal - Time)
+          Time = tFinal
+          write(*,*) Time
+          VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
+          EXIT
+       else
+          Time = Time + Dt
+          VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
+          write(*,*)Time
+       end if
+    end do
+    Plot_VC(3,1:nQ,1:nP) = VDF_G(1:nQ, 1:nP)
+    Error = sum(abs(VDF_G(1:nQ,1:nP) - VDFFinal_G(1:nQ,1:nP))*&
+         Volume_G(1:nQ,1:nP))/(WidthX*WidthY)
+    write(*,*)'Error=',Error
+    call save_plot_file(NameFile='test_poisson_2d_smooth.out', &
+         TypeFileIn='real4', TimeIn=tFinal, nStepIn = iStep, &
+         NameVarIn='-Py    Px   VDFInit VDFAnal VDFFinal  Error', &
+         CoordMinIn_D=[-12.0 + 0.50*DeltaQ, -12.0 +  0.50*DeltaP], &
+         CoordMaxIn_D=[12.0 - 0.50*DeltaQ, 12.0 - 0.50*DeltaP], &
+         ParamIn_I=[Error], &
+         VarIn_VII = Plot_VC)
+  contains
+    !=============================
+    real function initial_cap(x,y)
+      real, intent(in) :: x,y
+      real, parameter :: xCenter = -6.0, yCenter = 0.0
+      !--------------------------------------------
+      initial_cap = 0.0
+      if(abs(x  - xCenter)<=WidthX/2.and.abs(y - yCenter)<=WidthY/2)then
+         initial_cap = cos(cPi*(x - xCenter)/WidthX)**4*&
+              cos(cPi*(y - yCenter)/WidthY)**4
+      end if
+    end function initial_cap
+    !==========================================================================
+    real function final_cap(x,y)
+      real, intent(in) :: x,y
+      real :: CosPhi,SinPhi,Phi, P, P2, OmegaT, xInit, yInit
+      !----------------------
+      P2  = x**2 + y**2
+      OmegaT = tFinal/hamiltonian(P2)
+      P  = sqrt(P2)
+      CosPhi = x/P; SinPhi = y/P
+      if(SinPhi>=0.0)then
+         Phi =  acos(CosPhi)
+      else
+         Phi = -acos(CosPhi)
+      end if
+      xInit = P*cos(Phi + OmegaT)
+      yInit = P*sin(Phi + OmegaT)
+      final_cap = initial_cap(xInit,yInit)
+    end function final_cap
+    !==========================================================================
+  end subroutine test_poisson_2d_smooth
   !============================================================================
   subroutine test_energy_conservation(tFinal)
 
@@ -1195,7 +1304,7 @@ end module ModStochastic
 program test_program
   use ModTestPoissonBracket, ONLY: test_poisson_bracket, test_dsa_sa_mhd, &
        test_dsa_poisson, test_energy_conservation, test_in_action_angle,  &
-       test_poisson_2d
+       test_poisson_2d, test_poisson_2d_smooth
   use ModNumConst,           ONLY: cTwoPi
   use ModHillVortex, ONLY: test_hill_vortex
   use ModStochastic, ONLY: test_stochastic
@@ -1208,6 +1317,7 @@ program test_program
   call test_poisson_bracket(cTwoPi)        ! nightly test1
   call test_dsa_poisson                    ! nightly test2
   ! call test_poisson_2d(cTwoPi)  ! Fig 1 (right panel)
+  ! call test_poisson_2d_smooth(cTwoPi)
   ! call test_stochastic(1.2)
   ! call test_hill_vortex
   ! call test_energy_conservation(cTwoPi)
