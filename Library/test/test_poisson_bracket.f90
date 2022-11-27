@@ -294,7 +294,7 @@ contains
        end if
     end do
     call save_plot_file(NameFile='test_poisson2d.out', &
-         TypeFileIn='real4', TimeIn=tFinal, nStepIn = iStep, &
+         TypeFileIn='real8', TimeIn=tFinal, nStepIn = iStep, &
          NameVarIn='-Py    Px VDF', &
          CoordMinIn_D=[-12.0 + 0.50*DeltaQ, -12.0 +  0.50*DeltaP], &
          CoordMaxIn_D=[12.0 - 0.50*DeltaQ, 12.0 - 0.50*DeltaP], &
@@ -346,7 +346,7 @@ contains
     Plot_VC(1,:,:) = VDF_G(     1:nQ,1:nP)
     Plot_VC(2,:,:) = VDFFinal_G(1:nQ,1:nP)
     Source_C = 0.0
-    ! Compiutation
+    ! Computation
     Time = 0.0; iStep = 0
     do
        call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
@@ -372,7 +372,7 @@ contains
          Volume_G(1:nQ,1:nP))/(WidthX*WidthY)
     write(*,*)'Error=',Error
     call save_plot_file(NameFile='test_poisson_2d_smooth.out', &
-         TypeFileIn='real4', TimeIn=tFinal, nStepIn = iStep, &
+         TypeFileIn='real8', TimeIn=tFinal, nStepIn = iStep, &
          NameVarIn='-Py    Px   VDFInit VDFAnal VDFFinal  Error', &
          CoordMinIn_D=[-12.0 + 0.50*DeltaQ, -12.0 +  0.50*DeltaP], &
          CoordMaxIn_D=[12.0 - 0.50*DeltaQ, 12.0 - 0.50*DeltaP], &
@@ -505,7 +505,7 @@ contains
     PlotVar_VC(1,:,:) = VDF_G(1:nQ,1:nP)
     PlotVar_VC(2,:,:) = VDFInitial_C
     call save_plot_file(NameFile='test_energy.out', &
-         TypeFileIn='real4', TimeIn=tFinal, nStepIn = iStep, &
+         TypeFileIn='real8', TimeIn=tFinal, nStepIn = iStep, &
          NameVarIn='Q    P VDF VDFIni ErrorL2 EnergyDefect', &
          ParamIn_I=[NormL2/NormL2Init, Energy/EnergyInit - 1.0],&
          CoordMinIn_D=[-12.0 + 0.5*DeltaQ, -12.0 + 0.5*DeltaP], &
@@ -618,7 +618,7 @@ contains
     PlotVar_VC(1,:,:) = VDF_G(1:nJ,1:nPhi)
     PlotVar_VC(2,:,:) = VDFInitial_C
     call save_plot_file(NameFile='test_action_angle.out', &
-         TypeFileIn='real4', TimeIn=tFinal, nStepIn = iStep, &
+         TypeFileIn='real8', TimeIn=tFinal, nStepIn = iStep, &
          NameVarIn='Q    P VDF VDFIni ErrorL2 EnergyDefect', &
          CoordMinIn_D=[10.0**LogMomentum_I(1 ), 0.50*DeltaPhi],&
          CoordMaxIn_D=[10.0**LogMomentum_I(nJ), cTwoPi - 0.50*DeltaPhi], &
@@ -1068,14 +1068,14 @@ contains
     Time = 0.0; iStep = 0
 
     ! Save initial conditions
-    call save_plot_file('hill.outs', 'rewind', 'real4', &
+    call save_plot_file('hill.outs', 'rewind', 'real8', &
          'Hill vortex', iStep, Time, &
          NameVarIn='r Theta Rho'  , &
          CoordMinIn_D=[0.5 + 0.5*Dr, 180.0/nTheta],&
          CoordMaxIn_D=[5.0 - 0.5*Dr, 360.0 - 180.0/nTheta],&
          VarIn_II = VDF_G(1:nR,1:nTheta) )
 
-    call save_plot_file('hillcut.outs', 'rewind', 'real4', &
+    call save_plot_file('hillcut.outs', 'rewind', 'real8', &
          'Hill vortex', iStep, Time, &
          NameVarIn='r Theta Rho'  , &
          CoordMinIn_D=[0.5 + 0.5*Dr, 180 + 180.0/nTheta],&
@@ -1107,7 +1107,7 @@ contains
           PlotVar_VC(3,:, iTheta) = PlotVar_VC(3,:, 1+nTheta-iTheta)
           PlotVar_VC(5,:, iTheta) = PlotVar_VC(5,:, 1+nTheta-iTheta)
        end do
-       call save_plot_file('InitialSource.out', 'rewind','real4', &
+       call save_plot_file('InitialSource.out', 'rewind','real8', &
             'Hill vortex', iStep, Time, &
             NameVarIn=&
             'z r Rho DfDt Source DfDt2 Source2 Error ErrorTVD  Error2', &
@@ -1146,13 +1146,13 @@ contains
           write(*,*)'Time=',Time
           if(DoExit) EXIT PLOT
        end do PLOT
-       call save_plot_file('hill.outs', 'append', 'real4', &
+       call save_plot_file('hill.outs', 'append', 'real8', &
             'Hill vortex', iStep, tFinal, &
             NameVarIn='r Theta Rho'  , &
             CoordMinIn_D=[0.50 + 0.50*Dr, 180.0/nTheta],&
             CoordMaxIn_D=[5.0 - 0.50*Dr, 360.0 - 180.0/nTheta],&
             VarIn_II = VDF_G(1:nR,1:nTheta) )
-       call save_plot_file('hillcut.outs', 'append', 'real4', &
+       call save_plot_file('hillcut.outs', 'append', 'real8', &
             'Hill vortex', iStep, tFinal, &
             NameVarIn='r Theta Rho'  , &
             CoordMinIn_D=[0.5 + 0.5*Dr, 180 + 180.0/nTheta],&
@@ -1237,7 +1237,7 @@ contains
     ! Compiutation
     Time = 0.0; iStep = 0
     call save_plot_file(NameFile='initial.out', &
-         TypeFileIn='real4', TimeIn=tFinal, nStepIn = iStep, &
+         TypeFileIn='real8', TimeIn=tFinal, nStepIn = iStep, &
          NameVarIn='theta JT/2pi Log10VDF'  , &
          CoordMinIn_D=[         0.50*Delta, -2.0 + 0.50/nPointPer2Pi],&
          CoordMaxIn_D=[cTwoPi - 0.50*Delta,  2.0 - 0.50/nPointPer2Pi],&
@@ -1291,7 +1291,7 @@ contains
        end do
        write(NameFile,'(a,i3.3,a)')'stoc',iPlot,'.out'
        call save_plot_file(NameFile=NameFile, &
-            TypeFileIn='real4', TimeIn=tFinal, nStepIn = iStep, &
+            TypeFileIn='real8', TimeIn=tFinal, nStepIn = iStep, &
             NameVarIn='theta JT/2pi Log10VDF'  , &
             CoordMinIn_D=[         0.50*Delta, -2.0 + 0.50/nPointPer2Pi],&
             CoordMaxIn_D=[cTwoPi - 0.50*Delta,  2.0 - 0.50/nPointPer2Pi],&
