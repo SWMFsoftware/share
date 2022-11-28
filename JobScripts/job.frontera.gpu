@@ -54,7 +54,10 @@ export UCX_LOG_LEVEL=ERROR
 # add the following setting:
 # export UCX_TLS="knem,rc"
 
-#force nvfortran to use its own mpi library
+# force nvfortran to use its own mpi library
+# !!!use the following module commands for compilation with nvfortran:
+#    ml use /scratch1/projects/compilers/nvhpc20v7/modulefiles
+#    ml load nvhpc/20.7
 export OPAL_PREFIX=/scratch1/projects/compilers/nvhpc20v7/Linux_x86_64/20.7/comm_libs/mpi
 
 # Launch MPI code... 
