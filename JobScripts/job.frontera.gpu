@@ -1,5 +1,10 @@
 #!/bin/bash
 
+#!!!Important:
+#             make sure you have unloaded the impi and intel modules, otherwise they will 
+#             interfere with compiler settings (nvfortran, nvc, nvc++) and mpiexec. Instead,
+#             use the mpi library that comes with nvhpc, by setting $OPAL_PREFIX (see below).
+
 # Use default modules. To use IDL,
 # module load idl
 #
@@ -61,7 +66,8 @@ export UCX_LOG_LEVEL=ERROR
 export OPAL_PREFIX=/scratch1/projects/compilers/nvhpc20v7/Linux_x86_64/20.7/comm_libs/mpi
 
 # Launch MPI code... 
-# ibrun does not work for GPU launch, use mpirun even when documentation says not to
+# ibrun does not work for GPU launch for unknown reason, use mpirun even when documentation 
+# says not to.
 # change -n nGpus for # of gpus 
 mpirun -n 1 ./SWMF.exe  > runlog_`date +%y%m%d%H%M`
 
