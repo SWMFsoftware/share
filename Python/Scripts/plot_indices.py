@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-"""Plot the indeces based on the SWMF log files.
+"""Plot the indices based on the SWMF log files.
 
 Run from command line for help. There may be helpful functions here as a
 module.
 
 Usage:
-    python plot_indeces.py log_YYYMMDD...log geoindex_YYYYMMDD...log
+    python plot_indices.py log_YYYMMDD...log geoindex_YYYYMMDD...log
 """
 __author__ = 'Qusai Al Shidi'
 __email__ = 'qusai@umich.edu'
@@ -92,7 +92,7 @@ def plot_omni(axis: matplotlib.axes.Axes,
     return times_omni, data_omni, data_swmf
 
 
-def plot_indeces(axis, title,
+def plot_indices(axis, title,
                  times, data_swmf,
                  times_omni, data_omni,
                  units='nT',
@@ -251,15 +251,15 @@ def plot_geospace(data_dst, data_al,
         plot_newell(axes[0], data_omni)
     else:
         plot_solar_wind(axes[0], data_omni)
-    plot_indeces(axes[1], 'SYM-H',
+    plot_indices(axes[1], 'SYM-H',
                  data_dst['times'], data_dst['dst_sm'],
                  data_omni['times'], data_omni['sym_h'],
                  label='SYM-H')
-    plot_indeces(axes[2], 'Auroral Index (AL)',
+    plot_indices(axes[2], 'Auroral Index (AL)',
                  data_al['times'], data_al['AL'],
                  data_omni['times'], data_omni['al'],
                  label='AL')
-    plot_indeces(axes[3], 'Cross Polar Cap Potential (CPCP)',
+    plot_indices(axes[3], 'Cross Polar Cap Potential (CPCP)',
                  data_dst['times'],
                  data_dst['cpcpn'],
                  data_omni['times'],
@@ -294,7 +294,7 @@ def plot_geospace(data_dst, data_al,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Plot SWMF Geospace global indeces.')
+        description='Plot SWMF Geospace global indices.')
     parser.add_argument('log_files', nargs=2,
         help=('In order: the log_*.log file and the geoindex*.log file from'
               + ' SWMF output.'))

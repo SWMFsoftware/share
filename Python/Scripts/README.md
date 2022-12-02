@@ -13,7 +13,7 @@ Table of Contents:
 ------------------
 
 - [prepare_geospace.py](#prepare_geospacepy)
-- [plot_indeces.py](#plot_indeces)
+- [plot_indices.py](#plot_indices)
 
 prepare_geospace.py
 -------------------
@@ -70,17 +70,17 @@ To find out the options of `prepare_geospace.py` then run:
 
 Options can be useful to script this file with shell scripting, for example, when submitting jobs.
 
-plot_indeces.py
+plot_indices.py
 ---------------
 
-A script to plot the global indeces of your geospace run (SYM-H, cross polar cap
-potential, AL.. etc.). This uses `swmfpy` to get the observed indeces to
+A script to plot the global indices of your geospace run (SYM-H, cross polar cap
+potential, AL.. etc.). This uses `swmfpy` to get the observed indices to
 compare.
 
 To run simply type on your command line:
 
 ```bash
-python plot_indeces.py -h
+python plot_indices.py -h
 ```
 
 A simply way of using this script is to make sure you know where your
@@ -88,5 +88,5 @@ A simply way of using this script is to make sure you know where your
 
 ```bash
 # replace with your file names
-python plot_indeces.py log_YYYYMMMDD.log geo_YYYMMMDD.log
+python plot_indices.py log_YYYYMMMDD.log geo_YYYMMMDD.log
 ```
