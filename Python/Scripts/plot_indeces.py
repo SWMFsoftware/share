@@ -150,19 +150,33 @@ def ridley_2004(times, pci):
 
 
 def newell(velocity, b_y, b_z):
-    'get the newell function in certain time'
+    """Calculate the Newell (2015) function.
 
-    norm = (450**2  # 450 km/s ^2 avg
-            * 5)    # 5 nT
+    Args:
+        velocity (float or ArrayLike):
+            Solar wind speed.
+        b_y (float or ArrayLike):
+            Solar wind magnetic field component in the Y (GSM) direction.
+        b_z (float or ArrayLike):
+            Solar wind magnetic field component in the Z (GSM) direction.
+    
+    Returns:
+        (float or ArrayLike): $d\\Phi_{MP} / dt$ in Wb/s
+
+    Notes:
+        Newell (2015): doi:10.1029/2006JA012015
+        Cai and Clauer (2013): doi:10.1002/2013JA018819
+    """
+
     b_total = np.sqrt(b_y**2 + b_z**2)
     clock_angle = np.arctan2(b_y, b_z)
 
     value = (velocity**2
              * b_total
              * np.sin(0.5*clock_angle)**4
-             )/norm
+             )
 
-    return 100*np.power(value, 2/3)
+    return 100*np.power(value, 2/3)  # times 100 by Cai and Clauer (2013)
 
 
 def _interp_nans(x_vals, y_vals):
