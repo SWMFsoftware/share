@@ -21,6 +21,7 @@ module ModUtilities
 
   private ! except
 
+  public:: UnitTmp_ ! inherited from ModIoUnit
   public:: make_dir
   public:: check_dir
   public:: fix_dir_name
