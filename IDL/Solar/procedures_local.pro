@@ -1190,6 +1190,9 @@ pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
   endif else if (strpos(strlowcase(filename), 'solo')    ge 0) then begin
      TypeData      = 'solo'
      TypePlot  = '_solo'
+  endif else if (strpos(strlowcase(filename), 'psp')    ge 0) then begin
+     TypeData      = 'psp'
+     TypePlot  = '_psp'
   endif
 
   itype = size(filename,/type)
@@ -2150,7 +2153,24 @@ pro get_insitu_data, start_time, end_time, TypeData, u_obs, $
                               'protonTemp'],[start_time, end_time])
 
         if(not isa(obs_data)) then begin
-           print, ' Could not obtain solar orbiter data.'
+           print, ' Could not obtain Solar Orbiter data.'
+           RETURN
+        endif
+
+        u_obs    = obs_data.ProtonSpeed.dat
+        n_obs    = obs_data.protonDensity.dat
+        tem_obs  = obs_data.protonTemp.dat
+        mag_obs  = obs_data.B.dat
+        time_obs = obs_data.epoch.dat
+     end
+
+     'psp': begin
+        obs_data=spdfgetdata('PSP_COHO1HR_MERGED_MAG_PLASMA', $
+                             ['B' , 'ProtonSpeed', 'protonDensity', $
+                              'protonTemp'],[start_time, end_time])
+
+        if(not isa(obs_data)) then begin
+           print, ' Could not obtain Parker Solar Probe data.'
            RETURN
         endif
 
