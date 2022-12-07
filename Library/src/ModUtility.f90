@@ -1266,7 +1266,7 @@ contains
     character(len=*), intent(in),  optional:: StringError
     logical,          intent(out), optional:: IsInside
 
-    integer:: i, Di
+    integer:: i, Di, iIter, nMaxIter
     real(Real8_):: Tolerance
 
     logical:: IsUniform
@@ -1284,7 +1284,7 @@ contains
 
        iCoord = min(MaxCoord-1, max(MinCoord, floor(Coord)))
        dCoord = Coord - iCoord
-       Tolerance = (MaxCoord - MinCoord)*1d-12
+       Tolerance = (MaxCoord - MinCoord)*1d-15
 
        if(Coord < MinCoord - Tolerance)then
           if(.not. (present(DoExtrapolate))) then
@@ -1317,7 +1317,7 @@ contains
     elseif(Coord_I(MinCoord) < Coord_I(MaxCoord))then
 
        ! Monotone increasing coordinates
-       Tolerance = (Coord_I(MaxCoord) - Coord_I(MinCoord))*1d-12
+       Tolerance = (Coord_I(MaxCoord) - Coord_I(MinCoord))*1d-15
 
        if(Coord < Coord_I(MinCoord) - Tolerance)then
           if(.not. (present(DoExtrapolate))) then
@@ -1362,6 +1362,8 @@ contains
        ! binary search
        i  = (MinCoord + MaxCoord)/2
        Di = (MaxCoord - MinCoord)/2
+       iIter    = 0
+       nMaxIter = (MaxCoord-MinCoord)*2   ! well, twice of the range
        do
           Di = (Di + 1)/2
           if(Coord < Coord_I(i)) then
@@ -1370,6 +1372,14 @@ contains
              i = min(MaxCoord-1, i + Di)
           else
              EXIT
+          end if
+          iITer = iIter + 1
+          if (iIter > nMaxIter) then
+             write(*,*) 'Monotone increasing: '
+             write(*,*) 'Tolerance          =', Tolerance
+             write(*,*) 'Coord_I(MinCoord), Coord_I(MaxCoord), Coord =', &
+                  Coord_I(MinCoord), Coord_I(MaxCoord), Coord
+             call CON_stop('Maximum iteration exceeds!')
           end if
        end do
        iCoord = i
@@ -1382,7 +1392,7 @@ contains
     else
 
        ! Monotone decreasing coordinates
-       Tolerance = (Coord_I(MinCoord) - Coord_I(MaxCoord))*1d-12
+       Tolerance = (Coord_I(MinCoord) - Coord_I(MaxCoord))*1d-15
 
        if(Coord < Coord_I(MaxCoord) - Tolerance)then
           if(.not. (present(DoExtrapolate))) then
@@ -1427,6 +1437,8 @@ contains
        ! binary search
        i  = (MinCoord + MaxCoord)/2
        Di = (MaxCoord - MinCoord)/2
+       iITer    = 0
+       nMaxIter = (MaxCoord-MinCoord)*2   ! well, twice of the range
        do
           Di = (Di + 1)/2
           if(Coord > Coord_I(i)) then
@@ -1435,6 +1447,14 @@ contains
              i = min(MaxCoord-1, i + Di)
           else
              EXIT
+          end if
+          iITer = iIter + 1
+          if (iIter > nMaxIter) then
+             write(*,*) 'Monotone decreasing: '
+             write(*,*) 'Tolerance          =', Tolerance
+             write(*,*) 'Coord_I(MinCoord), Coord_I(MaxCoord), Coord =', &
+                  Coord_I(MinCoord), Coord_I(MaxCoord), Coord
+             call CON_stop('Maximum iteration exceeds!')
           end if
        end do
        iCoord = i
