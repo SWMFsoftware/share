@@ -1078,7 +1078,6 @@ contains
 
     character(len=*), parameter:: NameSub = 'find_cell4'
     !--------------------------------------------------------------------------
-
     if(present(Coord_I)) then
        IsUniform = size(Coord_I) < 2
     else
@@ -1266,7 +1265,7 @@ contains
     character(len=*), intent(in),  optional:: StringError
     logical,          intent(out), optional:: IsInside
 
-    integer:: i, Di, iIter, nMaxIter
+    integer:: i, Di, nIter, MaxIter
     real(Real8_):: Tolerance
 
     logical:: IsUniform
@@ -1284,7 +1283,7 @@ contains
 
        iCoord = min(MaxCoord-1, max(MinCoord, floor(Coord)))
        dCoord = Coord - iCoord
-       Tolerance = (MaxCoord - MinCoord)*1d-15
+       Tolerance = (MaxCoord - MinCoord)*1d-12
 
        if(Coord < MinCoord - Tolerance)then
           if(.not. (present(DoExtrapolate))) then
@@ -1317,7 +1316,9 @@ contains
     elseif(Coord_I(MinCoord) < Coord_I(MaxCoord))then
 
        ! Monotone increasing coordinates
-       Tolerance = (Coord_I(MaxCoord) - Coord_I(MinCoord))*1d-15
+       Tolerance = (Coord_I(MaxCoord) - Coord_I(MinCoord))*1d-12
+
+       if(present(IsInside)) IsInside = .true.
 
        if(Coord < Coord_I(MinCoord) - Tolerance)then
           if(.not. (present(DoExtrapolate))) then
@@ -1335,6 +1336,11 @@ contains
              dCoord = 0.0
           end if
           if(present(IsInside)) IsInside = .false.
+          RETURN
+       elseif(Coord <= Coord_I(MinCoord))then
+          ! Very near the edge
+          iCoord = MinCoord
+          dCoord = 0.0
           RETURN
        end if
 
@@ -1355,15 +1361,17 @@ contains
           end if
           if(present(IsInside)) IsInside = .false.
           RETURN
+       elseif(Coord >= Coord_I(MaxCoord))then
+          ! Very near the edge
+          iCoord = MaxCoord - 1
+          dCoord = 1.0
        end if
-
-       if(present(IsInside)) IsInside = .true.
 
        ! binary search
        i  = (MinCoord + MaxCoord)/2
        Di = (MaxCoord - MinCoord)/2
-       iIter    = 0
-       nMaxIter = (MaxCoord-MinCoord)*2   ! well, twice of the range
+       nIter   = 0
+       MaxIter = MaxCoord - MinCoord ! Even a linear search would end
        do
           Di = (Di + 1)/2
           if(Coord < Coord_I(i)) then
@@ -1373,13 +1381,14 @@ contains
           else
              EXIT
           end if
-          iITer = iIter + 1
-          if (iIter > nMaxIter) then
-             write(*,*) 'Monotone increasing: '
-             write(*,*) 'Tolerance          =', Tolerance
-             write(*,*) 'Coord_I(MinCoord), Coord_I(MaxCoord), Coord =', &
+          nIter = nIter + 1
+          if (nIter > MaxIter) then
+             write(*,*) NameSub,': ERROR in monotone increasing: '
+             write(*,*) 'Tolerance=', Tolerance
+             write(*,*) 'Coord_I(MinCoord), Coord_I(MaxCoord), Coord=', &
                   Coord_I(MinCoord), Coord_I(MaxCoord), Coord
-             call CON_stop_simple('Maximum iteration exceeds!')
+             write(*,*) 'i, Di, Coord_I(i:i+1)=', i, Di, Coord_I(i:i+1)
+             call CON_stop_simple(NameSub//': maximum iteration exceeded!')
           end if
        end do
        iCoord = i
@@ -1392,7 +1401,7 @@ contains
     else
 
        ! Monotone decreasing coordinates
-       Tolerance = (Coord_I(MinCoord) - Coord_I(MaxCoord))*1d-15
+       Tolerance = (Coord_I(MinCoord) - Coord_I(MaxCoord))*1d-12
 
        if(Coord < Coord_I(MaxCoord) - Tolerance)then
           if(.not. (present(DoExtrapolate))) then
@@ -1437,8 +1446,8 @@ contains
        ! binary search
        i  = (MinCoord + MaxCoord)/2
        Di = (MaxCoord - MinCoord)/2
-       iITer    = 0
-       nMaxIter = (MaxCoord-MinCoord)*2   ! well, twice of the range
+       nIter = 0
+       MaxIter = MaxCoord - MinCoord ! Even a linear search ends by this
        do
           Di = (Di + 1)/2
           if(Coord > Coord_I(i)) then
@@ -1448,13 +1457,14 @@ contains
           else
              EXIT
           end if
-          iITer = iIter + 1
-          if (iIter > nMaxIter) then
-             write(*,*) 'Monotone decreasing: '
-             write(*,*) 'Tolerance          =', Tolerance
-             write(*,*) 'Coord_I(MinCoord), Coord_I(MaxCoord), Coord =', &
+          nIter = nIter + 1
+          if (nIter > MaxIter) then
+             write(*,*) NameSub,': ERROR in monotone decreasing: '
+             write(*,*) 'Tolerance=', Tolerance
+             write(*,*) 'Coord_I(MinCoord), Coord_I(MaxCoord), Coord=', &
                   Coord_I(MinCoord), Coord_I(MaxCoord), Coord
-             call CON_stop_simple('Maximum iteration exceeds!')
+             write(*,*) 'i, Di, Coord_I(i:i+1)=', i, Di, Coord_I(i:i+1)
+             call CON_stop_simple(NameSub//': maximum iteration exceeded!')
           end if
        end do
        iCoord = i
