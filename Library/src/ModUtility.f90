@@ -1379,7 +1379,7 @@ contains
              write(*,*) 'Tolerance          =', Tolerance
              write(*,*) 'Coord_I(MinCoord), Coord_I(MaxCoord), Coord =', &
                   Coord_I(MinCoord), Coord_I(MaxCoord), Coord
-             call CON_stop('Maximum iteration exceeds!')
+             call CON_stop_simple('Maximum iteration exceeds!')
           end if
        end do
        iCoord = i
@@ -1454,7 +1454,7 @@ contains
              write(*,*) 'Tolerance          =', Tolerance
              write(*,*) 'Coord_I(MinCoord), Coord_I(MaxCoord), Coord =', &
                   Coord_I(MinCoord), Coord_I(MaxCoord), Coord
-             call CON_stop('Maximum iteration exceeds!')
+             call CON_stop_simple('Maximum iteration exceeds!')
           end if
        end do
        iCoord = i
