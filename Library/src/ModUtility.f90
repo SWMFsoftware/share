@@ -1383,11 +1383,13 @@ contains
           end if
           nIter = nIter + 1
           if (nIter > MaxIter) then
+#ifndef _OPENACC
              write(*,*) NameSub,': ERROR in monotone increasing: '
              write(*,*) 'Tolerance=', Tolerance
              write(*,*) 'Coord_I(MinCoord), Coord_I(MaxCoord), Coord=', &
                   Coord_I(MinCoord), Coord_I(MaxCoord), Coord
              write(*,*) 'i, Di, Coord_I(i:i+1)=', i, Di, Coord_I(i:i+1)
+#endif
              call CON_stop_simple(NameSub//': maximum iteration exceeded!')
           end if
        end do
@@ -1459,11 +1461,13 @@ contains
           end if
           nIter = nIter + 1
           if (nIter > MaxIter) then
+#ifndef _OPENACC
              write(*,*) NameSub,': ERROR in monotone decreasing: '
              write(*,*) 'Tolerance=', Tolerance
              write(*,*) 'Coord_I(MinCoord), Coord_I(MaxCoord), Coord=', &
                   Coord_I(MinCoord), Coord_I(MaxCoord), Coord
              write(*,*) 'i, Di, Coord_I(i:i+1)=', i, Di, Coord_I(i:i+1)
+#endif
              call CON_stop_simple(NameSub//': maximum iteration exceeded!')
           end if
        end do
