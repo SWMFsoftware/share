@@ -72,7 +72,7 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
   print, "compare_remote: dirs_adapt =", dirs_adapt
 
   if nDir gt 0 then begin
-     TypeADAPT_I = ['earth', 'sta', 'stb']
+     TypeADAPT_I = ['earth', 'sta', 'stb', 'solo', 'psp']
 
      for iType = 0, n_elements(TypeADAPT_I)-1 do begin
         ;; for each directory and each type, reset the default value

@@ -9,27 +9,34 @@ module ModDiffusion
   ! Adapted for the use in MFLAMPA (Dist_I is an input paramater,
   ! fixed contributions to M_I in the end points)-D.Borovikov, 2017
   ! Updated (identation, comments):  I.Sokolov, Dec.17, 2017
+
   implicit none
+
   PRIVATE
   public:: advance_diffusion1,tridiag
+
 contains
   !============================================================================
-  ! This routine solves the diffusion equation:
-  !         f_t-D_outer(D_inner*f_x)_x=0,
-  ! with zero Neumann boundary condition. The solution is advanced in time
-  ! using fully implicit scheme.
-  subroutine advance_diffusion1(Dt,n,Dist_I,F_I,DOuter_I,DInner_I)
+  subroutine advance_diffusion1(Dt, n, Dist_I, F_I, DOuter_I, DInner_I)
+
+    ! Solve the diffusion equation:
+    !         f_t-D_outer(D_inner*f_x)_x=0,
+    ! with zero Neumann boundary condition. The solution is advanced in time
+    ! using fully implicit scheme.
+
     use ModNumConst, ONLY: cTiny
 
     real,   intent(in   ):: Dt     ! Time step
     integer,intent(in   ):: n      ! Number of meshes along the x-coordinate
     real,   intent(in   ):: Dist_I(n) ! Distance to the next mesh
     real,   intent(inout):: F_I(n) ! In:sol.to be advanced; Out:advanced sol
+
     ! Laplace multiplier and diffusion coefficient.
     real,   intent(in   ):: DOuter_I(n), DInner_I(n)
 
     ! Mesh spacing and face spacing.
     real                 :: DsMesh_I(2:n), DsFace_I(2:n-1)
+
     ! Main, upper, and lower diagonals.
     real, dimension(n)   :: Main_I,Upper_I,Lower_I, R_I
     integer:: i
@@ -97,14 +104,16 @@ contains
     call tridiag(n,Lower_I,Main_I,Upper_I,R_I,F_I)
   end subroutine advance_diffusion1
   !============================================================================
-  ! This routine solves three-diagonal system of equations:
-  !  ||m_1 u_1  0....        || ||w_1|| ||r_1||
-  !  ||l_2 m_2 u_2...        || ||w_2|| ||r_2||
-  !  || 0  l_3 m_3 u_3       ||.||w_3||=||r_3||
-  !  ||...                   || ||...|| ||...||
-  !  ||.............0 l_n m_n|| ||w_n|| ||r_n||
-  ! From: Numerical Recipes, Chapter 2.6, p.40.
   subroutine tridiag(n, L_I, M_I, U_I, R_I, W_I)
+
+    ! Solve tri-diagonal system of equations:
+    !  ||m_1 u_1  0....        || ||w_1|| ||r_1||
+    !  ||l_2 m_2 u_2...        || ||w_2|| ||r_2||
+    !  || 0  l_3 m_3 u_3       ||.||w_3||=||r_3||
+    !  ||...                   || ||...|| ||...||
+    !  ||.............0 l_n m_n|| ||w_n|| ||r_n||
+    ! From: Numerical Recipes, Chapter 2.6, p.40.
+
     ! input parameters
     integer,            intent(in):: n
     real, dimension(n), intent(in):: L_I, M_I ,U_I ,R_I
@@ -151,17 +160,21 @@ module ModTestPoissonBracket
   real ::  VDFOld_G(-1:nX+2, -1:nP+2)
 contains
   !============================================================================
-
   subroutine test_poisson_bracket(tFinal)
+
     real, intent(in) :: tFinal
+
     ! Misc:
     ! Gyration in a uniform magnetic field, nQ numper of points
     ! for the momentum grid, nP is number of point over azimuthal angle
     integer, parameter::  nQ = 300,  nP = 360
+
     ! Loop variables
     integer           ::  iQ, iStep
+
     ! Momentum max and min, in units of mc
     real, parameter   :: qMax = 10.0, qMin = 0.01
+
     ! Mesh size in \phi
     real, parameter   :: DeltaPhi = cTwoPi/nP
     real :: MomentumRatio, MomentumMin, MomentumMax
@@ -190,12 +203,12 @@ contains
     do
        call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
             Hamiltonian_N,   &
-            CFLIn=0.99, DtOut = Dt)
+            CFLIn=0.99, DtOut = Dt, IsPeriodicIn_D=[.false.,.true.])
        iStep = iStep +1
        if(Time + Dt >= tFinal)then
           call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
                Hamiltonian_N,   &
-               DtIn = tFinal - Time)
+               DtIn = tFinal - Time, IsPeriodicIn_D=[.false.,.true.])
           VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
           EXIT
        else
@@ -213,32 +226,215 @@ contains
          CoordMaxIn_D=[10.0**LogMomentum_I(nQ), cTwoPi - 0.50*DeltaPhi], &
          Coord1In_I = 10.0**LogMomentum_I(1:nQ), &
          VarIn_II = VDF_G(1:nQ,1:nP) )
-  contains
-    !==========================================================================
-    real function Hamiltonian(P2)
-      real, intent(in) :: P2 ! momentum squared
-      !------------------------------------------------------------------------
-      Hamiltonian = sqrt(1.0 + P2)
-    end function Hamiltonian
-    !==========================================================================
   end subroutine test_poisson_bracket
+  !==========================================================================
+  real function Hamiltonian(P2)
+    real, intent(in) :: P2 ! momentum squared
+    !------------------------------------------------------------------------
+    Hamiltonian = sqrt(1.0 + P2)
+  end function Hamiltonian
   !============================================================================
-  subroutine test_energy_conservation(tFinal)
+  subroutine test_poisson_2d(tFinal)
+
     real, intent(in) :: tFinal
+
     ! Misc:
     ! Harmonic oscillators, nQ is the number of meshes over coordinate,
     ! nP is number of meshes overr generalized momentum
-    integer, parameter::  nQ = 1200,  nP = 1200
+    integer, parameter::  nQ = 300,  nP = 300
+
     ! Loop variables
     integer           ::  iQ, iP, iStep
+
     ! Mesh size
-    real, parameter   :: DeltaQ = 0.02, DeltaP = 0.02
+    real, parameter   :: DeltaQ = 24.0/nQ, DeltaP = 24.0/nP
+    real :: VDF_G(-1:nQ+2, -1:nP+2)
+    real :: Volume_G(0:nQ+1, 0:nP+1)
+    real :: Hamiltonian_N(-1:nQ+1, -1:nP+1)
+    real :: Time, Dt, Source_C(nQ,nP)
+    real :: NormL2Init, NormL2, EnergyInit, Energy, qNode, pNode, Q, P
+    !--------------------------------------------------------------------------
+    ! Control volume, for a uniform rectangular grid
+    Volume_G = DeltaQ*DeltaP
+    ! Hamiltonian at the nodes
+    do iP = -1, nP+1
+       pNode = DeltaP*(iP - nP/2)
+       do iQ = -1, nQ+2
+          qNode = DeltaQ*(iQ - nQ/2)
+          Hamiltonian_N(iQ,iP) = hamiltonian(qNode**2 + pNode**2)
+       end do
+    end do
+    ! Initial distribution function
+    VDF_G = 0.0
+    do iP = -1, nP+2
+       P = DeltaP*(iP - nP/2 - 0.50)
+       do iQ = -1, nQ+2
+          Q = DeltaQ*(iQ - nQ/2 - 0.50)
+          if(abs(P) < -Q*tan(cPi/20.0).and.P**2+Q**2<=100)VDF_G(iQ,iP) = 1.0
+       end do
+    end do
+    Source_C = 0.0
+    ! Compiutation
+    Time = 0.0; iStep = 0
+    do
+       call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
+            Hamiltonian_N,   &
+            CFLIn=0.99, DtOut = Dt)
+       iStep = iStep +1
+       if(Time + Dt >= tFinal)then
+          call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
+               Hamiltonian_N,   &
+               DtIn = tFinal - Time)
+          VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
+          EXIT
+       else
+          Time = Time + Dt
+          VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
+          write(*,*)Time
+       end if
+    end do
+    call save_plot_file(NameFile='test_poisson2d.out', &
+         TypeFileIn='real8', TimeIn=tFinal, nStepIn = iStep, &
+         NameVarIn='-Py    Px VDF', &
+         CoordMinIn_D=[-12.0 + 0.50*DeltaQ, -12.0 +  0.50*DeltaP], &
+         CoordMaxIn_D=[12.0 - 0.50*DeltaQ, 12.0 - 0.50*DeltaP], &
+         VarIn_II = VDF_G(1:nQ,1:nP))
+
+  end subroutine test_poisson_2d
+  !===================================================================
+  subroutine test_poisson_2d_smooth(tFinal)
+    real, intent(in) :: tFinal
+
+    ! Misc:
+    ! Anharmonic oscillators, nQ is the number of meshes over coordinate,
+    ! nP is number of meshes overr generalized momentum
+    integer, parameter::  nQ = 300,  nP = 300
+
+    ! Loop variables
+    integer           ::  iQ, iP, iStep
+
+    ! Mesh size
+    real, parameter   :: DeltaQ = 24.0/nQ, DeltaP = 24.0/nP
+    real :: VDF_G(-1:nQ+2, -1:nP+2), VDFFinal_G(-1:nQ+2,-1:nP+2)
+    real :: Plot_VC(3,1:nQ,1:nP)
+    real :: Volume_G(0:nQ+1, 0:nP+1)
+    real :: Hamiltonian_N(-1:nQ+1, -1:nP+1)
+    real :: Time, Dt, Source_C(nQ,nP), Error
+    real :: NormL2Init, NormL2, EnergyInit, Energy, qNode, pNode, Q, P
+    real, parameter :: WidthX = 6.0, WidthY = 6.0
+    !--------------------------------------------------------------------------
+    ! Control volume, for a uniform rectangular grid
+    Volume_G = DeltaQ*DeltaP
+    ! Hamiltonian at the nodes
+    do iP = -1, nP+1
+       pNode = DeltaP*(iP - nP/2)
+       do iQ = -1, nQ+2
+          qNode = DeltaQ*(iQ - nQ/2)
+          Hamiltonian_N(iQ,iP) = hamiltonian(qNode**2 + pNode**2)
+       end do
+    end do
+    ! Initial distribution function
+    VDF_G = 0.0
+    do iP = -1, nP+2
+       P = DeltaP*(iP - nP/2 - 0.50)
+       do iQ = -1, nQ+2
+          Q = DeltaQ*(iQ - nQ/2 - 0.50)
+          VDF_G(     iQ,iP) = initial_cap(Q,P)
+          VDFFinal_G(iQ,iP) = final_cap(  Q,P)
+       end do
+    end do
+    Plot_VC(1,:,:) = VDF_G(     1:nQ,1:nP)
+    Plot_VC(2,:,:) = VDFFinal_G(1:nQ,1:nP)
+    Source_C = 0.0
+    ! Computation
+    Time = 0.0; iStep = 0
+    do
+       call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
+            Hamiltonian_N,   &
+            CFLIn=0.50, DtOut = Dt)
+       iStep = iStep +1
+       if(Time + Dt >= tFinal)then
+          call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
+               Hamiltonian_N,   &
+               DtIn = tFinal - Time)
+          Time = tFinal
+          write(*,*) Time
+          VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
+          EXIT
+       else
+          Time = Time + Dt
+          VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
+          write(*,*)Time
+       end if
+    end do
+    Plot_VC(3,1:nQ,1:nP) = VDF_G(1:nQ, 1:nP)
+    Error = sum(abs(VDF_G(1:nQ,1:nP) - VDFFinal_G(1:nQ,1:nP))*&
+         Volume_G(1:nQ,1:nP))/(WidthX*WidthY)
+    write(*,*)'Error=',Error
+    call save_plot_file(NameFile='test_poisson_2d_smooth.out', &
+         TypeFileIn='real8', TimeIn=tFinal, nStepIn = iStep, &
+         NameVarIn='-Py    Px   VDFInit VDFAnal VDFFinal  Error', &
+         CoordMinIn_D=[-12.0 + 0.50*DeltaQ, -12.0 +  0.50*DeltaP], &
+         CoordMaxIn_D=[12.0 - 0.50*DeltaQ, 12.0 - 0.50*DeltaP], &
+         ParamIn_I=[Error], &
+         VarIn_VII = Plot_VC)
+  contains
+    !=============================
+    real function initial_cap(x,y)
+      real, intent(in) :: x,y
+      real, parameter :: xCenter = -6.0, yCenter = 0.0
+      !--------------------------------------------
+      initial_cap = 0.0
+      if(abs(x  - xCenter)<=WidthX/2.and.abs(y - yCenter)<=WidthY/2)then
+         initial_cap = cos(cPi*(x - xCenter)/WidthX)**4*&
+              cos(cPi*(y - yCenter)/WidthY)**4
+      end if
+    end function initial_cap
+    !==========================================================================
+    real function final_cap(x,y)
+      real, intent(in) :: x,y
+      real :: CosPhi,SinPhi,Phi, P, P2, OmegaT, xInit, yInit
+      !----------------------
+      P2  = x**2 + y**2
+      OmegaT = tFinal/hamiltonian(P2)
+      P  = sqrt(P2)
+      CosPhi = x/P; SinPhi = y/P
+      if(SinPhi>=0.0)then
+         Phi =  acos(CosPhi)
+      else
+         Phi = -acos(CosPhi)
+      end if
+      xInit = P*cos(Phi + OmegaT)
+      yInit = P*sin(Phi + OmegaT)
+      final_cap = initial_cap(xInit,yInit)
+    end function final_cap
+    !==========================================================================
+  end subroutine test_poisson_2d_smooth
+  !============================================================================
+  subroutine test_energy_conservation(tFinal)
+
+    real, intent(in) :: tFinal
+
+    ! Misc:
+    ! Harmonic oscillators, nQ is the number of meshes over coordinate,
+    ! nP is number of meshes overr generalized momentum
+    integer, parameter::  nQ = 90,  nP = 90
+
+    ! Loop variables
+    integer           ::  iQ, iP, iStep
+
+    ! Mesh size
+    real, parameter   :: DeltaQ = 24.0/nQ, DeltaP = 24.0/nP
     real :: VDF_G(-1:nQ+2, -1:nP+2),VDFInitial_C(nQ,nP),PlotVar_VC(2,nQ,nP)
     real :: Volume_G(0:nQ+1, 0:nP+1)
     real :: Hamiltonian_N(-1:nQ+1, -1:nP+1)
     real :: Energy_C(nQ, nP)
     real :: Time, Dt, Source_C(nQ,nP)
     real :: NormL2Init, NormL2, EnergyInit, Energy, qNode, pNode, Q, P
+    real, parameter :: CFL =0.5
+    real, parameter:: pWidth = 10.0, qWidth = 2.0
+    integer, parameter:: nPower = 4
+    logical, parameter:: IsSmooth = .true.
     !--------------------------------------------------------------------------
     ! Control volume, for a uniform rectangular grid
     Volume_G = DeltaQ*DeltaP
@@ -259,7 +455,20 @@ contains
        end do
     end do
     ! Initial distribution function
-    VDFInitial_C = 0.0; VDFInitial_C(551:650,101:1100) = 1.0
+    VDFInitial_C = 0.0
+    do iP = 1, nP; do iQ = 1, nQ
+       P = DeltaP*(iP - nP/2 - 0.5)
+       Q = DeltaQ*(iQ - nQ/2 - 0.5)
+       if(abs(Q) < qWidth .and. abs(P) < pWidth)then
+          if(IsSmooth)then
+             VDFInitial_C(iQ,iP) = cos(0.5*cPi*Q/qWidth)**nPower &
+                  *                cos(0.5*cPi*P/pWidth)**nPower
+          else
+             VDFInitial_C(iQ,iP) = 1.0
+          endif
+       end if
+    end do; end do
+
     VDF_G = 0.0; VDF_G(1:nQ, 1:nP) = VDFInitial_C
     Source_C = 0.0
     ! Initial NormL2 and Energy
@@ -267,11 +476,10 @@ contains
     EnergyInit = sum(VDFInitial_C*Energy_C)
     ! Compiutation
     Time = 0.0; iStep = 0
-    ! write(*,*)'Time NormL2/NormL2Init Energy/EnergyInit-1'
     do
        call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
             Hamiltonian_N,   &
-            CFLIn=0.99, DtOut = Dt)
+            CFLIn=CFL, DtOut = Dt)
        iStep = iStep +1
        if(Time + Dt >= tFinal)then
           call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
@@ -297,31 +505,36 @@ contains
     PlotVar_VC(1,:,:) = VDF_G(1:nQ,1:nP)
     PlotVar_VC(2,:,:) = VDFInitial_C
     call save_plot_file(NameFile='test_energy.out', &
-         TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
+         TypeFileIn='real8', TimeIn=tFinal, nStepIn = iStep, &
          NameVarIn='Q    P VDF VDFIni ErrorL2 EnergyDefect', &
          ParamIn_I=[NormL2/NormL2Init, Energy/EnergyInit - 1.0],&
-         CoordMinIn_D=[-11.99, -11.99], &
-         CoordMaxIn_D=[11.99, 11.99], &
-         VarIn_II = VDF_G(1:nQ,1:nP) )
+         CoordMinIn_D=[-12.0 + 0.5*DeltaQ, -12.0 + 0.5*DeltaP], &
+         CoordMaxIn_D=[12.0 - 0.5*DeltaQ, 12.0 - 0.5*DeltaP], &
+         VarIn_VII = PlotVar_VC)
 
   end subroutine test_energy_conservation
   !============================================================================
   subroutine test_in_action_angle(tFinal)
+
     real, intent(in) :: tFinal
+
     ! Misc:
     ! Harmonic oscillators, nQ is the number of meshes over coordinate,
     ! nP is number of meshes overr generalized momentum
     integer, parameter::  nJ = 300,  nPhi = 360
+
     ! Loop variables
     integer           ::  iJ, iPhi, iStep
+
     ! Mesh size
     ! Momentum max and min
     real, parameter   :: JMax = 12.0, JMin = 0.01
+
     ! Mesh size in \phi
     real, parameter   :: DeltaPhi = cTwoPi/nPhi
     real :: MomentumRatio, MomentumMin, MomentumMax
     real :: VDF_G(-1:nJ+2, -1:nPhi+2), Volume_G(0:nJ+1, 0:nPhi+1)
-    real :: VDFInitial_C(nJ,nPhi)
+    real :: VDFInitial_C(nJ,nPhi), PlotVar_VC(2,nJ,nPhi)
 
     real :: Hamiltonian_N(-1:nJ+1, -1:nPhi+1)
     real :: LogMomentum_I(0:nJ+1), Momentum2_I(-1:nJ+1)
@@ -402,18 +615,22 @@ contains
                Energy/EnergyInit - 1.0
        end if
     end do
+    PlotVar_VC(1,:,:) = VDF_G(1:nJ,1:nPhi)
+    PlotVar_VC(2,:,:) = VDFInitial_C
     call save_plot_file(NameFile='test_action_angle.out', &
-         TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
-         NameVarIn='Q    P VDF', &
+         TypeFileIn='real8', TimeIn=tFinal, nStepIn = iStep, &
+         NameVarIn='Q    P VDF VDFIni ErrorL2 EnergyDefect', &
          CoordMinIn_D=[10.0**LogMomentum_I(1 ), 0.50*DeltaPhi],&
          CoordMaxIn_D=[10.0**LogMomentum_I(nJ), cTwoPi - 0.50*DeltaPhi], &
-         StringFormatIn = '(3F10.3)', &
+         ParamIn_I=[NormL2/NormL2Init, Energy/EnergyInit - 1.0],&
          Coord1In_I = 10.0**LogMomentum_I(1:nJ), &
-         VarIn_II = VDF_G(1:nJ,1:nPhi) )
+         VarIn_VII = PlotVar_VC)
   end subroutine test_in_action_angle
   !============================================================================
   subroutine test_dsa_poisson
+
     use ModDiffusion
+
     real,    parameter :: pMax = 100, pMin = 1
     real,    parameter :: tFinal = 6000.00
     real,    parameter :: DtTrial = 1.0
@@ -436,15 +653,19 @@ contains
     integer :: iX, iP, iStep
     !--------------------------------------------------------------------------
     Source_C(nX,nP) = 0.0
+
     ! Logarithmic grid in momentum. pMin is the value at the left face
     ! of the first physical cell, pMax is the value at the right face
     ! off the last cell. The momentum ratio at the faces of each cell is:
     MomentumRatio   = exp(log(pMax/pMin)/nP)
+
     ! The momentum at the left fface of 0th ghost cell is:
     MomentumMax     = pMin/MomentumRatio
+
     ! Calculate the generalized variable p^3/3 at each face, starting from
     ! the left fface of 0th cell
     Momentum3_I(-1) = MomentumMax**3/3
+
     ! For cells from 0 to nP+1 calculate face values and volume factor:
     do iP = 0, nP + 1
        MomentumMin = MomentumMax
@@ -503,7 +724,6 @@ contains
     ! do iP =1, nP
     !   write(*,*)LogMomentum_I(iP),alog10(VDF_G(5000,iP)*VolumeNew_G(5000,iP))
     ! end do
-    write(*,*)'Total weight=', sum(VDF_G(5000,1:nP)*VolumeNew_G(5000,1:nP))
     call save_plot_file(NameFile='test_dsa_poisson.out', &
          TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
          NameVarIn='LogMomentum VDF'  ,                  &
@@ -549,7 +769,9 @@ contains
   end subroutine test_dsa_poisson
   !============================================================================
   subroutine test_dsa_sa_mhd
+
     use ModDiffusion
+
     real,    parameter :: pMax = 100, pMin = 1
     real,    parameter :: tFinal = 6000.00
     real ::  MomentumRatio, MomentumMin, MomentumMax
@@ -641,6 +863,7 @@ contains
   contains
     !==========================================================================
     subroutine update_coords(Time)
+
       real, intent(in):: Time
 
       ! Effective width of the shock wave, in cell size
@@ -674,6 +897,7 @@ contains
          Hamiltonian_N(-1:nX+1, iP)= -0.50*Momentum3_I(iP)*&
               (VolumeX_I(-1:nX+1) + VolumeX_I(0:nX+2))
       end do
+
     end subroutine update_coords
     !==========================================================================
   end subroutine test_dsa_sa_mhd
@@ -706,8 +930,8 @@ contains
 
     ! Position and width of the smooth bump or sharp ellipsoid
     real, parameter:: xCenter = -3.0, yCenter = 0.0, WidthX = 3.0, WidthY = 6.0
-    logical:: IsSmooth = .false.
-    
+    logical:: IsSmooth = .true.
+
     real:: x, y, z, r, Uz, Ur, Vel_VC(Uz_:Ur_,-500:500,-500:500), RSph
 
     ! Loop variables
@@ -719,6 +943,8 @@ contains
     real :: R_I(-1:nR+1), Theta_I(-1:nTheta+1), CosTheta_I(-1:nTheta/2+1)
     real :: Hamiltonian_N(-1:nR+1, -1:nTheta/2+1)
     real :: Time, Dt, Source_C(nR,nTheta/2), tFinal
+    real :: PlotVar_VC(5,nR,nTheta), DfDt_C(nR,nTheta), DfDt2_C(nR,nTheta)
+    real :: Error, Error2, URSph, UTheta,ErrorTVD
     logical :: DoExit
     !--------------------------------------------------------------------------
     do j = -500,500
@@ -747,6 +973,8 @@ contains
          VarIn_VII = Vel_VC)
 
     ! Initialize coords
+    ! These are cell face coordinates:
+    ! r_I(iR) is the radius at iR+1/2, Theta_I(iTheta) is at iTheta+1/2.
     do iR = -1, nR + 1
        R_I(iR) = iR*Dr + 0.5
     end do
@@ -774,68 +1002,127 @@ contains
        end do
     end do
     ! write(*,*)'Maxval(Hamiltonian)=',maxval(Hamiltonian_N)
+
     ! Calculate volume
     ! angle-dependent factor
     do iTheta = 1, nTheta/2
        Volume_G(0:nR+1,iTheta) = (CosTheta_I(iTheta-1) - CosTheta_I(iTheta))*&
             (R_I(0:nR+1)**3 - R_I(-1:nR)**3)*cTwoPi/3
     end do
-    Volume_G(0:nR+1,0) = (CosTheta_I(0) - CosTheta_I(-1))*&
-         (R_I(0:nR+1)**3 - R_I(-1:nR)**3)*cTwoPi/3
-    Volume_G(0:nR+1,nTheta/2+1) = (CosTheta_I(nTheta/2+1) - &
-         CosTheta_I(nTheta/2))*(R_I(0:nR+1)**3 - R_I(-1:nR)**3)*cTwoPi/3
+    Volume_G(0:nR+1,0) = (CosTheta_I(0) - CosTheta_I(-1)) &
+         *(R_I(0:nR+1)**3 - R_I(-1:nR)**3)*cTwoPi/3
+    Volume_G(0:nR+1,nTheta/2+1) = &
+         (CosTheta_I(nTheta/2+1) - CosTheta_I(nTheta/2)) &
+         *(R_I(0:nR+1)**3 - R_I(-1:nR)**3)*cTwoPi/3
     ! write(*,*)'Minval(Volume)=',minval(Volume_G)
     ! Periodic boundary conditions
     Source_C = 0.0
 
     ! Initial conditions:
-    VDF_G = 0.0
+    VDF_G = 0.0; DfDt_C = 0.0; DfDt2_C = 0.0
     do iTheta = 1, nTheta; do iR = 1, nR
-       x = cos(Theta_I(iTheta))*R_I(iR) - xCenter
-       y = sin(Theta_I(iTheta))*R_I(iR) - yCenter
+       x = cos(Theta_I(iTheta) - dTheta/2)*(R_I(iR) - dR/2) - xCenter
+       y = sin(Theta_I(iTheta) - dTheta/2)*(R_I(iR) - dR/2) - yCenter
        if(IsSmooth)then
           ! inside a WidthX*WidthY rectangle centered on xCenter,yCenter
           ! cos^2(kx*(x-xCenter))*cos^2(ky*(y-yCenter))
-          if(abs(x) < WidthX/2 .and. abs(y) < WidthY/2) &
-               VDF_G(iR,iTheta) = cos(cPi*x/WidthX)**2 * cos(cPi*y/WidthY)**2
+          if(abs(x) < WidthX/2 .and. abs(y) < WidthY/2) then
+             VDF_G(iR,iTheta) = cos(cPi*x/WidthX)**4 * cos(cPi*y/WidthY)**4
+             z = x + xCenter; r = y + yCenter
+             RSph = sqrt(z**2 + r**2)
+             Uz = 1.0 - 1.0/RSph**3 + 1.50*r**2/RSph**5
+             Ur = -1.50*r*z/RSph**5
+             ! Anaylitical (df/dt=-u.grad f), to compare with numeric source
+             DfDt_C(iR,iTheta) =cos(cPi*x/WidthX)**3 *cos(cPi*y/WidthY)**3&
+                  *(Uz*cPi/WidthX*sin(cPi*x/WidthX)*cos(cPi*y/WidthY) + &
+                  Ur*cPi/WidthY*cos(cPi*x/WidthX)*sin(cPi*y/WidthY))*4.0
+          end if
        else
           if( (x/WidthX)**2 + (y/WidthY)**2 < 0.25) &
                VDF_G(iR,iTheta) = 1.0
        end if
     end do; end do
-    Time = 0.0; iStep = 0; tFinal = 0.0
-    call save_plot_file('hill.outs', 'rewind', 'real4', &
-         'Hill vortex', iStep, tFinal, &
+    if(IsSmooth)then
+       do iTheta = 1, nTheta; do iR = 1, nR
+          x = cos(Theta_I(iTheta) - dTheta/2)*(R_I(iR) - dR/2) - xCenter
+          y = sin(Theta_I(iTheta) - dTheta/2)*(R_I(iR) - dR/2) - yCenter
+          if(abs(x) < WidthX/2 .and. abs(y) < WidthY/2) then
+             VDF_G(iR,iTheta) = cos(cPi*x/WidthX)**4 * cos(cPi*y/WidthY)**4
+             z = x + xCenter; r = y + yCenter
+             RSph = sqrt(z**2 + r**2)
+             Uz = 1.0 - 1.0/RSph**3 + 1.50*r**2/RSph**5
+             Ur = -1.50*r*z/RSph**5
+             URsph = (Uz*z + Ur*r)/RSph
+             UTheta = (-Uz*r + Ur*z)/RSph
+             ! By differentiating  df/dt=-u.grad f, the second order derivative
+             ! may be evaluated: d2f/dt2=-u.grad(df/dt), so that analytical
+             ! df/dt may be differentiated numerically:
+             DfDt2_C(iR,iTheta) =-0.50*(&
+                  URsph*(DfDt_C(iR+1,iTheta) - DfDt_C(iR-1,iTheta))/Dr + &
+                  UTheta*(DfDt_C(iR,iTheta+1) - DfDt_C(iR,iTheta-1))/&
+                  (RSph*dTheta) )
+          end if
+       end do; end do
+    end if
+
+    Time = 0.0; iStep = 0
+
+    ! Save initial conditions
+    call save_plot_file('hill.outs', 'rewind', 'real8', &
+         'Hill vortex', iStep, Time, &
          NameVarIn='r Theta Rho'  , &
          CoordMinIn_D=[0.5 + 0.5*Dr, 180.0/nTheta],&
          CoordMaxIn_D=[5.0 - 0.5*Dr, 360.0 - 180.0/nTheta],&
          VarIn_II = VDF_G(1:nR,1:nTheta) )
 
-    call save_plot_file('hillcut.outs', 'rewind', 'real4', &
-         'Hill vortex', iStep, tFinal, &
+    call save_plot_file('hillcut.outs', 'rewind', 'real8', &
+         'Hill vortex', iStep, Time, &
          NameVarIn='r Theta Rho'  , &
          CoordMinIn_D=[0.5 + 0.5*Dr, 180 + 180.0/nTheta],&
          CoordMaxIn_D=[5.0 - 0.5*Dr, 360 - 180.0/nTheta],&
          VarIn_II = VDF_G(1:nR,nTheta/2+1:nTheta) )
-    
+    if(IsSmooth)then
+       ! Calculate source for small time step, to compare with
+       ! analytical DfDt
+       call explicit(nR, nTheta/2, VDF_G(-1:nR+2,-1:nTheta/2+2), Volume_G,&
+            Source_C, Hamiltonian_N,   &
+            CFLIn=1.0e-6, DtOut = Dt,ErrorTVD=ErrorTVD)
+       PlotVar_VC(1,:,:) = VDF_G(1:nR,1:nTheta)
+       PlotVar_VC(2,:,:) = DfDt_C(1:nR,1:nTheta)
+       PlotVar_VC(3,:,1:nTheta/2) = Source_C/Dt
+       Error = sum(abs(PlotVar_VC(2,:,1:nTheta/2) - &
+            PlotVar_VC(3,:,1:nTheta/2))*&
+            Volume_G(1:nR,1:nTheta/2))/(4/3.0*cPi*5.0**3)
+       call explicit(nR, nTheta/2, VDF_G(-1:nR+2,-1:nTheta/2+2), Volume_G,&
+            Source_C, Hamiltonian_N,   &
+            CFLIn=CFL, DtOut = Dt)
+       PlotVar_VC(4,:,:) = 0.50*Dt*DfDt2_C(1:nR,1:nTheta)
+       PlotVar_VC(5,:,1:nTheta/2) = Source_C/Dt
+       Error2 = sum(abs(&
+            PlotVar_VC(2,:,1:nTheta/2) + PlotVar_VC(4,:,1:nTheta/2) - &
+            PlotVar_VC(5,:,1:nTheta/2))*&
+            Volume_G(1:nR,1:nTheta/2))/(4/3.0*cPi*5.0**3)
+       do iTheta = nTheta/2 + 1, nTheta
+          ! Symmetric prolongation for visualization
+          PlotVar_VC(3,:, iTheta) = PlotVar_VC(3,:, 1+nTheta-iTheta)
+          PlotVar_VC(5,:, iTheta) = PlotVar_VC(5,:, 1+nTheta-iTheta)
+       end do
+       call save_plot_file('InitialSource.out', 'rewind','real8', &
+            'Hill vortex', iStep, Time, &
+            NameVarIn=&
+            'z r Rho DfDt Source DfDt2 Source2 Error ErrorTVD  Error2', &
+            CoordMinIn_D=[0.5 + 0.5*Dr, 180.0/nTheta],&
+            CoordMaxIn_D=[5.0 - 0.5*Dr, 360.0 - 180.0/nTheta],&
+            ParamIn_I=[Error, ErrorTVD, Error2],&
+            VarIn_VII = PlotVar_VC )
+       write(*,*)'Error=', Error, ' ErrorTVD=',ErrorTVD,' Error2=', Error2
+       !!! stop
+    end if
     ! Computation
     do iPlot = 0, 99
        tFinal = (iPlot + 1)*0.1
        DoExit = .false.
        PLOT:do
-          ! Boundary condition for marking density in the band -6 < x-t < -5
-          !do iTheta = -1, nTheta/2+2
-          !   do iR = nR+1, nR+2
-          !      z = (0.50 + (iR - 0.50)*Dr)*cos(dTheta*(iTheta - 0.50))
-          !      x = 7 + z - Time
-          !      if(Time < 2 .and.  abs(x) < 2)then
-          !         VDF_G(iR,iTheta) = cos(0.25*cPi*x)**2 &
-          !              *cos(cPi*min(0.0, 1.5-Time))**2
-          !      else
-          !         VDF_G(iR,iTheta) = 0.0
-          !      end if
-          !   end do
-          !end do
           call explicit(nR, nTheta/2, VDF_G(-1:nR+2,-1:nTheta/2+2), Volume_G,&
                Source_C, Hamiltonian_N,   &
                CFLIn=Cfl, DtOut = Dt)
@@ -859,13 +1146,13 @@ contains
           write(*,*)'Time=',Time
           if(DoExit) EXIT PLOT
        end do PLOT
-       call save_plot_file('hill.outs', 'append', 'real4', &
+       call save_plot_file('hill.outs', 'append', 'real8', &
             'Hill vortex', iStep, tFinal, &
             NameVarIn='r Theta Rho'  , &
             CoordMinIn_D=[0.50 + 0.50*Dr, 180.0/nTheta],&
             CoordMaxIn_D=[5.0 - 0.50*Dr, 360.0 - 180.0/nTheta],&
             VarIn_II = VDF_G(1:nR,1:nTheta) )
-       call save_plot_file('hillcut.outs', 'append', 'real4', &
+       call save_plot_file('hillcut.outs', 'append', 'real8', &
             'Hill vortex', iStep, tFinal, &
             NameVarIn='r Theta Rho'  , &
             CoordMinIn_D=[0.5 + 0.5*Dr, 180 + 180.0/nTheta],&
@@ -885,7 +1172,7 @@ module ModStochastic
   PRIVATE ! Except
   public :: test_stochastic
   ! Streamlines:
-  integer, parameter :: nPointPer2Pi = 360
+  integer, parameter :: nPointPer2Pi = 180
   integer, parameter :: nJ = (4*nPointPer2Pi)/2, nTheta=nPointPer2Pi
   real, parameter    :: Delta = cTwoPi/nPointPer2Pi
   ! Loop variables
@@ -919,7 +1206,7 @@ contains
     end do
     ! Sinusoidal perturbation
     do iTheta = -1, nTheta+1
-       HamiltonianPush_N(-iTheta, -1-nJ:nJ+1) = cos(Theta_I(iTheta))
+       HamiltonianPush_N(iTheta, -1-nJ:nJ+1) = cos(Theta_I(iTheta))
     end do
     ! Account for:
     ! 1. Amplitude factor, KChirikov
@@ -950,23 +1237,23 @@ contains
     ! Compiutation
     Time = 0.0; iStep = 0
     call save_plot_file(NameFile='initial.out', &
-         TypeFileIn='real4', TimeIn=tFinal, nStepIn = iStep, &
+         TypeFileIn='real8', TimeIn=tFinal, nStepIn = iStep, &
          NameVarIn='theta JT/2pi Log10VDF'  , &
          CoordMinIn_D=[         0.50*Delta, -2.0 + 0.50/nPointPer2Pi],&
          CoordMaxIn_D=[cTwoPi - 0.50*Delta,  2.0 - 0.50/nPointPer2Pi],&
          VarIn_II = log10(VDF_G(1:nTheta,1-nJ:nJ)) )
-    do iPlot = 0, 249
+    do iPlot = 0, 999
        tFinal = tFinal + 0.1
        DoAgain = .true.
        do while(DoAgain)
           call explicit(nTheta,2*nJ, VDF_G, Volume_G,&
                Source_C, HamiltonianPush_N,   &
-               CFLIn=0.99, DtOut = Dt)
+               CFLIn=0.5, DtOut = Dt,IsPeriodicIn_D=[.true.,.false.])
           iStep = iStep +1
           if(Time + Dt >= tFinal)then
              call explicit(nTheta,2*nJ,VDF_G,Volume_G,&
                   Source_C, HamiltonianPush_N,   &
-                  DtIn = tFinal - Time)
+                  DtIn = tFinal - Time,IsPeriodicIn_D=[.true.,.false.])
              VDF_G(1:nTheta,1-nJ:nJ) = VDF_G(1:nTheta,1-nJ:nJ) + Source_C
              Time = tFinal
              DoAgain = .false.
@@ -984,12 +1271,12 @@ contains
        do while(DoAgain)
           call explicit(nTheta,2*nJ, VDF_G, Volume_G,&
                Source_C, HamiltonianFree_N,   &
-               CFLIn=0.99, DtOut = Dt)
+               CFLIn=0.99, DtOut = Dt,IsPeriodicIn_D=[.true.,.false.])
           iStep = iStep +1
           if(Time + Dt >= tFinal)then
              call explicit(nTheta,2*nJ,VDF_G,Volume_G,&
                   Source_C, HamiltonianFree_N,   &
-                  DtIn = tFinal - Time)
+                  DtIn = tFinal - Time,IsPeriodicIn_D=[.true.,.false.])
              VDF_G(1:nTheta,1-nJ:nJ) = VDF_G(1:nTheta,1-nJ:nJ) + Source_C
              Time = tFinal
              DoAgain = .false.
@@ -1004,30 +1291,37 @@ contains
        end do
        write(NameFile,'(a,i3.3,a)')'stoc',iPlot,'.out'
        call save_plot_file(NameFile=NameFile, &
-            TypeFileIn='real4', TimeIn=tFinal, nStepIn = iStep, &
+            TypeFileIn='real8', TimeIn=tFinal, nStepIn = iStep, &
             NameVarIn='theta JT/2pi Log10VDF'  , &
             CoordMinIn_D=[         0.50*Delta, -2.0 + 0.50/nPointPer2Pi],&
             CoordMaxIn_D=[cTwoPi - 0.50*Delta,  2.0 - 0.50/nPointPer2Pi],&
             VarIn_II = log10(VDF_G(1:nTheta,1-nJ:nJ)) )
     end do
   end subroutine test_stochastic
+  !============================================================================
 end module ModStochastic
+!==============================================================================
 program test_program
   use ModTestPoissonBracket, ONLY: test_poisson_bracket, test_dsa_sa_mhd, &
-       test_dsa_poisson, test_energy_conservation, test_in_action_angle
+       test_dsa_poisson, test_energy_conservation, test_in_action_angle,  &
+       test_poisson_2d, test_poisson_2d_smooth
   use ModNumConst,           ONLY: cTwoPi
   use ModHillVortex, ONLY: test_hill_vortex
   use ModStochastic, ONLY: test_stochastic
   ! use ModTestPoissonBracketAndScatter, ONLY: test_scatter
-  implicit none
 
+  implicit none
   !----------------------------------------------------------------------------
+  write(*,*)' Start poisson bracket tests'
+
+  call test_poisson_bracket(cTwoPi)        ! nightly test1
+  call test_dsa_poisson                    ! nightly test2
+  ! call test_poisson_2d(cTwoPi)  ! Fig 1 (right panel)
+  ! call test_poisson_2d_smooth(cTwoPi)
   ! call test_stochastic(1.2)
   ! call test_hill_vortex
-  call test_poisson_bracket(cTwoPi)        ! nightly test1
   ! call test_energy_conservation(cTwoPi)
   ! call test_in_action_angle(cTwoPi)
-  call test_dsa_poisson                    ! nightly test2
   ! call test_dsa_sa_mhd ! for Fig5.Right Panel
   ! call test_multipoisson_bracket(50.0)
 
@@ -1035,5 +1329,7 @@ program test_program
   ! Diffuornot = 0 or 1
 
   ! call test_scatter(50.0)
+  write(*,*)' Finish poisson bracket tests'
+  
 end program test_program
 !==============================================================================

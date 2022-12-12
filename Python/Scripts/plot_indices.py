@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-"""Plot the indeces based on the SWMF log files.
+"""Plot the indices based on the SWMF log files.
 
 Run from command line for help. There may be helpful functions here as a
 module.
 
 Usage:
-    python plot_indeces.py log_YYYMMDD...log geoindex_YYYYMMDD...log
+    python plot_indices.py log_YYYMMDD...log geoindex_YYYYMMDD...log
 """
 __author__ = 'Qusai Al Shidi'
 __email__ = 'qusai@umich.edu'
@@ -92,7 +92,7 @@ def plot_omni(axis: matplotlib.axes.Axes,
     return times_omni, data_omni, data_swmf
 
 
-def plot_indeces(axis, title,
+def plot_indices(axis, title,
                  times, data_swmf,
                  times_omni, data_omni,
                  units='nT',
@@ -150,19 +150,33 @@ def ridley_2004(times, pci):
 
 
 def newell(velocity, b_y, b_z):
-    'get the newell function in certain time'
+    """Calculate the Newell (2015) function.
 
-    norm = (450**2  # 450 km/s ^2 avg
-            * 5)    # 5 nT
+    Args:
+        velocity (float or ArrayLike):
+            Solar wind speed.
+        b_y (float or ArrayLike):
+            Solar wind magnetic field component in the Y (GSM) direction.
+        b_z (float or ArrayLike):
+            Solar wind magnetic field component in the Z (GSM) direction.
+    
+    Returns:
+        (float or ArrayLike): $d\\Phi_{MP} / dt$ in Wb/s
+
+    Notes:
+        Newell (2015): doi:10.1029/2006JA012015
+        Cai and Clauer (2013): doi:10.1002/2013JA018819
+    """
+
     b_total = np.sqrt(b_y**2 + b_z**2)
     clock_angle = np.arctan2(b_y, b_z)
 
     value = (velocity**2
              * b_total
              * np.sin(0.5*clock_angle)**4
-             )/norm
+             )
 
-    return 100*np.power(value, 2/3)
+    return 100*np.power(value, 2/3)  # times 100 by Cai and Clauer (2013)
 
 
 def _interp_nans(x_vals, y_vals):
@@ -237,15 +251,15 @@ def plot_geospace(data_dst, data_al,
         plot_newell(axes[0], data_omni)
     else:
         plot_solar_wind(axes[0], data_omni)
-    plot_indeces(axes[1], 'SYM-H',
+    plot_indices(axes[1], 'SYM-H',
                  data_dst['times'], data_dst['dst_sm'],
                  data_omni['times'], data_omni['sym_h'],
                  label='SYM-H')
-    plot_indeces(axes[2], 'Auroral Index (AL)',
+    plot_indices(axes[2], 'Auroral Index (AL)',
                  data_al['times'], data_al['AL'],
                  data_omni['times'], data_omni['al'],
                  label='AL')
-    plot_indeces(axes[3], 'Cross Polar Cap Potential (CPCP)',
+    plot_indices(axes[3], 'Cross Polar Cap Potential (CPCP)',
                  data_dst['times'],
                  data_dst['cpcpn'],
                  data_omni['times'],
@@ -280,7 +294,7 @@ def plot_geospace(data_dst, data_al,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Plot SWMF Geospace global indeces.')
+        description='Plot SWMF Geospace global indices.')
     parser.add_argument('log_files', nargs=2,
         help=('In order: the log_*.log file and the geoindex*.log file from'
               + ' SWMF output.'))

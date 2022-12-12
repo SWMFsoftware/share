@@ -21,6 +21,7 @@ module ModUtilities
 
   private ! except
 
+  public:: UnitTmp_ ! inherited from ModIoUnit
   public:: make_dir
   public:: check_dir
   public:: fix_dir_name
@@ -1077,7 +1078,6 @@ contains
 
     character(len=*), parameter:: NameSub = 'find_cell4'
     !--------------------------------------------------------------------------
-
     if(present(Coord_I)) then
        IsUniform = size(Coord_I) < 2
     else
@@ -1265,7 +1265,7 @@ contains
     character(len=*), intent(in),  optional:: StringError
     logical,          intent(out), optional:: IsInside
 
-    integer:: i, Di
+    integer:: i, Di, nIter, MaxIter
     real(Real8_):: Tolerance
 
     logical:: IsUniform
@@ -1318,6 +1318,8 @@ contains
        ! Monotone increasing coordinates
        Tolerance = (Coord_I(MaxCoord) - Coord_I(MinCoord))*1d-12
 
+       if(present(IsInside)) IsInside = .true.
+
        if(Coord < Coord_I(MinCoord) - Tolerance)then
           if(.not. (present(DoExtrapolate))) then
              if(present(StringError)) write(*,*) StringError
@@ -1334,6 +1336,11 @@ contains
              dCoord = 0.0
           end if
           if(present(IsInside)) IsInside = .false.
+          RETURN
+       elseif(Coord <= Coord_I(MinCoord))then
+          ! Very near the edge
+          iCoord = MinCoord
+          dCoord = 0.0
           RETURN
        end if
 
@@ -1354,13 +1361,17 @@ contains
           end if
           if(present(IsInside)) IsInside = .false.
           RETURN
+       elseif(Coord >= Coord_I(MaxCoord))then
+          ! Very near the edge
+          iCoord = MaxCoord - 1
+          dCoord = 1.0
        end if
-
-       if(present(IsInside)) IsInside = .true.
 
        ! binary search
        i  = (MinCoord + MaxCoord)/2
        Di = (MaxCoord - MinCoord)/2
+       nIter   = 0
+       MaxIter = MaxCoord - MinCoord ! Even a linear search would end
        do
           Di = (Di + 1)/2
           if(Coord < Coord_I(i)) then
@@ -1369,6 +1380,17 @@ contains
              i = min(MaxCoord-1, i + Di)
           else
              EXIT
+          end if
+          nIter = nIter + 1
+          if (nIter > MaxIter) then
+#ifndef _OPENACC
+             write(*,*) NameSub,': ERROR in monotone increasing: '
+             write(*,*) 'Tolerance=', Tolerance
+             write(*,*) 'Coord_I(MinCoord), Coord_I(MaxCoord), Coord=', &
+                  Coord_I(MinCoord), Coord_I(MaxCoord), Coord
+             write(*,*) 'i, Di, Coord_I(i:i+1)=', i, Di, Coord_I(i:i+1)
+#endif
+             call CON_stop_simple(NameSub//': maximum iteration exceeded!')
           end if
        end do
        iCoord = i
@@ -1426,6 +1448,8 @@ contains
        ! binary search
        i  = (MinCoord + MaxCoord)/2
        Di = (MaxCoord - MinCoord)/2
+       nIter = 0
+       MaxIter = MaxCoord - MinCoord ! Even a linear search ends by this
        do
           Di = (Di + 1)/2
           if(Coord > Coord_I(i)) then
@@ -1434,6 +1458,17 @@ contains
              i = min(MaxCoord-1, i + Di)
           else
              EXIT
+          end if
+          nIter = nIter + 1
+          if (nIter > MaxIter) then
+#ifndef _OPENACC
+             write(*,*) NameSub,': ERROR in monotone decreasing: '
+             write(*,*) 'Tolerance=', Tolerance
+             write(*,*) 'Coord_I(MinCoord), Coord_I(MaxCoord), Coord=', &
+                  Coord_I(MinCoord), Coord_I(MaxCoord), Coord
+             write(*,*) 'i, Di, Coord_I(i:i+1)=', i, Di, Coord_I(i:i+1)
+#endif
+             call CON_stop_simple(NameSub//': maximum iteration exceeded!')
           end if
        end do
        iCoord = i

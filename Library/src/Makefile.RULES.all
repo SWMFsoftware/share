@@ -32,6 +32,7 @@ $Compiler eq "f95" or $Compiler eq "nagfor"
 $Compiler eq "gfortran" and `gfortran -dumpversion` =~ /^1\d/
 	${COMPILE.f90} ${Cflag0} -fallow-argument-mismatch ModMpiInterfaces.f90
 	${COMPILE.f90} ${Cflag0} -fallow-argument-mismatch ModMpi.f90
+	${COMPILE.f90} ${Cflag0} ModRandomNumber.f90
 
 # Use LINK.f90 (usually mpif90) so the mpif.h header file can be included
 1

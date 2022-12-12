@@ -388,11 +388,15 @@ pro set_default_values
   common colors, r_orig, g_orig, b_orig, r_curr, g_curr, b_curr
 
   ;; Start day for the time axis of plot_log_data
-  common start_date, start_year, start_month, start_day
+  common start_date, start_year, start_month, start_day, $
+     start_hour, start_minute, start_second
   
-  start_year  = -1
-  start_month = -1
-  start_day   = -1
+  start_year   = -1
+  start_month  = -1
+  start_day    = -1
+  start_hour   = 0
+  start_minute = 0
+  start_second = 0
 
 end
 ;===========================================================================
@@ -4557,27 +4561,54 @@ end
 ;===========================================================================
 pro putbottom,multix,multiy,ix,iy,info,nx,it,time,ipict
 
+  common log_data, timeunit
   common debug_param & on_error, onerror
+  common start_date, start_year, start_month, start_day, $
+     start_hour, start_minute, start_second
 
-  t    = round(time)
-  sec  = t mod 60
-  t    = t/60
-  min  = t mod 60
-  t    = t/60
-  hour = t mod 24
-  t    = t/24
-  day  = t mod 365
-  year = t/365
+  if timeunit eq 'date' and start_year ge 1000 then begin
+     caldat, julday(start_month, start_day, start_year, $
+                    start_hour, start_minute, start_second + time), $
+             month, day, year, hour, min, sec
+     stime = string(year, month, day, hour, min, round(sec), $
+                    format='(i4,"-",i2.2,"-",i2.2,"T",i2.2,":",i2.2,":",i2.2)')
 
-  if year gt 0 then $
-     stime = string(year,day,hour,format='(i3,"y",i3.3,"d",i2.2,"h")') $
-  else if day gt 0 then $
-     stime = string(day,hour,min,format='(i4,"d",i2.2,"h",i2.2,"m")') $
-  else if hour gt 0 then $
-     stime = string(hour,min,sec,format='(i4,"h",i2.2,"m",i2.2,"s")') $
-  else $
-     stime = string(time, format='(g12.5)')
-
+  endif else if timeunit eq 'h' or timeunit eq 'date' then begin
+     t    = round(time)
+     sec  = t mod 60
+     t    = t/60
+     min  = t mod 60
+     t    = t/60
+     hour = t mod 24
+     t    = t/24
+     day  = t mod 365
+     year = t/365
+     if year gt 0 then $
+        stime = string(year,day,hour,format='(i3,"y",i3.3,"d",i2.2,"h")') $
+     else if day gt 0 then $
+        stime = string(day,hour,min,format='(i4,"d",i2.2,"h",i2.2,"m")') $
+     else if hour gt 0 then $
+        stime = string(hour,min,sec,format='(i4,"h",i2.2,"m",i2.2,"s")') $
+     else $
+        stime = string(time, format='(g12.5)')
+  endif else begin
+     case timeunit of
+        'y'       : t = time/(3600d0*24*365.25)
+        'year'    : t = time/(3600d0*24*365.25)
+        'd'       : t = time/(3600d0*24)
+        'day'     : t = time/(3600d0*24)
+        'hour'    : t = time/3600
+        'm'       : t = time/60
+        's'       : t = time
+        'second'  : t = time
+        'minute'  : t = time/60
+        'millisec': t = time*1000
+        'microsec': t = time*1d6
+        'ns'      : t = time*1d9
+     endcase
+     stime = string(t, format='(g12.5)') + ' ' + timeunit
+  endelse
+  
   if n_elements(nx) eq 1 then snx = string(nx, format='(i6)')
   if n_elements(nx) eq 2 then snx = string(nx, format='(i6,",",i4)')
   if n_elements(nx) eq 3 then snx = string(nx, format='(i6,",",i4,",",i4)')
@@ -6862,6 +6893,15 @@ pro plot_color_bar, pos, maxmin
 
 end
 
+;============================================================================
+pro loadct_bw, color
+  common colors
+
+  loadct,color
+  r_orig(0)=0 & g_orig(0)=0 & b_orig(0)=0
+  r_orig(255)=255 & g_orig(255)=255 & b_orig(255)=255
+  tvlct,r_orig,g_orig,b_orig
+end
 ;============================================================================
 pro makect, color
 

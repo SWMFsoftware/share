@@ -132,7 +132,7 @@ pro set_device, psfile, port=port, land=land, square=square, eps=eps, $
 	28 : device, file = psfile, encapsulated=eps, /color, bits=8,	$
 		/inches, landscape=land, xsize = xs, ysize = ys, $
 		xoff = xoff, yoff = yoff,  $
-		/Times
+		/Times, font_index=5
 	29 : device, file = psfile, encapsulated=eps, /color, bits=8,	$
 		/inches, landscape=land, xsize = xs, ysize = ys, $
 		xoff = xoff, yoff = yoff,  $
