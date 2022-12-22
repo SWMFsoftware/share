@@ -434,6 +434,10 @@ contains
        write(*,*)'XyzPlanetHgi_D/rSun = ',XyzPlanetHgi_D/rSun
        write(*,*)'XyzPlanetHgr_D/rSun = ',XyzPlanetHgr_D/rSun
        write(*,*)'vPlanetHgi_D/(km/s) = ',vPlanetHgi_D/1000.0
+       write(*,*)'HgiGse_DD='
+       call show_rot_matrix(HgiGse_DD)
+       write(*,*)'GsmGse_DD='
+       call show_rot_matrix(GsmGse_DD)
     end if
 
     DoInitializeAxes=.false.
