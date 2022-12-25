@@ -883,11 +883,6 @@ pro animate_data
         ', velvector=',velvector,', velspeed (0..5)=',velspeed,$
         FORMAT='(a,i3,a,i3,a,i4,a,i2)'
   if keyword_set(multiplot) then begin
-     ;; scalar multiplot value is converted to a row (+) or a column (-)
-     if size(multiplot,/n_dim) eq 0 then begin
-        if multiplot gt 0 then multiplot=[multiplot,1,1] $
-        else                   multiplot=[1,-multiplot,1]
-     endif
      print,'multiplot= ',multiplot,', axistype (coord/cells)=',axistype,$
            ', fixaspect= ',fixaspect,$
            FORMAT='(a,"[",i2,",",i2,",",i2,"]",a,a,a,i1)'
@@ -1037,9 +1032,15 @@ pro animate_data
   ;;===== DO ANIMATION IN MULTIX * MULTIY MULTIPLE WINDOWS
 
   if keyword_set(multiplot) then begin
-     multix=multiplot(0)
-     multiy=multiplot(1)
-     multidir=multiplot(2)
+     ;; scalar multiplot value is converted to a row (+) or a column (-)
+     if size(multiplot,/n_dim) eq 0 then begin
+        if multiplot gt 0 then       multiplot = [multiplot,1,1] $
+        else if multiplot eq -1 then multiplot = [1,nplot,1] $
+        else                         multiplot = [1,-multiplot,1]
+     endif
+     multix   = multiplot(0)
+     multiy   = multiplot(1)
+     multidir = multiplot(2)
      npict1=(multix*multiy)/(nplot*nfile)
      if npict1 eq 0 then npict1=1
   endif else if nfile eq 1 then begin
