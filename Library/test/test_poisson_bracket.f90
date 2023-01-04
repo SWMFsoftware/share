@@ -929,7 +929,7 @@ contains
     integer, parameter:: r_ = 2, Ur_ = 2, z_ = 1, Uz_  = 1
 
     ! Position and width of the smooth bump or sharp ellipsoid
-    real, parameter:: xCenter = -3.0, yCenter = 0.0, WidthX = 3.0, WidthY = 6.0
+    real, parameter:: xCenter = -3.0, yCenter = 0.0, WidthX = 3.0, WidthY = 4.0
     logical:: IsSmooth = .true.
 
     real:: x, y, z, r, Uz, Ur, Vel_VC(Uz_:Ur_,-500:500,-500:500), RSph
