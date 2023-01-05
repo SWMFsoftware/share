@@ -96,7 +96,7 @@ contains
   subroutine explicit2(nI, nJ, VDF_G, Volume_G, Source_C,    &
        Hamiltonian12_N, dHamiltonian01_FX, dHamiltonian02_FY,&
        DVolumeDt_G,                                          &
-       DtIn, CFLIn, DtOut, CFLOut, DtRecommend, IsPeriodicIn_D,&
+       DtIn, CFLIn, DtOut, DtRecommend, IsPeriodicIn_D,&
        ErrorTVD)
     ! solve the contribution to the
     ! numerical flux from a single Poisson bracket,
@@ -136,7 +136,7 @@ contains
     real,           intent(out):: Source_C(1:nI,1:nJ)
 
     real, optional, intent(in) :: DtIn, CFLIn   ! Options to set time step
-    real, optional, intent(out):: DtOut, CFLOut ! Options to report time step
+    real, optional, intent(out):: DtOut         ! Option to report time step
     real, optional, intent(out):: DtRecommend   ! Calculated for given CflIn
     real, optional, intent(out):: ErrorTVD
     logical, optional, intent(in) :: IsPeriodicIn_D(:)
@@ -150,7 +150,6 @@ contains
        DtIn=DtIn,                                            &
        CFLIn=CFLIn,                                          &
        DtOut=DtOut,                                          &
-       CFLOut=CFLOut,                                        &
        DtRecommend=DtRecommend,                              &
        IsPeriodicIn_D=IsPeriodicIn_D,  ErrorTVD=ErrorTVD)
   end subroutine explicit2
@@ -159,7 +158,7 @@ contains
        Hamiltonian12_N, Hamiltonian13_N, Hamiltonian23_N,                &
        dHamiltonian01_FX, dHamiltonian02_FY, dHamiltonian03_FZ,          &
        DVolumeDt_G,                                                      &
-       DtIn, CFLIn, DtOut, CFLOut, DtRecommend, IsPeriodicIn_D, ErrorTVD)
+       DtIn, CFLIn, DtOut, DtRecommend, IsPeriodicIn_D, ErrorTVD)
 
     ! solve the contribution to the numerical flux from multiple Poisson
     ! brackets, 1,2,3 enumerate phase coordinates,  0 relating to time.
@@ -211,7 +210,7 @@ contains
 
     !OPTIONAL PARAMETERS:
     real, optional, intent(in) :: DtIn, CFLIn   ! Options to set time step
-    real, optional, intent(out):: DtOut, CFLOut ! Options to report time step
+    real, optional, intent(out):: DtOut         ! Option to report time step
     real, optional, intent(out):: DtRecommend   ! Calculated for given CflIn
     logical, optional, intent(in) :: IsPeriodicIn_D(:)
     real, optional,  intent(out)  :: ErrorTVD
@@ -441,13 +440,6 @@ contains
        if(.not.present(DtIn))&
             Dt = CFLIn/maxval(CFLCoef_G(1:nI,1:nJ,1:nK))
        CFLCoef_G = Dt*CFLCoef_G
-    end if
-    if(present(CFLOut))then
-
-       ! The debugging version: normally, the CFL is known by now and there
-       ! is no need to calculate it again
-       CFLOut = maxval(CFLCoef_G(1:nI,1:nJ,1:nK))
-       if(CFLOut > CFLMax*0.99 + 0.01)call CON_stop('CFL is too large')
     end if
     if(present(DtOut ))DtOut  = Dt
 
