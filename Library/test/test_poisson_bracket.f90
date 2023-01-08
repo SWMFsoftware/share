@@ -206,9 +206,10 @@ contains
             CFLIn=0.99, DtOut = Dt, IsPeriodicIn_D=[.false.,.true.])
        iStep = iStep +1
        if(Time + Dt >= tFinal)then
+          Dt = tFinal - Time
           call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
                Hamiltonian_N,   &
-               DtIn = tFinal - Time, IsPeriodicIn_D=[.false.,.true.])
+               DtIn = Dt, IsPeriodicIn_D=[.false.,.true.])
           VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
           EXIT
        else
@@ -227,10 +228,10 @@ contains
          Coord1In_I = 10.0**LogMomentum_I(1:nQ), &
          VarIn_II = VDF_G(1:nQ,1:nP) )
   end subroutine test_poisson_bracket
-  !==========================================================================
+  !============================================================================
   real function Hamiltonian(P2)
     real, intent(in) :: P2 ! momentum squared
-    !------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     Hamiltonian = sqrt(1.0 + P2)
   end function Hamiltonian
   !============================================================================
@@ -282,9 +283,10 @@ contains
             CFLIn=0.99, DtOut = Dt)
        iStep = iStep +1
        if(Time + Dt >= tFinal)then
+          Dt = tFinal - Time
           call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
                Hamiltonian_N,   &
-               DtIn = tFinal - Time)
+               DtIn = Dt)
           VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
           EXIT
        else
@@ -301,7 +303,7 @@ contains
          VarIn_II = VDF_G(1:nQ,1:nP))
 
   end subroutine test_poisson_2d
-  !===================================================================
+  !============================================================================
   subroutine test_poisson_2d_smooth(tFinal)
     real, intent(in) :: tFinal
 
@@ -322,8 +324,8 @@ contains
     real :: Time, Dt, Source_C(nQ,nP), Error
     real :: NormL2Init, NormL2, EnergyInit, Energy, qNode, pNode, Q, P
     real, parameter :: WidthX = 6.0, WidthY = 6.0
-    !--------------------------------------------------------------------------
     ! Control volume, for a uniform rectangular grid
+    !--------------------------------------------------------------------------
     Volume_G = DeltaQ*DeltaP
     ! Hamiltonian at the nodes
     do iP = -1, nP+1
@@ -354,9 +356,10 @@ contains
             CFLIn=0.50, DtOut = Dt)
        iStep = iStep +1
        if(Time + Dt >= tFinal)then
+          Dt = tFinal - Time
           call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
                Hamiltonian_N,   &
-               DtIn = tFinal - Time)
+               DtIn = Dt)
           Time = tFinal
           write(*,*) Time
           VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
@@ -379,11 +382,11 @@ contains
          ParamIn_I=[Error], &
          VarIn_VII = Plot_VC)
   contains
-    !=============================
+    !==========================================================================
     real function initial_cap(x,y)
       real, intent(in) :: x,y
       real, parameter :: xCenter = -6.0, yCenter = 0.0
-      !--------------------------------------------
+      !------------------------------------------------------------------------
       initial_cap = 0.0
       if(abs(x  - xCenter)<=WidthX/2.and.abs(y - yCenter)<=WidthY/2)then
          initial_cap = cos(cPi*(x - xCenter)/WidthX)**4*&
@@ -394,7 +397,7 @@ contains
     real function final_cap(x,y)
       real, intent(in) :: x,y
       real :: CosPhi,SinPhi,Phi, P, P2, OmegaT, xInit, yInit
-      !----------------------
+      !------------------------------------------------------------------------
       P2  = x**2 + y**2
       OmegaT = tFinal/hamiltonian(P2)
       P  = sqrt(P2)
@@ -435,8 +438,8 @@ contains
     real, parameter:: pWidth = 10.0, qWidth = 2.0
     integer, parameter:: nPower = 4
     logical, parameter:: IsSmooth = .true.
-    !--------------------------------------------------------------------------
     ! Control volume, for a uniform rectangular grid
+    !--------------------------------------------------------------------------
     Volume_G = DeltaQ*DeltaP
     ! Hamiltonian at the nodes
     do iP = -1, nP+1
@@ -482,9 +485,10 @@ contains
             CFLIn=CFL, DtOut = Dt)
        iStep = iStep +1
        if(Time + Dt >= tFinal)then
+          Dt = tFinal - Time
           call explicit(nQ, nP, VDF_G, Volume_G, Source_C, &
                Hamiltonian_N,   &
-               DtIn = tFinal - Time)
+               DtIn = Dt)
           VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
           NormL2 = sum( (VDF_G(1:nQ,1:nP) - VDFInitial_C)**2 )
           Energy = sum(VDF_G(1:nQ,1:nP)*Energy_C)
@@ -588,9 +592,10 @@ contains
             CFLIn=0.99, DtOut = Dt)
        iStep = iStep +1
        if(Time + Dt >= tFinal)then
+          Dt = tFinal - Time
           call explicit(nJ, nPhi, VDF_G, Volume_G, Source_C, &
                Hamiltonian_N,   &
-               DtIn = tFinal - Time)
+               DtIn = Dt)
           VDF_G(1:nJ, 1:nPhi) = VDF_G(1:nJ, 1:nPhi) + Source_C
           NormL2 = sum( (VDF_G(1:nJ,1:nPhi) - VDFInitial_C)**2 &
                *Volume_G(1:nJ,1:nPhi))
@@ -645,7 +650,7 @@ contains
     real ::  dHamiltonian02_FY(0:nX+1, -1:nP+1)
     real ::  LogMomentum_I(0:nP+1)     ! Cell centered, for plots
     real ::  Momentum3_I(-1:nP+1)
-    real ::  Time = 0.0, Dt, DtNext, DtAdjust, Source_C(nX,nP)
+    real ::  Time = 0.0, Dt, DtNext, Source_C(nX,nP)
     real ::  Coord_I(-1:nX+2)  ! Time-dependent coordinate of a mesh
     real ::  Dist_I(-1:nX+1)   ! Distance from mesh i to mesh i+1
 
@@ -698,11 +703,9 @@ contains
        call explicit(nX, nP, VDF_G, Volume_G, Source_C, &
             dHamiltonian02_FY=dHamiltonian02_FY,        &
             dVolumeDt_G = dVolumeDt_G,                  &
-            DtIn=Dt,           & ! Input time step
+            DtIn=Dt,           & ! Input time step, which may be reduced
             CFLIn=0.98,        & ! Input CFL to calculate next time step
-            DtOut=DtAdjust,    & ! Actual time step, which may be reduced
-            DtRecommend=DtNext)  ! Calculation of next time step
-       Dt = DtAdjust
+            DtOut=DtNext)        ! Calculation of next time step
        ! Correct final volumes, if Dt had been reduced
        VolumeNew_G  = Volume_G  + Dt*dVolumeDt_G
        VolumeNewX_I = VolumeX_I + Dt*dVolumeXDt_G
@@ -1128,8 +1131,9 @@ contains
                CFLIn=Cfl, DtOut = Dt)
           iStep = iStep +1
           if(Time + Dt >= tFinal)then
+             Dt = tFinal - Time
              call explicit(nR, nTheta/2, VDF_G(-1:nR+2,-1:nTheta/2+2), &
-                  Volume_G, Source_C, Hamiltonian_N, DtIn = tFinal - Time)
+                  Volume_G, Source_C, Hamiltonian_N, DtIn = Dt)
              VDF_G(1:nR, 1:nTheta/2) = VDF_G(1:nR, 1:nTheta/2) + Source_C
              Time = tFinal
              DoExit = .true.
@@ -1251,9 +1255,10 @@ contains
                CFLIn=0.5, DtOut = Dt,IsPeriodicIn_D=[.true.,.false.])
           iStep = iStep +1
           if(Time + Dt >= tFinal)then
+             Dt = tFinal - Time
              call explicit(nTheta,2*nJ,VDF_G,Volume_G,&
                   Source_C, HamiltonianPush_N,   &
-                  DtIn = tFinal - Time,IsPeriodicIn_D=[.true.,.false.])
+                  DtIn = Dt,IsPeriodicIn_D=[.true.,.false.])
              VDF_G(1:nTheta,1-nJ:nJ) = VDF_G(1:nTheta,1-nJ:nJ) + Source_C
              Time = tFinal
              DoAgain = .false.
@@ -1274,9 +1279,10 @@ contains
                CFLIn=0.99, DtOut = Dt,IsPeriodicIn_D=[.true.,.false.])
           iStep = iStep +1
           if(Time + Dt >= tFinal)then
+             Dt = tFinal - Time
              call explicit(nTheta,2*nJ,VDF_G,Volume_G,&
                   Source_C, HamiltonianFree_N,   &
-                  DtIn = tFinal - Time,IsPeriodicIn_D=[.true.,.false.])
+                  DtIn = Dt, IsPeriodicIn_D=[.true.,.false.])
              VDF_G(1:nTheta,1-nJ:nJ) = VDF_G(1:nTheta,1-nJ:nJ) + Source_C
              Time = tFinal
              DoAgain = .false.
@@ -1330,6 +1336,6 @@ program test_program
 
   ! call test_scatter(50.0)
   write(*,*)' Finish poisson bracket tests'
-  
+
 end program test_program
 !==============================================================================

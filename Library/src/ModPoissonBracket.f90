@@ -96,8 +96,7 @@ contains
   subroutine explicit2(nI, nJ, VDF_G, Volume_G, Source_C,    &
        Hamiltonian12_N, dHamiltonian01_FX, dHamiltonian02_FY,&
        DVolumeDt_G,                                          &
-       DtIn, CFLIn, DtOut, DtRecommend, IsPeriodicIn_D,&
-       ErrorTVD)
+       DtIn, CFLIn, DtOut, IsPeriodicIn_D, ErrorTVD)
     ! solve the contribution to the
     ! numerical flux from a single Poisson bracket,
     ! df/dq_l dH/dp_l - df/dp_l dH/dq_l
@@ -135,10 +134,10 @@ contains
     ! f(t+dt) - f(t) = Source_C
     real,           intent(out):: Source_C(1:nI,1:nJ)
 
-    real, optional, intent(in) :: DtIn, CFLIn   ! Options to set time step
-    real, optional, intent(out):: DtOut         ! Option to report time step
-    real, optional, intent(out):: DtRecommend   ! Calculated for given CflIn
-    real, optional, intent(out):: ErrorTVD
+    real, optional, intent(inout) :: DtIn   ! Options to set time step
+    real, optional, intent(in)    :: CFLIn  ! Options to set time step
+    real, optional, intent(out)   :: DtOut  ! Option to report time step
+    real, optional, intent(out)   :: ErrorTVD
     logical, optional, intent(in) :: IsPeriodicIn_D(:)
     character(len=*), parameter:: NameSub = 'explicit2'
     !--------------------------------------------------------------------------
@@ -150,7 +149,6 @@ contains
        DtIn=DtIn,                                            &
        CFLIn=CFLIn,                                          &
        DtOut=DtOut,                                          &
-       DtRecommend=DtRecommend,                              &
        IsPeriodicIn_D=IsPeriodicIn_D,  ErrorTVD=ErrorTVD)
   end subroutine explicit2
   !============================================================================
@@ -158,7 +156,7 @@ contains
        Hamiltonian12_N, Hamiltonian13_N, Hamiltonian23_N,                &
        dHamiltonian01_FX, dHamiltonian02_FY, dHamiltonian03_FZ,          &
        DVolumeDt_G,                                                      &
-       DtIn, CFLIn, DtOut, DtRecommend, IsPeriodicIn_D, ErrorTVD)
+       DtIn, CFLIn, DtOut, IsPeriodicIn_D, ErrorTVD)
 
     ! solve the contribution to the numerical flux from multiple Poisson
     ! brackets, 1,2,3 enumerate phase coordinates,  0 relating to time.
@@ -209,9 +207,9 @@ contains
     real, intent(out) :: Source_C(1:nI, 1:nJ, 1:nK)
 
     !OPTIONAL PARAMETERS:
-    real, optional, intent(in) :: DtIn, CFLIn   ! Options to set time step
-    real, optional, intent(out):: DtOut         ! Option to report time step
-    real, optional, intent(out):: DtRecommend   ! Calculated for given CflIn
+    real, optional, intent(inout) :: DtIn    ! Options to set time step
+    real, optional, intent(in)    :: CFLIn   ! Options to set time step
+    real, optional, intent(out)   :: DtOut   ! Option to report time step
     logical, optional, intent(in) :: IsPeriodicIn_D(:)
     real, optional,  intent(out)  :: ErrorTVD
     ! Local variables
@@ -244,7 +242,7 @@ contains
     ! Local CFL number:
     real :: CFLCoef_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK), CFLLocal
     ! Time step
-    real :: Dt, CFL
+    real :: Dt
     ! Misc:
     ! Sum of major contributions
     real    :: SumMajor
@@ -390,25 +388,17 @@ contains
     end do; end do; end do
     ! Set CFL and time step
     if(UseTimeDependentVolume)then
-       if(present(DtRecommend))then
-          if(present(CFLIn))then
-             CFL = CFLIn
-          else
-             CFL = CFLMax
-          end if
-          ! Solve time step from equation
-          ! CFLIn = \Delta t*(-\sum\delta^-H)/(\Delta t*dV/dt + V)
-          DtRecommend = CFL/maxval(vInv_G(1:nI,1:nJ,1:nK)*&
-               (CFLCoef_G(1:nI,1:nJ,1:nK) - CFL*DVolumeDt_G(1:nI,1:nJ,1:nK)))
-       end if
        if(present(DtIn))then
+          if(present(DtOut).and.present(CFLIn))&
+               DtOut = CFLIn/maxval(vInv_G(1:nI,1:nJ,1:nK)*&
+               (CFLCoef_G(1:nI,1:nJ,1:nK) - &
+               CFLIn*DVolumeDt_G(1:nI,1:nJ,1:nK)))
           ! Calculate the CFL factor with given Dt:
           vInv_G = 1.0/(Volume_G + Dt*DVolumeDt_G)
           CFLCoef_G = Dt*vInv_G*CFLCoef_G
-          CFL = maxval(CFLCoef_G(1:nI,1:nJ,1:nK))
 
           ! Check if the CFL satisfies the stability criterion
-          if(CFL>CFLMax)then
+          if(maxval(CFLCoef_G(1:nI,1:nJ,1:nK)) > CFLMax)then
 
              ! Restore CFLCoef_G and vInv
              CFLCoef_G = CFLCoef_G/(Dt*vInv_G)
@@ -416,33 +406,44 @@ contains
 
              ! Reduce the time step using equation
              ! CFLMax = \Delta t*(-\sum\delta^-H)/(\Delta t*dV/dt + V)
-             CFL = CFLMax
-             Dt = CFL/maxval(vInv_G(1:nI,1:nJ,1:nK)*&
+             DtIn = CFLMax/maxval(vInv_G(1:nI,1:nJ,1:nK)*&
                   ( CFLCoef_G(1:nI,1:nJ,1:nK) &
-                  - CFL*DVolumeDt_G(1:nI,1:nJ,1:nK)))
-
+                  - CFLMax*DVolumeDt_G(1:nI,1:nJ,1:nK)))
+             Dt = DtIn
              ! Calculate the CFL factor with given Dt:
              vInv_G = 1.0/(Volume_G + Dt*DVolumeDt_G)
              CFLCoef_G = Dt*vInv_G*CFLCoef_G
           end if
+          if(present(DtOut).and..not.present(CFLIn))&
+               DtOut = Dt
        else
           ! Solve time step from equation
           ! CFLIn = \Delta t*(-\sum\delta^-H)/(\Delta t*dV/dt + V)
           Dt = CFLIn/maxval(vInv_G(1:nI,1:nJ,1:nK)*&
                (CFLCoef_G(1:nI,1:nJ,1:nK) - CFLIn*DVolumeDt_G(1:nI,1:nJ,1:nK)))
-
+          if(present(DtOut))DtOut = Dt
           ! Calculate the volume at upper time level
           ! V(+\Delta t):
           vInv_G = 1.0/(Volume_G + Dt*DVolumeDt_G)
           CFLCoef_G = Dt*vInv_G*CFLCoef_G
        end if
     else
-       if(.not.present(DtIn))&
-            Dt = CFLIn/maxval(CFLCoef_G(1:nI,1:nJ,1:nK))
-       CFLCoef_G = Dt*CFLCoef_G
+       if(present(DtIn))then
+          if(present(DtOut ))&
+               DtOut = CFLIn/maxval(CFLCoef_G(1:nI,1:nJ,1:nK))
+          CFLCoef_G = Dt*CFLCoef_G
+          if(maxval(CFLCoef_G(1:nI,1:nJ,1:nK)) > CFLMax)then
+             ! Adjust time step and local CFL:
+             Dt = Dt*CFLMax/maxval(CFLCoef_G(1:nI,1:nJ,1:nK))
+             CFLCoef_G = (Dt/DtIn)*CFLCoef_G
+             DtIn = Dt
+          end if
+       else
+          Dt = CFLIn/maxval(CFLCoef_G(1:nI,1:nJ,1:nK))
+          if(present(DtOut))DtOut = Dt
+          CFLCoef_G = Dt*CFLCoef_G
+       end if
     end if
-    if(present(DtOut ))DtOut  = Dt
-
     ! Calculate source = f(t+Dt) - f(t):
     ! First order monotone scheme
     Source_C = -CFLCoef_G(1:nI,1:nJ,1:nK)*DeltaMinusF_G(1:nI,1:nJ,1:nK)
