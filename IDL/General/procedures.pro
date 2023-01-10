@@ -44,6 +44,8 @@
 ;
 ; Functions for
 ;
+; calculating correlation between two functions
+;    corr2
 ; calculating first derivative in 1D
 ;    diff1
 ; calculating derivatives in 2D for Cartesian grids to 2nd,3rd,4th order
@@ -4654,6 +4656,16 @@ pro putheader,multix,multiy,ix,iy,ninfo,headline,nx
   if ninfo gt 1 then info=info+' (nx='+string(nx,format='(i6,2(i4))')+')'
   xyouts,5+(ix*!d.x_size)/multix,-12+((iy+1)*!d.y_size)/multiy,/DEV,info
 
+end
+;===========================================================================
+function corr2,a,b,ncorr
+  n = n_elements(a)
+  m = ncorr/2
+  corr = fltarr(n)
+  corr(0:m-1)               = correlate(a(0:ncorr-1),b(0:ncorr-1))
+  corr(-m:-1)               = correlate(a(-ncorr:-1),b(-ncorr:-1))
+  for i=m, n-m-1 do corr(i) = correlate(a(i-m+1:i+m),b(i-m+1:i+m))
+  return,corr
 end
 ;===========================================================================
 function diff1,a,x
