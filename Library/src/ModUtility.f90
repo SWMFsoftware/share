@@ -1365,6 +1365,7 @@ contains
           ! Very near the edge
           iCoord = MaxCoord - 1
           dCoord = 1.0
+          RETURN
        end if
 
        ! binary search
