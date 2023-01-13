@@ -529,7 +529,7 @@ test_poisson_bracket_exe:
 		-L${LIBDIR} -lSHARE ${Lflag}
 
 test_poisson_bracket:
-	rm -f test_poisson.out test_*poisson.ref.out test_multipoisson_0*.out
+	rm -f test_poisson.out test_poisson2d.out
 	@echo test_poisson_bracket starting	>  test_poisson.diff
 	@make test_poisson_bracket_exe		>> test_poisson.diff
 	@echo './test_poisson.exe'		>> test_poisson.diff
@@ -539,6 +539,9 @@ test_poisson_bracket:
 test_poisson_bracket_check:
 	-@(${DIFFNUM} -b -r=1e-6 -a=1e-7 \
 		test_poisson.out test_poisson.ref.out.gz > test_poisson.diff)
+	-@(${DIFFNUM} -b -r=1e-6 -a=1e-7 \
+		test_poisson2d.out test_poisson2d.ref.out.gz \
+		>> test_poisson.diff)
 	-@(${DIFFNUM} -b -a=1e-7 \
 		test_dsa_poisson.out test_dsa_poisson.ref >> test_poisson.diff)
 	@ls -l test_poisson.diff

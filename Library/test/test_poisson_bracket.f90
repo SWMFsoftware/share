@@ -296,7 +296,7 @@ contains
        end if
     end do
     call save_plot_file(NameFile='test_poisson2d.out', &
-         TypeFileIn='real8', TimeIn=tFinal, nStepIn = iStep, &
+         TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
          NameVarIn='-Py    Px VDF', &
          CoordMinIn_D=[-12.0 + 0.50*DeltaQ, -12.0 +  0.50*DeltaP], &
          CoordMaxIn_D=[12.0 - 0.50*DeltaQ, 12.0 - 0.50*DeltaP], &
@@ -1321,8 +1321,8 @@ program test_program
   write(*,*)' Start poisson bracket tests'
 
   call test_poisson_bracket(cTwoPi)        ! nightly test1
-  call test_dsa_poisson                    ! nightly test2
-  ! call test_poisson_2d(cTwoPi)  ! Fig 1 (right panel)
+  call test_poisson_2d(cTwoPi)            ! nightly test2
+  call test_dsa_poisson                  ! nightly test3
   ! call test_poisson_2d_smooth(cTwoPi)
   ! call test_stochastic(1.2)
   ! call test_hill_vortex
