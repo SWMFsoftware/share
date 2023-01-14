@@ -503,7 +503,7 @@ contains
           DeltaH = DeltaH_FY(i,j,k)
           HalfBeta  = 1.0 - CFLCoef_G(i,j,k)*(1.0 - minmodbeta( &
                DownwindDeltaMinusF=DeltaMinusF_G(i,j+1,k)*CFLCoef_G(i,j+1,k),&
-               UpwindDeltaMinusF = DeltaMinusF_G(i,j,k)))*CFLCoef_G(i,j,k)
+               UpwindDeltaMinusF = DeltaMinusF_G(i,j,k)*CFLCoef_G(i,j,k)))
           DeltaFLimited = betalimiter(                    &
                HalfBeta=HalfBeta,                         &
                DeltaF=VDF_G(i,j+1,k)  - VDF_G(i,j  ,k),   &
