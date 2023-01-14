@@ -260,9 +260,8 @@ contains
     ! Beta-limited delta f:
     real    :: DeltaFLimited
     ! Gamma-limiter
-    integer :: nMajorFlux, iFlux, iMajor_I(6), jMajor_I(6), kMajor_I(6)
-    real    :: DeltaPlusFBetaLimited, DeltaPlusFGammaLimited, Gamma
-    real    :: Flux, MajorFlux_I(6)
+    integer :: iFlux
+    real    :: DeltaPlusFBetaLimited, DeltaPlusFGammaLimited, Gamma, Flux
     character(len=*), parameter:: NameSub = 'explicit3'
     !--------------------------------------------------------------------------
     if(present(DtIn))then
@@ -531,8 +530,7 @@ contains
                UpwindDeltaF=VDF_G(i,j+1,k) - VDF_G(i,j+2,k))
           if(j < nJ)then
              Flux = DeltaH*DeltaFLimited
-             nFlux = nFlux_G(i,j+1,k) + 1
-             nFlux_G(i,j+1,k) = nFlux
+             nFlux = nFlux_G(i,j+1,k) + 1; nFlux_G(i,j+1,k) = nFlux
              iSide_SG(nFlux,i,j+1,k) = 3
              Buff_VSG(:,nFlux,i,j+1,k) = [DeltaH,Flux]
           elseif(.not.IsPeriodic_D(2))then
@@ -594,59 +592,33 @@ contains
     do k=1, nK; do j = 1, nJ; do i = 1, nI
        if(SumDeltaHPlus_G(i,j,k)==0.0)CYCLE
        CFLLocal = CFLCoef_G(i,j,k)
-       SumFluxPlus = sum(Buff_VSG(Flux_,1:nFlux_G(i,j,k),i,j,k))
+       nFlux = nFlux_G(i,j,k)
+       SumFluxPlus = sum(Buff_VSG(Flux_,1:nFlux,i,j,k))
        ! Calculate \delta^+f/2 already limited with beta-limiters
        DeltaPlusFBetaLimited  = SumFluxPlus/SumDeltaHPlus_G(i,j,k)
-       iIndex_D = [i,j,k]
-       if((DeltaPlusFBetaLimited*DeltaMinusF_G(i,j,k)>=0.0.and.&
-            abs(DeltaPlusFBetaLimited)<=abs(DeltaMinusF_G(i,j,k)))&
-            .or.(.not.UseLimiter))then
-          ! There is no need to limit DeltaPlus with DeltaMinus_G(i,j,k)
-          do iFlux = 1, nFlux_G(i,j,k)
-             iIndexNei_D = iIndex_D + iShift_DS(:,iSide_SG(iFlux,i,j,k))
-             SumFlux2_G(iIndexNei_D(1),iIndexNei_D(2),iIndexNei_D(3)) =      &
-                  SumFlux2_G(iIndexNei_D(1),iIndexNei_D(2),iIndexNei_D(3)) + &
-                  Buff_VSG(Flux_,iFlux,i,j,k) -                              &
-                  Buff_VSG(DeltaH_,iFlux,i,j,k)*CFLLocal*DeltaPlusFBetaLimited
-          end do
-          SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) - &
-               (1 - CFLLocal)*SumFluxPlus
-       else
-          ! The value of limited \deta^+H/2 to be achieved with gamma-limiter
-          DeltaPlusFGammaLimited = minmod(DeltaPlusFBetaLimited,&
-               DeltaMinusF_G(i,j,k))
-          ! Add the total limited flux in the given cell
-          SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) - &
-               (1.0 - CFLLocal)*DeltaPlusFGammaLimited*SumDeltaHPlus_G(i,j,k)
-          nMajorFlux = 0; SumMajor = 0.0
-          do iFlux = 1, nFlux_G(i,j,k)
-             iIndexNei_D = iIndex_D + iShift_DS(:,iSide_SG(iFlux,i,j,k))
-             SumFlux2_G(iIndexNei_D(1),iIndexNei_D(2),iIndexNei_D(3)) =      &
-                  SumFlux2_G(iIndexNei_D(1),iIndexNei_D(2),iIndexNei_D(3)) - &
-                  Buff_VSG(DeltaH_,iFlux,i,j,k)*CFLLocal*DeltaPlusFGammaLimited
-             Flux = Buff_VSG(Flux_,iFlux,i,j,k)
-             if(Flux*SumFluxPlus > 0.0)then
-                ! This is the major flux, having the same sign as their sum
-                SumMajor  = SumMajor  + Flux
-                nMajorFlux = nMajorFlux + 1
-                MajorFlux_I(nMajorFlux) = Flux
-                iMajor_I(nMajorFlux) = iIndexNei_D(1)
-                jMajor_I(nMajorFlux) = iIndexNei_D(2)
-                kMajor_I(nMajorFlux) = iIndexNei_D(3)
-             else
-                SumFlux2_G(iIndexNei_D(1),iIndexNei_D(2),iIndexnei_D(3)) =   &
-                     SumFlux2_G(iIndexNei_D(1),iIndexNei_D(2),iIndexNei_D(3)) +&
-                     Flux
-             end if
-          end do
+       ! The value of limited \deta^+H/2 to be achieved with gamma-limiter
+       DeltaPlusFGammaLimited = minmod(DeltaPlusFBetaLimited,&
+            DeltaMinusF_G(i,j,k))
+       ! This is the major flux, having the same sign as SumFluxPlus
+       SumMajor =  sum(Buff_VSG(Flux_,1:nFlux,i,j,k),&
+            MASK= SumFluxPlus*Buff_VSG(Flux_,1:nFlux,i,j,k) > 0.0)
+       if(abs(SumMajor) > 0.0)then
           Gamma = 1.0 + (DeltaPlusFGammaLimited*SumDeltaHPlus_G(i,j,k) - &
                SumFluxPlus)/SumMajor
-          do iFlux = 1, nMajorFlux
-             SumFlux2_G(iMajor_I(iFlux),jMajor_I(iFlux),kMajor_I(iFlux)) =   &
-                  SumFlux2_G(iMajor_I(iFlux),jMajor_I(iFlux),kMajor_I(iFlux))&
-                  + MajorFlux_I(iFlux)*Gamma
-          end do
+          where(SumFluxPlus*Buff_VSG(Flux_,1:nFlux,i,j,k) > 0.0)&
+               Buff_VSG(Flux_,1:nFlux,i,j,k) = &
+               Buff_VSG(Flux_,1:nFlux,i,j,k)*Gamma
        end if
+       iIndex_D = [i,j,k]
+       do iFlux = 1, nFlux_G(i,j,k)
+          iIndexNei_D = iIndex_D + iShift_DS(:,iSide_SG(iFlux,i,j,k))
+          SumFlux2_G(iIndexNei_D(1),iIndexNei_D(2),iIndexNei_D(3)) =      &
+               SumFlux2_G(iIndexNei_D(1),iIndexNei_D(2),iIndexNei_D(3)) + &
+               Buff_VSG(Flux_,iFlux,i,j,k) -                              &
+               Buff_VSG(DeltaH_,iFlux,i,j,k)*CFLLocal*DeltaPlusFGammaLimited
+       end do
+       SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) - &
+            (1 - CFLLocal)*DeltaPlusFGammaLimited*SumDeltaHPlus_G(i,j,k)
     end do; end do; end do
     if(IsPeriodic_D(1))then
        SumFlux2_G(1,1:nJ,1:nK) = &
