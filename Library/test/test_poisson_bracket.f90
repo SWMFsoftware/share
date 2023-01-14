@@ -947,7 +947,7 @@ contains
     real :: Hamiltonian_N(-1:nR+1, -1:nTheta/2+1)
     real :: Time, Dt, Source_C(nR,nTheta/2), tFinal
     real :: PlotVar_VC(5,nR,nTheta), DfDt_C(nR,nTheta), DfDt2_C(nR,nTheta)
-    real :: Error, Error2, URSph, UTheta,ErrorTVD
+    real :: Error, Error2, URSph, UTheta
     logical :: DoExit
     !--------------------------------------------------------------------------
     do j = -500,500
@@ -1089,7 +1089,7 @@ contains
        ! analytical DfDt
        call explicit(nR, nTheta/2, VDF_G(-1:nR+2,-1:nTheta/2+2), Volume_G,&
             Source_C, Hamiltonian_N,   &
-            CFLIn=1.0e-6, DtOut = Dt,ErrorTVD=ErrorTVD)
+            CFLIn=1.0e-6, DtOut = Dt)
        PlotVar_VC(1,:,:) = VDF_G(1:nR,1:nTheta)
        PlotVar_VC(2,:,:) = DfDt_C(1:nR,1:nTheta)
        PlotVar_VC(3,:,1:nTheta/2) = Source_C/Dt
@@ -1113,12 +1113,12 @@ contains
        call save_plot_file('InitialSource.out', 'rewind','real8', &
             'Hill vortex', iStep, Time, &
             NameVarIn=&
-            'z r Rho DfDt Source DfDt2 Source2 Error ErrorTVD  Error2', &
+            'z r Rho DfDt Source DfDt2 Source2 Error Error2', &
             CoordMinIn_D=[0.5 + 0.5*Dr, 180.0/nTheta],&
             CoordMaxIn_D=[5.0 - 0.5*Dr, 360.0 - 180.0/nTheta],&
-            ParamIn_I=[Error, ErrorTVD, Error2],&
+            ParamIn_I=[Error, Error2],&
             VarIn_VII = PlotVar_VC )
-       write(*,*)'Error=', Error, ' ErrorTVD=',ErrorTVD,' Error2=', Error2
+       write(*,*)'Error=', Error, ' Error2=', Error2
        !!! stop
     end if
     ! Computation
