@@ -260,7 +260,7 @@ contains
     ! Hamiltonian at the nodes
     do iP = -1, nP+1
        pNode = DeltaP*(iP - nP/2)
-       do iQ = -1, nQ+2
+       do iQ = -1, nQ+1
           qNode = DeltaQ*(iQ - nQ/2)
           Hamiltonian_N(iQ,iP) = hamiltonian(qNode**2 + pNode**2)
        end do
@@ -330,7 +330,7 @@ contains
     ! Hamiltonian at the nodes
     do iP = -1, nP+1
        pNode = DeltaP*(iP - nP/2)
-       do iQ = -1, nQ+2
+       do iQ = -1, nQ+1
           qNode = DeltaQ*(iQ - nQ/2)
           Hamiltonian_N(iQ,iP) = hamiltonian(qNode**2 + pNode**2)
        end do
