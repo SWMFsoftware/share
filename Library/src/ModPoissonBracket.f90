@@ -578,7 +578,7 @@ contains
             (1 - CFLLocal)*DeltaPlusFGammaLimited*SumDeltaHPlus_G(i,j,k)
     end do; end do; end do
     !
-    ! Second order fluxes across the boundary 
+    ! Second order fluxes across the boundary
     if(IsPeriodic_D(1))then
        SumFlux2_G(1,1:nJ,1:nK) = &
             SumFlux2_G(1,1:nJ,1:nK) + SumFlux2_G(nI+1,1:nJ,1:nK)
