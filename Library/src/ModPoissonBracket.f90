@@ -574,7 +574,7 @@ contains
       integer, intent(in):: iSide,i,j,k
       integer :: iU_D(3)
       !------------------------------------------------------------------------
-      iD_D = [i,j,k] + iShift_DS(:,iSide); iU_D = [i,j,k] - iShift_DS(:,iSide) 
+      iD_D = [i,j,k] + iShift_DS(:,iSide); iU_D = [i,j,k] - iShift_DS(:,iSide)
       limiter = betalimiter(                                           &
            DeltaF=VDF_G(iD_D(1),iD_D(2),iD_D(3))  - VDF_G(i,j,k),      &
            UpwindDeltaF=VDF_G(i,j,k) - VDF_G(iU_D(1),iU_D(2),iU_D(3)), &
