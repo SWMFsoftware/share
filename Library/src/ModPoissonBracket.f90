@@ -59,14 +59,10 @@ contains
     !  2. DownwindDeltaMinusF  otherwise
     real, intent(in) :: DownwindDeltaMinusF, UpwindDeltaMinusF
     !--------------------------------------------------------------------------
-    if(UseMinmodBeta)then
-       if(UpwindDeltaMinusF==0.0)then
-          minmodbeta  =  0.0
-       else
-          minmodbeta = minmod(DownwindDeltaMinusF/UpwindDeltaMinusF,1.0)
-       end if
+    if(UpwindDeltaMinusF==0.0)then
+       minmodbeta  =  0.0
     else
-       minmodbeta = 1.0
+       minmodbeta = minmod(DownwindDeltaMinusF/UpwindDeltaMinusF,1.0)
     end if
   end function minmodbeta
   !============================================================================
@@ -101,8 +97,12 @@ contains
        else
           AbsDeltaFLimited = 0.5*max(AbsDeltaF, SignDeltaF*UpwindDeltaF)
        end if
-       HalfBeta = half_beta(Cfl, (1 - Cfl)*DownwindDeltaMinusF, &
-            Cfl*UpwindDeltaMinusF)
+       if(UseMinmodBeta)then
+          HalfBeta = half_beta(Cfl, (1.0 - Cfl)*DownwindDeltaMinusF, &
+               Cfl*UpwindDeltaMinusF)
+       else
+          HalfBeta = 1.0
+       end if
        betalimiter = SignDeltaF*min(AbsDeltaF*HalfBeta,AbsDeltaFLimited)
     end if
   end function betalimiter
@@ -235,14 +235,14 @@ contains
     integer :: i, j, k
     ! Variations of VDF (one layer of ghost cell values):
     real,dimension(0:nI+1, 0:nJ+1, 1/nK:nK+1-1/nK) :: &
-         DeltaMinusF_G, DeltaPlusF_G, SumDeltaHPlus_G
+         DeltaMinusF_G, SumDeltaHPlus_G
     !
     ! face-centered vriations of Hamiltonian functions.
     ! one layer of ghost faces
     real :: DeltaH_FX(-1:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
     real :: DeltaH_FY(0:nI+1,-1:nJ+1,1/nK:nK+1-1/nK)
     real :: DeltaH_FZ(0:nI+1,0:nJ+1,-1:nK+1)
-    real :: SumDeltaHPlus_C(1:nI,1:nJ,1:nK), SumDeltaHMinus
+    real :: SumDeltaHMinus
     ! Fluxes:
     ! Sum of \delta^+H fluxes, to be limited
     real :: SumFluxPlus
@@ -256,10 +256,8 @@ contains
                             0,  1,  0, &
                             0,  0, -1, &
                             0,  0,  1], [3,6])
-    integer :: iIndex_D(3), iIndexNei_D(3)
-    real    :: Buff_VSG(DeltaH_:Flux_,6), DeltaH
-    integer :: nFlux
-    integer :: iSide_SG(6)
+    real    :: Buff_VSG(DeltaH_:Flux_,6)
+    integer :: nFlux, iFlux, iSide_SG(6), iD_D(3)
     ! Local CFL number:
     real :: CFLCoef_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK), CFLLocal
     ! Time step
@@ -269,11 +267,8 @@ contains
     real    :: SumMajor
     ! Misc:
     real    :: VDF
-    ! Beta-limited delta f:
-    real    :: DeltaFLimited
     ! Gamma-limiter
-    integer :: iFlux
-    real    :: DeltaPlusFBetaLimited, DeltaPlusFGammaLimited, Gamma, Flux
+    real    :: DeltaPlusFLimited, Gamma
     character(len=*), parameter:: NameSub = 'explicit3'
     !--------------------------------------------------------------------------
     if(present(DtIn))then
@@ -325,7 +320,6 @@ contains
              Hamiltonian23_N( 0:nI+1,-1:nJ  ,-1:nK+1) - &
              Hamiltonian23_N( 0:nI+1, 0:nJ+1,-1:nK+1)
     end if
-
     ! Bracket {F,H01}_t,x    Bracket {F,H02}_t,y      Bracket {F,H03}_t,z
     ! Hamiltonian 01 (tx)    Hamiltonian 02 (ty)      Hamiltonian 03 (tz)
     ! x                      y                        z
@@ -366,11 +360,6 @@ contains
                min(0.0, DeltaH_FY(i,   j,   k))*(VDF_G(i,j+1,k) - VDF) +&
                min(0.0,-DeltaH_FX(i-1, j,   k))*(VDF_G(i-1,j,k) - VDF) +&
                min(0.0,-DeltaH_FY(i, j-1,   k))*(VDF_G(i,j-1,k) - VDF)
-       DeltaPlusF_G(i, j, k) = &
-               max(0.0, DeltaH_FX(i,   j,   k))*(VDF_G(i+1,j,k) - VDF) +&
-               max(0.0, DeltaH_FY(i,   j,   k))*(VDF_G(i,j+1,k) - VDF) +&
-               max(0.0,-DeltaH_FX(i-1, j,   k))*(VDF_G(i-1,j,k) - VDF) +&
-               max(0.0,-DeltaH_FY(i, j-1,   k))*(VDF_G(i,j-1,k) - VDF)
        if(nK>1)then
           ! Add three-dimensional effects.
           SumDeltaHMinus         = SumDeltaHMinus              +&
@@ -382,19 +371,11 @@ contains
           DeltaMinusF_G(i, j, k) = DeltaMinusF_G(i, j, k)      +&
                min(0.0, DeltaH_FZ(i,   j,   k))*(VDF_G(i,j,k+1) - VDF) +&
                min(0.0,-DeltaH_FZ(i,   j, k-1))*(VDF_G(i,j,k-1) - VDF)
-          DeltaPlusF_G(i, j, k) =   DeltaPlusF_G(i, j, k) +     &
-               max(0.0, DeltaH_FZ(i,   j,   k))*(VDF_G(i,j,k+1) - VDF) +&
-               max(0.0,-DeltaH_FZ(i,   j, k-1))*(VDF_G(i,j,k-1) - VDF)
        end if
        if(SumDeltaHMinus==0.0)then
           DeltaMinusF_G(i,j,k) = 0.0
        else
           DeltaMinusF_G(i,j,k) = - DeltaMinusF_G(i,j,k)/SumDeltaHMinus
-       end if
-       if(SumDeltaHPlus_G(i,j,k) ==0.0)then
-          DeltaPlusF_G(i,j,k) = 0.0
-       else
-          DeltaPlusF_G(i,j,k) = DeltaPlusF_G(i,j,k)/SumDeltaHPlus_G(i,j,k)
        end if
        if(UseTimeDependentVolume)then
           ! Local CFLs are expressed via SumDeltaHMinus
@@ -467,117 +448,64 @@ contains
     ! Second order correction
     SumFlux2_G = 0.0
     do k=1, nK; do j = 1, nJ; do i = 1, nI
+       ! Limit and store fuxes across delta plus H faces ffrom the given cell
        if(SumDeltaHPlus_G(i,j,k)==0.0)CYCLE
        nFlux = 0
-       CFLLocal = CFLCoef_G(i,j,k)
        if(DeltaH_FX(i,j,k) > 0.0)then
-          DeltaH = DeltaH_FX(i,j,k)
-          DeltaFLimited = betalimiter(                     &
-               DeltaF=VDF_G(i+1,j,k) - VDF_G(i  ,j,k),     &
-               UpwindDeltaF=VDF_G(i,j,k) - VDF_G(i-1,j,k), &
-               Cfl = CFLLocal,                             &
-               DownwindDeltaMinusF=DeltaMinusF_G(i+1,j,k), &
-               UpwindDeltaMinusF  =DeltaMinusF_G(i,j,k))
-          Flux   = DeltaH*DeltaFLimited
-          nFlux = nFlux + 1
-          iSide_SG(nFlux)   = 2
-          Buff_VSG(:,nFlux) = [DeltaH,Flux]
+          nFlux = nFlux + 1; iSide_SG(nFlux) = 2
+          Buff_VSG(DeltaH_:Flux_,nFlux) = DeltaH_FX(i,j,k)*&
+               [1.0, limiter(2,i,j,k)]
        end if
        if(DeltaH_FX(i-1,j,k) < 0.0 )then
-          DeltaH   = -DeltaH_FX(i-1,j,k)
-          DeltaFLimited = betalimiter(                     &
-               DeltaF=VDF_G(i-1,j,k)  - VDF_G(i,j,k),      &
-               UpwindDeltaF=VDF_G(i,j,k) - VDF_G(i+1,j,k), &
-               Cfl = CFLLocal, &
-               DownwindDeltaMinusF=DeltaMinusF_G(i-1,j,k), &
-               UpwindDeltaMinusF  =DeltaMinusF_G(i,j,k))
-          Flux = DeltaH*DeltaFLimited
-          nFlux = nFlux + 1
-          iSide_SG(nFlux) = 1
-          Buff_VSG(:,nFlux) = [DeltaH,Flux]
+          nFlux = nFlux + 1; iSide_SG(nFlux) = 1
+          Buff_VSG(DeltaH_:Flux_,nFlux) = (-DeltaH_FX(i-1,j,k))*&
+               [1.0, limiter(1,i,j,k)]
        end if
        if(DeltaH_FY(i,j,k) > 0.0)then
-          DeltaH = DeltaH_FY(i,j,k)
-          DeltaFLimited = betalimiter(                     &
-               DeltaF=VDF_G(i,j+1,k)  - VDF_G(i,j  ,k),    &
-               UpwindDeltaF=VDF_G(i,j,k) - VDF_G(i,j-1,k), &
-               Cfl = CFLLocal,                             &
-               DownwindDeltaMinusF=DeltaMinusF_G(i,j+1,k), &
-               UpwindDeltaMinusF = DeltaMinusF_G(i,j,k))
-          Flux = DeltaH*DeltaFLimited
-          nFlux = nFlux + 1
-          iSide_SG(nFlux) = 4
-          Buff_VSG(:,nFlux) = [DeltaH,Flux]
+          nFlux = nFlux + 1; iSide_SG(nFlux) = 4
+          Buff_VSG(DeltaH_:Flux_,nFlux) = DeltaH_FY(i,j,k)*&
+               [1.0, limiter(4,i,j,k)]
        end if
        if(DeltaH_FY(i,j-1,k) < 0.0)then
-          DeltaH = -DeltaH_FY(i,j-1,k)
-          DeltaFLimited = betalimiter(                     &
-               DeltaF=VDF_G(i,j-1,k)  - VDF_G(i,j ,k),     &
-               UpwindDeltaF=VDF_G(i,j,k) - VDF_G(i,j+1,k), &
-               Cfl = CFLLocal,                             &
-               DownwindDeltaMinusF=DeltaMinusF_G(i,j-1,k), &
-               UpwindDeltaMinusF=DeltaMinusF_G(i,j,k))
-          Flux = DeltaH*DeltaFLimited
-          nFlux = nFlux + 1
-          iSide_SG(nFlux) = 3
-          Buff_VSG(:,nFlux) = [DeltaH,Flux]
+          nFlux = nFlux + 1; iSide_SG(nFlux) = 3
+          Buff_VSG(DeltaH_:Flux_,nFlux) = (-DeltaH_FY(i,j-1,k))*&
+               [1.0, limiter(3,i,j,k)]
        end if
        if(nK>1)then
           if(DeltaH_FZ(i,j,k) > 0.0)then
-             DeltaH = DeltaH_FZ(i,j,k)
-             DeltaFLimited = betalimiter(                     &
-                  DeltaF=VDF_G(i,j,k+1)  - VDF_G(i,j,k),      &
-                  UpwindDeltaF=VDF_G(i,j,k) - VDF_G(i,j,k-1), &
-                  Cfl = CFLLocal,                             &
-                  DownwindDeltaMinusF=DeltaMinusF_G(i,j,k+1), &
-                  UpwindDeltaMinusF  =DeltaMinusF_G(i,j,k))
-             Flux = DeltaH*DeltaFLimited
-             nFlux = nFlux + 1
-             iSide_SG(nFlux) = 6
-             Buff_VSG(:,nFlux) = [DeltaH,Flux]
+             nFlux = nFlux + 1; iSide_SG(nFlux) = 6
+             Buff_VSG(DeltaH_:Flux_,nFlux) = DeltaH_FZ(i,j,k)*&
+                  [1.0, limiter(6,i,j,k)]
           end if
           if(DeltaH_FZ(i,j,k-1) < 0.0)then
-             DeltaH = -DeltaH_FZ(i,j,k-1)
-             DeltaFLimited = betalimiter(                     &
-                  DeltaF=VDF_G(i,j,k-1)  - VDF_G(i,j ,k),     &
-                  UpwindDeltaF=VDF_G(i,j,k) - VDF_G(i,j,k+1), &
-                  Cfl = CFLLocal,                             &
-                  DownwindDeltaMinusF=DeltaMinusF_G(i,j,k-1), &
-                  UpwindDeltaMinusF  =DeltaMinusF_G(i,j,k))
-             Flux = DeltaH*DeltaFLimited
-             nFlux = nFlux + 1
-             iSide_SG(nFlux) = 5
-             Buff_VSG(:,nFlux) = [DeltaH,Flux]
+             nFlux = nFlux + 1; iSide_SG(nFlux) = 5
+             Buff_VSG(DeltaH_:Flux_,nFlux) = (-DeltaH_FZ(i,j,k-1))*&
+                  [1.0, limiter(5,i,j,k)]
           end if
        end if
        SumFluxPlus = sum(Buff_VSG(Flux_,1:nFlux))
-       ! Calculate \delta^+f/2 already limited with beta-limiters
-       DeltaPlusFBetaLimited  = SumFluxPlus/SumDeltaHPlus_G(i,j,k)
        ! The value of limited \deta^+H/2 to be achieved with gamma-limiter
-       DeltaPlusFGammaLimited = minmod(DeltaPlusFBetaLimited,&
+       DeltaPlusFLimited = minmod(SumFluxPlus/SumDeltaHPlus_G(i,j,k),&
             DeltaMinusF_G(i,j,k))
        ! This is the major flux, having the same sign as SumFluxPlus
        SumMajor =  sum(Buff_VSG(Flux_,1:nFlux),&
             MASK= SumFluxPlus*Buff_VSG(Flux_,1:nFlux) > 0.0)
        if(abs(SumMajor) > 0.0)then
-          Gamma = 1.0 + (DeltaPlusFGammaLimited*SumDeltaHPlus_G(i,j,k) - &
+          Gamma = 1.0 + (DeltaPlusFLimited*SumDeltaHPlus_G(i,j,k) - &
                SumFluxPlus)/SumMajor
           where(SumFluxPlus*Buff_VSG(Flux_,1:nFlux) > 0.0)&
-               Buff_VSG(Flux_,1:nFlux) = &
-               Buff_VSG(Flux_,1:nFlux)*Gamma
+               Buff_VSG(Flux_,1:nFlux) = Buff_VSG(Flux_,1:nFlux)*Gamma
        end if
-       iIndex_D = [i,j,k]
+       CFLLocal = CFLCoef_G(i,j,k)
        do iFlux = 1, nFlux
-          iIndexNei_D = iIndex_D + iShift_DS(:,iSide_SG(iFlux))
-          SumFlux2_G(iIndexNei_D(1),iIndexNei_D(2),iIndexNei_D(3)) =      &
-               SumFlux2_G(iIndexNei_D(1),iIndexNei_D(2),iIndexNei_D(3)) + &
-               Buff_VSG(Flux_,iFlux) -                              &
-               Buff_VSG(DeltaH_,iFlux)*CFLLocal*DeltaPlusFGammaLimited
+          iD_D = [i,j,k] + iShift_DS(:,iSide_SG(iFlux))
+          SumFlux2_G(iD_D(1),iD_D(2),iD_D(3)) =      &
+               SumFlux2_G(iD_D(1),iD_D(2),iD_D(3)) + Buff_VSG(Flux_,iFlux) - &
+               Buff_VSG(DeltaH_,iFlux)*CFLLocal*DeltaPlusFLimited
        end do
        SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) - &
-            (1 - CFLLocal)*DeltaPlusFGammaLimited*SumDeltaHPlus_G(i,j,k)
+            (1 - CFLLocal)*DeltaPlusFLimited*SumDeltaHPlus_G(i,j,k)
     end do; end do; end do
-    !
     ! Second order fluxes across the boundary
     if(IsPeriodic_D(1))then
        SumFlux2_G(1,1:nJ,1:nK) = &
@@ -586,33 +514,15 @@ contains
             SumFlux2_G(nI,1:nJ,1:nK) + SumFlux2_G(0,1:nJ,1:nK)
     else
        do k=1, nK; do j = 1, nJ
-          i = 0
-          if(DeltaH_FX(i,j,k) > 0.0)then
-             DeltaH = DeltaH_FX(i,j,k)
-             DeltaFLimited = betalimiter(                      &
-                  DeltaF=VDF_G(i+1,j,k) - VDF_G(i  ,j,k),      &
-                  UpwindDeltaF=VDF_G(i,j,k) - VDF_G(i-1,j,k),  &
-                  Cfl = CFLCoef_G(i,j,k),                      &
-                  DownwindDeltaMinusF=DeltaMinusF_G(i+1,j,k)*  &
-                  CFLCoef_G(i+1,j,k),&
-                  UpwindDeltaMinusF  =DeltaMinusF_G(i,j,k)*CFLCoef_G(i,j,k))
-             DeltaFLimited = minmod(DeltaFLimited,DeltaMinusF_G(i,j,k))
-             SumFlux2_G(i+1,j,k)     = SumFlux2_G(i+1,j,k) + &
-                  DeltaH*(1.0 - CFLCoef_G(i,j,k))*DeltaFLimited
+          if(DeltaH_FX(0,j,k) > 0.0)then
+             SumFlux2_G(1,j,k) = SumFlux2_G(1,j,k) + DeltaH_FX(0,j,k)*&
+                  (1.0 - CFLCoef_G(0,j,k))* minmod(&
+                  limiter(2,0,j,k), DeltaMinusF_G(0,j,k))
           end if
-          i = nI
-          if(DeltaH_FX(i,j,k) < 0.0 )then
-             DeltaH   = -DeltaH_FX(i,j,k)
-             DeltaFLimited = betalimiter(                     &
-                  DeltaF=VDF_G(i,j,k)  - VDF_G(i+1,j,k),      &
-                  UpwindDeltaF=VDF_G(i+1,j,k) - VDF_G(i+2,j,k),&
-                  Cfl = CFLCoef_G(i+1,j,k), &
-                  DownwindDeltaMinusF=DeltaMinusF_G(i,j,k)*CFLCoef_G(i,j,k),&
-                  UpwindDeltaMinusF  =DeltaMinusF_G(i+1,j,k)*CFLCoef_G(i+1,j,k))
-             DeltaFLimited = minmod(DeltaFLimited,&
-                  DeltaMinusF_G(i+1,j,k))
-             SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) + DeltaH*&
-                  (1.0 - CFLCoef_G(i+1,j,k))*DeltaFLimited
+          if(DeltaH_FX(nI,j,k) < 0.0 )then
+             SumFlux2_G(nI,j,k)   = SumFlux2_G(nI,j,k)   - DeltaH_FX(nI,j,k)*&
+                  (1.0 - CFLCoef_G(nI+1,j,k))*minmod(&
+                  limiter(1,nI+1,j,k), DeltaMinusF_G(nI+1,j,k))
           end if
        end do; end do
     end if
@@ -623,34 +533,16 @@ contains
             SumFlux2_G(1:nI,nJ,1:nK) + SumFlux2_G(1:nI,0,1:nK)
     else
        do k=1, nK; do i = 1, nI
-          j = 0
-          if(DeltaH_FY(i,j,k) > 0.0)then
-             DeltaH = DeltaH_FY(i,j,k)
-             DeltaFLimited = betalimiter(                    &
-                  DeltaF=VDF_G(i,j+1,k)  - VDF_G(i,j  ,k),   &
-                  UpwindDeltaF=VDF_G(i,j  ,k) - VDF_G(i,j-1,k),&
-                  Cfl = CFLCoef_G(i,j,k),                    &
-                  DownwindDeltaMinusF=DeltaMinusF_G(i,j+1,k)*&
-                  CFLCoef_G(i,j+1,k),&
-                  UpwindDeltaMinusF = DeltaMinusF_G(i,j,k)*CFLCoef_G(i,j,k))
-             DeltaFLimited =minmod( &
-                  DeltaFLimited, DeltaMinusF_G(i,j,k))
-             SumFlux2_G(i,j+1,k) = SumFlux2_G(i,j+1,k) + DeltaH*&
-                  (1.0 - CFLCoef_G(i,j,k))*DeltaFLimited
+          if(DeltaH_FY(i,0,k) > 0.0)then
+             SumFlux2_G(i,1,k) = SumFlux2_G(i,1,k) + DeltaH_FY(i,0,k)*&
+                  (1.0 - CFLCoef_G(i,0,k))*minmod( &
+                  limiter(4,i,0,k), DeltaMinusF_G(i,0,k))
           end if
           j = nJ
-          if(DeltaH_FY(i,j,k) < 0.0)then
-             DeltaH = -DeltaH_FY(i,j,k)
-             DeltaFLimited = betalimiter(                    &
-                  DeltaF=VDF_G(i,j,k)  - VDF_G(i,j+1 ,k),    &
-                  UpwindDeltaF=VDF_G(i,j+1,k) - VDF_G(i,j+2,k),&
-                  Cfl = CFLCoef_G(i,j+1,k),&
-                  DownwindDeltaMinusF=DeltaMinusF_G(i,j,k)*CFLCoef_G(i,j,k),&
-                  UpwindDeltaMinusF=DeltaMinusF_G(i,j+1,k)*CFLCoef_G(i,j+1,k))
-             DeltaFLimited = minmod(  &
-                  DeltaFLimited, DeltaMinusF_G(i,j+1,k))
-             SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) + DeltaH*&
-                  (1.0 - CFLCoef_G(i,j+1,k))*DeltaFLimited
+          if(DeltaH_FY(i,nJ,k) < 0.0)then
+             SumFlux2_G(i,nJ,k)   = SumFlux2_G(i,nJ,k)   - DeltaH_FY(i,nJ,k)*&
+                  (1.0 - CFLCoef_G(i,nJ+1,k))*minmod(  &
+                  limiter(3,i,nJ+1,k), DeltaMinusF_G(i,nJ+1,k))
           end if
        end do; end do
     end if
@@ -661,42 +553,36 @@ contains
           SumFlux2_G(1:nI,1:nJ,nK) = &
                SumFlux2_G(1:nI,1:nJ,nK) + SumFlux2_G(1:nI,1:nJ,0)
        else
-          ! Calculate Face-Z fluxes.
           do j = 1, nJ; do i = 1, nI
-             k = 0
-             if(DeltaH_FZ(i,j,k) > 0.0)then
-                DeltaH = DeltaH_FZ(i,j,k)
-                DeltaFLimited = betalimiter(                                 &
-                     DeltaF=VDF_G(i,j,k+1)  - VDF_G(i,j  ,k),                &
-                     UpwindDeltaF=VDF_G(i,j  ,k) - VDF_G(i,j,k-1),           &
-                     Cfl = CFLCoef_G(i,j,k),                                 &
-                     DownwindDeltaMinusF=                                    &
-                     DeltaMinusF_G(i,j,k+1)*CFLCoef_G(i,j,k+1),              &
-                     UpwindDeltaMinusF  =DeltaMinusF_G(i,j,k)*CFLCoef_G(i,j,k))
-                DeltaFLimited = minmod( &
-                     DeltaFLimited, DeltaMinusF_G(i,j,k))
-                SumFlux2_G(i,j,k+1) = SumFlux2_G(i,j,k+1) + DeltaH*&
-                     (1.0 - CFLCoef_G(i,j,k))*DeltaFLimited
+             if(DeltaH_FZ(i,j,0) > 0.0)then
+                SumFlux2_G(i,j,1) = SumFlux2_G(i,j,1) + DeltaH_FZ(i,j,0)*&
+                     (1.0 - CFLCoef_G(i,j,0))*minmod( &
+                     limiter(6,i,j,0), DeltaMinusF_G(i,j,0))
              end if
-             k = nK
-             if(DeltaH_FZ(i,j,k) < 0.0)then
-                DeltaH = -DeltaH_FZ(i,j,k)
-                DeltaFLimited = betalimiter(                                  &
-                     DeltaF=VDF_G(i,j,k)  - VDF_G(i,j ,k+1),                  &
-                     UpwindDeltaF=VDF_G(i,j,k+1) - VDF_G(i,j,k+2),            &
-                     Cfl = CFLCoef_G(i,j,k+1),                                &
-                     DownwindDeltaMinusF=DeltaMinusF_G(i,j,k)*CFLCoef_G(i,j,k),&
-                     UpwindDeltaMinusF  =                                     &
-                     DeltaMinusF_G(i,j,k+1)*CFLCoef_G(i,j,k+1))
-                DeltaFLimited = minmod( &
-                     DeltaFLimited ,DeltaMinusF_G(i,j,k+1))
-                SumFlux2_G(i,j,k) = SumFlux2_G(i,j,k) + DeltaH*&
-                     (1.0 - CFLCoef_G(i,j,k+1))*DeltaFLimited
+             if(DeltaH_FZ(i,j,nK) < 0.0)then
+                SumFlux2_G(i,j,nK)   = SumFlux2_G(i,j,nK) - DeltaH_FZ(i,j,nK)*&
+                     (1.0 - CFLCoef_G(i,j,nK+1))*minmod( &
+                     limiter(5,i,j,nK+1), DeltaMinusF_G(i,j,nK+1))
              end if
           end do; end do
        end if
     end if
     Source_C = Source_C + Dt*vInv_G(1:nI,1:nJ,1:nK)*SumFlux2_G(1:nI,1:nJ,1:nK)
+  contains
+    !==========================================================================
+    real function limiter(iSide,i,j,k)
+      integer, intent(in):: iSide,i,j,k
+      integer :: iU_D(3)
+      !------------------------------------------------------------------------
+      iD_D = [i,j,k] + iShift_DS(:,iSide); iU_D = [i,j,k] - iShift_DS(:,iSide) 
+      limiter = betalimiter(                                           &
+           DeltaF=VDF_G(iD_D(1),iD_D(2),iD_D(3))  - VDF_G(i,j,k),      &
+           UpwindDeltaF=VDF_G(i,j,k) - VDF_G(iU_D(1),iU_D(2),iU_D(3)), &
+           Cfl = CFLCoef_G(i,j,k),                                     &
+           DownwindDeltaMinusF=DeltaMinusF_G(iD_D(1),iD_D(2),iD_D(3)), &
+           UpwindDeltaMinusF  =DeltaMinusF_G(i,j,k))
+    end function limiter
+    !==========================================================================
   end subroutine explicit3
   !============================================================================
 end module ModPoissonBracket
