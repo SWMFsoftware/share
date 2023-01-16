@@ -421,7 +421,7 @@ contains
     ! Misc:
     ! Harmonic oscillators, nQ is the number of meshes over coordinate,
     ! nP is number of meshes overr generalized momentum
-    integer, parameter::  nQ = 90,  nP = 90
+    integer, parameter::  nQ = 360,  nP = 360
 
     ! Loop variables
     integer           ::  iQ, iP, iStep
@@ -433,11 +433,11 @@ contains
     real :: Hamiltonian_N(-1:nQ+1, -1:nP+1)
     real :: Energy_C(nQ, nP)
     real :: Time, Dt, Source_C(nQ,nP)
-    real :: NormL2Init, NormL2, EnergyInit, Energy, qNode, pNode, Q, P
-    real, parameter :: CFL =0.5
-    real, parameter:: pWidth = 10.0, qWidth = 2.0
+    real :: NormL1Init, NormL1, EnergyInit, Energy, qNode, pNode, Q, P
+    real, parameter :: CFL =0.99
+    real, parameter:: pWidth = 10.0, qWidth = 1.0
     integer, parameter:: nPower = 4
-    logical, parameter:: IsSmooth = .true.
+    logical, parameter:: IsSmooth = .false.
     ! Control volume, for a uniform rectangular grid
     !--------------------------------------------------------------------------
     Volume_G = DeltaQ*DeltaP
@@ -475,7 +475,7 @@ contains
     VDF_G = 0.0; VDF_G(1:nQ, 1:nP) = VDFInitial_C
     Source_C = 0.0
     ! Initial NormL2 and Energy
-    NormL2Init = sum(VDFInitial_C**2)
+    NormL1Init = sum(VDFInitial_C)
     EnergyInit = sum(VDFInitial_C*Energy_C)
     ! Compiutation
     Time = 0.0; iStep = 0
@@ -490,19 +490,19 @@ contains
                Hamiltonian_N,   &
                DtIn = Dt)
           VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
-          NormL2 = sum( (VDF_G(1:nQ,1:nP) - VDFInitial_C)**2 )
+          NormL1 = sum( abs(VDF_G(1:nQ,1:nP) - VDFInitial_C) )
           Energy = sum(VDF_G(1:nQ,1:nP)*Energy_C)
           write(*,*)tFinal, &
-               NormL2/NormL2Init,&
+               NormL1/NormL1Init,&
                Energy/EnergyInit - 1.0
           EXIT
        else
           Time = Time + Dt
           VDF_G(1:nQ, 1:nP) = VDF_G(1:nQ, 1:nP) + Source_C
-          NormL2 = sum( (VDF_G(1:nQ,1:nP) - VDFInitial_C)**2 )
+          NormL1 = sum( abs(VDF_G(1:nQ,1:nP) - VDFInitial_C) )
           Energy = sum(VDF_G(1:nQ,1:nP)*Energy_C)
           write(*,*)Time, &
-               NormL2/NormL2Init,&
+               NormL1/NormL1Init,&
                Energy/EnergyInit - 1.0
        end if
     end do
@@ -510,8 +510,8 @@ contains
     PlotVar_VC(2,:,:) = VDFInitial_C
     call save_plot_file(NameFile='test_energy.out', &
          TypeFileIn='real8', TimeIn=tFinal, nStepIn = iStep, &
-         NameVarIn='Q    P VDF VDFIni ErrorL2 EnergyDefect', &
-         ParamIn_I=[NormL2/NormL2Init, Energy/EnergyInit - 1.0],&
+         NameVarIn='Q    P VDF VDFIni ErrorL1 EnergyDefect', &
+         ParamIn_I=[NormL1/NormL1Init, Energy/EnergyInit - 1.0],&
          CoordMinIn_D=[-12.0 + 0.5*DeltaQ, -12.0 + 0.5*DeltaP], &
          CoordMaxIn_D=[12.0 - 0.5*DeltaQ, 12.0 - 0.5*DeltaP], &
          VarIn_VII = PlotVar_VC)
