@@ -7157,10 +7157,14 @@ pro save_log, filename, headline, varname, array, badvalue=badvalue, $
   if not keyword_set(format) then format = '(100(e13.5))'
 
   openw, unit, filename
+
   for i = 0, n_elements(headline)-1 do printf, unit, headline(i)
   printf, unit, strjoin(varname,' ')
-  for i = 0, n-1 do if badvalue ne 0 and min(array(i,*)) gt badvalue then $
-     printf, unit, array(i,*), format=format
+  if badvalue eq 0 then $
+     for i = 0, n-1 do printf, unit, array(i,*), format=format $
+  else $
+     for i = 0, n-1 do if min(array(i,*)) gt badvalue then $
+        printf, unit, array(i,*), format=format
 
   close, unit
 
