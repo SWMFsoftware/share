@@ -139,7 +139,7 @@ REPEAT:{
 		&shell("./pION");
 	    }
             &concat_sat_log if $Concat;
-	}elsif( $Dir =~ /^PC$/ ){
+	}elsif( $Dir =~ /^PC|PT$/ ){
 	    &shell($pIDL);
 	}elsif( $Dir =~ /^SC|IH|OH|GM|EE$/ ){
 	    &shell($pIDL);
