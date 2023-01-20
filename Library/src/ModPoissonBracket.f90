@@ -35,7 +35,7 @@ module ModPoissonBracket
   ! which scheme produces an extra dissipation  noticeable at 0.5<CFL<1,
   ! where \delta^-f changes sign. With UseMinmodBeta=.false. the TVD
   ! property is proved only at infinitesimal timestep.
-  logical, parameter ::  UseMinmodBeta  = .false.
+  logical, parameter ::  UseMinmodBeta  = .true.
   logical, parameter ::  UseKoren = .false.
   real, parameter :: cTol = 1.0e-14
 
@@ -72,7 +72,7 @@ contains
     !  2. DownwindDeltaMinusF  otherwise
     real, intent(in) :: Cfl, DownwindDeltaMinusF, UpwindDeltaMinusF
     !--------------------------------------------------------------------------
-    half_beta = 1.0 - Cfl*(1.0 - minmodbeta( &
+    half_beta = 1.0 - 1.0e-14 - Cfl*(1.0 - minmodbeta( &
                DownwindDeltaMinusF, UpwindDeltaMinusF))
   end function half_beta
   !============================================================================
@@ -97,11 +97,11 @@ contains
        else
           AbsDeltaFLimited = 0.5*max(AbsDeltaF, SignDeltaF*UpwindDeltaF)
        end if
-       if(UseMinmodBeta)then
-          HalfBeta = half_beta(Cfl, (1.0 - Cfl)*DownwindDeltaMinusF, &
-               Cfl*UpwindDeltaMinusF)
+       if(UseMinmodBeta.and.UpwindDeltaMinusF*DeltaF < 0.0)then
+          HalfBeta = max(half_beta(Cfl, (1.0 - Cfl)*DownwindDeltaMinusF, &
+               Cfl*UpwindDeltaMinusF), 1.0 - 1.0e-14 + CFL*UpwindDeltaMinusF/DeltaF)
        else
-          HalfBeta = 1.0
+          HalfBeta = 1.0 - 1.0e-14
        end if
        betalimiter = SignDeltaF*min(AbsDeltaF*HalfBeta,AbsDeltaFLimited)
     end if
