@@ -7,7 +7,7 @@
 ;
 ; Main procedures to (re)set defaults and to read, plot, animate and slice data
 ;   set_default_values
-;   read_data, plot_data, animate_data, slice_data
+;   read_data, plot_data, show_data, animate_data, slice_data
 ;   read_log_data, plot_log_data, show_log_data
 ;
 ; Procedures for
@@ -596,6 +596,7 @@ pro read_data
 
   common ask_param, doask
   common getpict_param
+  common animate_param
   common plot_data
   common file_head
   common transform_param
@@ -629,6 +630,8 @@ pro read_data
      print
 
      open_file,10,filenames(ifile),filetypes(ifile)
+     if n_elements(firstpict) eq nfile $
+        and max(firstpict) ne min(firstpict) then npict=firstpict[ifile]
      get_pict,10,filenames(ifile),filetypes(ifile),npict<npictinfiles(ifile),$
               error
 
@@ -831,6 +834,12 @@ pro plot_data
   ;; Restore velpos array
   velpos=velpos0 & velpos0=0
 
+end
+;===========================================================================
+pro show_data
+  ; read data and plot it
+  read_data
+  plot_data
 end
 ;===========================================================================
 pro animate_data

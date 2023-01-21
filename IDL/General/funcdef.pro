@@ -69,6 +69,8 @@ function funcdef,xx,w,func
      ['ue'       , 'sqrt({uex}^2+{uey}^2+{uez}^2)'           ], $
      ['ur'       , '(x*ux+y*uy+z*uz)/r'                      ], $ ; radial u
      ['uphi'     , '(uy*x-ux*y)/r'                           ], $ ; uphi
+     ['ulon'     , '-sin(Lon)*ux+cos(Lon)*uy'                ], $ ; B in longitude direction
+     ['ulat'     , '-sin(Lat)*(cos(Lon)*ux+sin(Lon)*uy)+cos(Lat)*uz'], $ ; B in latitude direction
      ['Br'       , '(x*bx+y*by+z*bz)/r'                      ], $ ; radial B
      ['Bt'       , 'sin(Lat)*cos(Lon)*bx+sin(Lat)*sin(Lon)*by-cos(Lat)*bz'], $ ; B in theta direction
      ['Bp'       , '-sin(Lon)*bx+cos(Lon)*by'                ], $ ; B in phi direction

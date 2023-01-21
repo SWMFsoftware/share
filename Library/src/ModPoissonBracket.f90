@@ -35,7 +35,7 @@ module ModPoissonBracket
   ! which scheme produces an extra dissipation  noticeable at 0.5<CFL<1,
   ! where \delta^-f changes sign. With UseMinmodBeta=.false. the TVD
   ! property is proved only at infinitesimal timestep.
-  logical, parameter ::  UseMinmodBeta  = .false.
+  logical, parameter ::  UseMinmodBeta  = .true.
   logical, parameter ::  UseKoren = .false.
   real, parameter :: cTol = 1.0e-14
 
@@ -72,7 +72,7 @@ contains
     !  2. DownwindDeltaMinusF  otherwise
     real, intent(in) :: Cfl, DownwindDeltaMinusF, UpwindDeltaMinusF
     !--------------------------------------------------------------------------
-    half_beta = 1.0 - Cfl*(1.0 - minmodbeta( &
+    half_beta = 1.0 - 1.0e-14 - Cfl*(1.0 - minmodbeta( &
                DownwindDeltaMinusF, UpwindDeltaMinusF))
   end function half_beta
   !============================================================================
@@ -97,11 +97,11 @@ contains
        else
           AbsDeltaFLimited = 0.5*max(AbsDeltaF, SignDeltaF*UpwindDeltaF)
        end if
-       if(UseMinmodBeta)then
-          HalfBeta = half_beta(Cfl, (1.0 - Cfl)*DownwindDeltaMinusF, &
-               Cfl*UpwindDeltaMinusF)
+       if(UseMinmodBeta.and.UpwindDeltaMinusF*DeltaF < 0.0)then
+          HalfBeta = max(half_beta(Cfl, (1.0 - Cfl)*DownwindDeltaMinusF, &
+               Cfl*UpwindDeltaMinusF), 1.0 - 1.0e-14 + CFL*UpwindDeltaMinusF/DeltaF)
        else
-          HalfBeta = 1.0
+          HalfBeta = 1.0 - 1.0e-14
        end if
        betalimiter = SignDeltaF*min(AbsDeltaF*HalfBeta,AbsDeltaFLimited)
     end if
@@ -232,16 +232,14 @@ contains
     ! Boundary conddition:
     logical :: IsPeriodic_D(3) = .false.
     ! Loop variables:
-    integer :: i, j, k
+    integer :: i, j, k, iDim, nDim
     ! Variations of VDF (one layer of ghost cell values):
     real,dimension(0:nI+1, 0:nJ+1, 1/nK:nK+1-1/nK) :: &
          DeltaMinusF_G, SumDeltaHPlus_G
     !
     ! face-centered vriations of Hamiltonian functions.
     ! one layer of ghost faces
-    real :: DeltaH_FX(-1:nI+1,0:nJ+1,1/nK:nK+1-1/nK)
-    real :: DeltaH_FY(0:nI+1,-1:nJ+1,1/nK:nK+1-1/nK)
-    real :: DeltaH_FZ(0:nI+1,0:nJ+1,-1:nK+1)
+    real :: DeltaH_DG(3,-1:nI+1,-1:nJ+1,-1+2*(1/nK):nK+1-1/nK)
     real :: SumDeltaHMinus
     ! Fluxes:
     ! Sum of \delta^+H fluxes, to be limited
@@ -281,11 +279,11 @@ contains
     if(present(IsPeriodicIn_D))&
          IsPeriodic_D(1:size(IsPeriodicIn_D)) = IsPeriodicIn_D
     UseTimeDependentVolume = present(DVolumeDt_G)
-    iKStart  = 1/nK ;  iKLast  = nK + 1 - 1/nK
+    iKStart  = 1/nK ;  iKLast  = nK + 1 - 1/nK; nDim = 3 - 1/nK
     vInv_G = 1.0/Volume_G
 
     ! Nullify arrays:
-    DeltaH_FX = 0.0; DeltaH_FY = 0.0; DeltaH_FZ = 0.0
+    DeltaH_DG = 0.0
 
     ! Bracket {F,H12}_{x,y}   Bracket {F,H13}_{x,z}    Bracket {F,H23}_{y,z}
     ! Hamiltonian 12 (xy)     Hamiltonian 13 (xz)      Hamiltonian 23 (yz)
@@ -297,28 +295,34 @@ contains
     ! |                  |    |                   |    |                   |
     ! 0--------->--------1x   0---------->--------1x   0---------->--------1y
     if (present(Hamiltonian12_N)) then
-       DeltaH_FX = DeltaH_FX(-1:nI+1, 0:nJ+1,iKStart:iKLast) + &
-               Hamiltonian12_N(-1:nI+1, 0:nJ+1,iKStart:iKLast) - &
-               Hamiltonian12_N(-1:nI+1,-1:nJ  ,iKStart:iKLast)
-       DeltaH_FY = DeltaH_FY( 0:nI+1,-1:nJ+1,iKStart:iKLast) + &
-               Hamiltonian12_N(-1:nI  ,-1:nJ+1,iKStart:iKLast) - &
-               Hamiltonian12_N(0:nI+1 ,-1:nJ+1,iKStart:iKLast)
+       DeltaH_DG(1,-1:nI+1, 0:nJ+1,iKStart:iKLast)          = &
+            DeltaH_DG(1,-1:nI+1, 0:nJ+1,iKStart:iKLast)     + &
+            Hamiltonian12_N(-1:nI+1, 0:nJ+1,iKStart:iKLast) - &
+            Hamiltonian12_N(-1:nI+1,-1:nJ  ,iKStart:iKLast)
+       DeltaH_DG(2, 0:nI+1,-1:nJ+1,iKStart:iKLast)          = &
+            DeltaH_DG(2, 0:nI+1,-1:nJ+1,iKStart:iKLast)     + &
+            Hamiltonian12_N(-1:nI  ,-1:nJ+1,iKStart:iKLast) - &
+            Hamiltonian12_N(0:nI+1 ,-1:nJ+1,iKStart:iKLast)
     end if
     if (present(Hamiltonian13_N)) then
-       DeltaH_FX = DeltaH_FX(-1:nI+1, 0:nJ+1, 0:nK+1) + &
-             Hamiltonian13_N(-1:nI+1, 0:nJ+1, 0:nK+1) - &
-             Hamiltonian13_N(-1:nI+1, 0:nJ+1,-1:nK  )
-       DeltaH_FZ = DeltaH_FZ( 0:nI+1, 0:nJ+1,-1:nK+1) + &
-             Hamiltonian13_N(-1:nI  , 0:nJ+1,-1:nK+1) - &
-             Hamiltonian13_N( 0:nI+1, 0:nJ+1,-1:nK+1)
+       DeltaH_DG(1,-1:nI+1, 0:nJ+1, 0:nK+1)                 = &
+            DeltaH_DG(1,-1:nI+1, 0:nJ+1, 0:nK+1)            + &
+            Hamiltonian13_N(-1:nI+1, 0:nJ+1, 0:nK+1)        - &
+            Hamiltonian13_N(-1:nI+1, 0:nJ+1,-1:nK  )
+       DeltaH_DG(3, 0:nI+1, 0:nJ+1,-1:nK+1)                 = &
+            DeltaH_DG(3, 0:nI+1, 0:nJ+1,-1:nK+1)            + &
+            Hamiltonian13_N(-1:nI  , 0:nJ+1,-1:nK+1)        - &
+            Hamiltonian13_N( 0:nI+1, 0:nJ+1,-1:nK+1)
     end if
     if (present(Hamiltonian23_N)) then
-       DeltaH_FY = DeltaH_FY( 0:nI+1,-1:nJ+1, 0:nK+1) + &
-             Hamiltonian23_N( 0:nI+1,-1:nJ+1, 0:nK+1) - &
-             Hamiltonian23_N( 0:nI+1,-1:nJ+1,-1:nK  )
-       DeltaH_FZ = DeltaH_FZ( 0:nI+1, 0:nJ+1,-1:nK+1) + &
-             Hamiltonian23_N( 0:nI+1,-1:nJ  ,-1:nK+1) - &
-             Hamiltonian23_N( 0:nI+1, 0:nJ+1,-1:nK+1)
+       DeltaH_DG(2, 0:nI+1,-1:nJ+1, 0:nK+1)                 = &
+            DeltaH_DG(2, 0:nI+1,-1:nJ+1, 0:nK+1)            + &
+            Hamiltonian23_N( 0:nI+1,-1:nJ+1, 0:nK+1)        - &
+            Hamiltonian23_N( 0:nI+1,-1:nJ+1,-1:nK  )
+       DeltaH_DG(3, 0:nI+1, 0:nJ+1,-1:nK+1)                 = &
+            DeltaH_DG(3, 0:nI+1, 0:nJ+1,-1:nK+1)            + &
+            Hamiltonian23_N( 0:nI+1,-1:nJ  ,-1:nK+1)        - &
+            Hamiltonian23_N( 0:nI+1, 0:nJ+1,-1:nK+1)
     end if
     ! Bracket {F,H01}_t,x    Bracket {F,H02}_t,y      Bracket {F,H03}_t,z
     ! Hamiltonian 01 (tx)    Hamiltonian 02 (ty)      Hamiltonian 03 (tz)
@@ -330,47 +334,49 @@ contains
     !
     ! ---------->--------t   ---------->---------t    ----------->-------t
     if (present(dHamiltonian01_FX))&
-         DeltaH_FX = DeltaH_FX + dHamiltonian01_FX
+         DeltaH_DG(1,-1:nI+1, 0:nJ+1,iKStart:iKLast)     = &
+         DeltaH_DG(1,-1:nI+1, 0:nJ+1,iKStart:iKLast)     + &
+         dHamiltonian01_FX
     if (present(dHamiltonian02_FY))&
-         DeltaH_FY = DeltaH_FY + dHamiltonian02_FY
+         DeltaH_DG(2, 0:nI+1,-1:nJ+1,iKStart:iKLast)     = &
+         DeltaH_DG(2, 0:nI+1,-1:nJ+1,iKStart:iKLast)     + &
+         dHamiltonian02_FY
     if (present(dHamiltonian03_FZ))&
-         DeltaH_FZ = DeltaH_FZ + dHamiltonian03_FZ
+         DeltaH_DG(3, 0:nI+1, 0:nJ+1,-1:nK+1)            = &
+         DeltaH_DG(3, 0:nI+1, 0:nJ+1,-1:nK+1)            + &
+         dHamiltonian03_FZ
     ! Cleanup
-    where(abs(DeltaH_FX)<cTol)DeltaH_FX = 0.0
-    where(abs(DeltaH_FY)<cTol)DeltaH_FY = 0.0
-    if(nK>1)then
-       where(abs(DeltaH_FZ)<cTol)DeltaH_FZ = 0.0
-    end if
+    where(abs(DeltaH_DG)<=cTol)DeltaH_DG = 0.0
     ! Now, for each cell the value of DeltaH for face in positive
     ! directions of i and j may be found in the arrays, for
     ! negative directions the should be taken with opposite sign
     ! Calculate DeltaMinusF and SumDeltaH
     do k=iKStart, iKLast; do j = 0, nJ+1; do i = 0, nI+1
-       SumDeltaHMinus          =min(0.0, DeltaH_FX(i,  j,  k)) +&
-                                min(0.0, DeltaH_FY(i,  j,  k)) +&
-                                min(0.0,-DeltaH_FX(i-1,j,  k)) +&
-                                min(0.0,-DeltaH_FY(i,j-1,  k))
-       SumDeltaHPlus_G(i,j,k) = max(0.0, DeltaH_FX(i,  j,  k)) +&
-                                max(0.0, DeltaH_FY(i,  j,  k)) +&
-                                max(0.0,-DeltaH_FX(i-1,j,  k)) +&
-                                max(0.0,-DeltaH_FY(i,j-1,  k))
+       SumDeltaHMinus         = min(0.0, DeltaH_DG(1,i,  j,  k)) +&
+                                min(0.0, DeltaH_DG(2,i,  j,  k)) +&
+                                min(0.0,-DeltaH_DG(1,i-1,j,  k)) +&
+                                min(0.0,-DeltaH_DG(2,i,j-1,  k))
+       SumDeltaHPlus_G(i,j,k) = max(0.0, DeltaH_DG(1,i,  j,  k)) +&
+                                max(0.0, DeltaH_DG(2,i,  j,  k)) +&
+                                max(0.0,-DeltaH_DG(1,i-1,j,  k)) +&
+                                max(0.0,-DeltaH_DG(2,i,j-1,  k))
        VDF = VDF_G(i,j,k)
        DeltaMinusF_G(i, j, k) = &
-               min(0.0, DeltaH_FX(i,   j,   k))*(VDF_G(i+1,j,k) - VDF) +&
-               min(0.0, DeltaH_FY(i,   j,   k))*(VDF_G(i,j+1,k) - VDF) +&
-               min(0.0,-DeltaH_FX(i-1, j,   k))*(VDF_G(i-1,j,k) - VDF) +&
-               min(0.0,-DeltaH_FY(i, j-1,   k))*(VDF_G(i,j-1,k) - VDF)
+               min(0.0, DeltaH_DG(1,i,   j,   k))*(VDF_G(i+1,j,k) - VDF) +&
+               min(0.0, DeltaH_DG(2,i,   j,   k))*(VDF_G(i,j+1,k) - VDF) +&
+               min(0.0,-DeltaH_DG(1,i-1, j,   k))*(VDF_G(i-1,j,k) - VDF) +&
+               min(0.0,-DeltaH_DG(2,i, j-1,   k))*(VDF_G(i,j-1,k) - VDF)
        if(nK>1)then
           ! Add three-dimensional effects.
           SumDeltaHMinus         = SumDeltaHMinus              +&
-                                    min(0.0, DeltaH_FZ(i,j,k)) +&
-                                    min(0.0,-DeltaH_FZ(i,j,k-1))
+                                    min(0.0, DeltaH_DG(3,i,j,k)) +&
+                                    min(0.0,-DeltaH_DG(3,i,j,k-1))
           SumDeltaHPlus_G(i,j,k) = SumDeltaHPlus_G(i,j,k)      +&
-                                    max(0.0, DeltaH_FZ(i,j,k)) +&
-                                    max(0.0,-DeltaH_FZ(i,j,k-1))
+                                    max(0.0, DeltaH_DG(3,i,j,k)) +&
+                                    max(0.0,-DeltaH_DG(3,i,j,k-1))
           DeltaMinusF_G(i, j, k) = DeltaMinusF_G(i, j, k)      +&
-               min(0.0, DeltaH_FZ(i,   j,   k))*(VDF_G(i,j,k+1) - VDF) +&
-               min(0.0,-DeltaH_FZ(i,   j, k-1))*(VDF_G(i,j,k-1) - VDF)
+               min(0.0, DeltaH_DG(3,i,   j,   k))*(VDF_G(i,j,k+1) - VDF) +&
+               min(0.0,-DeltaH_DG(3,i,   j, k-1))*(VDF_G(i,j,k-1) - VDF)
        end if
        if(SumDeltaHMinus==0.0)then
           DeltaMinusF_G(i,j,k) = 0.0
@@ -451,38 +457,20 @@ contains
        ! Limit and store fuxes across delta plus H faces ffrom the given cell
        if(SumDeltaHPlus_G(i,j,k)==0.0)CYCLE
        nFlux = 0
-       if(DeltaH_FX(i,j,k) > 0.0)then
-          nFlux = nFlux + 1; iSide_SG(nFlux) = 2
-          Buff_VSG(DeltaH_:Flux_,nFlux) = DeltaH_FX(i,j,k)*&
-               [1.0, limiter(2,i,j,k)]
-       end if
-       if(DeltaH_FX(i-1,j,k) < 0.0 )then
-          nFlux = nFlux + 1; iSide_SG(nFlux) = 1
-          Buff_VSG(DeltaH_:Flux_,nFlux) = (-DeltaH_FX(i-1,j,k))*&
-               [1.0, limiter(1,i,j,k)]
-       end if
-       if(DeltaH_FY(i,j,k) > 0.0)then
-          nFlux = nFlux + 1; iSide_SG(nFlux) = 4
-          Buff_VSG(DeltaH_:Flux_,nFlux) = DeltaH_FY(i,j,k)*&
-               [1.0, limiter(4,i,j,k)]
-       end if
-       if(DeltaH_FY(i,j-1,k) < 0.0)then
-          nFlux = nFlux + 1; iSide_SG(nFlux) = 3
-          Buff_VSG(DeltaH_:Flux_,nFlux) = (-DeltaH_FY(i,j-1,k))*&
-               [1.0, limiter(3,i,j,k)]
-       end if
-       if(nK>1)then
-          if(DeltaH_FZ(i,j,k) > 0.0)then
-             nFlux = nFlux + 1; iSide_SG(nFlux) = 6
-             Buff_VSG(DeltaH_:Flux_,nFlux) = DeltaH_FZ(i,j,k)*&
-                  [1.0, limiter(6,i,j,k)]
+       do iDim = 1, nDim
+          if(DeltaH_DG(iDim,i,j,k) > 0.0)then
+             nFlux = nFlux + 1; iSide_SG(nFlux) = 2*iDim
+             Buff_VSG(DeltaH_:Flux_,nFlux) = DeltaH_DG(iDim,i,j,k)*&
+                  [1.0, limiter(2*iDim,i,j,k)]
           end if
-          if(DeltaH_FZ(i,j,k-1) < 0.0)then
-             nFlux = nFlux + 1; iSide_SG(nFlux) = 5
-             Buff_VSG(DeltaH_:Flux_,nFlux) = (-DeltaH_FZ(i,j,k-1))*&
-                  [1.0, limiter(5,i,j,k)]
+          iD_D = [i,j,k] +iShift_DS(:,2*iDim - 1)
+          if(DeltaH_DG(iDim,iD_D(1),iD_D(2),iD_D(3)) < 0.0 )then
+             nFlux = nFlux + 1; iSide_SG(nFlux) = 2*iDIm-1
+             Buff_VSG(DeltaH_:Flux_,nFlux) = &
+                  (-DeltaH_DG(iDim,iD_D(1),iD_D(2),iD_D(3)))*&
+                  [1.0, limiter(2*iDim-1,i,j,k)]
           end if
-       end if
+       end do
        SumFluxPlus = sum(Buff_VSG(Flux_,1:nFlux))
        ! The value of limited \deta^+H/2 to be achieved with gamma-limiter
        DeltaPlusFLimited = minmod(SumFluxPlus/SumDeltaHPlus_G(i,j,k),&
@@ -514,13 +502,13 @@ contains
             SumFlux2_G(nI,1:nJ,1:nK) + SumFlux2_G(0,1:nJ,1:nK)
     else
        do k=1, nK; do j = 1, nJ
-          if(DeltaH_FX(0,j,k) > 0.0)then
-             SumFlux2_G(1,j,k) = SumFlux2_G(1,j,k) + DeltaH_FX(0,j,k)*&
+          if(DeltaH_DG(1,0,j,k) > 0.0)then
+             SumFlux2_G(1,j,k) = SumFlux2_G(1,j,k) + DeltaH_DG(1,0,j,k)*&
                   (1.0 - CFLCoef_G(0,j,k))* minmod(&
                   limiter(2,0,j,k), DeltaMinusF_G(0,j,k))
           end if
-          if(DeltaH_FX(nI,j,k) < 0.0 )then
-             SumFlux2_G(nI,j,k)   = SumFlux2_G(nI,j,k)   - DeltaH_FX(nI,j,k)*&
+          if(DeltaH_DG(1,nI,j,k) < 0.0 )then
+             SumFlux2_G(nI,j,k)   = SumFlux2_G(nI,j,k)   - DeltaH_DG(1,nI,j,k)*&
                   (1.0 - CFLCoef_G(nI+1,j,k))*minmod(&
                   limiter(1,nI+1,j,k), DeltaMinusF_G(nI+1,j,k))
           end if
@@ -533,14 +521,13 @@ contains
             SumFlux2_G(1:nI,nJ,1:nK) + SumFlux2_G(1:nI,0,1:nK)
     else
        do k=1, nK; do i = 1, nI
-          if(DeltaH_FY(i,0,k) > 0.0)then
-             SumFlux2_G(i,1,k) = SumFlux2_G(i,1,k) + DeltaH_FY(i,0,k)*&
+          if(DeltaH_DG(2,i,0,k) > 0.0)then
+             SumFlux2_G(i,1,k) = SumFlux2_G(i,1,k) + DeltaH_DG(2,i,0,k)*&
                   (1.0 - CFLCoef_G(i,0,k))*minmod( &
                   limiter(4,i,0,k), DeltaMinusF_G(i,0,k))
           end if
-          j = nJ
-          if(DeltaH_FY(i,nJ,k) < 0.0)then
-             SumFlux2_G(i,nJ,k)   = SumFlux2_G(i,nJ,k)   - DeltaH_FY(i,nJ,k)*&
+          if(DeltaH_DG(2,i,nJ,k) < 0.0)then
+             SumFlux2_G(i,nJ,k)   = SumFlux2_G(i,nJ,k)   - DeltaH_DG(2,i,nJ,k)*&
                   (1.0 - CFLCoef_G(i,nJ+1,k))*minmod(  &
                   limiter(3,i,nJ+1,k), DeltaMinusF_G(i,nJ+1,k))
           end if
@@ -554,13 +541,13 @@ contains
                SumFlux2_G(1:nI,1:nJ,nK) + SumFlux2_G(1:nI,1:nJ,0)
        else
           do j = 1, nJ; do i = 1, nI
-             if(DeltaH_FZ(i,j,0) > 0.0)then
-                SumFlux2_G(i,j,1) = SumFlux2_G(i,j,1) + DeltaH_FZ(i,j,0)*&
+             if(DeltaH_DG(3,i,j,0) > 0.0)then
+                SumFlux2_G(i,j,1) = SumFlux2_G(i,j,1) + DeltaH_DG(3,i,j,0)*&
                      (1.0 - CFLCoef_G(i,j,0))*minmod( &
                      limiter(6,i,j,0), DeltaMinusF_G(i,j,0))
              end if
-             if(DeltaH_FZ(i,j,nK) < 0.0)then
-                SumFlux2_G(i,j,nK)   = SumFlux2_G(i,j,nK) - DeltaH_FZ(i,j,nK)*&
+             if(DeltaH_DG(3,i,j,nK) < 0.0)then
+                SumFlux2_G(i,j,nK) = SumFlux2_G(i,j,nK) - DeltaH_DG(3,i,j,nK)*&
                      (1.0 - CFLCoef_G(i,j,nK+1))*minmod( &
                      limiter(5,i,j,nK+1), DeltaMinusF_G(i,j,nK+1))
              end if
