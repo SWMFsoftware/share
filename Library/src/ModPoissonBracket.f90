@@ -52,19 +52,19 @@ contains
        minmod = (sign(0.5, Arg1) + sign(0.5, Arg2))*min(abs(Arg1), abs(Arg2))
     end if
   end function minmod
-  !============================================================================
-  real function minmodbeta(DownwindDeltaMinusF, UpwindDeltaMinusF)
-    !  To switch between two choices of beta-parameter:
-    !  1. minmod, if UseMinmodBeta=.true.
-    !  2. DownwindDeltaMinusF  otherwise
-    real, intent(in) :: DownwindDeltaMinusF, UpwindDeltaMinusF
+!  !============================================================================
+!  real function minmodbeta(DownwindDeltaMinusF, UpwindDeltaMinusF)
+!    !  To switch between two choices of beta-parameter:
+!    !  1. minmod, if UseMinmodBeta=.true.
+!    !  2. DownwindDeltaMinusF  otherwise
+!    real, intent(in) :: DownwindDeltaMinusF, UpwindDeltaMinusF
     !--------------------------------------------------------------------------
-    if(UpwindDeltaMinusF==0.0)then
-       minmodbeta  =  0.0
-    else
-       minmodbeta = minmod(DownwindDeltaMinusF/UpwindDeltaMinusF,1.0)
-    end if
-  end function minmodbeta
+!    if(UpwindDeltaMinusF==0.0)then
+!       minmodbeta  =  0.0
+!    else
+!       minmodbeta = minmod(DownwindDeltaMinusF/UpwindDeltaMinusF,1.0)
+!    end if
+!  end function minmodbeta
   !============================================================================
   real function half_beta(Cfl, DownwindDeltaMinusF, UpwindDeltaMinusF)
     !  To switch between two choices of beta-parameter:
@@ -72,8 +72,8 @@ contains
     !  2. DownwindDeltaMinusF  otherwise
     real, intent(in) :: Cfl, DownwindDeltaMinusF, UpwindDeltaMinusF
     !--------------------------------------------------------------------------
-    half_beta = 1.0 - 1.0e-14 - Cfl*(1.0 - minmodbeta( &
-               DownwindDeltaMinusF, UpwindDeltaMinusF))
+    half_beta = 1.0 - 1.0e-14 - Cfl*(1.0 - minmod( &
+               DownwindDeltaMinusF/UpwindDeltaMinusF, 1.0))
   end function half_beta
   !============================================================================
   real function betalimiter(DeltaF, UpwindDeltaF,&
@@ -97,9 +97,10 @@ contains
        else
           AbsDeltaFLimited = 0.5*max(AbsDeltaF, SignDeltaF*UpwindDeltaF)
        end if
-       if(UseMinmodBeta.and.UpwindDeltaMinusF*DeltaF < 0.0)then
+       if(UseMinmodBeta.and.CFL > 0.0.and.UpwindDeltaMinusF*DeltaF < 0.0)then
           HalfBeta = max(half_beta(Cfl, (1.0 - Cfl)*DownwindDeltaMinusF, &
-               Cfl*UpwindDeltaMinusF), 1.0 - 1.0e-14 + CFL*UpwindDeltaMinusF/DeltaF)
+               Cfl*UpwindDeltaMinusF), &
+               1.0 - 1.0e-14 + CFL*UpwindDeltaMinusF/DeltaF)
        else
           HalfBeta = 1.0 - 1.0e-14
        end if
@@ -240,7 +241,7 @@ contains
     ! face-centered vriations of Hamiltonian functions.
     ! one layer of ghost faces
     real :: DeltaH_DG(3,-1:nI+1,-1:nJ+1,-1+2*(1/nK):nK+1-1/nK)
-    real :: SumDeltaHMinus
+    real :: SumDeltaHMinus, DeltaMinusH
     ! Fluxes:
     ! Sum of \delta^+H fluxes, to be limited
     real :: SumFluxPlus
@@ -255,7 +256,7 @@ contains
                             0,  0, -1, &
                             0,  0,  1], [3,6])
     real    :: Buff_VSG(DeltaH_:Flux_,6)
-    integer :: nFlux, iFlux, iSide_SG(6), iD_D(3)
+    integer :: nFlux, iFlux, iSide, iSide_SG(6), iD_D(3), iU_D(3), iCell_D(3)
     ! Local CFL number:
     real :: CFLCoef_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK), CFLLocal
     ! Time step
@@ -352,32 +353,28 @@ contains
     ! negative directions the should be taken with opposite sign
     ! Calculate DeltaMinusF and SumDeltaH
     do k=iKStart, iKLast; do j = 0, nJ+1; do i = 0, nI+1
-       SumDeltaHMinus         = min(0.0, DeltaH_DG(1,i,  j,  k)) +&
-                                min(0.0, DeltaH_DG(2,i,  j,  k)) +&
-                                min(0.0,-DeltaH_DG(1,i-1,j,  k)) +&
-                                min(0.0,-DeltaH_DG(2,i,j-1,  k))
-       SumDeltaHPlus_G(i,j,k) = max(0.0, DeltaH_DG(1,i,  j,  k)) +&
-                                max(0.0, DeltaH_DG(2,i,  j,  k)) +&
-                                max(0.0,-DeltaH_DG(1,i-1,j,  k)) +&
-                                max(0.0,-DeltaH_DG(2,i,j-1,  k))
+       SumDeltaHMinus = 0.0
+       SumDeltaHPlus_G(i,j,k) = 0.0
+       DeltaMinusF_G(i,j,k) = 0.0
        VDF = VDF_G(i,j,k)
-       DeltaMinusF_G(i, j, k) = &
-               min(0.0, DeltaH_DG(1,i,   j,   k))*(VDF_G(i+1,j,k) - VDF) +&
-               min(0.0, DeltaH_DG(2,i,   j,   k))*(VDF_G(i,j+1,k) - VDF) +&
-               min(0.0,-DeltaH_DG(1,i-1, j,   k))*(VDF_G(i-1,j,k) - VDF) +&
-               min(0.0,-DeltaH_DG(2,i, j-1,   k))*(VDF_G(i,j-1,k) - VDF)
-       if(nK>1)then
-          ! Add three-dimensional effects.
-          SumDeltaHMinus         = SumDeltaHMinus              +&
-                                    min(0.0, DeltaH_DG(3,i,j,k)) +&
-                                    min(0.0,-DeltaH_DG(3,i,j,k-1))
-          SumDeltaHPlus_G(i,j,k) = SumDeltaHPlus_G(i,j,k)      +&
-                                    max(0.0, DeltaH_DG(3,i,j,k)) +&
-                                    max(0.0,-DeltaH_DG(3,i,j,k-1))
-          DeltaMinusF_G(i, j, k) = DeltaMinusF_G(i, j, k)      +&
-               min(0.0, DeltaH_DG(3,i,   j,   k))*(VDF_G(i,j,k+1) - VDF) +&
-               min(0.0,-DeltaH_DG(3,i,   j, k-1))*(VDF_G(i,j,k-1) - VDF)
-       end if
+       do iDim = 1, nDim
+          ! Caalculate contributions from up faces to
+          ! SumDeltaHPlus and DeltaMinusF 
+          iU_D = [i,j,k]; iU_D(iDim) = iU_D(iDim) + 1
+          DeltaMinusH = min(0.0, DeltaH_DG(iDim,i,j,k))
+          SumDeltaHMinus = SumDeltaHMinus + DeltaMinusH
+          DeltaMinusF_G(i,j,k) = DeltaMinusF_G(i,j,k) + &
+               DeltaMinusH*(VDF_G(iU_D(1),iU_D(2),iU_D(3)) - VDF)
+          SumDeltaHPlus_G(i,j,k) = SumDeltaHPlus_G(i,j,k) + &
+               max(0.0, DeltaH_DG(iDim,i,j,k))
+          iD_D = [i,j,k]; iD_D(iDim) = iD_D(iDim) - 1
+          DeltaMinusH = min(0.0, -DeltaH_DG(iDim,iD_D(1),iD_D(2),iD_D(3)))
+          SumDeltaHMinus = SumDeltaHMinus + DeltaMinusH
+          DeltaMinusF_G(i,j,k) = DeltaMinusF_G(i,j,k) + &
+               DeltaMinusH*(VDF_G(iD_D(1),iD_D(2),iD_D(3)) - VDF)
+          SumDeltaHPlus_G(i,j,k) = SumDeltaHPlus_G(i,j,k) + &
+               max(0.0,-DeltaH_DG(iDim,iD_D(1),iD_D(2),iD_D(3)))
+       end do
        if(SumDeltaHMinus==0.0)then
           DeltaMinusF_G(i,j,k) = 0.0
        else
@@ -403,11 +400,9 @@ contains
 
           ! Check if the CFL satisfies the stability criterion
           if(maxval(CFLCoef_G(1:nI,1:nJ,1:nK)) > CFLMax)then
-
              ! Restore CFLCoef_G and vInv
              CFLCoef_G = CFLCoef_G/(Dt*vInv_G)
              vInv_G = 1/Volume_G
-
              ! Reduce the time step using equation
              ! CFLMax = \Delta t*(-\sum\delta^-H)/(\Delta t*dV/dt + V)
              DtIn = CFLMax/maxval(vInv_G(1:nI,1:nJ,1:nK)*&
@@ -458,17 +453,19 @@ contains
        if(SumDeltaHPlus_G(i,j,k)==0.0)CYCLE
        nFlux = 0
        do iDim = 1, nDim
+          iSide = 2*iDim
           if(DeltaH_DG(iDim,i,j,k) > 0.0)then
-             nFlux = nFlux + 1; iSide_SG(nFlux) = 2*iDim
+             nFlux = nFlux + 1; iSide_SG(nFlux) = iSide
              Buff_VSG(DeltaH_:Flux_,nFlux) = DeltaH_DG(iDim,i,j,k)*&
-                  [1.0, limiter(2*iDim,i,j,k)]
+                  [1.0, limiter(iSide,i,j,k)]
           end if
-          iD_D = [i,j,k] +iShift_DS(:,2*iDim - 1)
+          iSide = 2*iDim -1
+          iD_D = [i,j,k]; iD_D(iDim) = iD_D(iDim) - 1
           if(DeltaH_DG(iDim,iD_D(1),iD_D(2),iD_D(3)) < 0.0 )then
-             nFlux = nFlux + 1; iSide_SG(nFlux) = 2*iDIm-1
+             nFlux = nFlux + 1; iSide_SG(nFlux) = iSide
              Buff_VSG(DeltaH_:Flux_,nFlux) = &
                   (-DeltaH_DG(iDim,iD_D(1),iD_D(2),iD_D(3)))*&
-                  [1.0, limiter(2*iDim-1,i,j,k)]
+                  [1.0, limiter(iSide,i,j,k)]
           end if
        end do
        SumFluxPlus = sum(Buff_VSG(Flux_,1:nFlux))
@@ -508,7 +505,7 @@ contains
                   limiter(2,0,j,k), DeltaMinusF_G(0,j,k))
           end if
           if(DeltaH_DG(1,nI,j,k) < 0.0 )then
-             SumFlux2_G(nI,j,k)   = SumFlux2_G(nI,j,k)   - DeltaH_DG(1,nI,j,k)*&
+             SumFlux2_G(nI,j,k)   = SumFlux2_G(nI,j,k) - DeltaH_DG(1,nI,j,k)*&
                   (1.0 - CFLCoef_G(nI+1,j,k))*minmod(&
                   limiter(1,nI+1,j,k), DeltaMinusF_G(nI+1,j,k))
           end if
@@ -527,7 +524,7 @@ contains
                   limiter(4,i,0,k), DeltaMinusF_G(i,0,k))
           end if
           if(DeltaH_DG(2,i,nJ,k) < 0.0)then
-             SumFlux2_G(i,nJ,k)   = SumFlux2_G(i,nJ,k)   - DeltaH_DG(2,i,nJ,k)*&
+             SumFlux2_G(i,nJ,k)   = SumFlux2_G(i,nJ,k) - DeltaH_DG(2,i,nJ,k)*&
                   (1.0 - CFLCoef_G(i,nJ+1,k))*minmod(  &
                   limiter(3,i,nJ+1,k), DeltaMinusF_G(i,nJ+1,k))
           end if
@@ -559,7 +556,6 @@ contains
     !==========================================================================
     real function limiter(iSide,i,j,k)
       integer, intent(in):: iSide,i,j,k
-      integer :: iU_D(3)
       !------------------------------------------------------------------------
       iD_D = [i,j,k] + iShift_DS(:,iSide); iU_D = [i,j,k] - iShift_DS(:,iSide)
       limiter = betalimiter(                                           &
