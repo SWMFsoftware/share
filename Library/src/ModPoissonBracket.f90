@@ -52,6 +52,7 @@ contains
        minmod = (sign(0.5, Arg1) + sign(0.5, Arg2))*min(abs(Arg1), abs(Arg2))
     end if
   end function minmod
+  !============================================================================
 !  !============================================================================
 !  real function minmodbeta(DownwindDeltaMinusF, UpwindDeltaMinusF)
 !    !  To switch between two choices of beta-parameter:
@@ -65,7 +66,6 @@ contains
 !       minmodbeta = minmod(DownwindDeltaMinusF/UpwindDeltaMinusF,1.0)
 !    end if
 !  end function minmodbeta
-  !============================================================================
   real function half_beta(Cfl, DownwindDeltaMinusF, UpwindDeltaMinusF)
     !  To switch between two choices of beta-parameter:
     !  1. minmod, if UseMinmodBeta=.true.
@@ -359,7 +359,7 @@ contains
        VDF = VDF_G(i,j,k)
        do iDim = 1, nDim
           ! Caalculate contributions from up faces to
-          ! SumDeltaHPlus and DeltaMinusF 
+          ! SumDeltaHPlus and DeltaMinusF
           iU_D = [i,j,k]; iU_D(iDim) = iU_D(iDim) + 1
           DeltaMinusH = min(0.0, DeltaH_DG(iDim,i,j,k))
           SumDeltaHMinus = SumDeltaHMinus + DeltaMinusH
