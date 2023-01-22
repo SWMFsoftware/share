@@ -6922,6 +6922,7 @@ pro loadct_bw, color
   loadct,color
   r_orig(0)=0 & g_orig(0)=0 & b_orig(0)=0
   r_orig(255)=255 & g_orig(255)=255 & b_orig(255)=255
+  r_curr=r_orig & g_curr=g_orig & b_curr=b_orig
   tvlct,r_orig,g_orig,b_orig
 end
 ;============================================================================
