@@ -217,6 +217,7 @@ contains
   !============================================================================
   subroutine explicit4(nI, nJ, nK, nP, VDF_G, Volume_G, Source_C,        &
        Hamiltonian12_N, Hamiltonian13_N, Hamiltonian23_N,                &
+       Hamiltonian14_N, Hamiltonian24_N, Hamiltonian34_N,                &
        dHamiltonian01_FX, dHamiltonian02_FY, dHamiltonian03_FZ,          &
        dHamiltonian04_FP, DVolumeDt_G,                                   &
        DtIn, CFLIn, DtOut, IsPeriodicIn_D)
@@ -253,6 +254,24 @@ contains
     !    (In other words, X-aligned-edge-centered)
     real, optional, intent(in) :: Hamiltonian23_N( 0:nI+1,-1:nJ+1,&
          -1:nK+1,1/nP:nP+1-1/nP)
+    ! Hamiltonian functions in nodes. One layer of ghost nodes is used.
+    ! 4. Hamiltonian function for the Poisson bracket \{f,H_{14}}_{x,P}
+    !    Node-centered at XP plane, cell-centered with respect to y,z
+    !    (In other words, YZ-aligned-edge-centered)
+    real, optional, intent(in) :: Hamiltonian14_N(-1:nI+1, 0:nJ+1,&
+         0:nK+1,-1:nP+1)
+
+    ! 5. Hamiltonian function for the Poisson bracket \{f,H_{24}}_{y,P}
+    !    Node-centered at YP plane, cell-centered with respect to XZ
+    !    (In other words, XZ-aligned-edge-centered)
+    real, optional, intent(in) :: Hamiltonian24_N(0:nI+1,-1:nJ+1,&
+         0:nK+1,-1:nP+1)
+
+    ! 6. Hamiltonian function for the Poisson bracket \{f,H_{34}}_{zP}
+    !    Node-centered at ZP plane, cell-centered with respect to XY
+    !    (In other words, XY-aligned-edge-centered)
+    real, optional, intent(in) :: Hamiltonian34_N( 0:nI+1, 0:nJ+1,&
+         -1:nK+1,-1:nP+1)
 
     real, optional, intent(in) :: dHamiltonian01_FX(-1:nI+1,0:nJ+1,&
          1/nK:nK+1-1/nK,1/nP:nP+1-1/nP)
@@ -384,6 +403,36 @@ contains
             Hamiltonian23_N( 0:nI+1,-1:nJ  ,-1:nK+1,iPStart:iPLast)        - &
             Hamiltonian23_N( 0:nI+1, 0:nJ+1,-1:nK+1,iPStart:iPLast)
     end if
+    if (present(Hamiltonian14_N)) then
+       DeltaH_DG(1,-1:nI+1, 0:nJ+1,0:nK+1,0:nP+1)                          = &
+            DeltaH_DG(1,-1:nI+1, 0:nJ+1,0:nK+1,0:nP+1)                     + &
+            Hamiltonian14_N(-1:nI+1, 0:nJ+1,0:nK+1,0:nP+1)                 - &
+            Hamiltonian14_N(-1:nI+1, 0:nJ+1,0:nK+1,-1:nP)
+       DeltaH_DG(4, 0:nI+1,0:nJ+1,0:nK+1,-1:nP+1)                          = &
+            DeltaH_DG(4, 0:nI+1,0:nJ+1,0:nK+1,-1:nP+1)                     + &
+            Hamiltonian14_N(-1:nI  , 0:nJ+1, 0:nK+1,-1:nP+1)               - &
+            Hamiltonian14_N(0:nI+1 , 0:nJ+1, 0:nK+1,-1:nP+1)
+    end if
+    if (present(Hamiltonian24_N)) then
+       DeltaH_DG(2, 0:nI+1,-1:nJ+1, 0:nK+1,0:nP+1)                         = &
+            DeltaH_DG(2,0:nI+1,-1:nJ+1,0:nK+1,0:nP+1)                      + &
+            Hamiltonian24_N(0:nI+1,-1:nJ+1, 0:nK+1,0:nP+1)                 - &
+            Hamiltonian24_N(0:nI+1,-1:nJ+1, 0:nK+1,-1:nP)
+       DeltaH_DG(4, 0:nI+1, 0:nJ+1, 0:nK+1,-1:nP+1)                        = &
+            DeltaH_DG(4, 0:nI+1, 0:nJ+1, 0:nK+1,-1:nP+1)                   + &
+            Hamiltonian24_N( 0:nI+1,-1:nJ  ,0:nK+1,-1:nP+1)                - &
+            Hamiltonian24_N( 0:nI+1, 0:nJ+1,0:nK+1,-1:nP+1)
+    end if
+    if (present(Hamiltonian34_N)) then
+       DeltaH_DG(3,0:nI+1,0:nJ+1,-1:nK+1,0:nP+1)                           = &
+            DeltaH_DG(3,0:nI+1,0:nJ+1,-1:nK+1,0:nP+1)                      + &
+            Hamiltonian34_N( 0:nI+1,0:nJ+1,-1:nK+1,0:nP+1)                 - &
+            Hamiltonian34_N( 0:nI+1,0:nJ+1,-1:nK+1,-1:nP)
+       DeltaH_DG(4,0:nI+1,0:nJ+1,0:nK+1,-1:nP+1)                           = &
+            DeltaH_DG(4,0:nI+1,0:nJ+1,0:nK+1,-1:nP+1)                      + &
+            Hamiltonian34_N(0:nI+1,0:nJ+1,-1:nK,-1:nP+1)                   - &
+            Hamiltonian34_N(0:nI+1,0:nJ+1,0:nK+1,-1:nP+1)
+    end if
     ! Bracket {F,H01}_t,x    Bracket {F,H02}_t,y      Bracket {F,H03}_t,z
     ! Hamiltonian 01 (tx)    Hamiltonian 02 (ty)      Hamiltonian 03 (tz)
     ! x                      y                        z
@@ -405,6 +454,10 @@ contains
          DeltaH_DG(3, 0:nI+1, 0:nJ+1,-1:nK+1,iPStart:iPLast)            = &
          DeltaH_DG(3, 0:nI+1, 0:nJ+1,-1:nK+1,iPStart:iPLast)            + &
          dHamiltonian03_FZ
+    if (present(dHamiltonian04_FP))&
+         DeltaH_DG(4, 0:nI+1, 0:nJ+1, 0:nK+1,-1:nP+1)                   = &
+         DeltaH_DG(4, 0:nI+1, 0:nJ+1, 0:nK+1,-1:nP+1)                   + &
+         dHamiltonian04_FP
     ! Cleanup
     where(abs(DeltaH_DG)<=cTol)DeltaH_DG = 0.0
     ! Now, for each cell the value of DeltaH for face in positive
@@ -631,7 +684,7 @@ contains
       iU_D = [i,j,k,iP] - iShift_DS(:,iSide)
       limiter = betalimiter(                                                  &
            DeltaF=VDF_G(iD_D(1),iD_D(2),iD_D(3),iD_D(4))  - VDF_G(i,j,k,iP)  ,&
-           UpwindDeltaF=VDF_G(i,j,k,iP)                                      -&
+           UpwindDeltaF=VDF_G(i,j,k,iP) - &
            VDF_G(iU_D(1),iU_D(2),iU_D(3),iU_D(4))                            ,&
            Cfl = CFLCoef_G(i,j,k,iP)                                         ,&
            DownwindDeltaMinusF=DeltaMinusF_G(iD_D(1),iD_D(2),iD_D(3),iD_D(4)),&
