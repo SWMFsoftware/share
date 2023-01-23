@@ -345,7 +345,7 @@ contains
     real    :: VDF
     ! Gamma-limiter
     real    :: DeltaPlusFLimited, Gamma
-    character(len=*), parameter:: NameSub = 'explicit3'
+    character(len=*), parameter:: NameSub = 'explicit4'
     !--------------------------------------------------------------------------
     if(present(DtIn))then
        Dt = DtIn
@@ -471,7 +471,7 @@ contains
        VDF = VDF_G(i,j,k,iP)
        do iDim = 1, nDim
           ! Caalculate contributions from up faces to
-          ! SumDeltaHPlus and DeltaMinusF 
+          ! SumDeltaHPlus and DeltaMinusF
           iU_D = [i,j,k,iP]; iU_D(iDim) = iU_D(iDim) + 1
           DeltaMinusH = min(0.0, DeltaH_DG(iDim,i,j,k,iP))
           SumDeltaHMinus = SumDeltaHMinus + DeltaMinusH
