@@ -6916,14 +6916,16 @@ pro plot_color_bar, pos, maxmin
 end
 
 ;============================================================================
-pro loadct_bw, color
+pro loadct_bw, color, reverse=reverse
   common colors
 
+  if not keyword_set(reverse) then reverse=0
   loadct,color
-  help,r_orig,g_orig,b_orig
-  r_orig=reverse(r_orig)
-  g_orig=reverse(g_orig)
-  b_orig=reverse(b_orig)
+  if reverse then begin
+     r_orig=reverse(r_orig)
+     g_orig=reverse(g_orig)
+     b_orig=reverse(b_orig)
+  endif
   r_orig(0)=0 & g_orig(0)=0 & b_orig(0)=0
   r_orig(255)=255 & g_orig(255)=255 & b_orig(255)=255
   r_curr=r_orig & g_curr=g_orig & b_curr=b_orig
