@@ -6920,6 +6920,10 @@ pro loadct_bw, color
   common colors
 
   loadct,color
+  help,r_orig,g_orig,b_orig
+  r_orig=reverse(r_orig)
+  g_orig=reverse(g_orig)
+  b_orig=reverse(b_orig)
   r_orig(0)=0 & g_orig(0)=0 & b_orig(0)=0
   r_orig(255)=255 & g_orig(255)=255 & b_orig(255)=255
   r_curr=r_orig & g_curr=g_orig & b_curr=b_orig
