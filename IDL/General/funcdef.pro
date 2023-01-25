@@ -69,13 +69,18 @@ function funcdef,xx,w,func
      ['ue'       , 'sqrt({uex}^2+{uey}^2+{uez}^2)'           ], $
      ['ur'       , '(x*ux+y*uy+z*uz)/r'                      ], $ ; radial u
      ['uphi'     , '(uy*x-ux*y)/r'                           ], $ ; uphi
-     ['ulon'     , '-sin(Lon)*ux+cos(Lon)*uy'                ], $ ; B in longitude direction
-     ['ulat'     , '-sin(Lat)*(cos(Lon)*ux+sin(Lon)*uy)+cos(Lat)*uz'], $ ; B in latitude direction
-     ['Br'       , '(x*bx+y*by+z*bz)/r'                      ], $ ; radial B
-     ['Bt'       , 'sin(Lat)*cos(Lon)*bx+sin(Lat)*sin(Lon)*by-cos(Lat)*bz'], $ ; B in theta direction
-     ['Bp'       , '-sin(Lon)*bx+cos(Lon)*by'                ], $ ; B in phi direction
-     ['Blon'     , '{Bp}'                                    ], $ ; B in longitude direction
-     ['Blat'     , '-{Bt}'                                   ], $ ; B in latitude direction
+     ['ulon'     , '-sin(Lon)*ux+cos(Lon)*uy'                ], $ ; ulon
+     ['ulat'     , '-sin(Lat)*(cos(Lon)*ux+sin(Lon)*uy)+cos(Lat)*uz'], $ ; ulat
+     ['ulonrot'  , '-sin(Lon)*{uxrot}+cos(Lon)*{uyrot}'      ], $ ; ulon witout rotation
+     ['ulatrot'  , '-sin(Lat)*(cos(Lon)*{uxrot}+sin(Lon)*{uyrot})+cos(Lat)*{uzrot}'], $ ; ulatrot
+     ['Br'       , '(x*bx+y*by+z*bz)/r'                      ], $ ; Br
+     ['Bt'       , 'sin(Lat)*(cos(Lon)*bx+sin(Lon)*by)-cos(Lat)*bz'], $ ; Btheta
+     ['Bp'       , '-sin(Lon)*bx+cos(Lon)*by'                ], $ ; Bphi
+     ['Blon'     , '{Bp}'                                    ], $ ; Blon
+     ['Blat'     , '-{Bt}'                                   ], $ ; Blat
+     ['B1r'      , '(x*{b1x}+y*{b1y}+z*{b1z})/r'             ], $ ; B1r
+     ['B1lon'    , '-sin(Lon)*{b1x}+cos(Lon)*{b1y}'          ], $ ; B1lon
+     ['B1lat'    , 'cos(Lat)*{b1z}-sin(Lat)*(cos(Lon)*{b1x}+sin(Lon)*{b1y})'], $ ; B1lat
      ['Bphi'     , '(by*x-bx*y)/r'                           ], $ ; Bphi
      ['B0x'      , 'bx-{b1x}'                                ], $ ; B0x
      ['B0y'      , 'by-{b1y}'                                ], $ ; B0y
@@ -85,10 +90,11 @@ function funcdef,xx,w,func
      ['B1'       , 'sqrt({b1x}^2+{b1y}^2+{b1z}^2)'           ], $ ; B1
      ['jr'       , '(x*{jx}+y*{jy}+z*{jz})/r'                ], $ ; radial current
      ['j'        , 'sqrt({jx}^2+{jy}^2+{jz}^2)'              ], $ ; current density
-     ['jxBx'     , '{jy}*bz-{jz}*by'                         ], $ ; Lorentz force
-     ['jxBy'     , '{jz}*bx-{jx}*bz'                         ], $ ; Lorentz force
-     ['jxBz'     , '{jx}*by-{jy}*bx'                         ], $ ; Lorentz force 
-     ['jxB'      , 'sqrt({jxBx}^2+{jxBy}^2+{jxBz}^2)'        ], $ 
+     ['jxBx'     , '{jy}*bz-{jz}*by'                         ], $ ; Lorentz force x
+     ['jxBy'     , '{jz}*bx-{jx}*bz'                         ], $ ; Lorentz force y
+     ['jxBz'     , '{jx}*by-{jy}*bx'                         ], $ ; Lorentz force z
+     ['jxB'      , 'sqrt({jxBx}^2+{jxBy}^2+{jxBz}^2)'        ], $ ; JxB magnitude
+     ['jxBr'     , '({jxBx}*x+{jxBy}*y+{jxBz}*z)/r'          ], $ ; JxB in r direction
      ['divbxy'   , 'div(bx,by,x,y)'                          ], $ ; div(B) in 2D
      ['divb1xy'  , 'div({b1x},{b1y},x,y)'                    ], $ ; div(B1) in 2D
      ['Ex'       , 'by*uz-uy*bz'                             ], $ ; electric field
@@ -268,6 +274,9 @@ function funcdef,xx,w,func
         'x': x = xx(*,*,idim)
         'y': y = xx(*,*,idim)
         'z': z = xx(*,*,idim)
+        'r'        : Radius = xx(*,*,idim)
+        'R'        : Radius = xx(*,*,idim)
+        'Radius'   : Radius = xx(*,*,idim)
         'Longitude': Lon = xx(*,*,idim)
         'Lon'      : Lon = xx(*,*,idim)
         'lon'      : Lon = xx(*,*,idim)
@@ -285,6 +294,9 @@ function funcdef,xx,w,func
         'z': z = xx(*,*,*,idim)
         'logRadius': Radius = 10^xx(*,*,*,idim)
         'logr'     : Radius = 10^xx(*,*,*,idim)
+        'r'        : Radius = xx(*,*,*,idim)
+        'R'        : Radius = xx(*,*,*,idim)
+        'Radius'   : Radius = xx(*,*,*,idim)
         'Longitude': Lon = xx(*,*,*,idim)   
         'Lon'      : Lon = xx(*,*,*,idim)
         'lon'      : Lon = xx(*,*,*,idim)
