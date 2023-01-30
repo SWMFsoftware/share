@@ -3969,7 +3969,8 @@ pro plot_func
      n2  = 1
      irr = 0
   endif else begin
-     n2=siz(2)
+     ; Check if there is a 2nd or 3rd dimension that is larger than 1
+     n2=max(siz(2:siz(0)))
      irr = gencoord or (n2 eq 1)
   endelse
 
@@ -3977,7 +3978,7 @@ pro plot_func
      print,'Irregular grid, axistype must be set to coord'
      axistype='coord'
   endif
-
+  
                                 ; Save global values that will be overwritten
   xtitleorig = !x.title
   ytitleorig = !y.title
@@ -4190,6 +4191,13 @@ pro plot_func
         plotmod=strmid(plotmod,0,i)+strmid(plotmod,i+6)
      endif
 
+     if irr and plotmod eq 'tv' then begin
+        print, $
+           'Irregular grid: tv plotmode does not work, switching to contfill!'
+        plotmod='cont'
+        fill=1
+     endif
+     
      ;; Calculate the next p.multi(0) explicitly
      if !p.multi(0) gt 0 then multi0=!p.multi(0)-1 $
      else multi0=!p.multi(1)*!p.multi(2)-1
@@ -4432,11 +4440,12 @@ pro plot_func
                       FOLLOW=label, FILL=fill, TRIANGULATION=tri, $
                       LEVELS=levels,XSTYLE=noaxis+1,YSTYLE=noaxis+1,$
                       /NOERASE, XLOG=lgx, YLOG=lgy
-           endif else $
+           endif else begin
               contour,f>f_min,xx,yy,$
                       FOLLOW=label, FILL=fill, LEVELS=levels,   $
                       XSTYLE=noaxis+1,YSTYLE=noaxis+1,/NOERASE, $
                       XLOG=lgx, YLOG=lgy
+           endelse
            'scatter'  :begin
               if not keyword_set(tri) then                   $
                  triangulate,float(xx),float(yy),tri
