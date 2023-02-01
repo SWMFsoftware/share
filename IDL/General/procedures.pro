@@ -3961,16 +3961,16 @@ pro plot_func
   ;; Get grid dimensions and set irr=1 
   ;; if it is an irregular grid
 
-  if keyword_set(cut) then siz = size(cut)  $
+  if keyword_set(cut) then siz = size(reform(cut))  $
   else if usereg then      siz = size(xreg) $
   else                     siz = size(x)
-  n1=siz(1)
+  n1 = siz(1)
   if plotdim eq 1 then begin
      n2  = 1
      irr = 0
   endif else begin
-     ; Check if there is a 2nd or 3rd dimension that is larger than 1
-     n2=max(siz(2:siz(0)))
+     ;; Check if the 2nd dimension is 1 (unstructured 2D grid)
+     n2 = siz(2)
      irr = gencoord or (n2 eq 1)
   endelse
 
@@ -3979,15 +3979,28 @@ pro plot_func
      axistype='coord'
   endif
   
-                                ; Save global values that will be overwritten
+  ;; Save global values that will be overwritten
   xtitleorig = !x.title
   ytitleorig = !y.title
 
+  uniform = 1
   if axistype eq 'coord' then begin
      if usereg then $
         getaxes,ndim,xreg,xx,yy,zz,cut,cut0,rSlice,plotdim,variables $
-     else $
+     else begin
         getaxes,ndim,x   ,xx,yy,zz,cut,cut0,rSlice,plotdim,variables
+
+        ;; Check if this is a uniform grid
+        if irr then uniform = 0 $
+        else begin
+           dx = xx(1:*,*) - xx(0:-2,*)
+           if max(dx) - min(dx) gt 1e-6 then uniform = 0
+           if uniform and ndim gt 1 then begin
+              dy = yy(*,1:*) - yy(*,0:-2)
+              if max(dy) - min(dy) gt 1e-6 then uniform = 0
+           endif
+        endelse
+     endelse
   endif
 
   if xtitleorig ne '' then !x.title=xtitleorig
@@ -4191,9 +4204,9 @@ pro plot_func
         plotmod=strmid(plotmod,0,i)+strmid(plotmod,i+6)
      endif
 
-     if irr and plotmod eq 'tv' then begin
+     if not uniform and plotmod eq 'tv' then begin
         print, $
-           'Irregular grid: tv plotmode does not work, switching to contfill!'
+           'Nonumiform grid: tv plotmode does not work, switching to contfill!'
         plotmod='cont'
         fill=1
      endif
@@ -4230,14 +4243,15 @@ pro plot_func
 
         if keyword_set(fixaspect) and strmid(plotmod,0,4) ne 'plot' then begin
 
-           if plotmod eq 'polar' or plotmod eq 'lonlatn' or plotmod eq 'lonlats' then $
+           if plotmod eq 'polar' or plotmod eq 'lonlatn' or $
+              plotmod eq 'lonlats' then $
               aspectx=1 $
            else if abs(fixaspect) ne 1 then $
               aspectx = abs(fixaspect) $
            else begin
               if axistype eq 'cells' then begin
-                 width  = n1-1.0
-                 height = n2-1.0
+                 width  = n1 - 1.0
+                 height = n2 - 1.0
               endif else begin
                  width  = abs(xrange(1) - xrange(0))
                  height = abs(yrange(1) - yrange(0))
