@@ -19,6 +19,7 @@ my $MakeTar       = ($t or $tar or $T or $TAR);
 my $KeepTarOnly   = ($T or $TAR);
 my $nThread       = ($n or 4);
 my $Rsync         = ($rsync or $sync);
+my $Replace       = ($replace);
 my $AllParam      = ($param or $allparam);
 my $Pattern       = $p;
 my $Format        = ($f or $format); $Format = "-f=$Format" if $Format;
@@ -52,8 +53,13 @@ if(@ARGV){
     die "$ERROR: only one directory name can be given!\n" 
 	unless $#ARGV == 0;
     $NameOutput = $ARGV[0];
-    die "$ERROR: directory or file $NameOutput already exists!\n"
-	if -e $NameOutput;
+    if(-e $NameOutput){
+	if($Replace and $NameOutput !~ /^\./){
+	    `/bin/rm -rf $NameOutput`;
+	}else{
+	    die "$ERROR: directory or file $NameOutput already exists!\n";
+	}
+    }
     `mkdir -p $NameOutput`;
     die "$ERROR: could not mkdir -p $NameOutput\n" if $?;
 }
@@ -458,6 +464,9 @@ Usage:
                after a certain number of days or when the 
                '.$StopFile.' file is present (touched).
 
+   -replace    Replace the directory DIR if it already exists. By default the
+	       code stops with an error message if DIR would be overwritten.
+
    -s=STOP     Exit from the script after STOP days. Useful when the script
                is run in the background with repeat flag. Default is 2 days.
 
@@ -497,11 +506,11 @@ PostProc.pl -noptec -f=tec
 
    Post-process the plot files, create movies from IDL output,
    concatenate satellite, log, and magnetometer files, move output into a 
-   directory tree "RESULTS/run23", run PostIDL.exe on 8 cores, and
-   link RESULTS/run23/RESTART/IH to the current IH input restart directory if
-   IH/restartOUT is empty:
+   directory tree "RESULTS/run23" even if it is already there, 
+   run PostIDL.exe on 8 cores, and link RESULTS/run23/RESTART/IH 
+   to the current IH input restart directory if IH/restartOUT is empty:
 
-PostProc.pl -M -cat -n=8 -l=IH RESULTS/run23
+PostProc.pl -M -cat -n=8 -l=IH -replace RESULTS/run23
 
    Post-process the plot files, compress the ASCII files, rsync the results
    and all PARAM.* files to another machine and print verbose info:
