@@ -4569,7 +4569,8 @@ pro plot_func
         if(plotmod eq 'polar')then                                       $
            plot_grid,xx,yy*angleunit,lines=showmesh,xstyle=5,ystyle=5,/polar $
         else if keyword_set(cut) then                                    $
-           plot_grid,xx,yy,lines=showmesh,xstyle=5,ystyle=5               $
+           plot_grid,xx,yy,lines=showmesh,xstyle=5,ystyle=5,   $
+                     xrange=xrange,yrange=yrange               $
         else begin
            plot_grid,x,lines=showmesh,xstyle=5,ystyle=5,$
                      xrange=xrange,yrange=yrange
