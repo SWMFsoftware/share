@@ -10,6 +10,7 @@ module ModHyperGeometric
   PRIVATE ! Except
   public :: toroid_p ! tilde{P}_n function, related to k**3 * (k^\prime)**n
   public :: toroid_q ! tilde{Q}_n function, related to k**3 * (k^\prime)**n
+  public :: cothu    ! converts \kappa^\prime^2=\exp(-2u) to \coth (u)
   public :: scr_inductance    ! inductance of a superconducting ring
   public :: l0_ext_inductance ! the external inductance of a ring current
   public :: calc_elliptic_int_1kind  ! Elliptic integral, of the first kind
@@ -314,6 +315,12 @@ contains
     l0_ext_inductance = 0.50*toroid_p(0, KappaPrime2In=KappaPrime2)*cPi**2/&
          toroid_q(0,KappaPrime2In=KappaPrime2)
   end function l0_ext_inductance
+  !============================================================================
+  real function cothu(KappaPrime2In)
+    real, intent(in)     :: KappaPrime2In
+    !--------------------------------------------------------------------------
+    cothu = 1 + 2*KappaPrime2In/(1 - KappaPrime2In)
+  end function cothu
   !============================================================================
   subroutine calc_elliptic_int_1kind(Z, KElliptic)
     real, intent(in):: Z
