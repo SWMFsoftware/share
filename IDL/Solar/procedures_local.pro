@@ -1653,7 +1653,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
 
   if IsOverPlot ne 1 then    $
      utplot,utc_obs(index_u),u_obs(index_u),background=7,color=0,         $
-            ytitle='Ur [km/s]',thick=9, timerange=[start_time,end_time],  $
+            ytitle='U [km/s]',thick=9, timerange=[start_time,end_time],  $
             xstyle=1,yrange=[ymin,ymax],ystyle=1,                         $
             charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos, $
             xtickname=REPLICATE(' ', 7),xtitle=' '

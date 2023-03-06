@@ -89,7 +89,7 @@ pro compare_insitu_one, file_sim=file_sim,                      $
   device,xsize=20,ysize=20
 
   plot_insitu, time_obs, u_obs,  n_obs,  tem_obs, mag_obs,             $
-               time_swmf, ur_swmf, n_swmf,  ti_swmf,  te_swmf, B_swmf, $
+               time_swmf, ut_swmf, n_swmf,  ti_swmf,  te_swmf, B_swmf, $
                start_time, end_time, typeData=typeData,                $
                charsize=CharSizeLocal, DoPlotTe = DoPlotTe,            $
                legendNames=Model, DoLogT=DoLogT,                       $
