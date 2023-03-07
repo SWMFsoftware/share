@@ -110,7 +110,7 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
               continue
            endif
 
-           u_max = max([u_max, ur_swmf])
+           u_max = max([u_max, ut_swmf])
            n_max = max([n_max, n_swmf])
            T_max = max([T_max, ti_swmf])
            B_max = max([B_max, B_swmf*1e5])
@@ -139,7 +139,7 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
                           start_time=start_time, end_time=end_time
 
            plot_insitu, time_obs, u_obs,  n_obs,  tem_obs, mag_obs,                 $
-                        time_swmf, ur_swmf, n_swmf,  ti_swmf,  te_swmf, B_swmf,     $
+                        time_swmf, ut_swmf, n_swmf,  ti_swmf,  te_swmf, B_swmf,     $
                         start_time, end_time, typeData=typeData,                    $
                         charsize=CharSizeLocal, DoPlotTe = DoPlotTe,                $
                         legendNames=Model, DoShowDist=0, IsOverPlot=IsOverPlot,     $
