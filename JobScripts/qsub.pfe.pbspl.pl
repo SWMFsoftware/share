@@ -79,8 +79,8 @@ foreach $machine (@machine){
     $text =~ s/^#+ *(PBS -l.*model=.*)$/### $1/igm;
 
     # Uncomment the line for model=$machine
-    $text =~ s/^### (PBS -l.*model=$machine)$/#$1/im;
-    
+    $text =~ s/^### (PBS -l.*model=$machine)\s*$/#$1/im;
+
     # Change the name of the resubmit script
     $text =~ s/^qsub .*$/qsub $fileout/m;
 
