@@ -1543,7 +1543,7 @@ pro read_log_data
   endif
 
   ; initialize start date for all log files
-  start_year = -1 & start_month = -1 & start_day = -1
+  ; start_year = -1 & start_month = -1 & start_day = -1
   
   ; First time read the row names into wlogrownames
   get_log, logfilenames(0), wlog,  wlognames,  logtime, timeunit, $
@@ -1688,10 +1688,10 @@ function log_time,wlog,wlognames,timeunit
      endcase
   endfor
 
-  if start_year  lt 0 and iyear gt -1 then start_year  = wlog(0,iyear)
-  if start_month lt 0 and imon  gt -1 then start_month = wlog(0,imon)
-  if start_day   lt 0 and iday  gt -1 then start_day   = wlog(0,iday)
-  if start_day   lt 0 and idoy  gt -1 then begin
+  if iyear gt -1 then start_year  = wlog(0,iyear)
+  if imon  gt -1 then start_month = wlog(0,imon)
+  if iday  gt -1 then start_day   = wlog(0,iday)
+  if idoy  gt -1 then begin
      start_month = 1
      start_day   = wlog(0,idoy)
   endif
@@ -1750,11 +1750,13 @@ function log_time,wlog,wlognames,timeunit
               logtime = hours/24.0
            endif else begin $
               if imon eq -1 or iday eq -1 or iyear eq -1 then   $
-                 print, ' Warning: check start time: ', $
-                        STRING(start_month, format='(i02)'),'/', $
-                        STRING(start_day,   format='(i02)'),'/', $
-                        STRING(start_year,  format='(i4)')
-              logtime = JULDAY(start_month, start_day, start_year, hours)
+                 print, ' Warning: check start time: ', start_year, $
+                   start_month, start_day, start_hour, start_minute, $
+                   start_second, $
+                   format='(a,i04,"-",i02,"-",i02,"T",i02,":",i02,":",i02)'
+              logtime = JULDAY(start_month, start_day, start_year, $
+                               start_hour + start_minute/60.0 + $
+                               start_second/3600.0 + hours)
            endelse
         end
         else: 
