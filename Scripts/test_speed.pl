@@ -36,7 +36,7 @@ foreach $dir (@ARGV){
     }
     
     while(<FILE>){
-	if(/make test_(\w+)_run\b/){
+	if(/make test\d*_(\w+)_run\b/){
 	    $test = $1;
 	    if($Tests){
 		next unless $Tests =~ /\b$test\b/;
