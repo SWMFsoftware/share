@@ -316,7 +316,7 @@ contains
     ! Check if a directory exists by trying to open a file in it.
     ! If iErrorOut is present, return the error code. Otherwise
     ! die with an error message if the directory does not exist
-    ! or it is not writable. 
+    ! or it is not writable.
     !
     ! {\bf This subroutine should be called by the root PE of the component
     ! only!}
@@ -335,7 +335,7 @@ contains
 
     ! Delete the file if it was created successfully
     if(iError == 0) close(UnitTmp_, status = 'DELETE')
-    
+
     if(present(iErrorOut))then
        ! Simply inform the caller
        iErrorOut = iError
