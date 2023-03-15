@@ -36,7 +36,7 @@ foreach $dir (@ARGV){
     }
     
     while(<FILE>){
-	if(/make test_(\w+)_run\b/){
+	if(/make test(\w+)_run\b/){
 	    $test = $1;
 	    if($Tests){
 		next unless $Tests =~ /\b$test\b/;
@@ -56,7 +56,7 @@ foreach $dir (@ARGV){
 
 foreach $test (sort keys %Test){
     foreach $dir (@ARGV){
-	printf "test_%-20s %s: %8.2f\n", $test, $dir, $Speed{$dir}{$test};
+	printf "test%-20s %s: %8.2f\n", $test, $dir, $Speed{$dir}{$test};
     }
 }
 

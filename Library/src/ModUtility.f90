@@ -314,9 +314,9 @@ contains
     integer, optional, intent(out):: iErrorOut
 
     ! Check if a directory exists by trying to open a file in it.
-    ! Die with an error message if the directory does not exist.
-    ! Directory names are cached, so multiple calls with the same
-    ! name do not repeat the check.
+    ! If iErrorOut is present, return the error code. Otherwise
+    ! die with an error message if the directory does not exist
+    ! or it is not writable. 
     !
     ! {\bf This subroutine should be called by the root PE of the component
     ! only!}
@@ -333,16 +333,16 @@ contains
     open(UnitTmp_, file=trim(NameDir)//'/.test', status='unknown', &
          iostat = iError)
 
-    if (iError /= 0) then
-       if(present(iErrorOut))then
-          iErrorOut = iError
-          RETURN
-       else
-          call CON_stop(NameSub//' ERROR: Cannot find/write into directory '&
-               //trim(NameDir))
-       end if
-    else
-       close(UnitTmp_, status = 'DELETE')
+    ! Delete the file if it was created successfully
+    if(iError == 0) close(UnitTmp_, status = 'DELETE')
+    
+    if(present(iErrorOut))then
+       ! Simply inform the caller
+       iErrorOut = iError
+    elseif (iError /= 0) then
+       ! Stop the run
+       call CON_stop(NameSub//' ERROR: Cannot find/write into directory '&
+            //trim(NameDir))
     endif
 
   end subroutine check_dir
@@ -879,12 +879,14 @@ contains
     write(*,'(a)') 'check_dir returned successfully'
     write(*,'(a)') 'check directory "xxx/"'
     call check_dir('xxx/', iErrorOut=iError)
-    if(iError==0) write(*,*) 'ERROR: iError should not be zero!'
+    if(iError == 0) write(*,*) 'ERROR: iError should not be zero!'
 
     write(*,'(a)') 'testing make_dir'
     write(*,'(a)') 'make directory "xxx/"'
     call make_dir('xxx')
-    call check_dir('xxx/')
+    call check_dir('xxx') ! Should not stop
+    call check_dir('xxx/', iErrorOut=iError)
+    if(iError /= 0) write(*,*) 'ERROR: iError should be zero! iError=', iError
     write(*,'(a)') 'make xxx/ directory again (should not produce an error)'
     call make_dir('xxx', iErrorOut=iError)
     write(*,*) iError
