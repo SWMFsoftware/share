@@ -270,42 +270,38 @@ contains
 
     use iso_c_binding
 
-    !INPUT ARGUMENTS:
     character(len=*), intent(in):: NameDir ! Directory name
 
     integer, intent(in), optional:: iPermissionIn ! Access permission
 
-    !OUTPUT ARGUMENTS:
     integer, intent(out), optional:: iErrorOut    ! 0 on success, -1 otherwise
     integer, intent(out), optional:: iErrorNumberOut ! C error number
 
-    !DESCRIPTION:
     ! Create the directory specified by NameDir. Trailing spaces are ignored.
     ! Nested directories are also allowed.
     ! If the directory already exists, this function does nothing.
     !
     ! The optional iPermissionIn parameter sets the permissions for the new
     ! directory. This should be specified in octal notation, which in
-    ! Fortran is written with a capital O followed by the digits in quotes. 
+    ! Fortran is written with a capital O followed by the digits in quotes.
     ! For instance, the permissions 0755 would be written as O'0775',
     ! which is the default value (drwxr-xr-x).
-    ! The actual directory will have permissions modified by 
-    ! the default mask (set by the Unix command umask). 
+    ! The actual directory will have permissions modified by
+    ! the default mask (set by the Unix command umask).
     !
-    ! The optional iErrorOut is set to 0 if no error occured and -1 otherwise. 
+    ! The optional iErrorOut is set to 0 if no error occured and -1 otherwise.
     ! If iError is not present, the code stops with an error message.
     !
     ! The iErrorNumber contains the return value from the C mkdir() function.
     ! Values of iErrorNumber are found in errno.h and are not standardized,
     ! so exact values of these should not be relied upon.
-    !EOP
 
     integer(c_int):: iPermission ! Octal permissions (value passed to C)
     integer:: iErrorNumber       ! Error number as returned from C
     integer:: iError             ! Return value as retrieved from C
 
     interface
-       ! Interface for mkdir_wrapper implemented in ModUtility_c.c
+       ! Interface for make_dir_c implemented in ModUtility_c.c
        integer(kind=c_int) function make_dir_c(path, perm, errno) bind(C)
          use iso_c_binding
          character(kind=c_char), intent(in):: path
@@ -318,28 +314,28 @@ contains
     integer:: i, j, k, l
 
     character(len=*), parameter:: NameSub = 'make_dir'
-    !------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     if(.not. present(iPermissionIn)) then
        iPermission = O'0755'
     else
        iPermission = iPermissionIn
     endif
 
-    ! Create the directory. 
+    ! Create the directory.
     ! If NameDir contains one or more /, then create the top directory first
     ! and then the subdirectories.
 
     l = len_trim(NameDir)
     i = 1
     do
-       ! Find the next '/' in NameDir
+       ! Find the next '/' in NameDir, but not the first character
        j = l
-       k = index(NameDir(i:l), '/')
-       if(k > 1) j = i + k - 1
+       k = index(NameDir(i+1:l), '/')
+       if(k > 0) j = i + k
 
-       ! Create (sub)directory. This line should NOT be broken so that
-       ! target LIB_NO_C works!
-       iError = make_dir_c(NameDir(1:j)//C_NULL_CHAR, iPermission, iErrorNumber)
+       ! Create (sub)directory
+       iError = make_dir_c(NameDir(1:j)//C_NULL_CHAR, &
+            iPermission, iErrorNumber)
 
        ! Check for errors
        if(iError /= 0)then
@@ -348,9 +344,9 @@ contains
              if(present(iErrorNumberOut)) iErrorNumberOut = iErrorNumber
              RETURN
           else
-             write(*,*) NameSub,' iError, iErrorNumber=', iError, iErrorNumber 
+             write(*,*) NameSub,' iError, iErrorNumber=', iError, iErrorNumber
              call CON_stop(NameSub// &
-                  ' failed to open directory '//trim(NameDir))
+                  ' failed to create directory '//trim(NameDir(1:j)))
           end if
        end if
 
@@ -938,10 +934,10 @@ contains
     if(iError == 0) write(*,*) 'ERROR: iError should not be zero!'
 
     write(*,'(a)') 'testing make_dir'
-    write(*,'(a)') 'make directory "xxx/"'
-    call make_dir('xxx')
+    write(*,'(a)') 'make directory "xxx/yyy"'
+    call make_dir('xxx/yyy')
     call check_dir('xxx') ! Should not stop
-    call check_dir('xxx/', iErrorOut=iError)
+    call check_dir('xxx/yyy', iErrorOut=iError)
     if(iError /= 0) write(*,*) 'ERROR: iError should be zero! iError=', iError
     write(*,'(a)') 'make xxx/ directory again (should not produce an error)'
     call make_dir('xxx', iErrorOut=iError)
