@@ -316,7 +316,7 @@ contains
     character(len=*), parameter:: NameSub = 'make_dir'
     !--------------------------------------------------------------------------
     if(.not. present(iPermissionIn)) then
-       iPermission = 439 ! same as O'0755', but gfortran does not like that
+       iPermission = 493 ! same as O'0755', but gfortran does not like that
     else
        iPermission = iPermissionIn
     endif
