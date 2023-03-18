@@ -4,6 +4,7 @@
 
 #include <sys/stat.h>
 #include <errno.h>
+#include <stdio.h>
 
 /** 
 
@@ -17,10 +18,9 @@
 int make_dir_c(const char *path, int perm, int *mkdir_errno)
 {
 
-  mode_t uperm=perm;
-
+  // printf("perm= %o\n", perm);
   // Make the directory
-  int retval = mkdir(path, uperm);
+  int retval = mkdir(path, perm);
 
   *mkdir_errno = errno;
 
