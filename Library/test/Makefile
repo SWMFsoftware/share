@@ -457,7 +457,7 @@ test_utilities:
 	-@(diff -b test_utilities.tmp test_utilities.log \
 						>  test_utilities.diff)
 	@ls -l test_utilities.diff
-	@rmdir xxx
+	@rmdir xxx/yyy; rmdir xxx
 
 #######################################################################
 test_triangulate_exe:

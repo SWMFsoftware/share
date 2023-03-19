@@ -56,6 +56,7 @@ OBJECTS = \
 	ModTriangulate.o\
 	ModTriangulateSpherical.o\
 	ModUtility.o\
+	ModUtility_c.o\
 	ModGridInfo.o\
 	GridInfo.o\
 	CON_axes.o\
