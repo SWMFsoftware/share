@@ -7,7 +7,8 @@ pro compare_insitu_one, file_sim=file_sim,                      $
                         dir_obs=dir_obs, dir_plot=dir_plot,     $
                         DoSaveObs=DoSaveObs,DoLogT=DoLogT,      $
                         EventTimeDist=EventTimeDist,            $
-                        TimeWindowDist=TimeWindowDist
+                        TimeWindowDist=TimeWindowDist,          $
+                        DoPlotDeltaB=DoPlotDeltaB
 
   if (not keyword_set(extra_plt_info)) then begin
      extra_plt_info = ''
@@ -18,7 +19,7 @@ pro compare_insitu_one, file_sim=file_sim,                      $
   if (not keyword_set(UseTimePlotName)) then UseTimePlotName = 0
   if (not keyword_set(CharSizeLocal))   then CharSizeLocal = 2.5
   if (not keyword_set(DoPlotTe))        then DoPlotTe = 0
-
+  if (not keyword_set(DoPlotDeltaB))    then DoPlotDeltaB = 0
   if (not keyword_set(Model)) then Model = 'AWSoM'
 
   if (not isa(DoSaveObs)) then DoSaveObs = 1
@@ -30,7 +31,8 @@ pro compare_insitu_one, file_sim=file_sim,                      $
 
   read_swmf_sat, file_sim, time_swmf, n_swmf, ux_swmf, uy_swmf,        $
                  uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf, $
-                 ut_swmf, ur_swmf, B_swmf, DoContainData=DoContainData,$
+                 ut_swmf, ur_swmf, B_swmf, Btotal_swmf,                $
+                 DoContainData=DoContainData,                          $
                  TypeData=TypeData, TypePlot=TypePlot,                 $
                  start_time=start_time, end_time=end_time
   
@@ -90,12 +92,13 @@ pro compare_insitu_one, file_sim=file_sim,                      $
 
   plot_insitu, time_obs, u_obs,  n_obs,  tem_obs, mag_obs,             $
                time_swmf, ut_swmf, n_swmf,  ti_swmf,  te_swmf, B_swmf, $
-               start_time, end_time, typeData=typeData,                $
+               Btotal_swmf, start_time, end_time, typeData=typeData,   $
                charsize=CharSizeLocal, DoPlotTe = DoPlotTe,            $
                legendNames=Model, DoLogT=DoLogT,                       $
                file_dist=fileplot.replace('.eps','.txt'),              $
-               EventTimeDist=EventTimeDist, TimeWindowDist=TimeWindowDist
-
+               EventTimeDist=EventTimeDist, TimeWindowDist=TimeWindowDist,$
+               DoPlotDeltaB=DoPlotDeltaB
+  
   device,/close_file
 end
 
