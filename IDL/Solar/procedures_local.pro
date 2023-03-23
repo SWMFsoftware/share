@@ -1168,10 +1168,10 @@ end
 ;--------------------------------------------------------------------
 
 pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
-                   ut, ur, bt, nvars, data, varnames,                     $
+                   ut, ur, bt, btotal, nvars, data, varnames,                     $
                    DoContainData=DoContainData, nData=nData,              $
                    TypeData=TypeData, TypePlot=TypePlot, start_time=start_time,   $
-                   end_time=end_time
+                   end_time=end_time, DoPlotDeltaB=DoPlotDeltaB
 
   DoContainData = 1
   TypeData = 'none'
@@ -1257,7 +1257,7 @@ pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
 
            ;; split line into numbers
            string_to_array,line, numbers, nvars
-
+           
            ;; create arrays to read data into
            data_ = dblarr(nvars)
            data  = dblarr(nvars,buf)
@@ -1359,6 +1359,18 @@ pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
         'uz'         : iuz   = i
         'p'          : ip    = i
         'pe'         : ipe   = i
+        'ehot'       : begin
+           iehot = i
+           DoEhot = 1
+        end
+        'i01'        : begin
+           ii01  = i
+           DoI01 = 1
+        end
+        'i02'        : begin
+           ii02  = i
+           DoI02 = 1
+        end
         else:
      endcase
   endfor
@@ -1380,7 +1392,12 @@ pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
   bz     =data(*,ibz)
   p      =data(*,ip)            ;dyne/cm2
   pe     =data(*,ipe)
-
+  if (DoEhot) then  ehot   =data(*,iehot)
+  if (DoI01 && DoI02) then begin
+     DoPlotDeltaB = 1
+     i01    =data(*,ii01)
+     i02    =data(*,ii02)       ; ergs/cc
+  endif else DoPlotDeltaB = 0
   nData = n_elements(year)
 
   time=strarr(nData)
@@ -1404,7 +1421,12 @@ pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
   k  = 1.3807e-23
   ti = p*ProtonMass/rho/k*1.e-7
   te = pe*ProtonMass/rho/k*1.e-7
-
+  if (DoI01 && DoI02) then begin
+     ew = i01 + i01             ;ergs/cc
+     deltab = sqrt(4*!pi*ew)    ; Gauss
+     deltau = sqrt(ew/rho)      ; cm/s
+     btotal = sqrt(bt^2+deltab^2) ; Gauss
+  endif
   start_time = time(0)
   end_time   = time(n_elements(time)-1)
 
@@ -1552,18 +1574,19 @@ end
 
 pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
                  time_simu, u_simu, n_simu, ti_simu, te_simu, b_simu,         $
-                 start_time, end_time, fileplot=fileplot, typeData=typeData,  $
-                 charsize=charsize, colorLocal=colorLocal,                    $
+                 btotal_simu, start_time, end_time, fileplot=fileplot,         $
+                 typeData=typeData, charsize=charsize, colorLocal=colorLocal, $
                  DoPlotTe=DoPlotTe, legendNames = legendNames,                $
                  legendPosL=legendPosL, legendPosR=legendPosR,                $
                  DoShowDist=DoShowDist, DoLogRho=DoLogRho, DoLogT=DoLogT,     $
                  IsOverPlot=IsOverPlot, DoLegend=DoLegend,                    $
                  ymin_I=ymin_I, ymax_I=ymax_I, linethick=linethick,           $
                  nLegendPlot=nLegendPlot,file_dist=file_dist,                 $
-                 EventTimeDist=EventTimeDist, TimeWindowDist=TimeWindowDist
+                 EventTimeDist=EventTimeDist, TimeWindowDist=TimeWindowDist,  $
+                 DoPlotDeltaB=DoPlotDeltaB
 
   if (not isa(DoPlotTe)) then DoPlotTe = 1
-
+  
   if (not isa(legendNames)) then begin
      if DoPlotTe then begin
         legendNamesLocal = ['AWSoM', 'AWSoM Te']
@@ -1758,7 +1781,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   ymax = ymax_I[3]
 
   pos=[x1[0],y1[0],x2[0],y2[0]]
-
+  
   if IsOverPlot ne 1 then $
      utplot,utc_obs(index_B),B_obs(index_B),background=7,color=0,            $
             ytitle='B [nT]',thick=9,                                         $
@@ -1768,7 +1791,12 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   utplot,time_simu, b_simu*1.e5, background=7, color=colorLocal,             $
          thick=linethick, timerange=[start_time,end_time],                   $
          yrange=[ymin,ymax],xstyle=5,ystyle=5, position=pos, /noerase
-
+  if (DoPlotDeltaB) then begin
+     utplot,time_simu, btotal_simu*1.e5, background=7, color=4,          $
+            thick=linethick, timerange=[start_time,end_time],                $
+            yrange=[ymin,ymax],xstyle=5,ystyle=5, position=pos, /noerase,    $
+            linestyle=0
+  endif
   if DoShowDist ne 0 then legend,dist_int(3),thick=5,charsize=1,charthick=5,  $
                                  position=[0.75,legendPosR-0.67],/norm,box=0
 end

@@ -40,7 +40,7 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
   if (not keyword_set(UseTimePlotName)) then UseTimePlotName = 0
   if (not keyword_set(CharSizeLocal))   then CharSizeLocal = 2.5
   if (not keyword_set(DoPlotTe))        then DoPlotTe = 0
-
+  
   if (strpos(dir_sim, 'AWSoM2T') ge 0) then begin
      Model = 'AWSoM-2T'
   endif else if (strpos(dir_sim, 'AWSoMR') ge 0) then begin
@@ -101,21 +101,24 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
 
            read_swmf_sat, file_sim_adapt, time_swmf, n_swmf, ux_swmf, uy_swmf,        $
                           uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf,       $
-                          ut_swmf, ur_swmf, B_swmf, DoContainData=DoContainData,      $
+                          ut_swmf, ur_swmf, B_swmf, Btotal_swmf,                      $
+                          DoContainData=DoContainData,                                $
                           TypeData=TypeData, TypePlot=TypePlot,                       $
-                          start_time=start_time, end_time=end_time
-
+                          start_time=start_time, end_time=end_time,                   $
+                          DoPlotDeltaB=DoPlotDeltaB
+           
            if DoContainData ne 1 then begin
               print, " Error: filename=", file_sim_adapt, " does not contain any data"
               continue
            endif
-
+           
            u_max = max([u_max, ut_swmf])
            n_max = max([n_max, n_swmf])
            T_max = max([T_max, ti_swmf])
            B_max = max([B_max, B_swmf*1e5])
+           if DoPlotDeltaB then Btotal_max = max([B_max, Btotal_swmf*1e5])
         endfor
-
+        
         get_insitu_data, start_time, end_time, TypeData, u_obs, n_obs, tem_obs,  $
                          mag_obs, time_obs, DoContainData=DoContainData
 
@@ -123,7 +126,7 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
            print, " Error: no observational data are found."
            continue
         endif
-
+        
         u_max = max([u_max, u_obs])*1.3
         n_max = max([n_max, n_obs])*1.3
         T_max = max([T_max, tem_obs])*1.3
@@ -134,17 +137,20 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
 
            read_swmf_sat, file_sim_adapt, time_swmf, n_swmf, ux_swmf, uy_swmf,        $
                           uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf,       $
-                          ut_swmf, ur_swmf, B_swmf, DoContainData=DoContainData,      $
+                          ut_swmf, ur_swmf, B_swmf, Btotal_swmf,                      $
+                          DoContainData=DoContainData,                                $
                           TypeData=TypeData, TypePlot=TypePlot,                       $
-                          start_time=start_time, end_time=end_time
-
+                          start_time=start_time, end_time=end_time,                   $
+                          DoPlotDeltaB=DoPlotDeltaB
+           
            plot_insitu, time_obs, u_obs,  n_obs,  tem_obs, mag_obs,                 $
                         time_swmf, ut_swmf, n_swmf,  ti_swmf,  te_swmf, B_swmf,     $
-                        start_time, end_time, typeData=typeData,                    $
+                        Btotal_swmf, start_time, end_time, typeData=typeData,       $
                         charsize=CharSizeLocal, DoPlotTe = DoPlotTe,                $
                         legendNames=Model, DoShowDist=0, IsOverPlot=IsOverPlot,     $
-                        DoLegend=DoLegend,ymax_I=[u_max,n_max,T_max,B_max], DoLogT=1, linethick=5
-
+                        DoLegend=DoLegend,ymax_I=[u_max,n_max,T_max,B_max],         $
+                        DoLogT=1, linethick=5, DoPlotDeltaB=DoPlotDeltaB
+           
            IsOverPlot = 1
            DoLegend   = 0
         endfor
@@ -158,7 +164,7 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
                                CharSizeLocal=CharSizeLocal, DoPlotTe=DoPlotTe,            $
                                Model=Model, dir_obs=dir_obs, dir_plot=dirs_adapt[iFile],  $
                                DoSaveObs=DoSaveObs, DoLogT=1, EventTimeDist=EventTimeDist,$
-                               TimeWindowDist=TimeWindowDist
+                               TimeWindowDist=TimeWindowDist, DoPlotDeltaB=DoPlotDeltaB
            DoSaveObs = 0
         endfor
      endfor
@@ -175,7 +181,7 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
                          CharSizeLocal=CharSizeLocal, DoPlotTe=DoPlotTe,   $
                          Model=Model, dir_obs=dir_obs, dir_plot=dir_plot,  $
                          DoSaveObs=DoSaveObs, EventTimeDist=EventTimeDist, $
-                         TimeWindowDist=TimeWindowDist
+                         TimeWindowDist=TimeWindowDist,                    $
+                         DoPlotDeltaB=DoPlotDeltaB
   endfor
 end
-
