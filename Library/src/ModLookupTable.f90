@@ -38,7 +38,7 @@ module ModLookupTable
   public:: get_lookup_table         ! get information from a lookup table
   public:: test_lookup_table        ! unit test
 
-  integer, public, parameter:: MaxTable = 20 ! maximum number of tables
+  integer, public, parameter:: MaxTable = 40 ! maximum number of tables
   integer, public :: nTable = 0     ! actual number of tables
 
   public:: TableType
