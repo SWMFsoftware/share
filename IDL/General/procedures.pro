@@ -77,17 +77,14 @@ pro set_default_values
   !y.tickname=strarr(60)
 
 ; Confirmation for set parameters
-  common ask_param, $
-     doask
+  common ask_param, doask
   doask=0
   
 ; behavior on error: 0: stop in the unit (for debug), 2=return to main
-  common debug_param, $
-     onerror
+  common debug_param, onerror
   onerror=2
 
-  common fits_param, $
-     noresize
+  common fits_param, noresize
   noresize=0                    ; Keep original size of fits image
 
 ; Parameters for read_data
@@ -837,7 +834,7 @@ pro plot_data
 end
 ;===========================================================================
 pro show_data
-  on_error, onerror
+  common debug_param & on_error, onerror
   ;; read data and plot it
   read_data
   plot_data
