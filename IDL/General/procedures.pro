@@ -837,7 +837,8 @@ pro plot_data
 end
 ;===========================================================================
 pro show_data
-  ; read data and plot it
+  on_error, onerror
+  ;; read data and plot it
   read_data
   plot_data
 end
@@ -3997,7 +3998,7 @@ pro plot_func
         else begin
            dx = xx(1:*,*) - xx(0:-2,*)
            if max(dx) - min(dx) gt 1e-6 then uniform = 0
-           if uniform and ndim gt 1 then begin
+           if uniform and plotdim gt 1 then begin
               dy = yy(*,1:*) - yy(*,0:-2)
               if max(dy) - min(dy) gt 1e-6 then uniform = 0
            endif
