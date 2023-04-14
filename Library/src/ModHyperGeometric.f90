@@ -13,6 +13,8 @@ module ModHyperGeometric
   public :: cothu    ! converts \kappa^\prime^2=\exp(-2u) to \coth (u)
   public :: scr_inductance    ! inductance of a superconducting ring
   public :: l0_ext_inductance ! the external inductance of a ring current
+  public :: l0_int_inductance ! self-inductance of a uniform ring current
+  public :: l0_tor_inductance ! toroidal field inductane
   public :: calc_elliptic_int_1kind  ! Elliptic integral, of the first kind
   public :: calc_elliptic_int_2kind  ! Elliptic integral, of the second kind
   real, parameter:: cTolerance_I(0:1) = [1.0e-7, 1.0e-15]
@@ -315,6 +317,47 @@ contains
     l0_ext_inductance = 0.50*toroid_p(0, KappaPrime2In=KappaPrime2)*cPi**2/&
          toroid_q(0,KappaPrime2In=KappaPrime2)
   end function l0_ext_inductance
+  !============================================================================
+  real function l0_int_inductance(KappaPrime2)
+    real, intent(in):: KappaPrime2
+
+    ! calculate the ratio of self-inductance of a uniform ring current
+    ! to \mu_0R_\infty as a function of (k^prime_0)^2.
+    real :: CurrentE      ! Uniform current
+    real :: Kappa2, Kappa
+    real :: ToroidQ0U0    ! Q^{-1}_{-1/2}(u_0)
+    real :: DToroidQ0DuU0 ! dQ^{-1}_{-1/2}(u_0)/du_0
+    !--------------------------------------------------------------------------
+    Kappa2 = 1 - KappaPrime2; Kappa = sqrt(Kappa2)
+    ToroidQ0U0 = Kappa2*Kappa*toroid_q(0,KappaPrime2In=KappaPrime2)
+    ! dQ^{-1}_{-1/2)(u_0)/du_0 = 3*KappaPrime0/Kappa0**2*Q^{-1}_{1/2}(u_0)
+    DToroidQ0DuU0 = 3*KappaPrime2*Kappa*toroid_q(1,KappaPrime2In=KappaPrime2)
+    CurrentE = -1/DToroidQ0DuU0
+    l0_int_inductance = 4*cPi**2*CurrentE*&
+         ( (cothu(KappaPrime2) - 1)*0.75*CurrentE - 1/ToroidQ0U0)
+  end function l0_int_inductance
+  !============================================================================
+  real function l0_tor_inductance(KappaPrime2)
+    real, intent(in):: KappaPrime2
+
+    ! calculate the ratio of self-inductance of a uniform ring current
+    ! to \mu_0R_\infty as a function of (k^prime_0)^2.
+    real :: CurrentE      ! Uniform current
+    real :: Kappa2, Kappa
+    real :: ToroidQ0U0    ! Q^{-1}_{-1/2}(u_0)
+    real :: DToroidQ0DuU0 ! dQ^{-1}_{-1/2}(u_0)/du_0
+    real :: DToroidP0DuU0 ! dP^{-1}_{-1/2}(u_0)/du_0
+    !--------------------------------------------------------------------------
+    Kappa2 = 1 - KappaPrime2; Kappa = sqrt(Kappa2)
+    ToroidQ0U0 = Kappa2*Kappa*toroid_q(0,KappaPrime2In=KappaPrime2)
+    ! dQ^{-1}_{-1/2)(u_0)/du_0 = 3*KappaPrime0/Kappa0**2*Q^{-1}_{1/2}(u_0)
+    DToroidQ0DuU0 = 3*KappaPrime2*Kappa*toroid_q(1,KappaPrime2In=KappaPrime2)
+    ! dP^{-1}_{-1/2)(u_0)/du_0 = 3*KappaPrime0/Kappa0**2*P^{-1}_{1/2}(u_0)
+    DToroidP0DuU0 = 3*KappaPrime2*Kappa*toroid_p(1,KappaPrime2In=KappaPrime2)
+    CurrentE = -1/DToroidQ0DuU0
+    l0_tor_inductance = cPi**2*CurrentE*DToroidP0DuU0*&
+         ( (cothu(KappaPrime2) - 1)*0.75*CurrentE*ToroidQ0U0 - 1)
+  end function l0_tor_inductance
   !============================================================================
   real function cothu(KappaPrime2In)
     real, intent(in)     :: KappaPrime2In
