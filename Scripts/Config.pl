@@ -943,8 +943,10 @@ sub set_amrex_{
 	$AmrexCompiler="nag" if $Compiler eq "nagfor";
 	$AmrexCompiler="pgi" if $Compiler eq "pgf90" or $Compiler eq "nvfortran";
 	
+	my $AmrexDim = 3;
+
 	&shell_command("cd util/AMREX;", 
-		       "./configure --prefix $installdir --comp $AmrexCompiler --enable-fortran-api no --debug $Debug --enable-tiny-profile yes;",
+		       "./configure --prefix $installdir --comp $AmrexCompiler --enable-fortran-api no --debug $Debug --enable-tiny-profile yes --dim $AmrexDim;",
 		       "rm -rf util/AMREX/InstallDir");
 	
 	$IsStrict = 0;

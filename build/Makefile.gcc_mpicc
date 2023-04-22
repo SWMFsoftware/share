@@ -9,7 +9,7 @@ LINK.cpp = ${COMPILE.c} -lstdc++
 
 CPPLIB = -lstdc++ -lmpi_cxx -lmpi++
 
-#DEBUGC =  -g 
+#DEBUGC =  -g -Wall -Wextra -Wno-unused-parameter
 
 .SUFFIXES: .c .cpp
 
