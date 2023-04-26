@@ -1643,13 +1643,20 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   utc_obs = anytim2utc(cdf2utc(time_obs),/external)
 
   if DoShowDist then begin
-
-     dist_int = calc_dist_insitu(time_obs, u_obs, n_obs, T_obs, B_obs,     $
-                                 time_simu,u_simu,n_simu,ti_simu,b_simu,   $
-                                 dist_int_u, dist_int_t,                   $
-                                 dist_int_n, dist_int_b,                   $
-                                 EventTimeDist, TimeWindowDist)
-
+     if (DoPlotDeltaB) then begin
+        dist_int = calc_dist_insitu(time_obs, u_obs, n_obs, T_obs, B_obs,     $
+                                    time_simu,u_simu,n_simu,ti_simu,          $
+                                    btotal_simu,                     $
+                                    dist_int_u, dist_int_t,                   $
+                                    dist_int_n, dist_int_b,                   $
+                                    EventTimeDist, TimeWindowDist)
+     endif else begin
+        dist_int = calc_dist_insitu(time_obs, u_obs, n_obs, T_obs, B_obs,     $
+                                    time_simu,u_simu,n_simu,ti_simu,b_simu,   $
+                                    dist_int_u, dist_int_t,                   $
+                                    dist_int_n, dist_int_b,                   $
+                                    EventTimeDist, TimeWindowDist)
+     endelse
      openw, lun_dist, file_dist, /get_lun
      printf,lun_dist, 'Dist_U ='+STRING(trim(dist_int_u),format='(f6.3)')
      printf,lun_dist, 'Dist_N ='+STRING(trim(dist_int_n),format='(f6.3)')
@@ -1788,15 +1795,16 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
             timerange=[start_time,end_time],xstyle=1,yrange=[ymin,ymax],     $
             ysytle=1, charsize=charsize,                                     $
             charthick=5,xthick=5,ythick=5,position=pos
-  utplot,time_simu, b_simu*1.e5, background=7, color=colorLocal,             $
-         thick=linethick, timerange=[start_time,end_time],                   $
-         yrange=[ymin,ymax],xstyle=5,ystyle=5, position=pos, /noerase
   if (DoPlotDeltaB) then begin
-     utplot,time_simu, btotal_simu*1.e5, background=7, color=4,          $
+     utplot,time_simu, btotal_simu*1.e5, background=7, color=colorLocal,$
             thick=linethick, timerange=[start_time,end_time],                $
             yrange=[ymin,ymax],xstyle=5,ystyle=5, position=pos, /noerase,    $
             linestyle=0
-  endif
+  endif else begin
+     utplot,time_simu, b_simu*1.e5, background=7, color=colorLocal,             $
+            thick=linethick, timerange=[start_time,end_time],                   $
+            yrange=[ymin,ymax],xstyle=5,ystyle=5, position=pos, /noerase
+  endelse
   if DoShowDist ne 0 then legend,dist_int(3),thick=5,charsize=1,charthick=5,  $
                                  position=[0.75,legendPosR-0.67],/norm,box=0
 end
@@ -1843,7 +1851,7 @@ pro download_images,  TimeEvent = TimeEvent, CaseInst = CaseInst,    $
                                  /extract) , '/')
 
   TimeRange = TimeStart + '-' + TimeEnd
-
+  print,'TimeRange =',TimeRange
   case CaseInst of
      'aia': $
         ListLocal_I = vso_search(date=TimeRange, source='SDO', det='aia', $
