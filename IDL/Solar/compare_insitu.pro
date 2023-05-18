@@ -49,7 +49,11 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
      Model = 'AWSoM'
   endif
   
-  if (keyword_set(ModelIn)) then Model = ModelIn
+  if (keyword_set(ModelIn)) then begin
+     if (ModelIn ne 'DEFAULT') then Model = ModelIn
+  endif else begin
+     Model = 'AWSoM'
+  endelse
 
   files_sim = file_search(dir_sim+'/*sat', count = nSimFile)
 
