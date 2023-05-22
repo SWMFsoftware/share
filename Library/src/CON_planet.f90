@@ -99,6 +99,13 @@ module CON_planet
   real :: Excentricity    ! Dimless
   ! Euler angles of orbit (in degs):
   real :: RightAscension, Inclination, ArgPeriapsis
+  ! Derived orbital elements
+  ! 1. Matrix to transform from orbital coordinates
+  !    xOrb, yOrb to Xyz in HGI:
+  !    XyzHgi = matmul(HgiOrb_DD, [xOrb, yOrb, 0.0])
+  real :: HgiOrb_DD(3,3)
+  ! 2. Major and minor semi-axii
+  real :: SemiMinorAxis, SemiMajorAxis
 
 contains
   !============================================================================
@@ -243,7 +250,7 @@ contains
     Inclination      = Inclination*cDegToRad
     ArgPeriapsis     = ArgPeriapsis_I(Planet_)
     ArgPeriapsis     = ArgPeriapsis*cDegToRad
-
+    call get_orbit_elements
     ! For Enceladus the dipole is at Saturn's center
     if(Planet_==Enceladus_) MagCenter_D(2)    = 944.23
 
@@ -487,6 +494,9 @@ contains
           call normalize_schmidt_coefficients
        end if
     case('#ORBIT')
+       call read_var('OrbitalPeriodPlanet', OrbitalPeriodPlanet_I(Planet_))
+       OmegaOrbit = cTwoPi/OrbitalPeriodPlanet_I(Planet_)
+       ! Correct omega planet?
        call read_var('rOrbitPlanet',rOrbitPlanet) ! [m]
        call read_var('Excentricity',Excentricity) ! dimless
        ! read Euler angles of orbit (read in degs, convert to rads):
@@ -496,7 +506,7 @@ contains
        Inclination = Inclination*cDegToRad
        call read_var('ArgPeriapsis',ArgPeriapsis)
        ArgPeriapsis = ArgPeriapsis*cDegToRad
-
+       call get_orbit_elements
     end select
 
   end subroutine read_planet_var
@@ -593,6 +603,16 @@ contains
     deallocate(S)
 
   end subroutine normalize_schmidt_coefficients
+  !============================================================================
+  subroutine get_orbit_elements
+    use ModCoordTransform, ONLY: rot_matrix_x, rot_matrix_z
+    !--------------------------------------------------------------------------
+    HgiOrb_DD = matmul(rot_matrix_z(-RightAscension), &
+         rot_matrix_x(-Inclination))
+    HgiOrb_DD = matmul(HgiOrb_DD, rot_matrix_z(-ArgPeriapsis))
+    SemiMajorAxis = rOrbitPlanet   ! Check acculacy!
+    SemiMinorAxis= SemiMajorAxis/(1 - Excentricity**2)
+  end subroutine get_orbit_elements
   !============================================================================
 
 end module CON_planet
