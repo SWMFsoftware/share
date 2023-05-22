@@ -14,7 +14,7 @@ module CON_planet
   ! Components can only access the data through the inquiry methods
   ! via the {\bf CON\_physics} class.
 
-  use ModNumConst, ONLY: cTwoPi
+  use ModNumConst, ONLY: cTwoPi, cDegToRad
   use ModPlanetConst
   use ModTimeConvert, ONLY: TimeType, time_int_to_real
   use ModUtilities, ONLY: CON_stop
@@ -94,6 +94,12 @@ module CON_planet
   character (len=200) :: NamePlanetHarmonicsFile
   real, allocatable :: g_Planet(:, :), h_Planet(:, :)
 
+  ! Orbit parameters
+  real :: rOrbitPlanet     ! [m]
+  real :: Excentricity    ! Dimless
+  ! Euler angles of orbit (in degs):
+  real :: RightAscension, Inclination, ArgPeriapsis
+
 contains
   !============================================================================
 
@@ -133,9 +139,19 @@ contains
     DipoleStrength   = DipoleStrengthPlanet_I(Earth_)
     MagAxisThetaGeo  = bAxisThetaPlanet_I(Earth_)
     MagAxisPhiGeo    = bAxisPhiPlanet_I(Earth_)
+    rOrbitPlanet     = rOrbitPlanet_I(Earth_)  ! [m]
+    Excentricity     = Excentricity_I(Earth_) ! dimless
+    ! Euler angles of orbit (read in degs, convert to rads):
+    RightAscension   = RightAscension_I(Earth_)
+    RightAscension   = RightAscension*cDegToRad
+    Inclination      = Inclination_I(Earth_)
+    Inclination      = Inclination*cDegToRad
+    ArgPeriapsis     = ArgPeriapsis_I(Earth_)
+    ArgPeriapsis     = ArgPeriapsis*cDegToRad
 
     !$acc update device(OmegaPlanet, AngleEquinox, OmegaRotation, TimeEquinox, &
-    !$acc MagAxisPhi, MagAxisTheta)
+    !$acc MagAxisPhi, MagAxisTheta,  rOrbitPlanet, Excentricity,               &
+    !$acc RightAscension, Inclination, ArgPeriapsis)
 
   end subroutine set_planet_defaults
   !============================================================================
@@ -218,11 +234,22 @@ contains
     MagAxisThetaGeo   = bAxisThetaPlanet_I(Planet_)  ! Permanent theta  in GEO
     MagAxisPhiGeo     = bAxisPhiPlanet_I(Planet_)    ! Permanent phi    in GEO
 
+    rOrbitPlanet     = rOrbitPlanet_I(Planet_)  ! [m]
+    Excentricity     = Excentricity_I(Planet_) ! dimless
+    ! Euler angles of orbit (read in degs, convert to rads):
+    RightAscension   = RightAscension_I(Planet_)
+    RightAscension   = RightAscension*cDegToRad
+    Inclination      = Inclination_I(Planet_)
+    Inclination      = Inclination*cDegToRad
+    ArgPeriapsis     = ArgPeriapsis_I(Planet_)
+    ArgPeriapsis     = ArgPeriapsis*cDegToRad
+
     ! For Enceladus the dipole is at Saturn's center
     if(Planet_==Enceladus_) MagCenter_D(2)    = 944.23
 
     !$acc update device(OmegaPlanet, AngleEquinox, OmegaRotation, TimeEquinox, &
-    !$acc MagAxisPhi, MagAxisTheta)
+    !$acc MagAxisPhi, MagAxisTheta,  rOrbitPlanet, Excentricity,               &
+    !$acc RightAscension, Inclination, ArgPeriapsis)
 
   end function is_planet_init
   !============================================================================
@@ -459,6 +486,16 @@ contains
 
           call normalize_schmidt_coefficients
        end if
+    case('#ORBIT')
+       call read_var('rOrbitPlanet',rOrbitPlanet) ! [m]
+       call read_var('Excentricity',Excentricity) ! dimless
+       ! read Euler angles of orbit (read in degs, convert to rads):
+       call read_var('RightAscension', RightAscension)
+       RightAscension = RightAscension*cDegToRad
+       call read_var('Inclination', Inclination)
+       Inclination = Inclination*cDegToRad
+       call read_var('ArgPeriapsis',ArgPeriapsis)
+       ArgPeriapsis = ArgPeriapsis*cDegToRad
 
     end select
 
