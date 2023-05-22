@@ -31,6 +31,9 @@ module ModPlanetConst
   ! FOUND AT THE END OF THE FILE AND IN THE CODE DOCUMENTATION (we hope).
 
   real,dimension(0:MaxPlanet+1):: rPlanet_I, mPlanet_I, rOrbitPlanet_I
+  real,dimension(0:MaxPlanet+1):: Excentricity_I   ! Dimless
+  ! Euler angles of orbit (in degs):
+  real,dimension(0:MaxPlanet+1):: RightAscension_I, Inclination_I, ArgPeriapsis_I
   real,dimension(0:MaxPlanet+1):: OrbitalPeriodPlanet_I, RotationPeriodPlanet_I
 
   integer,dimension(0:MaxPlanet+1) :: &
@@ -110,6 +113,10 @@ contains
     rOrbitPlanet_I                   = 0.0                     ! [ m]
     OrbitalPeriodPlanet_I            = 0.0                     ! [ s]
     RotationPeriodPlanet_I           = 0.0                     ! [ s]
+    Excentricity_I                   = 0.0                     ! dimless
+    RightAscension_I                 = 0.0                     ! [Degs]
+    Inclination_I                    = 0.0                     ! [Degs]
+    ArgPeriapsis_I                   = 0.0                     ! [Degs]
 
     iYearEquinoxPlanet_I             =2000                     ! [yr]
     iMonthEquinoxPlanet_I            =   1                     ! [mo]
@@ -154,6 +161,10 @@ contains
     rOrbitPlanet_I(Earth_)              = cAU                     ! [ m]
     OrbitalPeriodPlanet_I(Earth_)       = 365.24218967 * cDay     ! [ s]
     RotationPeriodPlanet_I(Earth_)      = cDay                    ! [ s]
+    Excentricity_I(Earth_)              = 0.016                   ! dimless
+    RightAscension_I(Earth_)            = 174.9                   ! [Degs]
+    Inclination_I(Earth_)               = 7.155                   ! [Degs]
+    ArgPeriapsis_I(Earth_)              = 288.1                   ! [Degs]
 
     iYearEquinoxPlanet_I(Earth_)        = 2000                    ! [yr]
     iMonthEquinoxPlanet_I(Earth_)       =    3                    ! [mo]
