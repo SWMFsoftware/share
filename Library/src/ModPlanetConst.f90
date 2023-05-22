@@ -162,9 +162,12 @@ contains
     OrbitalPeriodPlanet_I(Earth_)       = 365.24218967 * cDay     ! [ s]
     RotationPeriodPlanet_I(Earth_)      = cDay                    ! [ s]
     Excentricity_I(Earth_)              = 0.016                   ! dimless
-    RightAscension_I(Earth_)            = 174.9                   ! [Degs]
-    Inclination_I(Earth_)               = 7.155                   ! [Degs]
-    ArgPeriapsis_I(Earth_)              = 288.1                   ! [Degs]
+    ! As in geopack
+    RightAscension_I(Earth_)            = 75.77                   ! [Degs]
+    ! As in geopack
+    Inclination_I(Earth_)               = 7.25                    ! [Degs]
+    ! https://data.giss.nasa.gov/cgi-bin/ar5/srorbpar.cgi for year 2023
+    ArgPeriapsis_I(Earth_)              = 283.29                  ! [Degs]
 
     iYearEquinoxPlanet_I(Earth_)        = 2000                    ! [yr]
     iMonthEquinoxPlanet_I(Earth_)       =    3                    ! [mo]
