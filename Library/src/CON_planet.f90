@@ -106,7 +106,9 @@ module CON_planet
   real :: HgiOrb_DD(3,3)
   ! 2. Major and minor semi-axii
   real :: SemiMinorAxis, SemiMajorAxis
-
+  !$acc declare create(rOrbitPlanet, Excentricity)
+  !$acc declare create(RightAscension, Inclination, ArgPeriapsis)
+  !$acc declare create(HgiOrb_DD,SemiMinorAxis, SemiMajorAxis)
 contains
   !============================================================================
 
@@ -506,6 +508,8 @@ contains
        Inclination = Inclination*cDegToRad
        call read_var('ArgPeriapsis',ArgPeriapsis)
        ArgPeriapsis = ArgPeriapsis*cDegToRad
+       !$acc update device(OmegaOrbit,  rOrbitPlanet, Excentricity,    &
+       !$acc RightAscension, Inclination, ArgPeriapsis)
        call get_orbit_elements
     end select
 
@@ -612,6 +616,7 @@ contains
     HgiOrb_DD = matmul(HgiOrb_DD, rot_matrix_z(-ArgPeriapsis))
     SemiMajorAxis = rOrbitPlanet   ! Check acculacy!
     SemiMinorAxis= SemiMajorAxis/(1 - Excentricity**2)
+    !$acc update device(HgiOrb_DD, SemiMajorAxis, SemiMinorAxis)
   end subroutine get_orbit_elements
   !============================================================================
 
