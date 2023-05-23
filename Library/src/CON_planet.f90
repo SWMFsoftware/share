@@ -14,7 +14,7 @@ module CON_planet
   ! Components can only access the data through the inquiry methods
   ! via the {\bf CON\_physics} class.
 
-  use ModNumConst, ONLY: cTwoPi, cDegToRad
+  use ModNumConst, ONLY: cTwoPi, cDegToRad, cPi
   use ModPlanetConst
   use ModTimeConvert, ONLY: TimeType, time_int_to_real
   use ModUtilities, ONLY: CON_stop
@@ -157,7 +157,7 @@ contains
     Inclination      = Inclination*cDegToRad
     ArgPeriapsis     = ArgPeriapsis_I(Earth_)
     ArgPeriapsis     = ArgPeriapsis*cDegToRad
-
+    call get_orbit_elements
     !$acc update device(OmegaPlanet, AngleEquinox, OmegaRotation, TimeEquinox, &
     !$acc MagAxisPhi, MagAxisTheta,  rOrbitPlanet, Excentricity,               &
     !$acc RightAscension, Inclination, ArgPeriapsis)
@@ -611,13 +611,47 @@ contains
   subroutine get_orbit_elements
     use ModCoordTransform, ONLY: rot_matrix_x, rot_matrix_z
     !--------------------------------------------------------------------------
-    HgiOrb_DD = matmul(rot_matrix_z(-RightAscension), &
-         rot_matrix_x(-Inclination))
-    HgiOrb_DD = matmul(HgiOrb_DD, rot_matrix_z(-ArgPeriapsis))
+    ! The true formula for transformation from the 'orbital' coordinates
+    ! (for the Earth, in the ecliptic plane) to an arbitrary reference frame)
+    ! (any solar equatorial plane), the true formula is
+    ! XyzStarEquator_D = matmul(HgiOrb_DD,XyzOrb_D)
+    ! where
+    ! HgiOrb_DD = rot_matrix_z(RightAscension).rot_matrix_x(Inclination).&
+    !             rot_matrix_z(ArgPeriapsis),
+    ! where RightAscension is the angle between x-axis of the solar
+    ! equatorial coordinate system, and ascending node,
+    ! Inclination is for the orbital plane with
+    ! respect to the solar equatorial one and ArgPeriapsis is the angle between the
+    ! direction to periapsis with that to ascending node.
+    ! HOWEVER:
+    ! 1. For HGI coordinate system thus defined RightAscension = cPi
+    ! 2. and ArgPeriapsis and RightAscension are usually defined with regard
+    !    to the equinox, so what we need here is their difference
+    ! In this way the formula works for the Sun and the Earth or the star
+    ! and exoplanet, (in which cases the definition of HGI is based on the
+    ! particular choice of planet, otherwise the general formula shoud be
+    ! used with properly re-defined RightAscension and ArgPeriapsis.
+    !
+    HgiOrb_DD = matmul(rot_matrix_x(Inclination),&
+         rot_matrix_z(ArgPeriapsis - RightAscension) )
+    HgiOrb_DD = matmul(rot_matrix_z(cPi),HgiOrb_DD)
     SemiMajorAxis = rOrbitPlanet   ! Check acculacy!
-    SemiMinorAxis= SemiMajorAxis/(1 - Excentricity**2)
+    SemiMinorAxis= SemiMajorAxis*sqrt(1 - Excentricity**2)
     !$acc update device(HgiOrb_DD, SemiMajorAxis, SemiMinorAxis)
   end subroutine get_orbit_elements
+  !============================================================================
+  subroutine orbit_in_hgi(Time, XyzHgi_D)
+    real, intent(in)  :: Time
+    real, intent(out) :: XyzHgi_D(3)
+    real              :: XyzOrbit_D(3), TrueAnomaly
+    !--------------------------------------------------------------------------
+    ! Check accuracy!!!
+    TrueAnomaly = OmegaOrbit*(Time - TimeEquinox%Time) - ArgPeriapsis
+    TrueAnomaly= modulo(TrueAnomaly,cTwoPi)
+    XyzOrbit_D = [SemiMajorAxis*(cos(TrueAnomaly) - Excentricity), &
+         SemiMinorAxis*sin(TrueAnomaly), 0.0]
+    XyzHgi_D = matmul(HgiOrb_DD, XyzOrbit_D)
+  end subroutine orbit_in_hgi
   !============================================================================
 
 end module CON_planet
