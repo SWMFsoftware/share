@@ -14,8 +14,8 @@ module CON_star
   ! Components can only access the data through the inquiry methods
   ! via the {\bf CON\_physics} class.
 
-  use ModConst, ONLY: cTwoPi, cDegToRad, cPi, rSun, mSun,    &
-       RotationPeriodSun
+  use ModConst, ONLY: cTwoPi, rSun, mSun, RotationPeriodSun, &
+       cSecondPerDay
   use ModTimeConvert, ONLY: TimeType, time_int_to_real
   use ModUtilities, ONLY: CON_stop
   implicit none
@@ -23,8 +23,6 @@ module CON_star
   save
 
   character(len=*), parameter, private :: NameMod='CON_star'
-
-  character (len=3) :: NameStar = 'SUN'
 
   ! Define variables
   real           :: RadiusStar = rSun
@@ -39,7 +37,6 @@ contains
 
   subroutine read_star_var(NameCommand)
 
-    use ModUtilities, ONLY: upper_case
     use ModReadParam, ONLY: read_var, lStringLine
     use ModIoUnit,    ONLY: UnitTmp_
 
@@ -52,12 +49,14 @@ contains
     !--------------------------------------------------------------------------
     select case(NameCommand)
     case("#STAR")
-       call read_var('NameStar',NameStar)
-       
-          UseStar=.true.
-          call read_var('RadiusStar',         RadiusStar)
-          call read_var('MassStar',           MassStar)
-          call read_var('RotPeriodStar',      RotPeriodStar)
+       UseStar=.true.
+       call read_var('RadiusStar',         RadiusStar)  ! In rSun
+       RadiusStar = RadiusStar*rSun
+       call read_var('MassStar',           MassStar)
+       MassStar = MassStar*mSun
+       call read_var('RotPeriodStar',      RotPeriodStar)
+       RotPeriodStar = RotPeriodStar*cSecondPerDay
+       OmegaStar  = cTwoPi/RotPeriodStar
     case default
        call CON_stop('Unknwn NameCommand='//NameCommand//' in '//NameSub)
     end select
