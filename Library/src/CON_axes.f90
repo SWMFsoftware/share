@@ -174,7 +174,6 @@ module CON_axes
 
   integer, parameter, private :: x_=1, y_=2, z_=3
 
-
   ! Position and Velocity of Planet in HGI
   real :: XyzPlanetHgi_D(3), vPlanetHgi_D(3)
 
