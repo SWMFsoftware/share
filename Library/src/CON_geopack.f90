@@ -246,7 +246,10 @@ contains
   subroutine geopack_recalc(iYear,iMonth,iDay,iHour,iMin,iSec)
 
     use ModCoordTransform, ONLY: rot_matrix_z, rot_matrix_x
-
+    use ModConst,          ONLY: cAU
+    use CON_planet,        ONLY: RightAscension, TimeEquinox, Inclination, &
+         OmegaOrbit, UseOrbitElements, orbit_in_hgi
+    use ModTimeConvert,    ONLY: time_int_to_real
     ! Updates matrices for the coordinate transformations
     ! Computations for GeiGse_DD and GeiGsm_DD are from the subroutine
     ! RECALC of geopack.f by N.V.Tsyganenko
@@ -260,7 +263,7 @@ contains
     integer,intent(in):: iYear, iMonth, iDay, iHour, iMin, iSec
 
     integer::jDay
-    real::AxisMagGei_D(3),GSTime,SunLongitude,Obliq
+    real::AxisMagGei_D(3),GSTime,SunLongitude,Obliq, Time, XyzPlanet_D(3)
     real,parameter :: cLongAscNodeSolEquator = 75.77*cDegToRad
     ! Inclination of the solar equator on the ecliptic of date
     real,parameter :: cInclinationSolEquator = 7.25*cDegToRad
@@ -275,13 +278,23 @@ contains
 
     GeiGse_DD=&
          matmul(rot_matrix_x(Obliq),rot_matrix_z(SunLongitude-9.924E-5))
-    !
-    !   THE LAST CONSTANT IS A CORRECTION FOR THE ANGULAR ABERRATION
-    !   DUE TO THE ORBITAL MOTION OF THE EARTH
 
-    HgiGse_DD = matmul( &
-         rot_matrix_x(-cInclinationSolEquator),&
-         rot_matrix_z( SunLongitude - cLongAscNodeSolEquator ))
+    if(UseOrbitElements)then
+       call time_int_to_real([iYear,iMonth,iDay,iHour,iMin,iSec,0], Time)
+       HgiGse_DD = matmul( &
+            rot_matrix_x(-Inclination),&
+            rot_matrix_z(modulo(OmegaOrbit*(Time - TimeEquinox%Time),cTwoPi) &
+            - RightAscension))
+       call orbit_in_hgi(Time, XyzPlanet_D)
+       SunEMBDistance = sqrt(sum(XyzPlanet_D**2))/cAU
+    else
+       !
+       !   THE LAST CONSTANT IS A CORRECTION FOR THE ANGULAR ABERRATION
+       !   DUE TO THE ORBITAL MOTION OF THE EARTH
+       HgiGse_DD = matmul( &
+            rot_matrix_x(-cInclinationSolEquator),&
+            rot_matrix_z( SunLongitude - cLongAscNodeSolEquator ))
+    end if
 
     ! Offset the HGI coordinate system if required
     if(dLongitudeHgi > 0.0) &

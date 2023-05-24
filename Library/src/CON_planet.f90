@@ -95,6 +95,10 @@ module CON_planet
   real, allocatable :: g_Planet(:, :), h_Planet(:, :)
 
   ! Orbit parameters
+  ! Logical specifying if we use these elements
+  ! rather thhan the harwired in geopack and more
+  ! accurate description applicable to the Earth only
+  logical :: UseOrbitElements = .false.
   real :: rOrbitPlanet     ! [m]
   real :: Excentricity    ! Dimless
   ! Euler angles of orbit (in degs):
@@ -637,6 +641,7 @@ contains
     HgiOrb_DD = matmul(rot_matrix_z(cPi),HgiOrb_DD)
     SemiMajorAxis = rOrbitPlanet   ! Check acculacy!
     SemiMinorAxis= SemiMajorAxis*sqrt(1 - Excentricity**2)
+    UseOrbitElements = NamePlanet /= 'EARTH'
     !$acc update device(HgiOrb_DD, SemiMajorAxis, SemiMinorAxis)
   end subroutine get_orbit_elements
   !============================================================================
