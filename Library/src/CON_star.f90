@@ -61,6 +61,7 @@ contains
           RotPeriodStar = RotPeriodStar*cSecondPerDay
           OmegaStar = cTwoPi/RotPeriodStar
        end if
+       !$acc update device(OmegaStar)
     case default
        call CON_stop('Unknwn NameCommand='//NameCommand//' in '//NameSub)
     end select
