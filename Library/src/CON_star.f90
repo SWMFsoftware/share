@@ -16,7 +16,7 @@ module CON_star
   use ModKind
   use ModConst, ONLY: cTwoPi, rSun, mSun, RotationPeriodSun, &
        cSecondPerDay
-  use ModTimeConvert, ONLY: TimeType, time_int_to_real
+  use ModTimeConvert, ONLY: time_int_to_real
   use ModUtilities, ONLY: CON_stop
   implicit none
 
@@ -42,6 +42,7 @@ module CON_star
   !
   ! Difference between 01/01/1965 00:00:00 and 01/01/1854 12:00:00 in seconds
   real(Real8_) :: tAlignmentHgrHgi  = -3.5027856D+9
+  !$acc declare create(tAlignmentHgrHgi)
   ! For different star it may make sense to reset this reference time
   ! by reading the alignment time from PARAM.in file, for example, the time
   ! of stellar magnetogram, so that both planet motion (determined in HGI)
@@ -55,6 +56,7 @@ contains
     use ModIoUnit,    ONLY: UnitTmp_
 
     character (len=*), intent(in) :: NameCommand
+    integer :: iYear,iMonth,iDay,iHour,iMinute
 
     ! Planet related temporary variables
     character (len=3) :: NameStarIn
@@ -76,6 +78,14 @@ contains
           OmegaStar = cTwoPi/RotPeriodStar
        end if
        !$acc update device(OmegaStar)
+    case("#HGRALIGNMENTTIME")
+       call read_var('iYear',iYear)
+       call read_var('iMonth',iMonth)
+       call read_var('iDay',iDay)
+       call read_var('iHour',iHour)
+       call read_var('iMinute',iMinute)
+       call time_int_to_real([iYear,iMonth,iDay,iHour,iMinute,0,0],&
+            tAlignmentHgrHgi)
     case default
        call CON_stop('Unknwn NameCommand='//NameCommand//' in '//NameSub)
     end select

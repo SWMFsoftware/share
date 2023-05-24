@@ -515,6 +515,13 @@ contains
        !$acc update device(OmegaOrbit,  rOrbitPlanet, Excentricity,    &
        !$acc RightAscension, Inclination, ArgPeriapsis)
        call get_orbit_elements
+    case('#TIMEEQUINOX')
+       call read_var('iYear',  TimeEquinox%iYear)
+       call read_var('iMonth', TimeEquinox%iMonth)
+       call read_var('iDay',   TimeEquinox%iDay)
+       call read_var('iHour',  TimeEquinox%iHour)
+       call read_var('iMinute',TimeEquinox%iMinute)
+       call time_int_to_real(TimeEquinox)
     end select
 
   end subroutine read_planet_var
@@ -646,7 +653,8 @@ contains
   end subroutine get_orbit_elements
   !============================================================================
   subroutine orbit_in_hgi(Time, XyzHgi_D)
-    real, intent(in)  :: Time
+    use ModKind
+    real(real8_), intent(in)  :: Time
     real, intent(out) :: XyzHgi_D(3)
     real              :: XyzOrbit_D(3), TrueAnomaly
     !--------------------------------------------------------------------------
