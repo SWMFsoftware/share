@@ -55,8 +55,12 @@ contains
        call read_var('MassStar',           MassStar)
        MassStar = MassStar*mSun
        call read_var('RotPeriodStar',      RotPeriodStar)
-       RotPeriodStar = RotPeriodStar*cSecondPerDay
-       OmegaStar  = cTwoPi/RotPeriodStar
+       if(RotPeriodStar == 0.0)then
+          OmegaStar = 0.0
+       else
+          RotPeriodStar = RotPeriodStar*cSecondPerDay
+          OmegaStar = cTwoPi/RotPeriodStar
+       end if
     case default
        call CON_stop('Unknwn NameCommand='//NameCommand//' in '//NameSub)
     end select
