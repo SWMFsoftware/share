@@ -13,7 +13,7 @@ module CON_star
   ! This is a public class. The variables should be modified by CON only.
   ! Components can only access the data through the inquiry methods
   ! via the {\bf CON\_physics} class.
-
+  use ModKind
   use ModConst, ONLY: cTwoPi, rSun, mSun, RotationPeriodSun, &
        cSecondPerDay
   use ModTimeConvert, ONLY: TimeType, time_int_to_real
@@ -32,6 +32,20 @@ module CON_star
   real           :: RotPeriodStar  = RotationPeriodSun
   ! Logical, claiming if the star is not the Sun 
   logical        :: UseStar
+  ! For the Sun:
+  ! https://nssdc.gsfc.nasa.gov/space/helios/plan_des.html reads:
+  ! " The zero longitude of the HGR system is defined as the longitude that
+  ! passed through the ascending node of the solar equator on the ecliptic
+  ! plane on 1  January, 1854 at 12 UT (Julian day = 2398220.0). In accordance
+  ! with the definition of HGI, at this time HGR and HGI were aligned and
+  ! after this the HGR rotates with the CarringtonFrequency about z-axis.
+  !
+  ! Difference between 01/01/1965 00:00:00 and 01/01/1854 12:00:00 in seconds
+  real(Real8_) :: tAlignmentHgrHgi  = -3.5027856D+9
+  ! For different star it may make sense to reset this reference time
+  ! by reading the alignment time from PARAM.in file, for example, the time
+  ! of stellar magnetogram, so that both planet motion (determined in HGI)
+  ! and the magnetogram determined in HGR to be oriented consistently
 contains
   !============================================================================
 
