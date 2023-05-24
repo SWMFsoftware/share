@@ -14,7 +14,7 @@ module CON_planet
   ! Components can only access the data through the inquiry methods
   ! via the {\bf CON\_physics} class.
 
-  use ModNumConst, ONLY: cTwoPi
+  use ModNumConst, ONLY: cTwoPi, cDegToRad, cPi
   use ModPlanetConst
   use ModTimeConvert, ONLY: TimeType, time_int_to_real
   use ModUtilities, ONLY: CON_stop
@@ -94,6 +94,21 @@ module CON_planet
   character (len=200) :: NamePlanetHarmonicsFile
   real, allocatable :: g_Planet(:, :), h_Planet(:, :)
 
+  ! Orbit parameters
+  real :: rOrbitPlanet     ! [m]
+  real :: Excentricity    ! Dimless
+  ! Euler angles of orbit (in degs):
+  real :: RightAscension, Inclination, ArgPeriapsis
+  ! Derived orbital elements
+  ! 1. Matrix to transform from orbital coordinates
+  !    xOrb, yOrb to Xyz in HGI:
+  !    XyzHgi = matmul(HgiOrb_DD, [xOrb, yOrb, 0.0])
+  real :: HgiOrb_DD(3,3)
+  ! 2. Major and minor semi-axii
+  real :: SemiMinorAxis, SemiMajorAxis
+  !$acc declare create(rOrbitPlanet, Excentricity)
+  !$acc declare create(RightAscension, Inclination, ArgPeriapsis)
+  !$acc declare create(HgiOrb_DD,SemiMinorAxis, SemiMajorAxis)
 contains
   !============================================================================
 
@@ -133,9 +148,19 @@ contains
     DipoleStrength   = DipoleStrengthPlanet_I(Earth_)
     MagAxisThetaGeo  = bAxisThetaPlanet_I(Earth_)
     MagAxisPhiGeo    = bAxisPhiPlanet_I(Earth_)
-
+    rOrbitPlanet     = rOrbitPlanet_I(Earth_)  ! [m]
+    Excentricity     = Excentricity_I(Earth_) ! dimless
+    ! Euler angles of orbit (read in degs, convert to rads):
+    RightAscension   = RightAscension_I(Earth_)
+    RightAscension   = RightAscension*cDegToRad
+    Inclination      = Inclination_I(Earth_)
+    Inclination      = Inclination*cDegToRad
+    ArgPeriapsis     = ArgPeriapsis_I(Earth_)
+    ArgPeriapsis     = ArgPeriapsis*cDegToRad
+    call get_orbit_elements
     !$acc update device(OmegaPlanet, AngleEquinox, OmegaRotation, TimeEquinox, &
-    !$acc MagAxisPhi, MagAxisTheta)
+    !$acc MagAxisPhi, MagAxisTheta,  rOrbitPlanet, Excentricity,               &
+    !$acc RightAscension, Inclination, ArgPeriapsis)
 
   end subroutine set_planet_defaults
   !============================================================================
@@ -218,11 +243,22 @@ contains
     MagAxisThetaGeo   = bAxisThetaPlanet_I(Planet_)  ! Permanent theta  in GEO
     MagAxisPhiGeo     = bAxisPhiPlanet_I(Planet_)    ! Permanent phi    in GEO
 
+    rOrbitPlanet     = rOrbitPlanet_I(Planet_)  ! [m]
+    Excentricity     = Excentricity_I(Planet_) ! dimless
+    ! Euler angles of orbit (read in degs, convert to rads):
+    RightAscension   = RightAscension_I(Planet_)
+    RightAscension   = RightAscension*cDegToRad
+    Inclination      = Inclination_I(Planet_)
+    Inclination      = Inclination*cDegToRad
+    ArgPeriapsis     = ArgPeriapsis_I(Planet_)
+    ArgPeriapsis     = ArgPeriapsis*cDegToRad
+    call get_orbit_elements
     ! For Enceladus the dipole is at Saturn's center
     if(Planet_==Enceladus_) MagCenter_D(2)    = 944.23
 
     !$acc update device(OmegaPlanet, AngleEquinox, OmegaRotation, TimeEquinox, &
-    !$acc MagAxisPhi, MagAxisTheta)
+    !$acc MagAxisPhi, MagAxisTheta,  rOrbitPlanet, Excentricity,               &
+    !$acc RightAscension, Inclination, ArgPeriapsis)
 
   end function is_planet_init
   !============================================================================
@@ -459,7 +495,22 @@ contains
 
           call normalize_schmidt_coefficients
        end if
-
+    case('#ORBIT')
+       call read_var('OrbitalPeriodPlanet', OrbitalPeriodPlanet_I(Planet_))
+       OmegaOrbit = cTwoPi/OrbitalPeriodPlanet_I(Planet_)
+       ! Correct omega planet?
+       call read_var('rOrbitPlanet',rOrbitPlanet) ! [m]
+       call read_var('Excentricity',Excentricity) ! dimless
+       ! read Euler angles of orbit (read in degs, convert to rads):
+       call read_var('RightAscension', RightAscension)
+       RightAscension = RightAscension*cDegToRad
+       call read_var('Inclination', Inclination)
+       Inclination = Inclination*cDegToRad
+       call read_var('ArgPeriapsis',ArgPeriapsis)
+       ArgPeriapsis = ArgPeriapsis*cDegToRad
+       !$acc update device(OmegaOrbit,  rOrbitPlanet, Excentricity,    &
+       !$acc RightAscension, Inclination, ArgPeriapsis)
+       call get_orbit_elements
     end select
 
   end subroutine read_planet_var
@@ -556,6 +607,51 @@ contains
     deallocate(S)
 
   end subroutine normalize_schmidt_coefficients
+  !============================================================================
+  subroutine get_orbit_elements
+    use ModCoordTransform, ONLY: rot_matrix_x, rot_matrix_z
+    !--------------------------------------------------------------------------
+    ! The true formula for transformation from the 'orbital' coordinates
+    ! (for the Earth, in the ecliptic plane) to an arbitrary reference frame)
+    ! (any solar equatorial plane), the true formula is
+    ! XyzStarEquator_D = matmul(HgiOrb_DD,XyzOrb_D)
+    ! where
+    ! HgiOrb_DD = rot_matrix_z(RightAscension).rot_matrix_x(Inclination).&
+    !             rot_matrix_z(ArgPeriapsis),
+    ! where RightAscension is the angle between x-axis of the solar
+    ! equatorial coordinate system, and ascending node,
+    ! Inclination is for the orbital plane with
+    ! respect to the solar equatorial one and ArgPeriapsis is the angle between the
+    ! direction to periapsis with that to ascending node.
+    ! HOWEVER:
+    ! 1. For HGI coordinate system thus defined RightAscension = cPi
+    ! 2. and ArgPeriapsis and RightAscension are usually defined with regard
+    !    to the equinox, so what we need here is their difference
+    ! In this way the formula works for the Sun and the Earth or the star
+    ! and exoplanet, (in which cases the definition of HGI is based on the
+    ! particular choice of planet, otherwise the general formula shoud be
+    ! used with properly re-defined RightAscension and ArgPeriapsis.
+    !
+    HgiOrb_DD = matmul(rot_matrix_x(Inclination),&
+         rot_matrix_z(ArgPeriapsis - RightAscension) )
+    HgiOrb_DD = matmul(rot_matrix_z(cPi),HgiOrb_DD)
+    SemiMajorAxis = rOrbitPlanet   ! Check acculacy!
+    SemiMinorAxis= SemiMajorAxis*sqrt(1 - Excentricity**2)
+    !$acc update device(HgiOrb_DD, SemiMajorAxis, SemiMinorAxis)
+  end subroutine get_orbit_elements
+  !============================================================================
+  subroutine orbit_in_hgi(Time, XyzHgi_D)
+    real, intent(in)  :: Time
+    real, intent(out) :: XyzHgi_D(3)
+    real              :: XyzOrbit_D(3), TrueAnomaly
+    !--------------------------------------------------------------------------
+    ! Check accuracy!!!
+    TrueAnomaly = OmegaOrbit*(Time - TimeEquinox%Time) - ArgPeriapsis
+    TrueAnomaly= modulo(TrueAnomaly,cTwoPi)
+    XyzOrbit_D = [SemiMajorAxis*(cos(TrueAnomaly) - Excentricity), &
+         SemiMinorAxis*sin(TrueAnomaly), 0.0]
+    XyzHgi_D = matmul(HgiOrb_DD, XyzOrbit_D)
+  end subroutine orbit_in_hgi
   !============================================================================
 
 end module CON_planet
