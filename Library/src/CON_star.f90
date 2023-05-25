@@ -30,7 +30,7 @@ module CON_star
   real           :: OmegaStar  = cTwoPi/RotationPeriodSun
   !$acc declare create(OmegaStar)
   real           :: RotPeriodStar  = RotationPeriodSun
-  ! Logical, claiming if the star is not the Sun 
+  ! Logical, claiming if the star is not the Sun
   logical        :: UseStar
   ! For the Sun:
   ! https://nssdc.gsfc.nasa.gov/space/helios/plan_des.html reads:
