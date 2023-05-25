@@ -8,7 +8,7 @@ module CON_geopack
 #ifdef _OPENACC
   use ModUtilities, ONLY: norm2
 #endif
-  
+
   implicit none
 
   ! Contains some subroutine of the geopack code (by N.V.Tsyganenko),
@@ -271,7 +271,7 @@ contains
     ! Inclination of the solar equator on the ecliptic of date
     real, parameter:: cInclinationSolEquator = 7.25*cDegToRad
     integer, parameter:: x_=1, y_=2, z_=3
-    
+
     integer:: jDay
     real:: AxisMagGei_D(3), GSTime, SunLongitude, Obliq, XyzPlanet_D(3), Phi
     real(Real8_):: Time
