@@ -64,7 +64,8 @@ OBJECTS = \
 	CON_line_extract.o\
 	CON_planet.o\
 	CON_planet_field.o\
-	CON_ray_trace.o
+	CON_ray_trace.o\
+	CON_star.o
 
 DEPEND:
 	@perl ${SCRIPTDIR}/depend.pl ${OBJECTS} PostIDL.o

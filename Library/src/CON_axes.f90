@@ -156,7 +156,8 @@ module CON_axes
   use ModNumConst, ONLY: cHalfPi, cRadToDeg, cTwoPi, cTwoPi8, cUnit_DD, cTiny
   use ModConst, ONLY: rSun
   use ModUtilities, ONLY: CON_stop, CON_set_do_test
-
+  use CON_star,     ONLY:OmegaCarrington=>OmegaStar, &
+       tStartCarringtonCoord=>tAlignmentHgrHgi
   ! revision history:
   ! 01Aug03 - Gabor Toth and Aaron Ridley  - initial version
   ! 14Aug03 - Gabor Toth <gtoth@umich.edu> - major revision and extension
@@ -173,10 +174,6 @@ module CON_axes
 
   integer, parameter, private :: x_=1, y_=2, z_=3
 
-  ! Difference between 01/01/1965 00:00:00 and 01/01/1854 12:00:00 in seconds
-  real(Real8_), parameter :: tStartCarringtonCoord  = -3.5027856D+9
-
-  real, parameter :: OmegaCarrington = cTwoPi/(25.38D0*24*3600)
 
   ! Position and Velocity of Planet in HGI
   real :: XyzPlanetHgi_D(3), vPlanetHgi_D(3)

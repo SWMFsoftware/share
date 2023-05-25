@@ -95,6 +95,10 @@ module CON_planet
   real, allocatable :: g_Planet(:, :), h_Planet(:, :)
 
   ! Orbit parameters
+  ! Logical specifying if we use these elements
+  ! rather thhan the harwired in geopack and more
+  ! accurate description applicable to the Earth only
+  logical :: UseOrbitElements = .false.
   real :: rOrbitPlanet     ! [m]
   real :: Excentricity    ! Dimless
   ! Euler angles of orbit (in degs):
@@ -511,6 +515,13 @@ contains
        !$acc update device(OmegaOrbit,  rOrbitPlanet, Excentricity,    &
        !$acc RightAscension, Inclination, ArgPeriapsis)
        call get_orbit_elements
+    case('#TIMEEQUINOX')
+       call read_var('iYear',  TimeEquinox%iYear)
+       call read_var('iMonth', TimeEquinox%iMonth)
+       call read_var('iDay',   TimeEquinox%iDay)
+       call read_var('iHour',  TimeEquinox%iHour)
+       call read_var('iMinute',TimeEquinox%iMinute)
+       call time_int_to_real(TimeEquinox)
     end select
 
   end subroutine read_planet_var
@@ -637,11 +648,13 @@ contains
     HgiOrb_DD = matmul(rot_matrix_z(cPi),HgiOrb_DD)
     SemiMajorAxis = rOrbitPlanet   ! Check acculacy!
     SemiMinorAxis= SemiMajorAxis*sqrt(1 - Excentricity**2)
+    UseOrbitElements = NamePlanet /= 'EARTH'
     !$acc update device(HgiOrb_DD, SemiMajorAxis, SemiMinorAxis)
   end subroutine get_orbit_elements
   !============================================================================
   subroutine orbit_in_hgi(Time, XyzHgi_D)
-    real, intent(in)  :: Time
+    use ModKind
+    real(real8_), intent(in)  :: Time
     real, intent(out) :: XyzHgi_D(3)
     real              :: XyzOrbit_D(3), TrueAnomaly
     !--------------------------------------------------------------------------
