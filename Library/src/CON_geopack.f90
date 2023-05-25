@@ -4,7 +4,11 @@
 module CON_geopack
 
   use ModNumConst, ONLY: cDegToRad, cHalfPi, cTwoPi
-
+  use ModKind,     ONLY: Real8_
+#ifdef _OPENACC
+  use ModUtilities, ONLY: norm2
+#endif
+  
   implicit none
 
   ! Contains some subroutine of the geopack code (by N.V.Tsyganenko),
@@ -215,7 +219,7 @@ contains
     Dipole_D = Weight1*Dipole_DI(:,iEpoch) + Weight2*Dipole_DI(:,iEpoch+1)
 
     ! Take the dipole strength with negative magnitude (conventional)
-    DipoleStrengthGeopack = -sqrt(sum(Dipole_D**2))
+    DipoleStrengthGeopack = -norm2(Dipole_D)
 
     ! The negative sign is because the dipole strength is negative
     AxisMagGeo_D = Dipole_D/DipoleStrengthGeopack
@@ -243,13 +247,14 @@ contains
 
   end subroutine geopack_recalc_array
   !============================================================================
-  subroutine geopack_recalc(iYear,iMonth,iDay,iHour,iMin,iSec)
+  subroutine geopack_recalc(iYear, iMonth, iDay, iHour, iMin, iSec)
 
     use ModCoordTransform, ONLY: rot_matrix_z, rot_matrix_x
     use ModConst,          ONLY: cAU
     use CON_planet,        ONLY: RightAscension, TimeEquinox, Inclination, &
          OmegaOrbit, UseOrbitElements, orbit_in_hgi
     use ModTimeConvert,    ONLY: time_int_to_real
+
     ! Updates matrices for the coordinate transformations
     ! Computations for GeiGse_DD and GeiGsm_DD are from the subroutine
     ! RECALC of geopack.f by N.V.Tsyganenko
@@ -262,35 +267,38 @@ contains
 
     integer,intent(in):: iYear, iMonth, iDay, iHour, iMin, iSec
 
-    integer::jDay
-    real::AxisMagGei_D(3),GSTime,SunLongitude,Obliq, Time, XyzPlanet_D(3)
-    real,parameter :: cLongAscNodeSolEquator = 75.77*cDegToRad
+    real, parameter:: cLongAscNodeSolEquator = 75.77*cDegToRad
     ! Inclination of the solar equator on the ecliptic of date
-    real,parameter :: cInclinationSolEquator = 7.25*cDegToRad
-    integer,parameter::x_=1,y_=2,z_=3
+    real, parameter:: cInclinationSolEquator = 7.25*cDegToRad
+    integer, parameter:: x_=1, y_=2, z_=3
+    
+    integer:: jDay
+    real:: AxisMagGei_D(3), GSTime, SunLongitude, Obliq, XyzPlanet_D(3), Phi
+    real(Real8_):: Time
     !--------------------------------------------------------------------------
-    jDay=JulianDay(iYear,iMonth,iDay)
-    call geopack_mag_axis(iYear,jDay)
-    call geopack_sun(iYear,jDay,iHour,iMin,iSec,GSTime,SunLongitude,Obliq)
+    jDay = JulianDay(iYear,iMonth, iDay)
+    call geopack_mag_axis(iYear, jDay)
+    call geopack_sun(iYear, jDay, iHour, iMin, iSec, GSTime, &
+         SunLongitude, Obliq)
 
     RotAxisPhiGeoPack   = modulo(cHalfPi - (SunLongitude-9.924E-5), cTwoPi)
     RotAxisThetaGeopack = Obliq
 
-    GeiGse_DD=&
-         matmul(rot_matrix_x(Obliq),rot_matrix_z(SunLongitude-9.924E-5))
+    GeiGse_DD = &
+         matmul(rot_matrix_x(Obliq), rot_matrix_z(SunLongitude - 9.924E-5))
 
     if(UseOrbitElements)then
        call time_int_to_real([iYear,iMonth,iDay,iHour,iMin,iSec,0], Time)
-       HgiGse_DD = matmul( &
-            rot_matrix_x(-Inclination),&
-            rot_matrix_z(modulo(OmegaOrbit*(Time - TimeEquinox%Time),cTwoPi) &
-            - RightAscension))
+       ! Convert real precision
+       Phi = modulo(OmegaOrbit*(Time - TimeEquinox%Time), cTwoPi) &
+            - RightAscension
+       HgiGse_DD = matmul(rot_matrix_x(-Inclination), rot_matrix_z(Phi))
+
        call orbit_in_hgi(Time, XyzPlanet_D)
-       SunEMBDistance = sqrt(sum(XyzPlanet_D**2))/cAU
+       SunEMBDistance = norm2(XyzPlanet_D)/cAU
     else
-       !
-       !   THE LAST CONSTANT IS A CORRECTION FOR THE ANGULAR ABERRATION
-       !   DUE TO THE ORBITAL MOTION OF THE EARTH
+       ! THE LAST CONSTANT IS A CORRECTION FOR THE ANGULAR ABERRATION
+       ! DUE TO THE ORBITAL MOTION OF THE EARTH
        HgiGse_DD = matmul( &
             rot_matrix_x(-cInclinationSolEquator),&
             rot_matrix_z( SunLongitude - cLongAscNodeSolEquator ))
@@ -302,27 +310,23 @@ contains
 
     !   THE COMPONENTS OF THE UNIT VECTOR EXGSM=EXGSE IN THE
     !   SYSTEM GEI POINTING FROM THE EARTH'S CENTER TO THE SUN:
-    GeiGsm_DD(:,x_)=GeiGse_DD(:,x_)
+    GeiGsm_DD(:,x_) = GeiGse_DD(:,x_)
 
     !   THE COMPONENTS OF THE UNIT VECTOR EZSM=EZMAG
     !   IN THE SYSTEM GEI:
-    AxisMagGei_D=matmul(rot_matrix_z(GSTime),AxisMagGeo_D)
+    AxisMagGei_D = matmul(rot_matrix_z(GSTime),AxisMagGeo_D)
 
-    !
     !  NOW CALCULATE THE COMPONENTS OF THE UNIT VECTOR EYGSM
     !  IN THE SYSTEM GEI BY TAKING THE VECTOR PRODUCT
     !   D x S AND NORMALIZING IT TO UNIT LENGTH:
+    GeiGsm_DD(1,y_) = AxisMagGei_D(2)*GeiGsm_DD(3,x_) &
+         -            AxisMagGei_D(3)*GeiGsm_DD(2,x_)
+    GeiGsm_DD(2,y_) = AxisMagGei_D(3)*GeiGsm_DD(1,x_) &
+         -            AxisMagGei_D(1)*GeiGsm_DD(3,x_)
+    GeiGsm_DD(3,y_) = AxisMagGei_D(1)*GeiGsm_DD(2,x_) &
+         -            AxisMagGei_D(2)*GeiGsm_DD(1,x_)
+    GeiGsm_DD(:,y_) = GeiGsm_DD(:,y_)/norm2(GeiGsm_DD(:,y_))
 
-    GeiGsm_DD(1,y_)=AxisMagGei_D(2)*GeiGsm_DD(3,x_)-&
-         AxisMagGei_D(3)*GeiGsm_DD(2,x_)
-    GeiGsm_DD(2,y_)=AxisMagGei_D(3)*GeiGsm_DD(1,x_)-&
-         AxisMagGei_D(1)*GeiGsm_DD(3,x_)
-    GeiGsm_DD(3,y_)=AxisMagGei_D(1)*GeiGsm_DD(2,x_)-&
-         AxisMagGei_D(2)*GeiGsm_DD(1,x_)
-    GeiGsm_DD(:,y_)=GeiGsm_DD(:,y_)/&
-         sqrt(sum(GeiGsm_DD(:,y_)**2))
-
-    !
     !   THEN IN THE GEI SYSTEM THE UNIT VECTOR
     !   Z = EZGSM = EXGSM x EYGSM = S x Y
     !   HAS THE COMPONENTS:
