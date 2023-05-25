@@ -91,8 +91,8 @@ module CON_planet
   ! Variables added for the multipole option for the magnetic field
   logical :: UseMultipoleB0 = .false.
   integer :: MaxHarmonicDegree = -1
-  character (len=200) :: NamePlanetHarmonicsFile
-  real, allocatable :: g_Planet(:, :), h_Planet(:, :)
+  character(len=200) :: NamePlanetHarmonicsFile
+  real, allocatable :: gPlanet_II(:, :), hPlanet_II(:, :)
 
   ! Orbit parameters
   ! Logical specifying if we use these elements
@@ -108,7 +108,7 @@ module CON_planet
   !    xOrb, yOrb to Xyz in HGI:
   !    XyzHgi = matmul(HgiOrb_DD, [xOrb, yOrb, 0.0])
   real :: HgiOrb_DD(3,3)
-  ! 2. Major and minor semi-axii
+  ! 2. Major and minor semiaxes
   real :: SemiMinorAxis, SemiMajorAxis
   !$acc declare create(rOrbitPlanet, Excentricity)
   !$acc declare create(RightAscension, Inclination, ArgPeriapsis)
@@ -162,18 +162,17 @@ contains
     ArgPeriapsis     = ArgPeriapsis_I(Earth_)
     ArgPeriapsis     = ArgPeriapsis*cDegToRad
     call get_orbit_elements
-    !$acc update device(OmegaPlanet, AngleEquinox, OmegaRotation, TimeEquinox, &
-    !$acc MagAxisPhi, MagAxisTheta,  rOrbitPlanet, Excentricity,               &
+    !$acc update device(OmegaPlanet, AngleEquinox, OmegaRotation,             &
+    !$acc TimeEquinox, MagAxisPhi, MagAxisTheta,  rOrbitPlanet, Excentricity, &
     !$acc RightAscension, Inclination, ArgPeriapsis)
 
   end subroutine set_planet_defaults
   !============================================================================
-
   function is_planet_init(NamePlanetIn) result(IsKnown)
 
     character(len=*), intent(in) :: NamePlanetIn
 
-    !RETURN VALUE:
+    ! return value
     logical :: IsKnown
 
     ! Initialize parameters for the planet identified by its name and
@@ -229,8 +228,10 @@ contains
     end if
     OmegaPlanet     = OmegaRotation + OmegaOrbit
     AngleEquinox =  &
-         cTwoPi * ( iHourEquinoxPlanet_I(Planet_) * 3600 + iMinuteEquinoxPlanet_I(Planet_) * 60 &
-         + iSecondEquinoxPlanet_I(Planet_) + FracSecondEquinoxPlanet_I(Planet_)) / (24 * 3600)
+         cTwoPi*(iHourEquinoxPlanet_I(Planet_)*3600 &
+         +       iMinuteEquinoxPlanet_I(Planet_)*60 &
+         +       iSecondEquinoxPlanet_I(Planet_)  &
+         +       FracSecondEquinoxPlanet_I(Planet_))/(24*3600)
     TimeEquinox  = TimeType(&
          iYearEquinoxPlanet_I(Planet_), &
          iMonthEquinoxPlanet_I(Planet_), &
@@ -250,23 +251,19 @@ contains
     rOrbitPlanet     = rOrbitPlanet_I(Planet_)  ! [m]
     Excentricity     = Excentricity_I(Planet_) ! dimless
     ! Euler angles of orbit (read in degs, convert to rads):
-    RightAscension   = RightAscension_I(Planet_)
-    RightAscension   = RightAscension*cDegToRad
-    Inclination      = Inclination_I(Planet_)
-    Inclination      = Inclination*cDegToRad
-    ArgPeriapsis     = ArgPeriapsis_I(Planet_)
-    ArgPeriapsis     = ArgPeriapsis*cDegToRad
+    RightAscension   = RightAscension_I(Planet_)*cDegToRad
+    Inclination      = Inclination_I(Planet_)*cDegToRad
+    ArgPeriapsis     = ArgPeriapsis_I(Planet_)*cDegToRad
     call get_orbit_elements
     ! For Enceladus the dipole is at Saturn's center
     if(Planet_==Enceladus_) MagCenter_D(2)    = 944.23
 
-    !$acc update device(OmegaPlanet, AngleEquinox, OmegaRotation, TimeEquinox, &
-    !$acc MagAxisPhi, MagAxisTheta,  rOrbitPlanet, Excentricity,               &
+    !$acc update device(OmegaPlanet, AngleEquinox, OmegaRotation, TimeEquinox,&
+    !$acc MagAxisPhi, MagAxisTheta,  rOrbitPlanet, Excentricity,              &
     !$acc RightAscension, Inclination, ArgPeriapsis)
 
   end function is_planet_init
   !============================================================================
-
   subroutine read_planet_var(NameCommand)
 
     use ModUtilities, ONLY: upper_case
@@ -280,12 +277,11 @@ contains
     character (len=lStringLine) :: NamePlanetCommands=''
     logical :: UseNonDipole
 
-    integer :: m, n, m_loop, n_loop
-    character(len=100) :: headerline
+    integer :: m, n, m1, n1
+    character(len=100) :: StringHeader
 
     character(len=*), parameter:: NameSub = 'read_planet_var'
     !--------------------------------------------------------------------------
-
     select case(NameCommand)
     case("#PLANET", "#MOON", "#COMET")
 
@@ -481,18 +477,19 @@ contains
           call read_var('MaxHarmonicDegree', MaxHarmonicDegree)
           call read_var('NamePlanetHarmonicsFile', NamePlanetHarmonicsFile)
 
-          if(.not.allocated(g_Planet) .and. .not.allocated(h_Planet)) then
-             allocate(g_Planet(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
-             allocate(h_Planet(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
+          if(.not.allocated(gPlanet_II) .and. .not.allocated(hPlanet_II)) then
+             allocate(gPlanet_II(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
+             allocate(hPlanet_II(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
           end if
 
           ! Read in the coefficients from the file
-          open(UnitTmp_, file=NamePlanetHarmonicsFile, status='old', action='read')
-          read(UnitTmp_, *) headerline
-          do n=0,MaxHarmonicDegree
-             do m=0,n
+          open(UnitTmp_, file=NamePlanetHarmonicsFile, status='old')
+          read(UnitTmp_, *) StringHeader
+          do n = 0, MaxHarmonicDegree
+             do m = 0, n
                 ! Read data from the file, default fortran format
-                read(UnitTmp_, *) n_loop, m_loop, g_Planet(n, m), h_Planet(n, m)
+                read(UnitTmp_, *) &
+                     n1, m1, gPlanet_II(n, m), hPlanet_II(n, m)
              end do
           end do
           close(UnitTmp_)
@@ -526,7 +523,6 @@ contains
 
   end subroutine read_planet_var
   !============================================================================
-
   subroutine check_planet_var(IsProc0, DoTimeAccurate)
 
     logical, intent(in) :: IsProc0, DoTimeAccurate
@@ -551,9 +547,9 @@ contains
     ! If dipole is used with IdealAxes, no update is needed.
 
     !$acc update device(DoUpdateB0, DtUpdateB0)
+
   end subroutine check_planet_var
   !============================================================================
-
   subroutine get_planet( &
        NamePlanetOut, RadiusPlanetOut, MassPlanetOut, OmegaPlanetOut, &
        RotationPeriodOut, IonosphereHeightOut, &
@@ -583,45 +579,41 @@ contains
 
   end subroutine get_planet
   !============================================================================
-
-  ! ===========================================================================
   subroutine normalize_schmidt_coefficients
     ! Instead of normalizing the Legendre polynomials, from Gauss to Schmidt
     ! -semi-normalized, we normalize the Schmidt coefficients instead for
     ! a more efficient calculation. We only need to do this once at the
     ! beginning of the run.
     integer :: m, n
-    real, allocatable :: S(:,:)
-
-    ! --------------------------------------------
+    real, allocatable :: s_II(:,:)
     !--------------------------------------------------------------------------
-    if(.not.allocated(S)) then
-      allocate(S(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
-    end if
+    if(.not.allocated(s_II)) &
+         allocate(s_II(0:MaxHarmonicDegree,0:MaxHarmonicDegree))
 
-    S = 1.0
+    s_II = 1.0
 
-    do n=1,MaxHarmonicDegree
-      S(n,0) = S(n-1,0) * (2.0*n - 1.0) / n
-      S(n,1) = S(n,0) * sqrt(n * 2. / (n+1))
-      g_Planet(n,0) = g_Planet(n,0) * S(n,0)
-      h_Planet(n,0) = h_Planet(n,0) * S(n,0)
-      g_Planet(n,1) = g_Planet(n,1) * S(n,1)
-      h_Planet(n,1) = h_Planet(n,1) * S(n,1)
-      do m=2, n
-        S(n,m) = S(n,m-1) * sqrt((n-m+1.) / (n+m))
-        g_Planet(n,m) = g_Planet(n,m) * S(n,m)
-        h_Planet(n,m) = h_Planet(n,m) * S(n,m)
+    do n = 1, MaxHarmonicDegree
+      s_II(n,0) = s_II(n-1,0)*(2*n - 1.0)/n
+      s_II(n,1) = s_II(n,0)*sqrt(2*n/(n + 1.0))
+      gPlanet_II(n,0) = gPlanet_II(n,0)*s_II(n,0)
+      hPlanet_II(n,0) = hPlanet_II(n,0)*s_II(n,0)
+      gPlanet_II(n,1) = gPlanet_II(n,1)*s_II(n,1)
+      hPlanet_II(n,1) = hPlanet_II(n,1)*s_II(n,1)
+      do m = 2, n
+        s_II(n,m) = s_II(n,m-1) * sqrt((n - m + 1.0)/(n + m))
+        gPlanet_II(n,m) = gPlanet_II(n,m)*s_II(n,m)
+        hPlanet_II(n,m) = hPlanet_II(n,m)*s_II(n,m)
       end do
     end do
 
-    deallocate(S)
+    deallocate(s_II)
 
   end subroutine normalize_schmidt_coefficients
   !============================================================================
   subroutine get_orbit_elements
+
     use ModCoordTransform, ONLY: rot_matrix_x, rot_matrix_z
-    !--------------------------------------------------------------------------
+
     ! The true formula for transformation from the 'orbital' coordinates
     ! (for the Earth, in the ecliptic plane) to an arbitrary reference frame)
     ! (any solar equatorial plane), the true formula is
@@ -632,8 +624,8 @@ contains
     ! where RightAscension is the angle between x-axis of the solar
     ! equatorial coordinate system, and ascending node,
     ! Inclination is for the orbital plane with
-    ! respect to the solar equatorial one and ArgPeriapsis is the angle between the
-    ! direction to periapsis with that to ascending node.
+    ! respect to the solar equatorial one and ArgPeriapsis is the angle
+    ! between the direction to periapsis with that to ascending node.
     ! HOWEVER:
     ! 1. For HGI coordinate system thus defined RightAscension = cPi
     ! 2. and ArgPeriapsis and RightAscension are usually defined with regard
@@ -642,7 +634,8 @@ contains
     ! and exoplanet, (in which cases the definition of HGI is based on the
     ! particular choice of planet, otherwise the general formula shoud be
     ! used with properly re-defined RightAscension and ArgPeriapsis.
-    !
+
+    !--------------------------------------------------------------------------
     HgiOrb_DD = matmul(rot_matrix_x(Inclination),&
          rot_matrix_z(ArgPeriapsis - RightAscension) )
     HgiOrb_DD = matmul(rot_matrix_z(cPi),HgiOrb_DD)
@@ -650,9 +643,11 @@ contains
     SemiMinorAxis= SemiMajorAxis*sqrt(1 - Excentricity**2)
     UseOrbitElements = NamePlanet /= 'EARTH'
     !$acc update device(HgiOrb_DD, SemiMajorAxis, SemiMinorAxis)
+
   end subroutine get_orbit_elements
   !============================================================================
   subroutine orbit_in_hgi(Time, XyzHgi_D)
+
     use ModKind
     real(real8_), intent(in)  :: Time
     real, intent(out) :: XyzHgi_D(3)
@@ -664,8 +659,8 @@ contains
     XyzOrbit_D = [SemiMajorAxis*(cos(TrueAnomaly) - Excentricity), &
          SemiMinorAxis*sin(TrueAnomaly), 0.0]
     XyzHgi_D = matmul(HgiOrb_DD, XyzOrbit_D)
+
   end subroutine orbit_in_hgi
   !============================================================================
-
 end module CON_planet
 !==============================================================================
