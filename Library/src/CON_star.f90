@@ -70,7 +70,7 @@ contains
        RadiusStar = RadiusStar*rSun
        call read_var('MassStar',           MassStar)
        MassStar = MassStar*mSun
-       call read_var('RotPeriodStar',      RotPeriodStar)
+       call read_var('RotationPeriodStar', RotPeriodStar)
        if(RotPeriodStar == 0.0)then
           OmegaStar = 0.0
        else
