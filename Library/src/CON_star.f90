@@ -24,14 +24,14 @@ module CON_star
 
   character(len=*), parameter, private :: NameMod='CON_star'
 
+  character (len=3) :: NameStar = 'SUN'
+
   ! Define variables
   real           :: RadiusStar = rSun
   real           :: MassStar   = mSun
   real           :: OmegaStar  = cTwoPi/RotationPeriodSun
   !$acc declare create(OmegaStar)
   real           :: RotPeriodStar  = RotationPeriodSun
-  ! Logical, claiming if the star is not the Sun
-  logical        :: UseStar
   ! For the Sun:
   ! https://nssdc.gsfc.nasa.gov/space/helios/plan_des.html reads:
   ! " The zero longitude of the HGR system is defined as the longitude that
@@ -52,20 +52,26 @@ contains
 
   subroutine read_star_var(NameCommand)
 
+    use ModUtilities, ONLY: upper_case
     use ModReadParam, ONLY: read_var, lStringLine
     use ModIoUnit,    ONLY: UnitTmp_
 
     character (len=*), intent(in) :: NameCommand
     integer :: iYear,iMonth,iDay,iHour,iMinute
 
-    ! Planet related temporary variables
+    ! Temporary variable
     character (len=3) :: NameStarIn
 
     character(len=*), parameter:: NameSub = 'read_star_var'
     !--------------------------------------------------------------------------
     select case(NameCommand)
     case("#STAR")
-       UseStar=.true.
+
+       call read_var('NamePStar',NameStarIn)
+       call upper_case(NameStarIn)
+       ! Check if star has been already initialized
+       if(NameStar == NameStarIn) RETURN
+
        call read_var('RadiusStar',         RadiusStar)  ! In rSun
        RadiusStar = RadiusStar*rSun
        call read_var('MassStar',           MassStar)
