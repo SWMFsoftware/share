@@ -284,6 +284,8 @@ contains
     RotAxisPhiGeoPack   = modulo(cHalfPi - (SunLongitude-9.924E-5), cTwoPi)
     RotAxisThetaGeopack = Obliq
 
+    ! THE LAST CONSTANT IS A CORRECTION FOR THE ANGULAR ABERRATION
+    ! DUE TO THE ORBITAL MOTION OF THE EARTH
     GeiGse_DD = &
          matmul(rot_matrix_x(Obliq), rot_matrix_z(SunLongitude - 9.924E-5))
 
@@ -297,8 +299,6 @@ contains
        call orbit_in_hgi(Time, XyzPlanet_D)
        SunEMBDistance = norm2(XyzPlanet_D)/cAU
     else
-       ! THE LAST CONSTANT IS A CORRECTION FOR THE ANGULAR ABERRATION
-       ! DUE TO THE ORBITAL MOTION OF THE EARTH
        HgiGse_DD = matmul( &
             rot_matrix_x(-cInclinationSolEquator),&
             rot_matrix_z( SunLongitude - cLongAscNodeSolEquator ))
