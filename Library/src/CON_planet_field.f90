@@ -323,8 +323,8 @@ contains
       m=0
       sinphi_prev = 0.0
       cosphi_prev = 1.0
-      Br = Br + (a_r)**(n+2) * (n+1) * P_II(n,m) * g_Planet(n,m)
-      Btheta = Btheta - (a_r)**(n+2) * diffP_II(n,m) * g_Planet(n,m)
+      Br = Br + (a_r)**(n+2) * (n+1) * P_II(n,m) * gPlanet_II(n,m)
+      Btheta = Btheta - (a_r)**(n+2) * diffP_II(n,m) * gPlanet_II(n,m)
       ! Bphi contribution is 0 for m=0.
 
       do m=1,n
@@ -332,13 +332,13 @@ contains
         sinmphi = sinphi_prev * cosphi + cosphi_prev * sinphi
         cosmphi = cosphi_prev * cosphi - sinphi_prev * sinphi
         Br = Br + (a_r)**(n+2) * (n+1) * P_II(n,m) * &
-          (g_Planet(n,m)*cosmphi + h_Planet(n,m)*sinmphi)
+          (gPlanet_II(n,m)*cosmphi + hPlanet_II(n,m)*sinmphi)
 
         Btheta = Btheta - (a_r)**(n+2) * diffP_II(n,m) * &
-          (g_Planet(n,m)*cosmphi + h_Planet(n,m)*sinmphi)
+          (gPlanet_II(n,m)*cosmphi + hPlanet_II(n,m)*sinmphi)
 
         Bphi = Bphi + inv_sintheta * (a_r)**(n+2) * P_II(n,m) * m * &
-            (g_Planet(n,m)*sinmphi - h_Planet(n,m)*cosmphi)
+            (gPlanet_II(n,m)*sinmphi - hPlanet_II(n,m)*cosmphi)
 
         sinphi_prev = sinmphi
         cosphi_prev = cosmphi
