@@ -1316,6 +1316,10 @@ pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
 
   data = transpose(data(*,0:nt-1))
 
+  DoEhot = 0
+  DoI01 = 0
+  DoI02 = 0
+  
   for i = 0, nvars-1 do begin
      varname = strlowcase(varnames(i))
      case varname of
