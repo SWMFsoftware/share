@@ -23,11 +23,11 @@ $Compiler eq "nagfor"
 	${COMPILE.f90} ${Cflag0} ModRandomNumber.f90
 	${COMPILE.f90} ${Cflag1} CON_axes.f90
 
-# With NAG f95 ModMpiInterface compiles with -dusty only because
+# With NAGFOR ModMpiInterface and ModMpiModified compile with -dusty only because
 # the same MPI routines are called with different argument types
 $Compiler eq "f95" or $Compiler eq "nagfor"
 	${COMPILE.f90} ${Cflag0} -dusty ModMpiInterfaces.f90
-	${COMPILE.f90} ${Cflag0} -dusty ModMpi.f90
+	${COMPILE.f90} ${Cflag0} -dusty ModMpiModified.f90
 
 $Compiler eq "gfortran" and `gfortran -dumpversion` =~ /^1\d/
 	${COMPILE.f90} ${Cflag0} -fallow-argument-mismatch ModMpiInterfaces.f90
