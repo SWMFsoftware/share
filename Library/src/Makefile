@@ -43,6 +43,7 @@ OBJECTS = \
 	ModLookupTable.o\
 	ModMpiInterfaces.o\
 	ModMpi.o\
+	ModMpiModified.o\
 	ModMpiOrig.o\
 	ModNumConst.o\
 	ModPlanetConst.o\
