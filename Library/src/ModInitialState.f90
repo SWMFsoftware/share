@@ -51,7 +51,6 @@ module ModInitialState
 
 contains
   !============================================================================
-
   subroutine init_initial_state(NameVarState, iVarMaterial1In, nMaterialIn)
 
     use ModUtilities, ONLY: split_string, lower_case
@@ -95,12 +94,9 @@ contains
 
   end subroutine init_initial_state
   !============================================================================
-
   subroutine clean_initial_state
-
     !--------------------------------------------------------------------------
-    if(allocated(NameVar_V)) deallocate( &
-         NameVar_V)
+    if(allocated(NameVar_V)) deallocate(NameVar_V)
 
     nVar          = 0
     iVarMaterial0 = -1
@@ -123,11 +119,10 @@ contains
 
   end subroutine clean_initial_state
   !============================================================================
-
   subroutine read_initial_state_param(NameCommand)
 
     use ModReadParam, ONLY: read_var
-    use ModUtilities, ONLY: split_string
+    use ModUtilities, ONLY: split_string, cTab
 
     character(len=*), intent(in):: NameCommand
 
@@ -153,6 +148,9 @@ contains
        ! Remove parameter name "string...." if present.
        i = index(String, 'string')
        if(i > 1)String(i:100) = ' '
+       ! Remove TABS if present.
+       i = index(String, cTab)
+       if(i > 1)String(i:100) = ' '
        call split_string(String, nVar, NameStateVar_I, nStateVar)
 
        ! Find indexes for corresponding state variables
@@ -164,6 +162,7 @@ contains
                 CYCLE LOOPSTATE
              end if
           end do
+          write(*,*)NameSub,': i, NameVar_V=', i, NameVar_V
           call CON_stop(NameSub//': could not match variable name='// &
                trim(NameStateVar_I(i)))
        end do LOOPSTATE
@@ -226,7 +225,6 @@ contains
 
       character(len=2), intent(in):: NameMaterial
       integer:: iMaterial, iVar
-
       !------------------------------------------------------------------------
       do iMaterial = 1, nMaterial
          iVar = iVarMaterial0 + iMaterial
@@ -241,12 +239,10 @@ contains
 
     end function i_level
     !==========================================================================
-
     integer function i_state(NameMaterial)
 
       character(len=*), intent(in):: NameMaterial
       integer:: i
-
       !------------------------------------------------------------------------
       if(nMaterialState == 0) call CON_stop(NameSub// &
            ' material states are not defined')
@@ -266,10 +262,8 @@ contains
 
     end function i_state
     !==========================================================================
-
   end subroutine read_initial_state_param
   !============================================================================
-
   subroutine get_initial_state(CoordIn_D, State_V, DoTest)
 
     real,    intent(in) :: CoordIn_D(2)          ! Coordinates of point
@@ -377,7 +371,6 @@ contains
 
   end subroutine get_initial_state
   !============================================================================
-
   subroutine test_initial_state
 
     use ModPlotFile, ONLY: save_plot_file
@@ -453,6 +446,5 @@ contains
 
   end subroutine test_initial_state
   !============================================================================
-
 end module ModInitialState
 !==============================================================================
