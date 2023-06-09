@@ -578,7 +578,8 @@ contains
   end subroutine set_gei_geo_matrix
   !============================================================================
   subroutine set_axes(TimeSim, DoSetAxes)
-
+    use CON_planet,        ONLY: RightAscension, TimeEquinox, Inclination, &
+         OmegaOrbit, UseOrbitElements, orbit_in_hgi
     real,              intent(in) :: TimeSim
     logical, optional, intent(in) :: DoSetAxes
 
@@ -610,14 +611,23 @@ contains
 
     real :: TimeSimLast = -1000.0  ! Last simulation time for magnetic fields
     real :: TimeSimHgr  = -1000.0  ! Last simulation time for HGR update
-    real :: Angle
-
+    real :: Angle, Phi
+    real(real8_) :: Time8
     ! Reset the helio-centered coordinate transformations if time changed
     logical:: DoTest
     character(len=*), parameter:: NameSub = 'set_axes'
     !--------------------------------------------------------------------------
     if(TimeSimHgr /= TimeSim)then
+       if(UseOrbitElements)then
+          Time8 = tStart + TimeSim
+          ! Convert real precision
+          Phi = modulo(OmegaOrbit*(Time8 - TimeEquinox%Time), cTwoPi) &
+               - RightAscension
+          HgiGse_DD = matmul(rot_matrix_x(-Inclination), rot_matrix_z(Phi))
 
+          call orbit_in_hgi(Time8, XyzPlanetHgi_D, vPlanetHgi_D)
+          SunEMBDistance = norm2(XyzPlanetHgi_D)/cAU
+       end if
        ! Recalculate the HgrHgi_DD matrix
        ! The negative sign in front of OmegaCarrington comes from that
        ! this matrix transforms from HGI to HGR, so a point at rest

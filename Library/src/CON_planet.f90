@@ -646,12 +646,16 @@ contains
 
   end subroutine get_orbit_elements
   !============================================================================
-  subroutine orbit_in_hgi(Time, XyzHgi_D)
+  subroutine orbit_in_hgi(Time, XyzHgi_D, vHgi_D)
 
     use ModKind
     real(real8_), intent(in)  :: Time
-    real, intent(out) :: XyzHgi_D(3)
-    real              :: XyzOrbit_D(3), TrueAnomaly
+    real, intent(out)           :: XyzHgi_D(3)  ! Coordinates in HGI
+    real, optional, intent(out) :: vHgi_D(3)    ! Velocity in HGI
+    ! True (in fact, not true) anomaly:
+    real :: TrueAnomaly
+    ! Coordinates and velocity in the orbital plane
+    real              :: XyzOrbit_D(3),  vOrbit_D(3)
     !--------------------------------------------------------------------------
     ! Check accuracy!!!
     TrueAnomaly = OmegaOrbit*(Time - TimeEquinox%Time) - ArgPeriapsis
@@ -659,7 +663,11 @@ contains
     XyzOrbit_D = [SemiMajorAxis*(cos(TrueAnomaly) - Excentricity), &
          SemiMinorAxis*sin(TrueAnomaly), 0.0]
     XyzHgi_D = matmul(HgiOrb_DD, XyzOrbit_D)
-
+    if(present(vHgi_D))then
+       vOrbit_D = [-SemiMajorAxis*sin(TrueAnomaly), &
+            SemiMinorAxis*cos(TrueAnomaly), 0.0]*OmegaOrbit
+       vHgi_D =  matmul(HgiOrb_DD, vOrbit_D)
+    end if
   end subroutine orbit_in_hgi
   !============================================================================
 end module CON_planet
