@@ -1887,13 +1887,13 @@ pro get_file_types
            ;; Obtain filetype based on the length info in the first 4 bytes
            close,10
            openr,10,filenames(ifile)
-           lenhead=long(1)
+           lenhead=1L
            readu,10,lenhead
            if lenhead ne 79 and lenhead ne 500 then ftype='ascii' else begin
               ;; The length of the 2nd line decides between real4 and real8
               ;; since it contains the time, which is real*4 or real*8
               head=bytarr(lenhead+4)
-              len=long(1)
+              len=1L
               readu,10,head,len
               case len of
                  20: ftype='real4'
@@ -1974,11 +1974,11 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
   ;; Type definitions
   headline=''
   for i=1, lenstr do headline=headline+' '
-  it=long(1)
-  ndim=long(1)
-  neqpar=long(0)
-  eqpar=0.0
-  nw=long(1)
+  it     = 1L
+  ndim   = 1L
+  neqpar = 0L
+  eqpar  = 0.0
+  nw     = 1L
   varname=''
   for i=1, lenstr do varname=varname+' '
 
@@ -5623,42 +5623,42 @@ function coarsen,a,boxsize,fd=fd
   endcase else case ndim of
      1: begin
         result = dblarr(nx(0)/n(0))
-        for ix=0,nx(0)/n(0)-1 do $
-           for i=0,n(0)-1 do $
+        for ix=0L,nx(0)/n(0)-1 do $
+           for i=0L,n(0)-1 do $
               result(ix)=result(ix) + a(ix*n(0)+i)
         result=result/n(0)
      end
      2: begin
         result = dblarr(nx(0)/n(0),nx(1)/n(1))
-        for ix=0,nx(0)/n(0)-1 do $
-           for iy=0,nx(1)/n(1)-1 do $
-              for i=0,n(0)-1 do $
-                 for j=0,n(1)-1 do $
+        for ix=0L,nx(0)/n(0)-1 do $
+           for iy=0L,nx(1)/n(1)-1 do $
+              for i=0L,n(0)-1 do $
+                 for j=0L,n(1)-1 do $
                     result(ix,iy) = result(ix,iy) + a(ix*n(0)+i,iy*n(1)+j)
         result=result/n(0)/n(1)
      end
      3: begin
         result=dblarr(nx(0)/n(0),nx(1)/n(1),nx(2)/n(2))
-        for ix=0,nx(0)/n(0)-1 do $
-           for iy=0,nx(1)/n(1)-1 do $
-              for iz=0,nx(2)/n(2)-1 do $
-                 for i=0,n(0)-1 do $
-                    for j=0,n(1)-1 do $
-                       for k=0,n(2)-1 do $
+        for ix=0L,nx(0)/n(0)-1 do $
+           for iy=0L,nx(1)/n(1)-1 do $
+              for iz=0L,nx(2)/n(2)-1 do $
+                 for i=0L,n(0)-1 do $
+                    for j=0L,n(1)-1 do $
+                       for k=0L,n(2)-1 do $
                           result(ix,iy,iz) = result(ix,iy,iz) $
            + a(ix*n(0)+i,iy*n(1)+j,iz*n(2)+k)
         result = result/n(0)/n(1)/n(2)
      end
      4: begin
         result = dblarr(nx(0)/n(0),nx(1)/n(1),nx(2)/n(2),nx(3)/n(3))
-        for ix=0,nx(0)/n(0)-1 do $
-           for iy=0,nx(1)/n(1)-1 do $
-              for iz=0,nx(2)/n(2)-1 do $
-                 for iw=0,nx(3)/n(3)-1 do $
-                    for i=0,n(0)-1 do $
-                       for j=0,n(1)-1 do $
-                          for k=0,n(2)-1 do $
-                             for l=0,n(3)-1 do $
+        for ix=0L,nx(0)/n(0)-1 do $
+           for iy=0L,nx(1)/n(1)-1 do $
+              for iz=0L,nx(2)/n(2)-1 do $
+                 for iw=0L,nx(3)/n(3)-1 do $
+                    for i=0L,n(0)-1 do $
+                       for j=0L,n(1)-1 do $
+                          for k=0L,n(2)-1 do $
+                             for l=0L,n(3)-1 do $
                                 result(ix,iy,iz,iw) = result(ix,iy,iz,iw) $
            + a(ix*n(0)+i,iy*n(1)+j,iz*n(2)+k,iw*n(3)+l)
         result = result/n(0)/n(1)/n(2)/n(3)
@@ -6169,9 +6169,9 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
   nheadline = 0
   isheader  = 1
   headlines = strarr(1)
-  buf   = long(10000)
-  dbuf  = long(10000)
-  nt    = long(0)
+  buf   = 10000L
+  dbuf  = 10000L
+  nt    = 0L
   while not eof(unit) do begin
      on_ioerror,close_file
 
