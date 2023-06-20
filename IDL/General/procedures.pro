@@ -6539,6 +6539,7 @@ pro plot_log
                  plot, xcoord, field, pos = posm, $
                        xrange = xrange, $
                        yrange = yranges(*,ifunc), $
+                       xlog = dofft, $
                        ylog = dofft, $
                        xstyle = xstyle, $
                        ystyle = ystyle, $
