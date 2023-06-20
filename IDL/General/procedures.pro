@@ -2737,7 +2737,7 @@ pro read_plot_param
   if plotdim eq 1 then begin
      if strmid(plotmode,0,4) ne 'plot' then plotmode='default'
      print,'1D plotmode: plot/plot_io/plot_oi/plot_oo'
-     print,'1D +options: max,mean,log,noaxis,over,#c999,#ct999'
+     print,'1D +options: max,mean,log,noaxis,over,dot,dash,#c999,#ct999'
      askstr,'plotmode(s)                ',plotmode,doask
   endif else begin
      if strmid(plotmode,0,4) eq 'plot' then plotmode='default'
@@ -4028,6 +4028,7 @@ pro plot_func
   ytitle     = !y.title
   xtickname  = !x.tickname
   ytickname  = !y.tickname
+  !p.color = 255 - !p.background
 
   for ifunc=0,nfunc-1 do begin
 
@@ -4140,7 +4141,7 @@ pro plot_func
         plotmod=strmid(plotmod,0,i)+strmid(plotmod,i+4)
         usemean=1
      endif else usemean=0
-
+     
      ;; check if this plot requires a special color table #ctNNN
      if strpos(plotmod,'#ct') lt 0 then begin
         f4 = strmid(funci,0,4)
@@ -4181,6 +4182,7 @@ pro plot_func
      i=strpos(plotmod,'over')
      if i ge 0 then begin
         plotmod=strmid(plotmod,0,i)+strmid(plotmod,i+4)
+        if strmid(plotmod,0,4) eq 'plot' then plotmod = 'o'+plotmod
         !p.multi(0) = !p.multi(0)+1
         if !p.multi(0) ge !p.multi(1)*!p.multi(2) then !p.multi(0)=0
         !p.title = ''
@@ -4241,7 +4243,8 @@ pro plot_func
         if strmid(plotmod,0,4) eq 'plot' and multix gt 1 then $
            pos(0) = pos(0) + (pos(2) - pos(0))*0.15
 
-        if keyword_set(fixaspect) and strmid(plotmod,0,4) ne 'plot' then begin
+        if keyword_set(fixaspect) and strmid(plotmod,0,4) ne 'plot' $
+           and strmid(plotmod,0,5) ne 'oplot' then begin
 
            if plotmod eq 'polar' or plotmod eq 'lonlatn' or $
               plotmod eq 'lonlats' then $
@@ -4356,11 +4359,24 @@ pro plot_func
         f_min = f_min - 1
      endif
 
-     if strmid(plotmod,0,4) eq 'plot' then $
-        if nfunc gt ppp                then lstyle=ifunc/ppp $
-        else if keyword_set(linestyle) then lstyle=linestyle $
-        else                                lstyle=!p.linestyle
-
+     lstyle=0
+     if strmid(plotmod,0,4) eq 'plot' or $
+        strmid(plotmod,0,5) eq 'oplot' then begin
+        i=strpos(plotmod,'dot')
+        j=strpos(plotmod,'dash')
+        if i ge 0 then begin
+           plotmod=strmid(plotmod,0,i)+strmid(plotmod,i+3)
+           lstyle=1
+        endif else if j ge 0 then begin
+           plotmod=strmid(plotmod,0,j)+strmid(plotmod,j+4)
+           lstyle=2
+        endif else if !p.color eq 0 or !p.color eq 255 then begin
+           if nplot gt ppp           then lstyle=ifunc/ppp $
+           else if keyword_set(linestyle) then lstyle=linestyle $
+           else                           lstyle=!p.linestyle
+        endif
+     endif
+        
      ;; Skip minimum ad maximum levels
      if plotmod eq 'cont' or plotmod eq 'polar' or $
         plotmod eq 'lonlatn' or plotmod eq 'lonlats' then begin
@@ -4409,6 +4425,7 @@ pro plot_func
            'cont': contour,f>f_min,LEVELS=levels,$
                            FILL=fill,FOLLOW=label,$
                            XSTYLE=noaxis+1,YSTYLE=noaxis+1,/NOERASE
+           'oplot':oplot,f,LINE=lstyle
            'plot':plot,f,YRANGE=[f_min,f_max],$
                        XSTYLE=noaxis+18,ystyle=18,LINE=lstyle,/NOERASE
            'plot_io':plot_io,f,YRANGE=[f_min,f_max],$
@@ -4482,6 +4499,7 @@ pro plot_func
            'plot'     :plot,xx,f,YRANGE=[f_min,f_max],$
                             XSTYLE=noaxis+1,YSTYLE=noaxis+3,$
                             LINE=lstyle,/NOERASE
+           'oplot'    :oplot,xx,f,LINE=lstyle
            'plot_io'  :plot_io,xx,f,YRANGE=[f_min,f_max],$
                                XSTYLE=noaxis+1,YSTYLE=noaxis+3,$
                                LINE=lstyle,/NOERASE
@@ -4587,6 +4605,7 @@ pro plot_func
      !x.tickname = xtickname
      !y.title    = ytitle
      !y.tickname = ytickname
+     !p.color    = 255 - !p.background
   endfor
 
   !p.position = 0
