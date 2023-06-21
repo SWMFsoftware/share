@@ -26,7 +26,7 @@ module ModProcessVarName
   integer, parameter:: nSynonym = 3
 
   ! State variables not associated with a specific fluid/ specie
-  integer, parameter:: nVarExtra = 16
+  integer, parameter:: nVarExtra = 17
 
    ! Number of elements for charge state calculation
   integer, parameter:: nElementAll = 30
@@ -142,6 +142,7 @@ module ModProcessVarName
        'hyp  ', &
        'hype ', &
        'sign ', &
+       'z2sd ', &
        'lperp' ]
 
   ! Named indices for all elements in charge state calculation
@@ -193,6 +194,7 @@ module ModProcessVarName
        'Hyp  ', &
        'HypE ', &
        'Sign ', &
+       'Z2SD ', &
        'Lperp' ]
 
   ! Array storing standarized variable names for all species / fluids
