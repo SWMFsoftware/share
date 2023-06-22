@@ -45,7 +45,7 @@
 ; Functions for
 ;
 ; calculating correlation between two functions
-;    corr2
+;    corr2, pvalue
 ; calculating first derivative in 1D
 ;    diff1
 ; calculating derivatives in 2D for Cartesian grids to 2nd,3rd,4th order
@@ -4708,6 +4708,15 @@ pro putheader,multix,multiy,ix,iy,ninfo,headline,nx
   if ninfo gt 1 then info=info+' (nx='+string(nx,format='(i6,2(i4))')+')'
   xyouts,5+(ix*!d.x_size)/multix,-12+((iy+1)*!d.y_size)/multiy,/DEV,info
 
+end
+;===========================================================================
+function pvalue,a,b
+  df = n_elements(a) - 1 ; degrees of freedom
+  anorm = a - mean(a) & anorm /= stdev(anorm)  ; Gaussian (0,1)
+  bnorm = b - mean(b) & bnorm /= stdev(bnorm)  ; Gaussian (0,1)
+  cnorm = anorm - bnorm                        ; Gaussian (0,sqrt(2))
+  chi = df*variance(cnorm)/2.0                 ; X value
+  return, chisqr_pdf(chi, df)
 end
 ;===========================================================================
 function corr2,a,b,ncorr
