@@ -1654,11 +1654,13 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   TIMESTAMPTOVALUES,time_simu+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
   cdf_epoch,time_simu_epoch,yy,mo,dy,hh,mm,ss,/compute_epoch
 
-  TIMESTAMPTOVALUES,start_time_CME_I+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
-  cdf_epoch,start_time_CME_epoch,yy,mo,dy,hh,mm,ss,/compute_epoch
+  if (start_time_CME_I(0)) then begin
+     TIMESTAMPTOVALUES,start_time_CME_I+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
+     cdf_epoch,start_time_CME_epoch,yy,mo,dy,hh,mm,ss,/compute_epoch
 
-  TIMESTAMPTOVALUES,end_time_CME_I+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
-  cdf_epoch,end_time_CME_epoch,yy,mo,dy,hh,mm,ss,/compute_epoch
+     TIMESTAMPTOVALUES,end_time_CME_I+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
+     cdf_epoch,end_time_CME_epoch,yy,mo,dy,hh,mm,ss,/compute_epoch
+  endif
 
   index_cme = -1
 
@@ -1679,7 +1681,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   endfor
 
   ;; the first element is -1, need to be removed
-  if n_elements(index_cme) ge 1 then begin
+  if n_elements(index_cme) gt 1 then begin
      index_cme = index_cme[1:-1]
 
      ;; print the CME info
