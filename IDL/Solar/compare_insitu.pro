@@ -7,7 +7,7 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
                     dir_obs=dir_obs,                        $
                     EventTimeDist=EventTimeDist,            $
                     TimeWindowDist=TimeWindowDist,          $
-                    filename_CME  = filename_CME
+                    dir_CME_list=dir_CME_list
 
   if (not keyword_set(dir_sim)) then begin
      if (file_test('./simdata', /directory)) then begin
@@ -68,12 +68,10 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
   if (not isa(EventTimeDist))  then EventTimeDist  = 'none'
   if (not isa(TimeWindowDist)) then TimeWindowDist = -7
 
-  if keyword_set(filename_CME) then begin
-     get_CME_interval,filename_CME, start_time_CME_I, end_time_CME_I
-  endif else begin
-     start_time_CME_I = ''
-     end_time_CME_I   = ''
-  endelse
+  if (not keyword_set(dir_CME_list)) then dir_CME_list = './'
+
+  start_time_CME_I = ''
+  end_time_CME_I   = ''
 
   ;; default is to save the observation
   DoSaveObs = 1
@@ -87,6 +85,10 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
      TypeADAPT_I = ['earth', 'sta', 'stb', 'solo', 'psp']
 
      for iType = 0, n_elements(TypeADAPT_I)-1 do begin
+        ;; reset start_time_CME_I and end_time_CME_I
+        start_time_CME_I = ''
+        end_time_CME_I   = ''
+
         ;; for each directory and each type, reset the default value
         DoSaveObs = 1
 
@@ -102,6 +104,11 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
 
         IsOverPlot = 0
         DoLegend   = 1
+
+        if (TypeADAPT) eq 'earth' then begin
+           if file_test(dir_CME_list+'/ICME_list_EARTH.csv') then $
+              get_CME_interval,dir_CME_list+'/ICME_list_EARTH.csv',start_time_CME_I, end_time_CME_I
+        endif
 
         u_max = 0
         n_max = 0
@@ -189,6 +196,12 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
   for i = 0, nSimFile-1 do begin
      file_sim     = files_sim(i)
 
+     start_time_CME_I = ''
+     end_time_CME_I   = ''
+
+     if (strpos(file_sim,'earth') ge 0 and file_test(dir_CME_list+'/ICME_list_EARTH.csv')) then $
+        get_CME_interval,dir_CME_list+'/ICME_list_EARTH.csv',start_time_CME_I, end_time_CME_I
+     
      compare_insitu_one, file_sim=file_sim, extra_plt_info=extra_plt_info, $
                          UseTimePlotName=UseTimePlotName,                  $
                          CharSizeLocal=CharSizeLocal, DoPlotTe=DoPlotTe,   $
