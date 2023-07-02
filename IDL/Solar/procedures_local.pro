@@ -1587,7 +1587,8 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
                  ymin_I=ymin_I, ymax_I=ymax_I, linethick=linethick,           $
                  nLegendPlot=nLegendPlot,file_dist=file_dist,                 $
                  EventTimeDist=EventTimeDist, TimeWindowDist=TimeWindowDist,  $
-                 DoPlotDeltaB=DoPlotDeltaB
+                 DoPlotDeltaB=DoPlotDeltaB, start_time_CME_I=start_time_CME_I,$
+                 end_time_CME_I  =end_time_CME_I
 
   if (not isa(DoPlotTe)) then DoPlotTe = 1
   
@@ -1614,6 +1615,9 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   if (not isa(colorLocal)) then colorLocal = 5
   if (not isa(DoLegend))   then DoLegend   = 1
   if (not isa(linethick))  then linethick  = 9
+
+  if (not isa(start_time_CME_I)) then start_time_CME_I = ''
+  if (not isa(end_time_CME_I))   then end_time_CME_I = ''
 
   if (not keyword_set(ymin_I)) then ymin_I = [200,0,0,0]
 
@@ -1645,6 +1649,44 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
                max([max(B_obs[index_B]), max(b_simu)*1.e5])*1.3]
 
   utc_obs = anytim2utc(cdf2utc(time_obs),/external)
+
+  ;; utc_obs is in epoch time already, convet the simulation time
+  TIMESTAMPTOVALUES,time_simu+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
+  cdf_epoch,time_simu_epoch,yy,mo,dy,hh,mm,ss,/compute_epoch
+
+  TIMESTAMPTOVALUES,start_time_CME_I+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
+  cdf_epoch,start_time_CME_epoch,yy,mo,dy,hh,mm,ss,/compute_epoch
+
+  TIMESTAMPTOVALUES,end_time_CME_I+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
+  cdf_epoch,end_time_CME_epoch,yy,mo,dy,hh,mm,ss,/compute_epoch
+
+  index_cme = -1
+
+  start_time_plot = min([time_obs(0),time_simu_epoch(0)])
+  end_time_plot   = max([time_obs(-1),time_simu_epoch(-1)])
+
+  for i=0,n_elements(start_time_CME_epoch)-1 do begin
+     start_time_cme_local = start_time_CME_epoch(i)
+     end_time_cme_local   = end_time_CME_epoch(i)
+     ;; 1. CME is fully within the plot
+     ;; 2. the beginning is within the plot
+     ;; 3. the end is within the plot
+     if ((start_time_cme_local ge start_time_plot and start_time_cme_local le end_time_plot) or $
+         (end_time_cme_local ge start_time_plot and end_time_cme_local le end_time_plot)) then begin
+        ;; add to the array
+        index_cme = [index_cme,i]
+     endif
+  endfor
+
+  ;; the first element is -1, need to be removed
+  if n_elements(index_cme) ge 1 then begin
+     index_cme = index_cme[1:-1]
+
+     ;; print the CME info
+     for i=0,n_elements(index_cme)-1 do begin
+        print, 'CME is between ', start_time_CME_I(index_cme(i)),' and ', end_time_CME_I(index_cme(i))
+     endfor
+  endif
 
   if DoShowDist then begin
      if (DoPlotDeltaB) then begin
@@ -1694,6 +1736,14 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   utplot,time_simu, u_simu, background=7, color=colorLocal,               $
          thick=linethick, timerange=[start_time,end_time],                $
          yrange=[ymin,ymax],xstyle=5,ystyle=5, position=pos, /noerase
+
+  for i=0,n_elements(index_cme)-1 do begin
+     iLocal = index_cme(i)
+     if iLocal ge 0 then begin
+        plot_CME_interval, start_time_CME_I(iLocal), end_time_CME_I(iLocal), $
+                           start_time, end_time, ymin, ymax, pos, 2, 6
+     endif
+  endfor
 
   if DoLegend then begin
      if (DoPlotTe) then begin
@@ -1757,9 +1807,17 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   
   if DoShowDist ne 0 then legend,dist_int(1),thick=5,charsize=1,charthick=5, $
                                  position=[0.75,legendPosR-0.22],/norm,box=0
+
+  for i=0,n_elements(index_cme)-1 do begin
+     iLocal = index_cme(i)
+     if iLocal ge 0 then begin
+        plot_CME_interval, start_time_CME_I(iLocal), end_time_CME_I(iLocal), $
+                           start_time, end_time, ymin, ymax, pos, 2, 6
+     endif
+  endfor
+
   ;;----------------------------------------------------------------------
   ;; plot temperature
-
   ymin = ymin_I[2]
   ymax = ymax_I[2]
 
@@ -1785,6 +1843,15 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   endif
   if DoShowDist ne 0 then legend,dist_int(2),thick=5,charsize=1,charthick=5, $
                                  position=[0.75,legendPosR-0.45],/norm,box=0
+
+  for i=0,n_elements(index_cme)-1 do begin
+     iLocal = index_cme(i)
+     if iLocal ge 0 then begin
+        plot_CME_interval, start_time_CME_I(iLocal), end_time_CME_I(iLocal), $
+                           start_time, end_time, ymin, ymax, pos, 2, 6
+     endif
+  endfor
+
   ;;----------------------------------------------------------------------
   ;; plot magnetic field
 
@@ -1811,6 +1878,15 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   endelse
   if DoShowDist ne 0 then legend,dist_int(3),thick=5,charsize=1,charthick=5,  $
                                  position=[0.75,legendPosR-0.67],/norm,box=0
+
+  for i=0,n_elements(index_cme)-1 do begin
+     iLocal = index_cme(i)
+     if iLocal ge 0 then begin
+        plot_CME_interval, start_time_CME_I(iLocal), end_time_CME_I(iLocal), $
+                           start_time, end_time, ymin, ymax, pos, 2, 6
+     endif
+  endfor
+
 end
 
 ;--------------------------------------------------------------------
@@ -2263,4 +2339,52 @@ pro get_insitu_data, start_time, end_time, TypeData, u_obs, $
         RETURN
      end
   endcase
+end
+
+;--------------------------------------------------------------------
+
+pro get_CME_interval, filename, start_time_I, end_time_I
+
+  openr, lun_local, filename, /get_lun
+
+  line  = ''
+  nLine = 0
+
+  ;; maximum 10000 CMEs
+  start_time_I = strarr(10000)
+  end_time_I   = strarr(10000)
+
+  while not eof(lun_local) do begin
+     readf, lun_local, line
+     if line ne 'start_time,end_time' then begin
+        times = strsplit(line,',',/extract)
+        start_time_I(nLine) = times(0)
+        end_time_I(nLine)   = times(1)
+        nLine += 1
+     endif
+  endwhile
+
+  close, lun_local & free_lun, lun_local
+
+  start_time_I = start_time_I(0:nLine-1)
+  end_time_I   = end_time_I(0:nLine-1)
+
+  ;; use the IDL format
+  start_time_I = start_time_I.replace(' ','T')
+  end_time_I   = end_time_I.replace(' ','T')
+end
+
+;--------------------------------------------------------------------
+
+pro plot_CME_interval, start_time_CME, end_time_CME, start_time, end_time, $
+                       ymin, ymax, pos, linestyleIn, colorIn
+
+  utplot, [start_time_CME, start_time_CME], [ymin,ymax],       $
+          timerange=[start_time,end_time], yrange=[ymin,ymax], $
+          thick=9, xstyle=5,ystyle=5, position=pos, /noerase,  $
+          color=colorIn, linestyle=linestyleIn
+  utplot, [end_time_CME, end_time_CME], [ymin,ymax],           $
+          timerange=[start_time,end_time], yrange=[ymin,ymax], $
+          thick=9, xstyle=5,ystyle=5, position=pos, /noerase,  $
+          color=colorIn, linestyle=linestyleIn
 end
