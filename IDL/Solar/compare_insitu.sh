@@ -13,6 +13,6 @@ setenv MONTHLY_IMAGES $SSWDB/soho/lasco/monthly
 setenv CDF_LEAPSECONDSTABLE CDFLeapSeconds
 setenv IDL_STARTUP ssw_startup_insitu
 
-printf "compare_insitu, dir_sim='$2', dir_plot='$3', ModelIn='$4',dir_obs='$5', EventTimeDist='$6', TimeWindowDist=$7" | sswidl > $3/log_insitu
+printf "compare_insitu, dir_sim='$2', dir_plot='$3', ModelIn='$4',dir_obs='$5', EventTimeDist='$6', TimeWindowDist=$7, dir_CME_list=$8" | sswidl > $3/log_insitu
 
 exit
