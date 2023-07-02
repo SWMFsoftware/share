@@ -6,7 +6,8 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
                     DoPlotTe=DoPlotTe, ModelIn=ModelIn,     $
                     dir_obs=dir_obs,                        $
                     EventTimeDist=EventTimeDist,            $
-                    TimeWindowDist=TimeWindowDist
+                    TimeWindowDist=TimeWindowDist,          $
+                    filename_CME  = filename_CME
 
   if (not keyword_set(dir_sim)) then begin
      if (file_test('./simdata', /directory)) then begin
@@ -66,6 +67,13 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
 
   if (not isa(EventTimeDist))  then EventTimeDist  = 'none'
   if (not isa(TimeWindowDist)) then TimeWindowDist = -7
+
+  if keyword_set(filename_CME) then begin
+     get_CME_interval,filename_CME, start_time_CME_I, end_time_CME_I
+  endif else begin
+     start_time_CME_I = ''
+     end_time_CME_I   = ''
+  endelse
 
   ;; default is to save the observation
   DoSaveObs = 1
@@ -168,7 +176,8 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
                                CharSizeLocal=CharSizeLocal, DoPlotTe=DoPlotTe,            $
                                Model=Model, dir_obs=dir_obs, dir_plot=dirs_adapt[iFile],  $
                                DoSaveObs=DoSaveObs, DoLogT=1, EventTimeDist=EventTimeDist,$
-                               TimeWindowDist=TimeWindowDist, DoPlotDeltaB=DoPlotDeltaB
+                               TimeWindowDist=TimeWindowDist, DoPlotDeltaB=DoPlotDeltaB,  $
+                               start_time_CME_I=start_time_CME_I, end_time_CME_I=end_time_CME_I
            DoSaveObs = 0
         endfor
      endfor
@@ -186,6 +195,7 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
                          Model=Model, dir_obs=dir_obs, dir_plot=dir_plot,  $
                          DoSaveObs=DoSaveObs, EventTimeDist=EventTimeDist, $
                          TimeWindowDist=TimeWindowDist,                    $
-                         DoPlotDeltaB=DoPlotDeltaB
+                         DoPlotDeltaB=DoPlotDeltaB,                        $
+                         start_time_CME_I=start_time_CME_I, end_time_CME_I=end_time_CME_I
   endfor
 end
