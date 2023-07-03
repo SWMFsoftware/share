@@ -1739,14 +1739,9 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
          thick=linethick, timerange=[start_time,end_time],                $
          yrange=[ymin,ymax],xstyle=5,ystyle=5, position=pos, /noerase
 
-  for i=0,n_elements(index_cme)-1 do begin
-     iLocal = index_cme(i)
-     if iLocal ge 0 then begin
-        plot_CME_interval, start_time_CME_I(iLocal), end_time_CME_I(iLocal), $
-                           start_time, end_time, ymin, ymax, pos, 2, 6
-     endif
-  endfor
-
+  plot_CME_interval, start_time_CME_I, end_time_CME_I, index_cme,         $
+                     start_time, end_time, ymin, ymax, pos, 2, 6
+  
   if DoLegend then begin
      if (DoPlotTe) then begin
         if IsOverPlot ne 1 then begin
@@ -1810,13 +1805,8 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   if DoShowDist ne 0 then legend,dist_int(1),thick=5,charsize=1,charthick=5, $
                                  position=[0.75,legendPosR-0.22],/norm,box=0
 
-  for i=0,n_elements(index_cme)-1 do begin
-     iLocal = index_cme(i)
-     if iLocal ge 0 then begin
-        plot_CME_interval, start_time_CME_I(iLocal), end_time_CME_I(iLocal), $
-                           start_time, end_time, ymin, ymax, pos, 2, 6
-     endif
-  endfor
+  plot_CME_interval, start_time_CME_I, end_time_CME_I, index_cme,         $
+                     start_time, end_time, ymin, ymax, pos, 2, 6
 
   ;;----------------------------------------------------------------------
   ;; plot temperature
@@ -1846,13 +1836,8 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   if DoShowDist ne 0 then legend,dist_int(2),thick=5,charsize=1,charthick=5, $
                                  position=[0.75,legendPosR-0.45],/norm,box=0
 
-  for i=0,n_elements(index_cme)-1 do begin
-     iLocal = index_cme(i)
-     if iLocal ge 0 then begin
-        plot_CME_interval, start_time_CME_I(iLocal), end_time_CME_I(iLocal), $
-                           start_time, end_time, ymin, ymax, pos, 2, 6
-     endif
-  endfor
+  plot_CME_interval, start_time_CME_I, end_time_CME_I, index_cme,         $
+                     start_time, end_time, ymin, ymax, pos, 2, 6
 
   ;;----------------------------------------------------------------------
   ;; plot magnetic field
@@ -1881,14 +1866,8 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   if DoShowDist ne 0 then legend,dist_int(3),thick=5,charsize=1,charthick=5,  $
                                  position=[0.75,legendPosR-0.67],/norm,box=0
 
-  for i=0,n_elements(index_cme)-1 do begin
-     iLocal = index_cme(i)
-     if iLocal ge 0 then begin
-        plot_CME_interval, start_time_CME_I(iLocal), end_time_CME_I(iLocal), $
-                           start_time, end_time, ymin, ymax, pos, 2, 6
-     endif
-  endfor
-
+  plot_CME_interval, start_time_CME_I, end_time_CME_I, index_cme,           $
+                     start_time, end_time, ymin, ymax, pos, 2, 6
 end
 
 ;--------------------------------------------------------------------
@@ -2378,15 +2357,24 @@ end
 
 ;--------------------------------------------------------------------
 
-pro plot_CME_interval, start_time_CME, end_time_CME, start_time, end_time, $
-                       ymin, ymax, pos, linestyleIn, colorIn
+pro plot_CME_interval, start_time_CME_I, end_time_CME_I, index_cme, $
+                       start_time, end_time, ymin, ymax, pos,       $
+                       linestyleIn, colorIn
 
-  utplot, [start_time_CME, start_time_CME], [ymin,ymax],       $
-          timerange=[start_time,end_time], yrange=[ymin,ymax], $
-          thick=9, xstyle=5,ystyle=5, position=pos, /noerase,  $
-          color=colorIn, linestyle=linestyleIn
-  utplot, [end_time_CME, end_time_CME], [ymin,ymax],           $
-          timerange=[start_time,end_time], yrange=[ymin,ymax], $
-          thick=9, xstyle=5,ystyle=5, position=pos, /noerase,  $
-          color=colorIn, linestyle=linestyleIn
+  for i=0,n_elements(index_cme)-1 do begin
+     iLocal = index_cme(i)
+     if iLocal ge 0 then begin
+        start_time_CME = start_time_CME_I(iLocal)
+        end_time_CME   = end_time_CME_I(iLocal)
+
+        utplot, [start_time_CME, start_time_CME], [ymin,ymax],       $
+                timerange=[start_time,end_time], yrange=[ymin,ymax], $
+                thick=9, xstyle=5,ystyle=5, position=pos, /noerase,  $
+                color=colorIn, linestyle=linestyleIn
+        utplot, [end_time_CME, end_time_CME], [ymin,ymax],           $
+                timerange=[start_time,end_time], yrange=[ymin,ymax], $
+                thick=9, xstyle=5,ystyle=5, position=pos, /noerase,  $
+                color=colorIn, linestyle=linestyleIn
+     endif
+  endfor
 end
