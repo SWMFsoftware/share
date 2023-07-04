@@ -136,7 +136,7 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
   start_time_CME_I = ''
   end_time_CME_I   = ''
   print, 'TypeData =', TypeData
-  if (TypeData eq 'OMNI' then begin
+  if (TypeData eq 'OMNI') then begin
      if file_test(dir_CME_list+'/ICME_list_EARTH.csv') then $
         get_CME_interval,dir_CME_list+'/ICME_list_EARTH.csv',start_time_CME_I, end_time_CME_I
   endif
