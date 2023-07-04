@@ -168,7 +168,8 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
                         charsize=CharSizeLocal, DoPlotTe = DoPlotTe,                $
                         legendNames=Model, DoShowDist=0, IsOverPlot=IsOverPlot,     $
                         DoLegend=DoLegend,ymax_I=[u_max,n_max,T_max,B_max],         $
-                        DoLogT=1, linethick=5, DoPlotDeltaB=DoPlotDeltaB
+                        DoLogT=1, linethick=5, DoPlotDeltaB=DoPlotDeltaB,           $
+                        start_time_CME_I=start_time_CME_I, end_time_CME_I=end_time_CME_I
            
            IsOverPlot = 1
            DoLegend   = 0
