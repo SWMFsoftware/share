@@ -2415,14 +2415,16 @@ end
 pro plot_CME_interval, start_time_CME_epoch_I, end_time_CME_epoch_I, index_cme, $
                        start_time_epoch, end_time_epoch, ymin, ymax
 
+  xmax_local = (end_time_epoch-start_time_epoch)/1000
+
   for i=0,n_elements(index_cme)-1 do begin
      iLocal = index_cme(i)
      if iLocal ge 0 then begin
         start_time_CME = start_time_CME_epoch_I(iLocal)
         end_time_CME   = end_time_CME_epoch_I(iLocal)
 
-        x1_cme = (start_time_CME - start_time_epoch)/1000
-        x2_cme = (end_time_CME   - start_time_epoch)/1000
+        x1_cme = max([(start_time_CME - start_time_epoch)/1000, 0])
+        x2_cme = min([(end_time_CME   - start_time_epoch)/1000, xmax_local])
 
         POLYFILL, [x1_cme,x2_cme,x2_cme,x1_cme],[ymin,ymin,ymax,ymax],/data,color=87
      endif
