@@ -1,7 +1,8 @@
 pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   $
                               DoPlotTe=DoPlotTe, CharSizeLocal=CharSizeLocal,   $
                               nyMaxLegend=nyMaxLegend,DoHighlight=DoHighlight,  $
-                              DoStrictRange=DoStrictRange
+                              DoStrictRange=DoStrictRange, dir_CME_list=dir_CME_list, $
+                              DoPlotDeltaB=DoPlotDeltaB
 
   if (not keyword_set(filename_list)) then begin
      if (file_test('./filename_list.txt')) then begin
@@ -25,6 +26,10 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
   if (keyword_set(DoHighlight))        then $
      openw, lun_opt, './output/avg_dist.txt',/get_lun
   if (not keyword_set(DoStrictRange))  then DoStrictRange=0
+
+  if (not keyword_set(DoPlotDeltaB))    then DoPlotDeltaB = 0
+
+  if (not keyword_set(dir_CME_list)) then dir_CME_list = './'
 
   EventTimeDist  = 'none'
   TimeWindowDist = -7
@@ -57,14 +62,16 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
      filenames_sat  = strings_local[0]
      filename_sat_I = FILE_SEARCH(filenames_sat, count=nFileSim)
 
-     if nFileSim eq 0 then $
+     if nFileSim eq 0 then begin
         print, 'no file is found for '+filenames_sat
+        continue
+     endif
 
      for ifile=1,nFileSim do begin
         filename_sat = filename_sat_I(ifile-1)
         read_swmf_sat, filename_sat, time_swmf, n_swmf, ux_swmf, uy_swmf,       $
                        uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf,    $
-                       ut_swmf, ur_swmf, B_swmf, DoContainData=DoContainData,   $
+                       ut_swmf, ur_swmf, B_swmf, Btotal_swmf, DoContainData=DoContainData,   $
                        TypeData=TypeData, TypePlot=TypePlot,                    $
                        start_time=start_time, end_time=end_time
 
@@ -89,20 +96,23 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
         umax = max([umax,max(ur_swmf)*1.3])
         nmax = max([nmax,max(n_swmf )*1.3])
         tmax = max([tmax,max(ti_swmf)*1.3])
-        bmax = max([bmax,max(B_swmf )*1.3]*1e5)
+        bmax = max([bmax,max(B_swmf )*1.3*1e5])
         if DoPlotTe then tmax = max([tmax,max(te_swmf)*1.3])
 
-        if DoHighlight then begin
-           if (not isa(time_obs)) then begin
-              get_insitu_data, start_time, end_time, TypeData, u_obs, n_obs, tem_obs,  $
-                               mag_obs, time_obs, DoContainData=DoContainData
+        ;; download the observatonal data if time_obs is not defined yet
+        ;; no need to download if time_obs is defined (already downloaded)
+        if (not isa(time_obs)) then begin
+           get_insitu_data, start_time, end_time, TypeData, u_obs, n_obs, tem_obs,  $
+                            mag_obs, time_obs, DoContainData=DoContainData
 
-              if DoContainData ne 1 then begin
-                 print, " Error: no observational data are found."
-                 return
-              endif
+           if DoContainData ne 1 then begin
+              print, " Error: no observational data are found."
+              return
            endif
+        endif
 
+        ;; calculate the distance values to determine the minimum distance
+        if DoHighlight then begin
            dist_int = calc_dist_insitu(time_obs, u_obs,  n_obs, tem_obs, mag_obs, $
                                        time_swmf,ut_swmf,n_swmf,ti_swmf, B_swmf,  $
                                        dist_int_u, dist_int_t,                    $
@@ -117,17 +127,19 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
            dist_un_min = min([dist_un_min,(dist_int_u+dist_int_n)/2.0])
         endif
      end
-  end
-  
-  if (not isa(time_obs)) then begin
-     get_insitu_data, start_time, end_time, TypeData, u_obs, n_obs, tem_obs,  $
-                      mag_obs, time_obs, DoContainData=DoContainData
-     if DoContainData ne 1 then begin
-        print, " Error: no observational data are found."
-        return
-     endif
+  end ;; while not eof(lun)
+  close,lun
+  free_lun,lun
+
+  ;; get the CME intervals based on the list file.
+  start_time_CME_I = ''
+  end_time_CME_I   = ''
+  print, 'TypeData =', TypeData
+  if (TypeData eq 'OMNI' then begin
+     if file_test(dir_CME_list+'/ICME_list_EARTH.csv') then $
+        get_CME_interval,dir_CME_list+'/ICME_list_EARTH.csv',start_time_CME_I, end_time_CME_I
   endif
-  
+
   ;; adjust again with the observation
   if DoStrictRange then begin
      umax_plot = min([umax_plot,max([umax,max(u_obs)*1.3])])
@@ -166,14 +178,24 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
      filenames_sat  = strings_local[0]
      filename_sat_I = FILE_SEARCH(filenames_sat, count=nFileSim)
 
+     if nFileSim eq 0 then begin
+        print, 'no file is found for '+filenames_sat
+        continue
+     endif
+
      for ifile=1,nFileSim do begin
         filename_sat=filename_sat_I(ifile-1)
      
         read_swmf_sat, filename_sat, time_swmf, n_swmf, ux_swmf, uy_swmf,       $
                        uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf,    $
-                       ut_swmf, ur_swmf, B_swmf, DoContainData=DoContainData,   $
+                       ut_swmf, ur_swmf, B_swmf, Btotal_swmf, DoContainData=DoContainData,   $
                        TypeData=TypeData, TypePlot=TypePlot,                    $
                        start_time=start_time, end_time=end_time
+
+        if DoContainData ne 1 then begin
+           print, " Error: filename=", filename_sat, " does not contain any data"
+           continue
+        endif
 
         DoLegendIn = 1
         if n_elements(strings_local) ge 2 then begin
@@ -236,14 +258,16 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
 
         plot_insitu, time_obs, u_obs,  n_obs,  tem_obs, mag_obs,                 $
                      time_swmf, ur_swmf, n_swmf,  ti_swmf,  te_swmf, B_swmf,     $
-                     start_time, end_time, typeData=typeData,                    $
+                     Btotal_swmf, start_time, end_time, typeData=typeData,       $
                      charsize=CharSizeLocal, DoPlotTe = DoPlotTe,                $
                      legendNames=legendNameIn, DoShowDist=0,                     $
                      ymax_I=[umax_plot,nmax_plot,tmax_plot,bmax_plot],           $
                      IsOverPlot=IsOverPlot, DoLogT=1, linethick=linethickIn,     $
                      colorLocal=colorIn, DoLegend=DoLegendIn,                    $
                      nLegendPlot=nLegendPlot,legendPosL=legendPosLIn,            $
-                     EventTimeDist=EventTimeDist, TimeWindowDist=TimeWindowDist
+                     EventTimeDist=EventTimeDist, TimeWindowDist=TimeWindowDist, $
+                     DoPlotDeltaB=DoPlotDeltaB, start_time_CME_I=start_time_CME_I,$
+                     end_time_CME_I=end_time_CME_I
 
         ;; nLegendPlot is the number of legend printed in plot_insitu
         nLegendPlotTotal = nLegendPlotTotal + nLegendPlot
@@ -252,6 +276,8 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
         ;; print,' nLegendPlotTotal =', nLegendPlotTotal
      end
   end
+  close,lun
+  free_lun,lun
 
   if DoHighlight then begin
      nxLegend = nLegendPlotTotal/nyMaxLegend
@@ -260,19 +286,20 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
 
      plot_insitu, time_obs, u_obs,  n_obs,  tem_obs, mag_obs,                 $
                   time_swmf_h, ur_swmf_h, n_swmf_h,  ti_swmf_h,  te_swmf_h, B_swmf_h,     $
-                  start_time, end_time, typeData=typeData,                    $
+                  Btotal_swmf, start_time, end_time, typeData=typeData,       $
                   charsize=CharSizeLocal, DoPlotTe = DoPlotTe,                $
                   legendNames='Optimal Run', DoShowDist=0,                    $
                   ymax_I=[umax_plot,nmax_plot,tmax_plot,bmax_plot],           $
                   IsOverPlot=IsOverPlot, DoLogT=1, linethick=15,              $
                   colorLocal=5, DoLegend=1,                                   $
-                  nLegendPlot=nLegendPlot,legendPosL=legendPosLIn
+                  nLegendPlot=nLegendPlot,legendPosL=legendPosLIn,            $
+                  DoPlotDeltaB=DoPlotDeltaB
 
      print, 'The optimal run is found at '+filename_sat_h
      printf, lun_opt, 'The optimal run is found at '+filename_sat_h
      
      close,lun_opt
-     free_lun,lun_opt     
+     free_lun,lun_opt
   endif
 
   device,/close_file
