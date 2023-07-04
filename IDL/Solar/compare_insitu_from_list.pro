@@ -2,7 +2,7 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
                               DoPlotTe=DoPlotTe, CharSizeLocal=CharSizeLocal,   $
                               nyMaxLegend=nyMaxLegend,DoHighlight=DoHighlight,  $
                               DoStrictRange=DoStrictRange, dir_CME_list=dir_CME_list, $
-                              DoPlotDeltaB=DoPlotDeltaB
+                              DoPlotDeltaB=DoPlotDeltaB, yMax_I=yMax_I
 
   if (not keyword_set(filename_list)) then begin
      if (file_test('./filename_list.txt')) then begin
@@ -30,14 +30,15 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
   if (not keyword_set(DoPlotDeltaB))    then DoPlotDeltaB = 0
 
   if (not keyword_set(dir_CME_list)) then dir_CME_list = './'
+  if (not keyword_set(yMax_I)) then yMax_I=[1000,40,1e6,30]
 
   EventTimeDist  = 'none'
   TimeWindowDist = -7
   
-  umax_plot = 900
-  nmax_plot = 35
-  tmax_plot = 1e6
-  bmax_plot = 25
+  umax_plot = yMax_I(0)
+  nmax_plot = yMax_I(1)
+  tmax_plot = yMax_I(2)
+  bmax_plot = yMax_I(3)
 
   umax = 0
   nmax = 0
