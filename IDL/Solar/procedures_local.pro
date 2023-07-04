@@ -1656,25 +1656,27 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
 
   if (start_time_CME_I(0)) then begin
      TIMESTAMPTOVALUES,start_time_CME_I+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
-     cdf_epoch,start_time_CME_epoch,yy,mo,dy,hh,mm,ss,/compute_epoch
+     cdf_epoch,start_time_CME_epoch_I,yy,mo,dy,hh,mm,ss,/compute_epoch
 
      TIMESTAMPTOVALUES,end_time_CME_I+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
-     cdf_epoch,end_time_CME_epoch,yy,mo,dy,hh,mm,ss,/compute_epoch
+     cdf_epoch,end_time_CME_epoch_I,yy,mo,dy,hh,mm,ss,/compute_epoch
   endif
 
   index_cme = -1
 
-  start_time_plot = min([time_obs(0),time_simu_epoch(0)])
-  end_time_plot   = max([time_obs(-1),time_simu_epoch(-1)])
+  ;; the start/end time of the plot is obtaind from the simulation, as the data is
+  ;; downloaded based on the start/end time of the simulation.
+  start_time_epoch = time_simu_epoch(0)
+  end_time_epoch   = time_simu_epoch(-1)
 
-  for i=0,n_elements(start_time_CME_epoch)-1 do begin
-     start_time_cme_local = start_time_CME_epoch(i)
-     end_time_cme_local   = end_time_CME_epoch(i)
+  for i=0,n_elements(start_time_CME_epoch_I)-1 do begin
+     start_time_cme_local = start_time_CME_epoch_I(i)
+     end_time_cme_local   = end_time_CME_epoch_I(i)
      ;; 1. CME is fully within the plot
      ;; 2. the beginning is within the plot
      ;; 3. the end is within the plot
-     if ((start_time_cme_local ge start_time_plot and start_time_cme_local le end_time_plot) or $
-         (end_time_cme_local ge start_time_plot and end_time_cme_local le end_time_plot)) then begin
+     if ((start_time_cme_local ge start_time_epoch and start_time_cme_local le end_time_epoch) or $
+         (end_time_cme_local ge start_time_epoch and end_time_cme_local le end_time_epoch)) then begin
         ;; add to the array
         index_cme = [index_cme,i]
      endif
@@ -1729,18 +1731,35 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
 
   pos=[x1[0],y1[3],x2[0],y2[3]]
 
-  if IsOverPlot ne 1 then    $
-     utplot,utc_obs(index_u),u_obs(index_u),background=7,color=0,         $
-            ytitle='U [km/s]',thick=9, timerange=[start_time,end_time],  $
-            xstyle=1,yrange=[ymin,ymax],ystyle=1,                         $
-            charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos, $
-            xtickname=REPLICATE(' ', 7),xtitle=' '
+  if IsOverPlot ne 1 then begin
+     if max(index_cme) ge 0 then begin
+        ;; complicated to plot the CME interval due to the transparency...
+        ;; create a plot without any actual line first
+        utplot,utc_obs(index_u),u_obs(index_u),background=7,    $
+               timerange=[start_time,end_time],                 $
+               xstyle=5,yrange=[ymin,ymax],ystyle=5,                         $
+               position=pos
+        ;; plot the CME interval
+        plot_CME_interval, start_time_CME_epoch_I, end_time_CME_epoch_I, index_cme, $
+                           start_time_epoch, end_time_epoch, ymin, ymax
+        ;; plot the actual data
+        utplot,utc_obs(index_u),u_obs(index_u),background=7,color=0,         $
+               ytitle='U [km/s]',thick=9, timerange=[start_time,end_time],  $
+               xstyle=1,yrange=[ymin,ymax],ystyle=1,                         $
+               charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos, $
+               xtickname=REPLICATE(' ', 7),xtitle=' ', /noerase
+     endif else begin
+        utplot,utc_obs(index_u),u_obs(index_u),background=7,color=0,         $
+               ytitle='U [km/s]',thick=9, timerange=[start_time,end_time],  $
+               xstyle=1,yrange=[ymin,ymax],ystyle=1,                         $
+               charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos, $
+               xtickname=REPLICATE(' ', 7),xtitle=' '
+     endelse
+  endif
+
   utplot,time_simu, u_simu, background=7, color=colorLocal,               $
          thick=linethick, timerange=[start_time,end_time],                $
          yrange=[ymin,ymax],xstyle=5,ystyle=5, position=pos, /noerase
-
-  plot_CME_interval, start_time_CME_I, end_time_CME_I, index_cme,         $
-                     start_time, end_time, ymin, ymax, pos, 2, 6
   
   if DoLegend then begin
      if (DoPlotTe) then begin
@@ -1791,22 +1810,35 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
 
   pos=[x1[0],y1[2],x2[0],y2[2]]
 
-  if IsOverPlot ne 1 then $
-     utplot,utc_obs[index_n],n_obs[index_n],background=7,color=0,         $
-            ytitle='Np [cm!E-3!N]',thick=9,                               $
-            timerange=[start_time,end_time],xstyle=1,charsize=charsize,   $
-            charthick=5,xthick=5,                                         $
-            ythick=5,position=pos,xtickname=REPLICATE(' ', 7),xtitle=' ', $
-            yrange=[ymin,ymax], ystyle=1
+  if IsOverPlot ne 1 then begin
+     if max(index_cme) ge 0 then begin
+        utplot,utc_obs[index_n],n_obs[index_n],background=7,                 $
+               timerange=[start_time,end_time],xstyle=5,                     $
+               position=pos, yrange=[ymin,ymax], ystyle=5,/nodata
+        plot_CME_interval, start_time_CME_epoch_I, end_time_CME_epoch_I, index_cme, $
+                           start_time_epoch, end_time_epoch, ymin, ymax
+        utplot,utc_obs[index_n],n_obs[index_n],background=7,color=0,         $
+               ytitle='Np [cm!E-3!N]',thick=9,                               $
+               timerange=[start_time,end_time],xstyle=1,charsize=charsize,   $
+               charthick=5,xthick=5,                                         $
+               ythick=5,position=pos,xtickname=REPLICATE(' ', 7),xtitle=' ', $
+               yrange=[ymin,ymax], ystyle=1,/noerase
+     endif else begin
+        utplot,utc_obs[index_n],n_obs[index_n],background=7,color=0,         $
+               ytitle='Np [cm!E-3!N]',thick=9,                               $
+               timerange=[start_time,end_time],xstyle=1,charsize=charsize,   $
+               charthick=5,xthick=5,                                         $
+               ythick=5,position=pos,xtickname=REPLICATE(' ', 7),xtitle=' ', $
+               yrange=[ymin,ymax], ystyle=1
+     endelse
+  endif
+     
   utplot,time_simu, n_simu, background=7, color=colorLocal,               $
          thick=linethick, timerange=[start_time,end_time],                $
          yrange=[ymin,ymax],xstyle=5,ystyle=5, position=pos, /noerase
-  
+
   if DoShowDist ne 0 then legend,dist_int(1),thick=5,charsize=1,charthick=5, $
                                  position=[0.75,legendPosR-0.22],/norm,box=0
-
-  plot_CME_interval, start_time_CME_I, end_time_CME_I, index_cme,         $
-                     start_time, end_time, ymin, ymax, pos, 2, 6
 
   ;;----------------------------------------------------------------------
   ;; plot temperature
@@ -1815,13 +1847,28 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
 
   pos=[x1[0],y1[1],x2[0],y2[1]]
 
-  if IsOverPlot ne 1 then $
-     utplot,utc_obs[index_T],T_obs[index_T],background=7,color=0,              $
-            ytitle='Temperature [K]',thick=9,timerange=[start_time,end_time],  $
-            xstyle=1,                                                          $
-            charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos,      $
-            xtickname=REPLICATE(' ', 7),xtitle=' ',yrange=[ymin,ymax],ystyle=1,$
-            ytype=DoLogT
+  if IsOverPlot ne 1 then begin
+     if max(index_cme) ge 0 then begin
+        utplot,utc_obs[index_T],T_obs[index_T],background=7,                      $
+               timerange=[start_time,end_time], xstyle=5,                         $
+               position=pos, yrange=[ymin,ymax],ystyle=5, ytype=DoLogT,/nodata
+        plot_CME_interval, start_time_CME_epoch_I, end_time_CME_epoch_I, index_cme, $
+                           start_time_epoch, end_time_epoch, ymin, ymax
+        utplot,utc_obs[index_T],T_obs[index_T],background=7,color=0,              $
+               ytitle='Temperature [K]',thick=9,timerange=[start_time,end_time],  $
+               xstyle=1,                                                          $
+               charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos,      $
+               xtickname=REPLICATE(' ', 7),xtitle=' ',yrange=[ymin,ymax],ystyle=1,$
+               ytype=DoLogT, /noerase
+     endif else begin
+        utplot,utc_obs[index_T],T_obs[index_T],background=7,color=0,              $
+               ytitle='Temperature [K]',thick=9,timerange=[start_time,end_time],  $
+               xstyle=1,                                                          $
+               charsize=charsize,charthick=5,xthick=5,ythick=5,position=pos,      $
+               xtickname=REPLICATE(' ', 7),xtitle=' ',yrange=[ymin,ymax],ystyle=1,$
+               ytype=DoLogT
+     endelse
+  endif
   utplot,time_simu, ti_simu, background=7, color=colorLocal,              $
          thick=linethick, timerange=[start_time,end_time],                $
          yrange=[ymin,ymax],xstyle=5,ystyle=5, position=pos, /noerase,    $
@@ -1836,9 +1883,6 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   if DoShowDist ne 0 then legend,dist_int(2),thick=5,charsize=1,charthick=5, $
                                  position=[0.75,legendPosR-0.45],/norm,box=0
 
-  plot_CME_interval, start_time_CME_I, end_time_CME_I, index_cme,         $
-                     start_time, end_time, ymin, ymax, pos, 2, 6
-
   ;;----------------------------------------------------------------------
   ;; plot magnetic field
 
@@ -1846,13 +1890,27 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   ymax = ymax_I[3]
 
   pos=[x1[0],y1[0],x2[0],y2[0]]
-  
-  if IsOverPlot ne 1 then $
-     utplot,utc_obs(index_B),B_obs(index_B),background=7,color=0,            $
-            ytitle='B [nT]',thick=9,                                         $
-            timerange=[start_time,end_time],xstyle=1,yrange=[ymin,ymax],     $
-            ysytle=1, charsize=charsize,                                     $
-            charthick=5,xthick=5,ythick=5,position=pos
+
+  if IsOverPlot ne 1 then begin
+     if max(index_cme) ge 0 then begin
+        utplot,utc_obs(index_B),B_obs(index_B),background=7,                    $
+               timerange=[start_time,end_time],xstyle=5,yrange=[ymin,ymax],     $
+               ystyle=5, position=pos, /nodata
+        plot_CME_interval, start_time_CME_epoch_I, end_time_CME_epoch_I, index_cme, $
+                           start_time_epoch, end_time_epoch, ymin, ymax
+        utplot,utc_obs(index_B),B_obs(index_B),background=7,color=0,            $
+               ytitle='B [nT]',thick=9,                                         $
+               timerange=[start_time,end_time],xstyle=1,yrange=[ymin,ymax],     $
+               ysytle=1, charsize=charsize,                                     $
+               charthick=5,xthick=5,ythick=5,position=pos,/noerase
+     endif else begin
+        utplot,utc_obs(index_B),B_obs(index_B),background=7,color=0,            $
+               ytitle='B [nT]',thick=9,                                         $
+               timerange=[start_time,end_time],xstyle=1,yrange=[ymin,ymax],     $
+               ystyle=1, charsize=charsize,                                     $
+               charthick=5,xthick=5,ythick=5,position=pos
+     endelse
+  endif
   if (DoPlotDeltaB) then begin
      utplot,time_simu, btotal_simu*1.e5, background=7, color=colorLocal,$
             thick=linethick, timerange=[start_time,end_time],                $
@@ -1865,9 +1923,6 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   endelse
   if DoShowDist ne 0 then legend,dist_int(3),thick=5,charsize=1,charthick=5,  $
                                  position=[0.75,legendPosR-0.67],/norm,box=0
-
-  plot_CME_interval, start_time_CME_I, end_time_CME_I, index_cme,           $
-                     start_time, end_time, ymin, ymax, pos, 2, 6
 end
 
 ;--------------------------------------------------------------------
@@ -2357,24 +2412,19 @@ end
 
 ;--------------------------------------------------------------------
 
-pro plot_CME_interval, start_time_CME_I, end_time_CME_I, index_cme, $
-                       start_time, end_time, ymin, ymax, pos,       $
-                       linestyleIn, colorIn
+pro plot_CME_interval, start_time_CME_epoch_I, end_time_CME_epoch_I, index_cme, $
+                       start_time_epoch, end_time_epoch, ymin, ymax
 
   for i=0,n_elements(index_cme)-1 do begin
      iLocal = index_cme(i)
      if iLocal ge 0 then begin
-        start_time_CME = start_time_CME_I(iLocal)
-        end_time_CME   = end_time_CME_I(iLocal)
+        start_time_CME = start_time_CME_epoch_I(iLocal)
+        end_time_CME   = end_time_CME_epoch_I(iLocal)
 
-        utplot, [start_time_CME, start_time_CME], [ymin,ymax],       $
-                timerange=[start_time,end_time], yrange=[ymin,ymax], $
-                thick=9, xstyle=5,ystyle=5, position=pos, /noerase,  $
-                color=colorIn, linestyle=linestyleIn
-        utplot, [end_time_CME, end_time_CME], [ymin,ymax],           $
-                timerange=[start_time,end_time], yrange=[ymin,ymax], $
-                thick=9, xstyle=5,ystyle=5, position=pos, /noerase,  $
-                color=colorIn, linestyle=linestyleIn
+        x1_cme = (start_time_CME - start_time_epoch)/1000
+        x2_cme = (end_time_CME   - start_time_epoch)/1000
+
+        POLYFILL, [x1_cme,x2_cme,x2_cme,x1_cme],[ymin,ymin,ymax,ymax],/data,color=87
      endif
   endfor
 end
