@@ -1595,28 +1595,7 @@ pro show_log_data
   read_log_data
   plot_log_data
 end
-;=============================================================================
-pro show_imf, filename
-  common plotlog_param
-  
-  timeunit='date'
-  logfunc='rho ux bz'
-  read_log_data
-  ytitles=['Rho [cm!U-3!N]','V!DX!N [km/s]','B!DZ!N [nT]'] 
-  if keyword_set(filename) then begin
-     !p.thick=4
-     !x.thick=3
-     !y.thick=3
-     set_device,'imf.eps'
-  endif
-  show_log_data
-  if keyword_set(filename) then begin
-     close_device
-     !p.thick=0
-     !x.thick=0
-     !y.thick=0
-  endif
-end
+
 ;=============================================================================
 function reform2,x
 
