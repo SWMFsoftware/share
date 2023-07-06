@@ -6,7 +6,7 @@ my $History = $history;
 
 use strict;
 
-my $swmf_software     = "git\@gitlab.umich.edu:swmf_software";
+my $swmf_software     = "git\@github.com:SWMFsoftware";
 my $csem_software     = "git\@gitlab.umich.edu:csem_software";
 my $solstice_software = "git\@gitlab.umich.edu:solstice-software";
 
@@ -17,7 +17,6 @@ my %url = (
     "LATEX"              => $csem_software,
     "VAC"                => $csem_software,
     "WSA"                => $csem_software,
-    "MSWIM2D"            => $csem_software,
     "GITM"               => "https://github.com/GITMCode",
     "VISANAMATLAB"       => "https://github.com/henry2004y",
     "BATSRUS.jl"         => "https://github.com/henry2004y",

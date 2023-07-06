@@ -19,7 +19,7 @@ Usage:
 -r -reference print Git references 
 -r=c          print Git references as a C header with a print statement
 -r=f          print Git references as a Fortran write statement
--remote       switch remote to git@gitlab.umich.edu:swmf_software/
+-remote       switch remote to git@github.com:SWMFsoftware/
 -remote=URL   switch remote to URL
 COMMANDS      any Git command (cannot be combined with -r or -remote)
 
@@ -37,7 +37,7 @@ Print the references for each Git repository:
 Create a C header file to be compiled into the executable
     gitall -r=c > src/gitinfo.h
 
-Switch to the UM GitLab remote server
+Switch to the UM GitHub remote server
     gitall -remote
 
 ";
@@ -54,7 +54,7 @@ my $Remote    = ($remote);
 use strict;
 
 # Default remote
-$Remote = 'git@gitlab.umich.edu:swmf_software' if $Remote eq "1";
+$Remote = 'git@github.com:SWMFsoftware' if $Remote eq "1";
 
 my $gitcmd;                # The variable to receive the git command
 
