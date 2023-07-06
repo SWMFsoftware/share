@@ -142,7 +142,7 @@ module ModProcessVarName
        'hyp  ', &
        'hype ', &
        'sign ', &
-       'z2sd ', &
+       'wdiff', &
        'lperp' ]
 
   ! Named indices for all elements in charge state calculation
@@ -194,7 +194,7 @@ module ModProcessVarName
        'Hyp  ', &
        'HypE ', &
        'Sign ', &
-       'Z2SD ', &
+       'WDiff', &
        'Lperp' ]
 
   ! Array storing standarized variable names for all species / fluids
