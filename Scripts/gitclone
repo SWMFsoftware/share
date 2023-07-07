@@ -1,7 +1,6 @@
 #!/usr/bin/perl -s
 
 my $Help = ($h or $help);
-my $Sleep = ($s or $Sleep);
 my $History = $history;
 
 use strict;
@@ -38,10 +37,6 @@ Usage:
 
 -h -help      Print help message.
 
--s -sleep     Sleep \$GITLABSLEEP seconds after the cloning if the 
-              \$GITLABSLEEP environment variable is set to avoid 
-              firewall protection against repeated access to the git server.
-
 -history      Clone with history. If not present the --depth 1 is used
 
 flags         Any git flag.
@@ -72,7 +67,6 @@ my $url = ($url{uc($project)} or $swmf_software);
 $ARGV[0] .= " --depth 1 --no-single-branch" unless $History;
 
 my $command = "git clone $url/".join(" ", @ARGV);
-$command .= "; sleep $ENV{GITLABSLEEP}" if ($ENV{GITLABSLEEP} and $Sleep);
 
 print "$command\n";
 `$command`;
