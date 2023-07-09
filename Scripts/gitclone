@@ -13,6 +13,7 @@ my $solstice_software = "git\@gitlab.umich.edu:solstice-software";
 my %url = (
     "BATSRUS_GPU"        => $csem_software,
     "BATSRUS_GPU_SIMPLE" => $csem_software,
+    "CIMI2"              => "git\@gitlab.umich.edu:SWMF_software",
     "LATEX"              => $csem_software,
     "VAC"                => $csem_software,
     "WSA"                => $csem_software,
