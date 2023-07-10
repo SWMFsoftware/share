@@ -6,24 +6,14 @@ my $History = $history;
 use strict;
 
 my $swmf_software     = "git\@github.com:SWMFsoftware";
-my $csem_software     = "git\@gitlab.umich.edu:csem_software";
-my $solstice_software = "git\@gitlab.umich.edu:solstice-software";
 
 # The project name should be all capitalized.
 my %url = (
-    "BATSRUS_GPU"        => $csem_software,
-    "BATSRUS_GPU_SIMPLE" => $csem_software,
-    "CIMI2"              => "git\@gitlab.umich.edu:SWMF_software",
-    "LATEX"              => $csem_software,
-    "VAC"                => $csem_software,
-    "WSA"                => $csem_software,
-    "GITM"               => "https://github.com/GITMCode",
-    "VISANAMATLAB"       => "https://github.com/henry2004y",
     "BATSRUS.jl"         => "https://github.com/henry2004y",
-    "PARAMINS_GEOSPACE"  => $solstice_software,
-    "CME_LIST"           => $solstice_software,
-    "SWMF_PLOT_GEOSPACE" => $solstice_software,
-    "SUPERMAGSTATIONS"   => $solstice_software,
+    "CIMI2"              => "git\@gitlab.umich.edu:SWMF_software",
+    "GITM"               => "https://github.com/GITMCode",
+    "VAC"                => "git\@github.com:gtoth-umich",
+    "VISANAMATLAB"       => "https://github.com/henry2004y",
     );
 
 my @repo = ("SWMF, AMPS, BATSRUS, CIMI2, FSAM, FLEKS, GITM2, MFLAMPA, PWOM ...", 
@@ -46,11 +36,11 @@ REPO          Name of repository, including the following:\n\t\t", join("\n\t\t"
 
 Examples:
 
-Clone BATSRUS repository from swmf_software with history:
+Clone BATSRUS repository with history:
 
    gitclone -history BATSRUS
 
-Clone LATEX repositiry from csem_software without history into Papers/BIBTEX:
+Clone LATEX repositiry without history into Papers/BIBTEX:
 
    gitclone LATEX Papers/BIBTEX
 
