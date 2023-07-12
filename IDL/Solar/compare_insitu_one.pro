@@ -8,7 +8,9 @@ pro compare_insitu_one, file_sim=file_sim,                      $
                         DoSaveObs=DoSaveObs,DoLogT=DoLogT,      $
                         EventTimeDist=EventTimeDist,            $
                         TimeWindowDist=TimeWindowDist,          $
-                        DoPlotDeltaB=DoPlotDeltaB
+                        DoPlotDeltaB=DoPlotDeltaB,              $
+                        start_time_CME_I=start_time_CME_I,      $
+                        end_time_CME_I  =end_time_CME_I
 
   if (not keyword_set(extra_plt_info)) then begin
      extra_plt_info = ''
@@ -26,6 +28,8 @@ pro compare_insitu_one, file_sim=file_sim,                      $
 
   if (not isa(EventTimeDist))  then EventTimeDist  = 'none'
   if (not isa(TimeWindowDist)) then TimeWindowDist = -7
+  if (not isa(start_time_CME_I)) then start_time_CME_I = ''
+  if (not isa(end_time_CME_I))   then end_time_CME_I = ''
 
   print, "compare_insitu_one: DoSaveObs=", DoSaveObs
 
@@ -97,8 +101,8 @@ pro compare_insitu_one, file_sim=file_sim,                      $
                legendNames=Model, DoLogT=DoLogT,                       $
                file_dist=fileplot.replace('.eps','.txt'),              $
                EventTimeDist=EventTimeDist, TimeWindowDist=TimeWindowDist,$
-               DoPlotDeltaB=DoPlotDeltaB
-  
+               DoPlotDeltaB=DoPlotDeltaB, start_time_CME_I=start_time_CME_I, $
+               end_time_CME_I  =end_time_CME_I
+
   device,/close_file
 end
-

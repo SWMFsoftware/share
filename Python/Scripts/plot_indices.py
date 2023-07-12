@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 """Plot the indices based on the SWMF log files.
 
+Plot the IMF, SYM-H, AL, and CPCP of an SWMF geospace run. This needs you to
+output the log files like in the SWPC_v2 PARAM file.
+
 Run from command line for help. There may be helpful functions here as a
 module.
 

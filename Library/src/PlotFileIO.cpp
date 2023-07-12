@@ -1,6 +1,6 @@
 #include "PlotFileIO.h"
 
-using namespace std; 
+using namespace std;
 
 std::string FileAgent::outFormat;
 
@@ -221,6 +221,11 @@ template <typename real> void FileAgent::read_binary() {
     nRec = read_int();
   }
 
+  if (nDim <= 0) {
+    std::cout << "Error: unstructured grid is not supported yet!" << std::endl;
+    exit(1);
+  }
+
   {
     nPoint = 0;
     nRec = read_int();
@@ -311,6 +316,11 @@ void FileAgent::read_ascii() {
   std::ifstream inFile;
   inFile.open(fileIn.c_str(), std::ifstream::in);
   inFile >> unit >> iter >> time >> nDim >> nParam >> nVar;
+
+  if (nDim <= 0) {
+    std::cout << "Error: unstructured grid is not supported yet!" << std::endl;
+    exit(1);
+  }
 
   nPoint = 0;
   for (int i = 0; i < nDim; ++i) {
