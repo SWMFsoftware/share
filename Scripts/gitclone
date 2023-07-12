@@ -1,7 +1,7 @@
 #!/usr/bin/perl -s
 
 my $Help = ($h or $help);
-my $Sleep = ($s or $Sleep);
+my $Sleep = ($s or $sleep);
 my $History = $history;
 
 use strict;
