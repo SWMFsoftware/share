@@ -16,7 +16,7 @@ my %url = (
     "VISANAMATLAB"       => "https://github.com/henry2004y",
     );
 
-my @repo = ("SWMF, AMPS, BATSRUS, CIMI2, FSAM, FLEKS, GITM2, MFLAMPA, PWOM ...", 
+my @repo = ("SWMF, AMPS, BATSRUS, CIMI, FSAM, FLEKS, GITM2, MFLAMPA, PWOM ...", 
             sort keys %url);
 
 if($Help or not @ARGV){
