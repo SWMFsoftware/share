@@ -13,6 +13,9 @@ Usage:
 -l -list      list all subdirectories that are repositories
 -v -verbose   provide verbose information for the status command
 -q -quiet     execute the Git command without printing the gitall annotations
+-s -sleep     sleep 5 seconds after each Git command to avoid ssh access issues
+-s=N -sleep=N sleep N seconds after each Git push or pull command
+     	      The default is set by the \$GITHUBSLEEP environment variable.
 -r -reference print Git references 
 -r=c          print Git references as a C header with a print statement
 -r=f          print Git references as a Fortran write statement
@@ -24,6 +27,9 @@ Examples:
 
 Show verbose status of all Git subdirectories:
     gitall -v status
+
+Pull remote version into all Git subdirectories and sleep 5 seconds after each:
+    gitall -s pull
 
 Print the references for each Git repository:
     gitall -r
@@ -39,6 +45,7 @@ Switch to the UM GitHub remote server
 }
 
 my $Verbose   = ($v or $verbose);
+my $Sleep     = ($s or $sleep or $ENV{GITHUBSLEEP});
 my $List      = ($l or $list);
 my $Quiet     = ($q or $quiet);
 my $Reference = ($r or $reference);
@@ -52,6 +59,7 @@ $Remote = 'git@github.com:SWMFsoftware' if $Remote eq "1";
 my $gitcmd;                # The variable to receive the git command
 
 $gitcmd = join(' ',@ARGV) . ' 2>&1'; # redirect STDERR to STDOUT
+$gitcmd .= "; sleep $Sleep" if $Sleep and $gitcmd =~ /\b(push|pull)\b/;
 
 my @RefList; 
 my $pwd = `pwd`; chop($pwd);
