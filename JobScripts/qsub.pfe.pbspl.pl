@@ -124,12 +124,15 @@ LOOP:{
     @results = `$qstat | grep $pattern`;
     my $ids;
     foreach (@results){
-	/^(\d+).*([A-Z] +\S+)/;
-	print "id=$1 status=$2: $_";
-	$ids .= " $1";
-	$running = $1 if $2 =~ /R +\d\d:\d\d/;
+	/^(\d+).*([A-Z]\s+\S+)/;
+	my $id = $1;
+	my $status = $2;
+	print "id=$id status=$status: $_";
+	$ids .= " $id";
+	$running = $id if $status =~ /R \d\d/;
     }
     print "-------------------------\n";
+    print "running=$running\n" if $running;
     if($running){
 	$ids =~ s/ $running//; # remove running ID
       QDEL:{
