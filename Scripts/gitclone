@@ -1,6 +1,7 @@
 #!/usr/bin/perl -s
 
 my $Help = ($h or $help);
+my $Sleep = ($s or $sleep);
 my $History = $history;
 
 use strict;
@@ -9,13 +10,13 @@ my $swmf_software     = "git\@github.com:SWMFsoftware";
 
 # The project name should be all capitalized.
 my %url = (
-    "BATSRUS.jl"         => "https://github.com/henry2004y",
+    "BATSRUS.JL"         => "https://github.com/henry2004y",
     "GITM"               => "https://github.com/GITMCode",
-    "VAC"                => "git\@github.com:gtoth-umich",
+    "VAC"                => "https://github.com/gtoth-umich",
     "VISANAMATLAB"       => "https://github.com/henry2004y",
     );
 
-my @repo = ("SWMF, AMPS, BATSRUS, CIMI2, FSAM, FLEKS, GITM2, MFLAMPA, PWOM ...", 
+my @repo = ("SWMF, AMPS, BATSRUS, CIMI, FSAM, FLEKS, GITM2, MFLAMPA, PWOM ...", 
             sort keys %url);
 
 if($Help or not @ARGV){
@@ -26,6 +27,10 @@ Usage:
   gitclone [-h] [-s] [-history] REPO [flags] [DIRNAME]
 
 -h -help      Print help message.
+
+-s -sleep     Sleep \$GITHUBSLEEP seconds after the cloning if the
+              \$GITHUBSLEEP environment variable is set to avoid
+              firewall protection against repeated access to the git server.
 
 -history      Clone with history. If not present the --depth 1 is used
 
@@ -57,6 +62,7 @@ my $url = ($url{uc($project)} or $swmf_software);
 $ARGV[0] .= " --depth 1 --no-single-branch" unless $History;
 
 my $command = "git clone $url/".join(" ", @ARGV);
+$command .= "; sleep $ENV{GITHUBSLEEP}" if ($ENV{GITHUBSLEEP} and $Sleep);
 
 print "$command\n";
 `$command`;
