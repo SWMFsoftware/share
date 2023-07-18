@@ -1,9 +1,9 @@
 Python Scripts
 ==============
 
-Collection of Python scripts to make using [SWMF](https://gitlab.umich.edu/swmf_software/SWMF) easier. Note most of these require a recent version of Python __3__. Supercomputers typically have this already.
+Collection of Python scripts to make using [SWMF](https://github.com/SWMFsoftware/SWMF) easier. Note most of these require a recent version of Python __3__. Supercomputers typically have this already.
 
-Make sure [swmfpy](https://gitlab.umich.edu/swmf_software/swmfpy) is installed.
+Make sure [swmfpy](https://github.com/SWMFsoftware/swmfpy) is installed.
 
 ```bash
 $ pip install swmfpy || pip install --user swmfpy
