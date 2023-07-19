@@ -523,12 +523,13 @@ test_process_var_name_check:
 	@ls -l test_process_var_name.diff
 
 #######################################################################
+# optimization fails with gcc12 + nagfor
 test_poisson_bracket.o: test_poisson_bracket.f90
 	${COMPILE.f90} ${Cflag0} test_poisson_bracket.f90
 
 test_poisson_bracket_exe:
-	(cd ../src; make LIB)
-	make test_poisson_bracket.o
+	@(cd ../src; make LIB)
+	@make test_poisson_bracket.o
 	${LINK.f90} -o test_poisson.exe test_poisson_bracket.o \
 		-L${LIBDIR} -lSHARE ${Lflag}
 
