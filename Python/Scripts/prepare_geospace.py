@@ -4,7 +4,7 @@
 You need swmfpy installed.
 Installation:
     pip install -U --user \
-        git+https://gitlab.umich.edu/swmf_software/swmfpy.git@master
+        git+https://github.com/SWMFsoftware/swmfpy.git@master
 
 Usage:
     python prepare_geospace.py

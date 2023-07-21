@@ -60,7 +60,6 @@ test:
 	-@make test_lookup_table
 	-@make test_planet_field
 	-@make test_plot_file
-	-@make test_poisson_bracket
 	-@make test_random_number
 	-@make test_ray_trace
 	-@make test_sort
@@ -69,6 +68,8 @@ test:
 	-@make test_utilities
 	@echo ---------------------------------------------------------
 	@ls -l *.diff
+
+#	-@make test_poisson_bracket # too slow for a unit test
 
 clean: cleanfiles
 
@@ -522,6 +523,10 @@ test_process_var_name_check:
 	@ls -l test_process_var_name.diff
 
 #######################################################################
+# optimization fails with gcc12 + nagfor
+test_poisson_bracket.o: test_poisson_bracket.f90
+	${COMPILE.f90} ${Cflag0} test_poisson_bracket.f90
+
 test_poisson_bracket_exe:
 	@(cd ../src; make LIB)
 	@make test_poisson_bracket.o
