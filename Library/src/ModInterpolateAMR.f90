@@ -3051,7 +3051,6 @@ contains
     iGridRef = 1 + sum(iShift_D * iPowerOf2_D(1:nDim))
   end subroutine get_reference_block
   !============================================================================
-
   subroutine interpolate_amr_gc(&
        nDim, Xyz_D, XyzMin_D, DXyz_D, nCell_D, DiLevelNei_III, &
        nCellOut, iCellOut_II, Weight_I, IsSecondOrder)
@@ -3290,6 +3289,7 @@ contains
   contains
     !==========================================================================
     subroutine sort_out
+      character(len=*), parameter:: NameSub = 'sort_out'
       !------------------------------------------------------------------------
       cTol2 = 2*cTol2
       if(all(Weight_I >= cTol2))then
@@ -3304,10 +3304,16 @@ contains
          iCellOut_II(:, nCellOut) = iCellOut_II(:,iGrid)
          Weight_I(nCellOut) = Weight_I(iGrid)
       end do
-      if(nCellOut == 0)&
-           call CON_stop(&
-           "ModInterpolateAMR:interpolate_amr_gc: "//&
-           "All points in interpolation stencil have been sorted out!")
+      if(nCellOut == 0)then
+         do iGrid = 1, nGrid
+            write(*,*) NameSub, ' iGrid, iCellOut_II=', &
+                 iGrid, iCellOut_II(:,iGrid)
+         end do
+         write(*,*) NameSub,' nGrid, cTol2, Weight_I=', &
+              nGrid, cTol2, Weight_I(1:nGrid)
+         call CON_stop(&
+              "ModInterpolateAMR:interpolate_amr_gc: all tiny weights")
+      end if
     end subroutine sort_out
     !==========================================================================
   end subroutine interpolate_amr_gc
@@ -4374,7 +4380,10 @@ contains
       integer:: nStored ! To store starting nGridOut
       integer:: iLoc    ! To find location of repeating index
       integer:: iGrid   ! Loop variable
+
       ! Form index array and sort out zero weights
+
+      character(len=*), parameter:: NameSub = 'sort_out'
       !------------------------------------------------------------------------
       nStored =  nGridOut
       nGridOut = 0
@@ -4394,10 +4403,14 @@ contains
          iOrder_I(nGridOut) = iOrder_I(iGrid)
          Weight_I(nGridOut) = Weight_I(iGrid)
       end do ALL
-      if(nGridOut == 0)&
-           call CON_stop(&
-           "ModInterpolateAMR:interpolate_extended_stencil: "//&
-           "All points in interpolation stencil have been sorted out!")
+      if(nGridOut == 0)then
+         write(*,*) NameSub,' nStored, iOrder_I=', nStored, iOrder_I(1:nStored)
+         write(*,*) NameSub,' nGrid, cTol2, Weight_I=', &
+              nGrid, cTol2, Weight_I(1:nStored)
+         call CON_stop("ModInterpolateAMR:interpolate_extended_stencil:"// &
+              " all tiny weights")
+      end if
+
     end subroutine sort_out
     !==========================================================================
   end subroutine interpolate_extended_stencil
