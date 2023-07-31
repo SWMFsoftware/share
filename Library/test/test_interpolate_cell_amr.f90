@@ -1,18 +1,17 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, 
-!  portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 !===========================TESTS============================================
 module ModTestInterpolateAMR
   use ModInterpolateCellAMR, ONLY: interpolate=>interpolate_amr_cell, &
        order_connectivity_list
   implicit none
-  !\
+
   ! Shift of the iGrid point in the stencil with respect to the
   ! first one
-  !/
 
 contains
-  !==================================================================
+  !============================================================================
   subroutine interpolate_cell_amr(nDim, Xyz_D, XyzCell_D, DXyz_D,   &
        nNeighbor, XyzNeighbor_DI, DiLevelNei_I, IsOut_I,&
        WeightOut_I, IsSecondOrder)
@@ -30,9 +29,9 @@ contains
     real                :: XyzGrid_DIII(nDim,0:2**nDim,2**nDim,2**nDim)
     real                :: Weight_I(2**nDim)
     integer             :: iLevel_II(2**nDim,2**nDim), iIndexes_II(1,2**nDim)
-    logical:: IsOut_II( 2**nDim,2**nDim) 
+    logical:: IsOut_II( 2**nDim,2**nDim)
     integer:: nGridOut, iNeighbor
-    !-------------------
+    !--------------------------------------------------------------------------
     do iNeighbor = 1, nNeighbor; iCellId_II(1,iNeighbor) = iNeighbor; end do
 
     call order_connectivity_list(nDim, XyzCell_D, DXyz_D, 1, iCellId_I,&
@@ -43,27 +42,29 @@ contains
        1, iCellId_IIII, XyzGrid_DIII, iLevel_II, IsOut_II,             &
        nGridOut, Weight_I, iIndexes_II,                                &
        IsSecondOrder)
-    WeightOut_I = 0 
-    WeightOut_I(iIndexes_II(1,1:nGridOut)) = Weight_I(1:nGridOut) 
+    WeightOut_I = 0
+    WeightOut_I(iIndexes_II(1,1:nGridOut)) = Weight_I(1:nGridOut)
   end subroutine interpolate_cell_amr
+  !============================================================================
 end module ModTestInterpolateAMR
+!==============================================================================
 
 program test_interpolate_cell_amr
   use ModRandomNumber, ONLY: random_real
   use ModTestInterpolateAMR, ONLY: interpolate_cell_amr
   implicit none
-  !Test grid
+  ! Test grid
   !        ___________
   !       |   |   |   |
   !       |___|___|___|
-  !       |   |   |_|  
+  !       |   |   |_|
   !    ___|___|___|_|_
   !   |       |   |   |
   !   |       |___|___|
   !   |       |
   !   |_______|
   !
-  real,parameter:: XyzNeighbor_DI(2,9) = reshape( (/&
+  real,parameter:: XyzNeighbor_DI(2,9) = reshape( [&
        -1.00, -1.00,        &!
         0.50, -0.50,        &!
         1.50, -0.50,        &!
@@ -72,14 +73,14 @@ program test_interpolate_cell_amr
         1.25,  0.75,        &!
        -0.50,  1.50,        &!
         0.50,  1.50,        &!
-        1.50,  1.50  /),(/2,9/) )
+        1.50,  1.50  ],[2,9] )
   real, parameter:: XyzCell_D(2) = 0.50, DXyz_D(2) = 1.0
-  integer,parameter:: DiLevelNei_I(9) = (/-1, 0, 0, 0, 1, 1, 0, 0, 0/) 
+  integer,parameter:: DiLevelNei_I(9) = [-1, 0, 0, 0, 1, 1, 0, 0, 0]
   real:: Xyz_D(2), XyzInterpolated_D(2), WeightOut_I(0:9)
   logical :: IsSecondOrder
   logical,parameter:: IsOut_I(9) = .false.
   integer:: iPoint, iSeed = 1, iCount, iDir
-  !-----------------
+  !----------------------------------------------------------------------------
   do iCount = 1, 10000
      do iDir = 1, 2
         Xyz_D(iDir) = 0.01 +0.98*random_real(iSeed)
@@ -100,5 +101,5 @@ program test_interpolate_cell_amr
      end if
   end do
 end program test_interpolate_cell_amr
-
+!==============================================================================
 
