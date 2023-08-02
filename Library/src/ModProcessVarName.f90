@@ -207,14 +207,13 @@ contains
   !============================================================================
 
   subroutine process_var_string(NameVar,  &
-       nDensity, nSpeed, nP, nPpar, nWave, nMaterial, nChargeStateAll, nLcorr)
+       nDensity, nSpeed, nP, nPpar, nWave, nMaterial, nChargeStateAll)
 
     use ModUtilities,  ONLY: split_string, join_string
 
     character(len=*), intent(inout) :: NameVar
-    integer,intent(out)             :: nDensity, nSpeed, nP, nPpar, nWave
-    integer,intent(out)             :: nMaterial, nChargeStateAll
-    integer,intent(out),optional    :: nLcorr
+    integer,intent(out)             :: nDensity, nSpeed, nP, nPpar
+    integer,intent(out)             :: nWave, nMaterial, nChargeStateAll
 
     integer            :: nVarName
     integer, parameter :: MaxNameVar = 100
@@ -224,22 +223,21 @@ contains
     call split_string(NameVar, MaxNameVar, NameVar_V, nVarName)
 
     call process_var_list(nVarName, NameVar_V,  &
-         nDensity, nSpeed, nP, nPpar, nWave, nMaterial, nChargeStateAll, nLcorr)
+         nDensity, nSpeed, nP, nPpar, nWave, nMaterial, nChargeStateAll)
 
     call join_string(nVarName, NameVar_V(1:nVarName), NameVar)
 
   end subroutine process_var_string
   !============================================================================
   subroutine process_var_list(nVarName, NameVar_V,  &
-       nDensity, nSpeed, nP, nPpar, nWave, nMaterial, nChargeStateAll, nLcorr)
+       nDensity, nSpeed, nP, nPpar, nWave, nMaterial, nChargeStateAll)
 
     use ModUtilities,  ONLY: lower_case
 
     integer,intent(in)                :: nVarName
     character(len=*), intent(inout)   :: NameVar_V(nVarName)
-    integer,intent(out)               :: nDensity, nSpeed, nP, nPpar, nWave
-    integer,intent(out)               :: nMaterial, nChargeStateAll
-    integer,intent(out),optional      :: nLcorr
+    integer,intent(out)               :: nDensity, nSpeed, nP, nPpar
+    integer,intent(out)               :: nWave, nMaterial, nChargeStateAll
 
     ! ------------
     ! 1. Creates standard names and a dictionary for each standard name.
@@ -286,7 +284,7 @@ contains
     nWave = 0
     nMaterial = 0
     nChargeStateAll = 0
-    nLcorr = 0
+
     ! create standard names and dictionary arrays
     allocate(SubstanceStandardName_II(nSubstance, nVarPerSubstance))
     allocate(Dictionary_III(nSubstance, nVarPerSubstance, nSynonym))
@@ -319,17 +317,11 @@ contains
           end if
        end do
 
-       ! variable name may correspond to numbered wave/corr length/material
+       ! variable name may correspond to numbered wave/material
        ! These names are created  in BATSRUS:MH_set_parameters
        ! and need not be changed
        if (lge(NameVarIn, 'i01') .and. lle(NameVarIn, 'i99')) then
           nWave = nWave + 1
-          IsFoundVar = .true.
-          CYCLE NAMELOOP
-       end if
-
-       if (lge(NameVarIn, 'l1') .and. lle(NameVarIn, 'l9')) then
-          nLcorr = nLcorr + 1
           IsFoundVar = .true.
           CYCLE NAMELOOP
        end if
