@@ -1,4 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 program linear_advection_test
 
@@ -6,7 +7,9 @@ program linear_advection_test
 
   implicit none
 
+  !----------------------------------------------------------------------------
   call test_linear_advection
 
 end program linear_advection_test
+!==============================================================================
 
