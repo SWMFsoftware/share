@@ -44,6 +44,21 @@
 ! functions are provided.
 ! The first returns the cross product of vectors as a 3 element array.
 ! The second returns the inverse of 3 by 3 matrix.
+!
+! Important note: the Fortran reshape function lists the first 3 elements
+! of a matrix belonging to the first column (row index changes first), so
+!
+! A_DD = reshape ( [ a, b, c, &
+!                    d, e, f, &
+!                    g, h, j ], [3,3] )
+!
+! corresponds to the matrix
+!
+!      (a d g)
+!  A = (b e h)
+!      (c f j)
+!
+! in normal mathematical notation. (Also see the show_rot_matrix routine).
 
 module ModCoordTransform
 
@@ -172,88 +187,88 @@ module ModCoordTransform
 
 contains
   !============================================================================
-  subroutine xyz_to_sph11(Xyz_D,Sph_D)
+  subroutine xyz_to_sph11(Xyz_D, Sph_D)
     !$acc routine seq
 
     real, intent(in) :: Xyz_D(3)
     real, intent(out):: Sph_D(3)
     !--------------------------------------------------------------------------
-    call xyz_to_sph(Xyz_D(1),Xyz_D(2),Xyz_D(3),Sph_D(1),Sph_D(2),Sph_D(3))
+    call xyz_to_sph(Xyz_D(1), Xyz_D(2), Xyz_D(3), Sph_D(1), Sph_D(2), Sph_D(3))
 
   end subroutine xyz_to_sph11
   !============================================================================
-  subroutine xyz_to_sph13(Xyz_D,r,Theta,Phi)
+  subroutine xyz_to_sph13(Xyz_D, r, Theta, Phi)
     !$acc routine seq
 
     real, intent(in) :: Xyz_D(3)
     real, intent(out):: r,Theta,Phi
     !--------------------------------------------------------------------------
-    call xyz_to_sph(Xyz_D(1),Xyz_D(2),Xyz_D(3),r,Theta,Phi)
+    call xyz_to_sph(Xyz_D(1), Xyz_D(2), Xyz_D(3), r, Theta, Phi)
 
   end subroutine xyz_to_sph13
   !============================================================================
-  subroutine xyz_to_sph31(x,y,z,Sph_D)
+  subroutine xyz_to_sph31(x, y, z, Sph_D)
     !$acc routine seq
 
-    real, intent(in) :: x,y,z
+    real, intent(in) :: x, y, z
     real, intent(out):: Sph_D(3)
     !--------------------------------------------------------------------------
-    call xyz_to_sph(x,y,z,Sph_D(1),Sph_D(2),Sph_D(3))
+    call xyz_to_sph(x, y, z, Sph_D(1), Sph_D(2), Sph_D(3))
 
   end subroutine xyz_to_sph31
   !============================================================================
-  subroutine xyz_to_rlonlat11(Xyz_D,rLonLat_D)
+  subroutine xyz_to_rlonlat11(Xyz_D, rLonLat_D)
     !$acc routine seq
 
     real, intent(in) :: Xyz_D(3)
     real, intent(out):: rLonLat_D(3)
     !--------------------------------------------------------------------------
-    call xyz_to_sph(Xyz_D(1),Xyz_D(2),Xyz_D(3), &
-         rLonLat_D(1),rLonLat_D(3),rLonLat_D(2))
+    call xyz_to_sph(Xyz_D(1), Xyz_D(2), Xyz_D(3), &
+         rLonLat_D(1), rLonLat_D(3), rLonLat_D(2))
 
     rLonLat_D(3) = cHalfPi - rLonLat_D(3)
 
   end subroutine xyz_to_rlonlat11
   !============================================================================
-  subroutine xyz_to_rlonlat13(Xyz_D,r,Lon,Lat)
+  subroutine xyz_to_rlonlat13(Xyz_D, r, Lon, Lat)
     !$acc routine seq
 
     real, intent(in) :: Xyz_D(3)
-    real, intent(out):: r,Lon,Lat
+    real, intent(out):: r, Lon, Lat
     !--------------------------------------------------------------------------
-    call xyz_to_sph(Xyz_D(1),Xyz_D(2),Xyz_D(3),r,Lat,Lon)
+    call xyz_to_sph(Xyz_D(1), Xyz_D(2), Xyz_D(3), r, Lat, Lon)
     Lat = cHalfPi - Lat
 
   end subroutine xyz_to_rlonlat13
   !============================================================================
-  subroutine xyz_to_rlonlat31(x,y,z,rLonLat_D)
+  subroutine xyz_to_rlonlat31(x, y, z, rLonLat_D)
     !$acc routine seq
 
-    real, intent(in) :: x,y,z
+    real, intent(in) :: x, y, z
     real, intent(out):: rLonLat_D(3)
     !--------------------------------------------------------------------------
-    call xyz_to_sph(x,y,z,rLonLat_D(1),rLonLat_D(3),rLonLat_D(2))
+    call xyz_to_sph(x, y, z, rLonLat_D(1), rLonLat_D(3), rLonLat_D(2))
     rLonLat_D(3) = cHalfPi - rLonLat_D(3)
 
   end subroutine xyz_to_rlonlat31
   !============================================================================
-  subroutine xyz_to_rlonlat33(x,y,z,r,Lon,Lat)
+  subroutine xyz_to_rlonlat33(x, y, z, r, Lon, Lat)
     !$acc routine seq
 
-    real, intent(in) :: x,y,z
-    real, intent(out):: r,Lon,Lat
+    real, intent(in) :: x, y, z
+    real, intent(out):: r, Lon, Lat
     !--------------------------------------------------------------------------
-    call xyz_to_sph(x,y,z,r,Lat,Lon)
+    call xyz_to_sph(x, y, z, r, Lat, Lon)
     Lat = cHalfPi - Lat
 
   end subroutine xyz_to_rlonlat33
   !============================================================================
-  subroutine xyz_to_sph33(x,y,z,r,Theta,Phi)
+  subroutine xyz_to_sph33(x, y, z, r, Theta, Phi)
     !$acc routine seq
 
-    real, intent(in) :: x,y,z
+    real, intent(in) :: x, y, z
 
-    real, intent(out):: r,Theta,Phi
+    real, intent(out):: r, Theta, Phi
 
     ! This is the fundamental routine that converts Cartesian position into
     ! spherical position. All other xyz\_to\_sph varieties call this
@@ -265,20 +280,19 @@ contains
     d     = x**2 + y**2
     r     = sqrt(d + z**2)
     d     = sqrt(d)
-    Theta = atan2_check(d,z)
-    Phi   = atan2_check(y,x)
+    Theta = atan2_check(d, z)
+    Phi   = atan2_check(y, x)
 
   end subroutine xyz_to_sph33
   !============================================================================
-  subroutine rlonlat_to_xyz11(rLonLat_D,Xyz_D)
+  subroutine rlonlat_to_xyz11(rLonLat_D, Xyz_D)
     !$acc routine seq
 
     real, intent(in) :: rLonLat_D(3)
     real, intent(out):: Xyz_D(3)
-
     !--------------------------------------------------------------------------
-    call sph_to_xyz(rLonLat_D(1),cHalfPi-rLonLat_D(3),rLonLat_D(2), &
-         Xyz_D(1),Xyz_D(2),Xyz_D(3))
+    call sph_to_xyz(rLonLat_D(1), cHalfPi-rLonLat_D(3), rLonLat_D(2), &
+         Xyz_D(1), Xyz_D(2), Xyz_D(3))
 
   end subroutine rlonlat_to_xyz11
   !============================================================================
@@ -292,27 +306,27 @@ contains
 
   end subroutine rlonlat_to_xyz31
   !============================================================================
-  subroutine rlonlat_to_xyz13(rLonLat_D,x,y,z)
+  subroutine rlonlat_to_xyz13(rLonLat_D, x, y, z)
     !$acc routine seq
 
     real, intent(in) :: rLonLat_D(3)
     real, intent(out):: x,y,z
     !--------------------------------------------------------------------------
-    call sph_to_xyz(rLonLat_D(1),cHalfPi-rLonLat_D(3),rLonLat_D(2),x,y,z)
+    call sph_to_xyz(rLonLat_D(1), cHalfPi-rLonLat_D(3), rLonLat_D(2), x, y, z)
 
   end subroutine rlonlat_to_xyz13
   !============================================================================
-  subroutine rlonlat_to_xyz33(r,Lon,Lat,x,y,z)
+  subroutine rlonlat_to_xyz33(r, Lon, Lat, x, y, z)
     !$acc routine seq
 
-    real, intent(in) :: r,Lon,Lat
-    real, intent(out):: x,y,z
+    real, intent(in) :: r, Lon, Lat
+    real, intent(out):: x, y, z
     !--------------------------------------------------------------------------
     call sph_to_xyz(r, cHalfPi-Lat, Lon, x, y, z)
 
   end subroutine rlonlat_to_xyz33
   !============================================================================
-  subroutine sph_to_xyz11(Sph_D,Xyz_D)
+  subroutine sph_to_xyz11(Sph_D, Xyz_D)
     !$acc routine seq
 
     real, intent(in) :: Sph_D(3)
@@ -322,31 +336,31 @@ contains
 
   end subroutine sph_to_xyz11
   !============================================================================
-  subroutine sph_to_xyz31(r,Theta,Phi,Xyz_D)
+  subroutine sph_to_xyz31(r, Theta, Phi, Xyz_D)
     !$acc routine seq
 
-    real, intent(in) :: r,Theta,Phi
+    real, intent(in) :: r, Theta, Phi
     real, intent(out):: Xyz_D(3)
     !--------------------------------------------------------------------------
-    call sph_to_xyz(r,Theta,Phi,Xyz_D(1),Xyz_D(2),Xyz_D(3))
+    call sph_to_xyz(r, Theta, Phi, Xyz_D(1), Xyz_D(2), Xyz_D(3))
 
   end subroutine sph_to_xyz31
   !============================================================================
-  subroutine sph_to_xyz13(Sph_D,x,y,z)
+  subroutine sph_to_xyz13(Sph_D, x, y, z)
     !$acc routine seq
 
     real, intent(in) :: Sph_D(3)
-    real, intent(out):: x,y,z
+    real, intent(out):: x, y, z
     !--------------------------------------------------------------------------
-    call sph_to_xyz(Sph_D(1),Sph_D(2),Sph_D(3),x,y,z)
+    call sph_to_xyz(Sph_D(1), Sph_D(2), Sph_D(3), x, y, z)
 
   end subroutine sph_to_xyz13
   !============================================================================
-  subroutine sph_to_xyz33(r,Theta,Phi,x,y,z)
+  subroutine sph_to_xyz33(r, Theta, Phi, x, y, z)
     !$acc routine seq
 
-    real, intent(in)  :: r,Theta,Phi
-    real, intent(out) :: x,y,z
+    real, intent(in)  :: r, Theta, Phi
+    real, intent(out) :: x, y, z
 
     ! This is the fundamental routine that converts spherical position into
     ! Cartesian position. All other sph\_to\_xyz varieties call this
@@ -378,9 +392,9 @@ contains
     !$acc routine seq
 
     real, intent(in) :: Xyz_D(3)
-    real, intent(out):: Lon,Lat
+    real, intent(out):: Lon, Lat
     !--------------------------------------------------------------------------
-    call xyz_to_lonlat(Xyz_D(1),Xyz_D(2),Xyz_D(3),Lon,Lat)
+    call xyz_to_lonlat(Xyz_D(1), Xyz_D(2), Xyz_D(3), Lon, Lat)
 
   end subroutine xyz_to_lonlat12
   !============================================================================
@@ -394,57 +408,58 @@ contains
 
   end subroutine xyz_to_lonlat31
   !============================================================================
-  subroutine xyz_to_lonlat32(x,y,z,Lon,Lat)
+  subroutine xyz_to_lonlat32(x, y, z, Lon, Lat)
     !$acc routine seq
 
-    real, intent(in) :: x,y,z
-    real, intent(out):: Lon,Lat
+    real, intent(in) :: x, y, z
+    real, intent(out):: Lon, Lat
     !--------------------------------------------------------------------------
     Lon = atan2_check(y,x)
     Lat = cHalfPi - atan2_check(sqrt(x**2 + y**2),z)
 
   end subroutine xyz_to_lonlat32
   !============================================================================
-  subroutine xyz_to_dir12(Xyz_D,Theta,Phi)
+  subroutine xyz_to_dir12(Xyz_D, Theta, Phi)
     !$acc routine seq
-    real, intent(in) :: Xyz_D(3)
-    real, intent(out):: Theta,Phi
 
+    real, intent(in) :: Xyz_D(3)
+    real, intent(out):: Theta, Phi
     !--------------------------------------------------------------------------
-    call xyz_to_dir(Xyz_D(1),Xyz_D(2),Xyz_D(3),Theta,Phi)
+    call xyz_to_dir(Xyz_D(1), Xyz_D(2), Xyz_D(3), Theta, Phi)
 
   end subroutine xyz_to_dir12
   !============================================================================
-  subroutine xyz_to_dir32(x,y,z,Theta,Phi)
+  subroutine xyz_to_dir32(x, y, z, Theta, Phi)
     !$acc routine seq
-    real, intent(in) :: x,y,z
 
-    real, intent(out):: Theta,Phi
+    real, intent(in) :: x, y, z
+    real, intent(out):: Theta, Phi
 
     ! This is the fundamental routine that converts Cartesian vector into
     ! spherical direction given with angles.
     ! The Cartesian vector can have any positive length.
     !--------------------------------------------------------------------------
-    Theta = atan2_check(sqrt(x**2 + y**2),z)
-    Phi   = atan2_check(y,x)
+    Theta = atan2_check(sqrt(x**2 + y**2), z)
+    Phi   = atan2_check(y, x)
 
   end subroutine xyz_to_dir32
   !============================================================================
-  subroutine xyz_to_dir14(Xyz_D,SinTheta,CosTheta,SinPhi,CosPhi)
+  subroutine xyz_to_dir14(Xyz_D, SinTheta, CosTheta, SinPhi, CosPhi)
     !$acc routine seq
 
     real, intent(in) :: Xyz_D(3)
-    real, intent(out):: SinTheta,CosTheta,SinPhi,CosPhi
+    real, intent(out):: SinTheta, CosTheta, SinPhi, CosPhi
     !--------------------------------------------------------------------------
-    call xyz_to_dir(Xyz_D(1),Xyz_D(2),Xyz_D(3),SinTheta,CosTheta,SinPhi,CosPhi)
+    call xyz_to_dir(Xyz_D(1), Xyz_D(2), Xyz_D(3), &
+         SinTheta, CosTheta, SinPhi, CosPhi)
 
   end subroutine xyz_to_dir14
   !============================================================================
-  subroutine xyz_to_dir34(x,y,z,SinTheta,CosTheta,SinPhi,CosPhi)
+  subroutine xyz_to_dir34(x, y, z, SinTheta, CosTheta, SinPhi, CosPhi)
     !$acc routine seq
 
-    real, intent(in) :: x,y,z
-    real, intent(out):: SinTheta,CosTheta,SinPhi,CosPhi
+    real, intent(in) :: x, y, z
+    real, intent(out):: SinTheta, CosTheta, SinPhi, CosPhi
 
     ! This is the fundamental routine that converts Cartesian vector into
     ! spherical direction given with trigonometric functions.
@@ -455,7 +470,7 @@ contains
 
     ! local variables
 
-    real :: r,d
+    real :: r, d
     !--------------------------------------------------------------------------
     d = x**2+y**2
     r = sqrt(d+z**2)
@@ -481,19 +496,19 @@ contains
     !--------------------------------------------------------------------------
     Lon = LonLat_D(1); Lat = LonLat_D(2)
 
-    call dir_to_xyz(cos(Lat),sin(Lat),sin(Lon),cos(Lon),&
-         Xyz_D(1),Xyz_D(2),Xyz_D(3))
+    call dir_to_xyz(cos(Lat), sin(Lat), sin(Lon), cos(Lon),&
+         Xyz_D(1), Xyz_D(2), Xyz_D(3))
 
   end subroutine lonlat_to_xyz11
   !============================================================================
-  subroutine lonlat_to_xyz21(Lon,Lat,Xyz_D)
+  subroutine lonlat_to_xyz21(Lon, Lat, Xyz_D)
     !$acc routine seq
 
     real, intent(in) :: Lon, Lat
     real, intent(out):: Xyz_D(3)
     !--------------------------------------------------------------------------
-    call dir_to_xyz(cos(Lat),sin(Lat),sin(Lon),cos(Lon),&
-         Xyz_D(1),Xyz_D(2),Xyz_D(3))
+    call dir_to_xyz(cos(Lat), sin(Lat), sin(Lon), cos(Lon),&
+         Xyz_D(1), Xyz_D(2), Xyz_D(3))
 
   end subroutine lonlat_to_xyz21
   !============================================================================
@@ -510,13 +525,13 @@ contains
 
   end subroutine lonlat_to_xyz13
   !============================================================================
-  subroutine lonlat_to_xyz23(Lon,Lat,x,y,z)
+  subroutine lonlat_to_xyz23(Lon, Lat, x, y, z)
     !$acc routine seq
 
     real, intent(in) :: Lon, Lat
     real, intent(out):: x, y, z
     !--------------------------------------------------------------------------
-    call dir_to_xyz(cos(Lat),sin(Lat),sin(Lon),cos(Lon),x,y,z)
+    call dir_to_xyz(cos(Lat), sin(Lat), sin(Lon), cos(Lon), x, y, z)
 
   end subroutine lonlat_to_xyz23
   !============================================================================
@@ -526,8 +541,8 @@ contains
     real, intent(in) :: Theta, Phi
     real, intent(out):: Xyz_D(3)
     !--------------------------------------------------------------------------
-    call dir_to_xyz(sin(Theta),cos(Theta),sin(Phi),cos(Phi),&
-         Xyz_D(1),Xyz_D(2),Xyz_D(3))
+    call dir_to_xyz(sin(Theta), cos(Theta), sin(Phi), cos(Phi),&
+         Xyz_D(1), Xyz_D(2), Xyz_D(3))
 
   end subroutine dir_to_xyz21
   !============================================================================
@@ -537,7 +552,7 @@ contains
     real, intent(in) :: Theta,Phi
     real, intent(out):: x, y, z
     !--------------------------------------------------------------------------
-    call dir_to_xyz(sin(Theta),cos(Theta),sin(Phi),cos(Phi),x,y,z)
+    call dir_to_xyz(sin(Theta), cos(Theta), sin(Phi), cos(Phi), x, y, z)
 
   end subroutine dir_to_xyz23
   !============================================================================
@@ -547,7 +562,8 @@ contains
     real, intent(in) :: SinTheta, CosTheta, SinPhi, CosPhi
     real, intent(out):: Xyz_D(3)
     !--------------------------------------------------------------------------
-    call dir_to_xyz(SinTheta,CosTheta,SinPhi,CosPhi,Xyz_D(1),Xyz_D(2),Xyz_D(3))
+    call dir_to_xyz(SinTheta, CosTheta, SinPhi, CosPhi, &
+         Xyz_D(1), Xyz_D(2), Xyz_D(3))
 
   end subroutine dir_to_xyz41
   !============================================================================
@@ -573,7 +589,7 @@ contains
     real, intent(in) :: Angle
     real :: Rot_DD(2,2)
     !--------------------------------------------------------------------------
-    rot_DD = rot_matrix(sin(Angle), cos(Angle))
+    Rot_DD = rot_matrix(sin(Angle), cos(Angle))
 
   end function rot_matrix1
   !============================================================================
@@ -595,7 +611,7 @@ contains
     real, intent(in) :: Angle
     real :: Rot_DD(3,3)
     !--------------------------------------------------------------------------
-    rot_DD = rot_matrix_x(sin(Angle),cos(Angle))
+    Rot_DD = rot_matrix_x(sin(Angle),cos(Angle))
 
   end function rot_matrix_x1
   !============================================================================
@@ -626,11 +642,11 @@ contains
     real, intent(in) :: Angle
     real             :: Rot_DD(3,3)
     !--------------------------------------------------------------------------
-    Rot_DD = rot_matrix_y(sin(Angle),cos(Angle))
+    Rot_DD = rot_matrix_y(sin(Angle), cos(Angle))
 
   end function rot_matrix_y1
   !============================================================================
-  function rot_matrix_y2(SinAngle,CosAngle) result(Rot_DD)
+  function rot_matrix_y2(SinAngle, CosAngle) result(Rot_DD)
     !$acc routine seq
 
     real, intent(in) :: CosAngle, SinAngle
@@ -655,10 +671,10 @@ contains
 
   end function rot_matrix_z1
   !============================================================================
-  function rot_matrix_z2(SinAngle,CosAngle) result(Rot_DD)
+  function rot_matrix_z2(SinAngle, CosAngle) result(Rot_DD)
     !$acc routine seq
 
-    real, intent(in) :: SinAngle,CosAngle
+    real, intent(in) :: SinAngle, CosAngle
     real             :: Rot_DD(3,3)
     !--------------------------------------------------------------------------
     Rot_DD        =  0
@@ -677,38 +693,38 @@ contains
 
     real :: SinTheta, CosTheta, SinPhi, CosPhi
     !--------------------------------------------------------------------------
-    call xyz_to_dir(Xyz_D(1),Xyz_D(2),Xyz_D(3),SinTheta,CosTheta,SinPhi,CosPhi)
+    call xyz_to_dir(Xyz_D(1), Xyz_D(2), Xyz_D(3), &
+         SinTheta, CosTheta, SinPhi, CosPhi)
 
     Rot_DD = rot_xyz_sph(SinTheta,CosTheta,SinPhi,CosPhi)
 
   end function rot_xyz_sph1
   !============================================================================
-  function rot_xyz_sph3(x,y,z) result(Rot_DD)
+  function rot_xyz_sph3(x, y, z) result(Rot_DD)
 
     real, intent(in) :: x,y,z
     real             :: Rot_DD(3,3)
 
     real :: SinTheta, CosTheta, SinPhi, CosPhi
     !--------------------------------------------------------------------------
-    call xyz_to_dir(x,y,z,SinTheta,CosTheta,SinPhi,CosPhi)
+    call xyz_to_dir(x, y, z, SinTheta, CosTheta, SinPhi, CosPhi)
 
-    Rot_DD = rot_xyz_sph(SinTheta,CosTheta,SinPhi,CosPhi)
+    Rot_DD = rot_xyz_sph(SinTheta, CosTheta, SinPhi, CosPhi)
 
   end function rot_xyz_sph3
   !============================================================================
-  function rot_xyz_sph2(Theta,Phi) result(Rot_DD)
+  function rot_xyz_sph2(Theta, Phi) result(Rot_DD)
 
     real, intent(in) :: Theta,Phi
     real             :: Rot_DD(3,3)
     !--------------------------------------------------------------------------
-    Rot_DD = rot_xyz_sph4(sin(Theta),cos(Theta),sin(Phi),cos(Phi))
+    Rot_DD = rot_xyz_sph4(sin(Theta), cos(Theta), sin(Phi), cos(Phi))
 
   end function rot_xyz_sph2
   !============================================================================
-  function rot_xyz_sph4(SinTheta,CosTheta,SinPhi,CosPhi) result(XyzSph_DD)
+  function rot_xyz_sph4(SinTheta, CosTheta, SinPhi, CosPhi) result(XyzSph_DD)
 
-    real, intent(in) :: SinTheta,CosTheta,SinPhi,CosPhi
-
+    real, intent(in) :: SinTheta, CosTheta, SinPhi, CosPhi
     real             :: XyzSph_DD(3,3)
 
     ! This is the fundamental routine that calculates the rotation
@@ -741,7 +757,7 @@ contains
     !--------------------------------------------------------------------------
     XyzSph_DD = reshape( [ &
          CosPhi*SinTheta, SinPhi*SinTheta,  CosTheta, &
-          CosPhi*CosTheta, SinPhi*CosTheta, -SinTheta, &
+         CosPhi*CosTheta, SinPhi*CosTheta, -SinTheta, &
          -SinPhi,         CosPhi,           0.0 ], &
          [3,3] )
 
@@ -765,9 +781,9 @@ contains
 
   end function rot_xyz_rlonlat1
   !============================================================================
-  function rot_xyz_rlonlat3(x,y,z) result(Rot_DD)
+  function rot_xyz_rlonlat3(x, y, z) result(Rot_DD)
 
-    real, intent(in) :: x,y,z
+    real, intent(in) :: x, y, z
     real             :: Rot_DD(3,3)
 
     real             :: r, Lon, Lat
@@ -783,53 +799,53 @@ contains
 
   end function rot_xyz_rlonlat3
   !============================================================================
-  function rot_xyz_rlonlat2(lon, lat) result(Rot_DD)
+  function rot_xyz_rlonlat2(Lon, Lat) result(Rot_DD)
 
     real, intent(in) :: Lon, Lat
     real             :: Rot_DD(3,3)
 
     real :: SinLon, CosLon, SinLat, CosLat
     !--------------------------------------------------------------------------
-
     SinLon = sin(Lon)
     CosLon = cos(Lon)
     SinLat = sin(Lat)
     CosLat = cos(Lat)
-    Rot_DD = rot_xyz_rlonlat(SinLon,CosLon,SinLat,CosLat)
+    Rot_DD = rot_xyz_rlonlat(SinLon, CosLon, SinLat, CosLat)
 
   end function rot_xyz_rlonlat2
   !============================================================================
   function rot_xyz_rlonlat4(SinLon, CosLon, SinLat, CosLat) &
        result(XyzRlonlat_DD)
+
     real, intent(in) :: SinLon, CosLon, SinLat, CosLat
     real             :: SinTheta, CosTheta, SinPhi, CosPhi
-    real             :: XyzSph_DD(3,3), XyzRlonlat_DD(3,3), &
-         LonlatThetaphi_DD(3,3), ThetaphiXyz_DD(3,3)
+    real             :: XyzRlonlat_DD(3,3)
+    
     ! A vector in the Rlonlat components can be transformed into Xyz by
-    ! vec_Xyz = matmul(XyzRlonlat, vec_Rlonlat)
-    !         = matmul(ThetaphiXyz_DD, matmul(LonlatThetaphi_DD, vrc_Rlonlat))
-    ! The inner matmul change the order of (r, lon, lat) to (r, theta, phi),
-    ! The outer matmul change (r, theta, phi) into the Xyz coordinate.
-    ! LonlatThetaphi_DD = reshape( [ &
+    ! Xyz_D = matmul(XyzRlonlat_DD, rLonLat_D)
+    !       = matmul(XyzSph_DD, matmul(SphRlonlat_DD, Rlonlat_D))
+    ! The inner matmul changes the order of (r, lon, lat) to (r, theta, phi),
+    ! The outer matmul changes (r, theta, phi) into the (x, y, z) coordinates.
+    ! SphRlonlat_DD = reshape( [ &
     !     1,        0,        0, &
     !     0,        0,        1, &
-    !     0,        -1,        0], &
+    !     0,       -1,        0], &
     !     [3,3] )
-    ! write(*,*) "LonLatThetaphi_DD:"
-    ! call show_rot_matrix(LonlatThetaphi_DD)
+    ! write(*,*) "SphRlonlat_DD:"
+    ! call show_rot_matrix(SphRlonlat_DD)
     !
-    ! ThetaphiXyz_DD = reshape( [ &
+    ! from rot_xyz_sph4 using SinTheta=CosLat and CosTheta=SinLat:
+    ! XyzSph_DD = reshape( [ &
     !     CosLat*CosLon, CosLat*SinLon, SinLat, &
     !     SinLat*CosLon, SinLat*SinLon, -CosLat, &
-    !     -sinLon,       CosLon,        0.0], &
+    !     -SinLon,       CosLon,        0.0], &
     !     [3,3] )
-    ! write(*,*) "ThetaphiXyz_DD:"
-    ! call show_rot_matrix(ThetaphiXyz_DD)
+    ! write(*,*) "XyzSph_DD:"
+    ! call show_rot_matrix(XyzSph_DD)
     !
-    ! XyzRlonlat_DD = matmul(ThetaphiXyz_DD, LonlatThetaphi_DD)
+    ! XyzRlonlat_DD = matmul(XyzSph_DD, SphRlonlat_DD)
     ! write(*,*) "XyzRlonlat, matmul:"
     ! call show_rot_matrix(XyzRlonlat_DD)
-
     !--------------------------------------------------------------------------
     XyzRlonlat_DD = reshape ( [ &
          CosLat*CosLon,  CosLat*SinLon,  SinLat, &
@@ -857,15 +873,15 @@ contains
 
   end function rot_xyz_mercator1
   !============================================================================
-  function rot_xyz_mercator3(x,y,z) result(Rot_DD)
+  function rot_xyz_mercator3(x, y, z) result(Rot_DD)
 
-    real, intent(in) :: x,y,z
+    real, intent(in) :: x, y, z
     real             :: Rot_DD(3,3)
 
     real             :: r, Lon, Lat
     real :: SinLon, CosLon, SinLat, CosLat
     !--------------------------------------------------------------------------
-    call xyz_to_rlonlat(x,y,z,r,lon,lat)
+    call xyz_to_rlonlat(x, y, z, r, Lon, Lat)
 
     SinLon = sin(Lon)
     CosLon = cos(Lon)
@@ -875,14 +891,13 @@ contains
 
   end function rot_xyz_mercator3
   !============================================================================
-  function rot_xyz_mercator2(lon, lat) result(Rot_DD)
+  function rot_xyz_mercator2(Lon, Lat) result(Rot_DD)
 
     real, intent(in) :: Lon, Lat
     real             :: Rot_DD(3,3)
 
     real :: SinLon, CosLon, SinLat, CosLat
     !--------------------------------------------------------------------------
-
     SinLon = sin(Lon)
     CosLon = cos(Lon)
     SinLat = sin(Lat)
@@ -893,8 +908,10 @@ contains
   !============================================================================
   function rot_xyz_mercator4(SinLon, CosLon, SinLat, CosLat) &
        result(XyzMercator_DD)
+
     real, intent(in) :: SinLon, CosLon, SinLat, CosLat
     real :: XyzMercator_DD(3,3)
+
     ! A vector on the local Mercator map on spherical surface with:
     ! x-axis directed toward local direction to east
     ! y-axis directed toward north
@@ -912,7 +929,7 @@ contains
     ! XyzMercator_DD = matmul(rot_matrix_z(cPi/2 + Lon),&
     !                         rot_matrix_x(cPi/2 - Lat) )
 
-    ! It could be also obtained from the matrix XyzRLonLat_DD, once the
+    ! It could be also obtained from the matrix XyzRlonlat_DD, once the
     ! row/column for R component is passed from first to the third position
     ! (in effect, XyzMercator_DD is (x,y,z) -> (Lon,Lat,R) conversion matrix)
     ! Explicit computation:
@@ -922,6 +939,7 @@ contains
          -SinLat*CosLon, -SinLat*SinLon, CosLat,  &
          CosLat*CosLon,  CosLat*SinLon,  SinLat ], &
          [3,3] )
+
   end function rot_xyz_mercator4
   !============================================================================
   function cross_product11(a_D, b_D) result(c_D)
@@ -954,9 +972,9 @@ contains
     real, intent(in) :: aX, aY, aZ, b_D(3)
     real             :: c_D(3)
     !--------------------------------------------------------------------------
-    c_D(x_) = ay*b_D(z_) - az*b_D(y_)
-    c_D(y_) = az*b_D(x_) - ax*b_D(z_)
-    c_D(z_) = ax*b_D(y_) - ay*b_D(x_)
+    c_D(x_) = aY*b_D(z_) - aZ*b_D(y_)
+    c_D(y_) = aZ*b_D(x_) - aX*b_D(z_)
+    c_D(z_) = aX*b_D(y_) - aY*b_D(x_)
 
   end function cross_product31
   !============================================================================
@@ -966,9 +984,9 @@ contains
     real, intent(in) :: aX, aY, aZ, bX, bY, bZ
     real             :: c_D(3)
     !--------------------------------------------------------------------------
-    c_D(x_) = ay*bz - az*by
-    c_D(y_) = az*bx - ax*bz
-    c_D(z_) = ax*by - ay*bx
+    c_D(x_) = aY*bZ - aZ*bY
+    c_D(y_) = aZ*bX - aX*bZ
+    c_D(z_) = aX*bY - aY*bX
 
   end function cross_product33
   !============================================================================
@@ -1030,7 +1048,8 @@ contains
   !============================================================================
   function inverse_matrix_nn(n, a_II, SingularLimit, DoIgnoreSingular) &
        result(b_II)
-    ! Return the inverse of the nxn matrix a_DD
+
+    ! Return the inverse of the n x n matrix a_DD
     ! The optional SingularLimit gives the smallest value for the determinant
     ! The optional DoIgnoreSingular determines what to do if the
     ! determinant is less than SingularLimit.
@@ -1097,9 +1116,10 @@ contains
        write(*,*)'Determinant=', DetA
        call CON_stop('Singular matrix in '//NameSub)
     end if
+
   end function inverse_matrix_nn
   !============================================================================
-  function determinant33(a_DD) RESULT(Det)
+  function determinant33(a_DD) result(Det)
 
     ! Calculate determinant of 3 by 3 matrix
 
@@ -1112,6 +1132,7 @@ contains
          -a_DD(1,3)*a_DD(2,2)*a_DD(3,1) &
          -a_DD(1,1)*a_DD(2,3)*a_DD(3,2) &
          -a_DD(3,3)*a_DD(1,2)*a_DD(2,1)
+
   end function determinant33
   !============================================================================
   recursive function determinant_nn(a_II, n) result(Det)
@@ -1174,7 +1195,7 @@ contains
 
   end subroutine show_nbyn_matrix
   !============================================================================
-  real function atan2_check(x,y)
+  real function atan2_check(x, y)
     !$acc routine seq
 
     real, intent(in) :: x,y
@@ -1190,6 +1211,7 @@ contains
   !============================================================================
   subroutine  twopoints_on_sph(Lon1, Lat1,  Lon2, Lat2, &
        Lon, Lat, Orientation, HalfDist, Depth)
+
     ! For a pair of points on sphere:
     real, intent(in) :: Lon1, Lat1 ! Longitude and latitude of point 1
     real, intent(in) :: Lon2, Lat2 ! Longitude and latitude of point 2
@@ -1255,9 +1277,11 @@ contains
     SinOrientation = sum(Dir12_D*DirMer_D)
     Orientation  = acos(CosOrientation)
     if(SinOrientation < 0.0)  Orientation = cTwoPi - Orientation
+
   end subroutine twopoints_on_sph
   !============================================================================
   subroutine test_coord_transform
+
     use ModNumConst, ONLY: cPi, cDegToRad, cRadToDeg
     real, parameter      :: cTiny = 0.000001
     real, dimension(3)   :: Xyz_D, Sph_D, rLonLat_D, Xyz2_D
