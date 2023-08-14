@@ -820,7 +820,7 @@ contains
     real, intent(in) :: SinLon, CosLon, SinLat, CosLat
     real             :: SinTheta, CosTheta, SinPhi, CosPhi
     real             :: XyzRlonlat_DD(3,3)
-    
+
     ! A vector in the Rlonlat components can be transformed into Xyz by
     ! Xyz_D = matmul(XyzRlonlat_DD, rLonLat_D)
     !       = matmul(XyzSph_DD, matmul(SphRlonlat_DD, Rlonlat_D))
