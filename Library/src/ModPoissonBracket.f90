@@ -99,6 +99,7 @@ contains
   subroutine explicit2(nI, nJ, VDF_G, Volume_G, Source_C,    &
        Hamiltonian12_N, dHamiltonian01_FX, dHamiltonian02_FY,&
        DVolumeDt_G,                                          &
+       IsSteadyState,                                        &
        DtIn, CFLIn, DtOut, IsPeriodicIn_D)
     ! solve the contribution to the
     ! numerical flux from a single Poisson bracket,
@@ -128,6 +129,8 @@ contains
     !
     ! f(t+dt) - f(t) = Source_C
     real,           intent(out):: Source_C(1:nI,1:nJ)
+    ! Logical to distinguish a time accurate mode from stedy-state one
+    logical, optional, intent(in) :: IsSteadyState
     real, optional, intent(inout) :: DtIn   ! Options to set time step
     real, optional, intent(in)    :: CFLIn  ! Options to set time step
     real, optional, intent(out)   :: DtOut  ! Option to report time step
@@ -139,6 +142,7 @@ contains
          dHamiltonian01_FX= dHamiltonian01_FX,               &
          dHamiltonian02_FY= dHamiltonian02_FY,               &
          DVolumeDt_G=DVolumeDt_G,                            &
+         IsSteadyState=IsSteadyState,                        &
          DtIn=DtIn,                                          &
          CFLIn=CFLIn,                                        &
          DtOut=DtOut,                                        &
@@ -149,6 +153,7 @@ contains
        Hamiltonian12_N, Hamiltonian13_N, Hamiltonian23_N,                &
        dHamiltonian01_FX, dHamiltonian02_FY, dHamiltonian03_FZ,          &
        DVolumeDt_G,                                                      &
+       IsSteadyState,                                                    &
        DtIn, CFLIn, DtOut, IsPeriodicIn_D)
 
     ! solve the contribution to the numerical flux from multiple Poisson
@@ -195,6 +200,9 @@ contains
     real, intent(out) :: Source_C(1:nI, 1:nJ, 1:nK)
 
     !OPTIONAL PARAMETERS:
+    ! Logical to distinguish a time accurate mode from stedy-state one
+    logical, optional, intent(in) :: IsSteadyState
+
     real, optional, intent(inout) :: DtIn    ! Options to set time step
     real, optional, intent(in)    :: CFLIn   ! Options to set time step
     real, optional, intent(out)   :: DtOut   ! Option to report time step
@@ -209,6 +217,7 @@ contains
          dHamiltonian02_FY= dHamiltonian02_FY,               &
          dHamiltonian03_FZ= dHamiltonian03_FZ,               &
          DVolumeDt_G=DVolumeDt_G,                            &
+         IsSteadyState=IsSteadyState,                        &
          DtIn=DtIn,                                          &
          CFLIn=CFLIn,                                        &
          DtOut=DtOut,                                        &
@@ -220,6 +229,7 @@ contains
        Hamiltonian14_N, Hamiltonian24_N, Hamiltonian34_N,                &
        dHamiltonian01_FX, dHamiltonian02_FY, dHamiltonian03_FZ,          &
        dHamiltonian04_FP, DVolumeDt_G,                                   &
+       IsSteadyState,                                                    &
        DtIn, CFLIn, DtOut, IsPeriodicIn_D)
 
     ! solve the contribution to the numerical flux from multiple Poisson
@@ -295,6 +305,9 @@ contains
     real, intent(out) :: Source_C(1:nI, 1:nJ, 1:nK, 1:nP)
 
     !OPTIONAL PARAMETERS:
+    ! Logical to distinguish a time accurate mode from stedy-state one
+    logical, optional, intent(in) :: IsSteadyState
+
     real, optional, intent(inout) :: DtIn    ! Options to set time step
     real, optional, intent(in)    :: CFLIn   ! Options to set time step
     real, optional, intent(out)   :: DtOut   ! Option to report time step
@@ -336,8 +349,8 @@ contains
     integer :: nFlux, iFlux, iSide, iSide_SG(8), iD_D(4), iU_D(4)
     ! Local CFL number:
     real :: CFLCoef_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK,1/nP:nP+1-1/nP), CFLLocal
-    ! Time step
-    real :: Dt
+    ! Time step (global, local)
+    real :: Dt, TimeStep_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK,1/nP:nP+1-1/nP)
     ! Misc:
     ! Sum of major contributions
     real    :: SumMajor
@@ -352,6 +365,14 @@ contains
     else
        if(.not.present(CflIn))call CON_stop(&
             'Either CflIn or DtIn should be provided in '//NameSub)
+    end if
+    if(present(IsSteadyState))then
+       if(.not.IsSteadyState)call CON_stop(&
+            'If present IsSteadyState parameter, it should be .true.')
+       if(present(DtIn).or.present(DtOut))call CON_stop(&
+            'DtIn and DtOut make no sense in the steady-state mode')
+       if(.not.present(CflIn))call CON_stop(&
+            'CflIn is required in the steady-state mode')
     end if
     IsPeriodic_D = .false.
     if(present(IsPeriodicIn_D))&
