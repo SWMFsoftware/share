@@ -155,9 +155,6 @@ module ModTestPoissonBracket
   use ModPlotFile,       ONLY: save_plot_file
   use ModConst
   implicit none
-  integer, parameter :: nX = 10000 !# of Lagrangian points
-  integer, parameter :: nP = 40    ! 80  - for Fig5.Right Panel!# momentum bins
-  real ::  VDFOld_G(-1:nX+2, -1:nP+2)
 contains
   !============================================================================
   subroutine test_poisson_bracket(tFinal)
@@ -635,7 +632,8 @@ contains
   subroutine test_dsa_poisson
 
     use ModDiffusion
-
+    integer, parameter :: nX = 10000 ! # of Lagrangian points
+    integer, parameter :: nP = 40    ! # momentum bins
     real,    parameter :: pMax = 100, pMin = 1
     real,    parameter :: tFinal = 6000.00
     real,    parameter :: DtTrial = 1.0
@@ -735,7 +733,6 @@ contains
          StringFormatIn = '(2F16.9)',                    &
          Coord1In_I = LogMomentum_I(1:nP),               &
          VarIn_I = alog10(VDF_G(5000,1:nP)))
-    VDFOld_G = VDF_G
   contains
     !==========================================================================
     subroutine update_coords(Time)
@@ -774,7 +771,8 @@ contains
   subroutine test_dsa_sa_mhd
 
     use ModDiffusion
-
+    integer, parameter :: nX = 10000 ! # of Lagrangian points
+    integer, parameter :: nP = 40    ! # momentum bins
     real,    parameter :: pMax = 100, pMin = 1
     real,    parameter :: tFinal = 6000.00
     real ::  MomentumRatio, MomentumMin, MomentumMax
@@ -786,7 +784,7 @@ contains
     real ::  DOuter_I(nX) = 1.0, dInner_I(nX) = 200.0
     real ::  LogMomentum_I(0:nP+1)     ! Cell centered, for plots
     real ::  Momentum3_I(-1:nP+1)
-    real ::  Time = 0.0, Dt, Source_C(nX,nP), CFL
+    real ::  Time = 0.0, Dt, Source_C(nX,nP)
     real ::  Coord_I(-1:nX+2)  ! Time-dependent coordinate of a mesh
     real ::  Dist_I(-1:nX+1)   ! Distance from mesh i to mesh i+1
 
@@ -812,8 +810,7 @@ contains
        ! Only for visualization log10 of the cell centered momentum
        LogMomentum_I(iP) = 0.50*log10(MomentumMin*MomentumMax)
     end do
-    VDF_G = VDFOld_G
-
+    VDF_G = 1.0e-8; VDF_G(:,1) = 1/VolumeP_I(1)
     Time = 0.0; iStep = 0
     call update_coords(6000.0)
     ! Figure 5, left panel
@@ -823,7 +820,6 @@ contains
     ! end do
     ! stop
     do
-       VDFOld_G = VDF_G
        call explicit(nX, nP, VDF_G, Volume_G, Source_C, &
             Hamiltonian12_N=Hamiltonian_N,              &
             CFLIn=0.98, DtOut=Dt)
@@ -841,6 +837,7 @@ contains
           Time = tFinal
           EXIT
        end if
+
        VDF_G(1:nX, 1:nP) = VDF_G(1:nX, 1:nP) + Source_C
        do iP =1, nP
           call advance_diffusion1(Dt,nX,Dist_I(1:nX),VDF_G(1:nX,&
@@ -851,8 +848,7 @@ contains
        VDF_G(1:nX,nP+1:nP+2) = 1.0e-8
        VDF_G( 0,      :) = VDF_G(1,       :)
        VDF_G(-1,      :) = VDF_G(1,       :)
-       VDF_G(nX+1,    :) = max(VDF_G(nX,      :), 1.0e-8)
-       VDF_G(nX+2,    :) = max(VDF_G(nX,      :), 1.0e-8)
+       VDF_G(nX+1:nX+2,    :) = 1.0e-8
        VDF_G(nX+1:nX+2,1) = 1/VolumeP_I(1)
     end do
     call save_plot_file(NameFile='test_dsa_sa_mhd.out', &
