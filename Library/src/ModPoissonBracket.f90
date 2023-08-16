@@ -99,6 +99,7 @@ contains
   subroutine explicit2(nI, nJ, VDF_G, Volume_G, Source_C,    &
        Hamiltonian12_N, dHamiltonian01_FX, dHamiltonian02_FY,&
        DVolumeDt_G,                                          &
+       IsSteadyState,                                        &
        DtIn, CFLIn, DtOut, IsPeriodicIn_D)
     ! solve the contribution to the
     ! numerical flux from a single Poisson bracket,
@@ -128,6 +129,8 @@ contains
     !
     ! f(t+dt) - f(t) = Source_C
     real,           intent(out):: Source_C(1:nI,1:nJ)
+    ! Logical to distinguish a time accurate mode from stedy-state one
+    logical, optional, intent(in) :: IsSteadyState
     real, optional, intent(inout) :: DtIn   ! Options to set time step
     real, optional, intent(in)    :: CFLIn  ! Options to set time step
     real, optional, intent(out)   :: DtOut  ! Option to report time step
@@ -139,6 +142,7 @@ contains
          dHamiltonian01_FX= dHamiltonian01_FX,               &
          dHamiltonian02_FY= dHamiltonian02_FY,               &
          DVolumeDt_G=DVolumeDt_G,                            &
+         IsSteadyState=IsSteadyState,                        &
          DtIn=DtIn,                                          &
          CFLIn=CFLIn,                                        &
          DtOut=DtOut,                                        &
@@ -149,6 +153,7 @@ contains
        Hamiltonian12_N, Hamiltonian13_N, Hamiltonian23_N,                &
        dHamiltonian01_FX, dHamiltonian02_FY, dHamiltonian03_FZ,          &
        DVolumeDt_G,                                                      &
+       IsSteadyState,                                                    &
        DtIn, CFLIn, DtOut, IsPeriodicIn_D)
 
     ! solve the contribution to the numerical flux from multiple Poisson
@@ -195,6 +200,9 @@ contains
     real, intent(out) :: Source_C(1:nI, 1:nJ, 1:nK)
 
     !OPTIONAL PARAMETERS:
+    ! Logical to distinguish a time accurate mode from stedy-state one
+    logical, optional, intent(in) :: IsSteadyState
+
     real, optional, intent(inout) :: DtIn    ! Options to set time step
     real, optional, intent(in)    :: CFLIn   ! Options to set time step
     real, optional, intent(out)   :: DtOut   ! Option to report time step
@@ -209,6 +217,7 @@ contains
          dHamiltonian02_FY= dHamiltonian02_FY,               &
          dHamiltonian03_FZ= dHamiltonian03_FZ,               &
          DVolumeDt_G=DVolumeDt_G,                            &
+         IsSteadyState=IsSteadyState,                        &
          DtIn=DtIn,                                          &
          CFLIn=CFLIn,                                        &
          DtOut=DtOut,                                        &
@@ -220,6 +229,7 @@ contains
        Hamiltonian14_N, Hamiltonian24_N, Hamiltonian34_N,                &
        dHamiltonian01_FX, dHamiltonian02_FY, dHamiltonian03_FZ,          &
        dHamiltonian04_FP, DVolumeDt_G,                                   &
+       IsSteadyState,                                                    &
        DtIn, CFLIn, DtOut, IsPeriodicIn_D)
 
     ! solve the contribution to the numerical flux from multiple Poisson
@@ -295,6 +305,9 @@ contains
     real, intent(out) :: Source_C(1:nI, 1:nJ, 1:nK, 1:nP)
 
     !OPTIONAL PARAMETERS:
+    ! Logical to distinguish a time accurate mode from stedy-state one
+    logical, optional, intent(in) :: IsSteadyState
+
     real, optional, intent(inout) :: DtIn    ! Options to set time step
     real, optional, intent(in)    :: CFLIn   ! Options to set time step
     real, optional, intent(out)   :: DtOut   ! Option to report time step
@@ -336,8 +349,8 @@ contains
     integer :: nFlux, iFlux, iSide, iSide_SG(8), iD_D(4), iU_D(4)
     ! Local CFL number:
     real :: CFLCoef_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK,1/nP:nP+1-1/nP), CFLLocal
-    ! Time step
-    real :: Dt
+    ! Time step (global, local)
+    real :: Dt, TimeStep_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK,1/nP:nP+1-1/nP)
     ! Misc:
     ! Sum of major contributions
     real    :: SumMajor
@@ -353,6 +366,14 @@ contains
        if(.not.present(CflIn))call CON_stop(&
             'Either CflIn or DtIn should be provided in '//NameSub)
     end if
+    if(present(IsSteadyState))then
+       if(.not.IsSteadyState)call CON_stop(&
+            'If present IsSteadyState parameter, it must be be .true.')
+       if(present(DtIn).or.present(DtOut))call CON_stop(&
+            'DtIn and DtOut make no sense in the steady-state mode')
+       if(.not.present(CflIn))call CON_stop(&
+            'CflIn is required in the steady-state mode')
+    end if
     IsPeriodic_D = .false.
     if(present(IsPeriodicIn_D))&
          IsPeriodic_D = IsPeriodicIn_D(1:4-1/nK-1/nP)
@@ -362,8 +383,8 @@ contains
     vInv_G = 1.0/Volume_G
 
     ! Nullify arrays:
-    DeltaH_DG = 0.0
-
+    DeltaH_DG  = 0.0
+    TimeStep_G = 0.0
     ! Bracket {F,H12}_{x,y}   Bracket {F,H13}_{x,z}    Bracket {F,H23}_{y,z}
     ! Hamiltonian 12 (xy)     Hamiltonian 13 (xz)      Hamiltonian 23 (yz)
     ! y                       z                        z
@@ -490,14 +511,16 @@ contains
        end do
        if(SumDeltaHMinus==0.0)then
           DeltaMinusF_G(i,j,k,iP) = 0.0
+          CFLCoef_G(i,j,k,iP)     = 0.0
        else
           DeltaMinusF_G(i,j,k,iP) = - DeltaMinusF_G(i,j,k,iP)/SumDeltaHMinus
-       end if
-       if(UseTimeDependentVolume)then
-          ! Local CFLs are expressed via SumDeltaHMinus
-          CFLCoef_G(i,j,k,iP) = -SumDeltaHMinus
-       else
-          CFLCoef_G(i,j,k,iP) = -SumDeltaHMinus*vInv_G(i,j,k,iP)
+          if(UseTimeDependentVolume)then
+             ! Local CFLs are expressed via SumDeltaHMinus
+             CFLCoef_G(i,j,k,iP) = -SumDeltaHMinus
+          else
+             ! Local CFLs are expressed via
+             CFLCoef_G(i,j,k,iP) = -SumDeltaHMinus*vInv_G(i,j,k,iP)
+          end if
        end if
     end do; end do; end do; end do
     ! Set CFL and time step
@@ -528,17 +551,22 @@ contains
           end if
           if(present(DtOut).and..not.present(CFLIn))&
                DtOut = Dt
+          ! Time accurate mode, equal time step everywhere
+          TimeStep_G = Dt
        else
           ! Solve time step from equation
           ! CFLIn = \Delta t*(-\sum\delta^-H)/(\Delta t*dV/dt + V)
-          Dt = CFLIn/maxval(vInv_G(1:nI,1:nJ,1:nK,1:nP)*&
-               (CFLCoef_G(1:nI,1:nJ,1:nK,1:nP) - &
-               CFLIn*DVolumeDt_G(1:nI,1:nJ,1:nK,1:nP)))
-          if(present(DtOut))DtOut = Dt
+          TimeStep_G = CFLIn*Volume_G/(CFLCoef_G - CFLIn*DVolumeDt_G)
+          if(.not.present(IsSteadyState))then
+             Dt = minval(TimeStep_G(1:nI,1:nJ,1:nK,1:nP))
+             if(present(DtOut))DtOut = Dt
+             ! Time accurate mode, equal time step everywhere
+             TimeStep_G = Dt
+          end if
           ! Calculate the volume at upper time level
           ! V(+\Delta t):
-          vInv_G = 1.0/(Volume_G + Dt*DVolumeDt_G)
-          CFLCoef_G = Dt*vInv_G*CFLCoef_G
+          vInv_G = 1.0/(Volume_G + TimeStep_G*DVolumeDt_G)
+          CFLCoef_G = TimeStep_G*vInv_G*CFLCoef_G
        end if
     else
        if(present(DtIn))then
@@ -551,10 +579,18 @@ contains
              CFLCoef_G = (Dt/DtIn)*CFLCoef_G
              DtIn = Dt
           end if
+          ! Time accurate mode, equal time step everywhere
+          TimeStep_G = Dt
        else
-          Dt = CFLIn/maxval(CFLCoef_G(1:nI,1:nJ,1:nK,1:nP))
-          if(present(DtOut))DtOut = Dt
-          CFLCoef_G = Dt*CFLCoef_G
+          where(CFLCoef_G/=0.0)TimeStep_G = CFLIn/CFLCoef_G
+          if(.not.present(IsSteadyState))then
+             Dt = minval(TimeStep_G(1:nI,1:nJ,1:nK,1:nP), &
+                  MASK=TimeStep_G(1:nI,1:nJ,1:nK,1:nP)>0.0)
+             if(present(DtOut))DtOut = Dt
+             ! Time accurate mode, equal time step everywhere
+             TimeStep_G = Dt
+          end if
+          CFLCoef_G = TimeStep_G*CFLCoef_G
        end if
     end if
     ! Calculate source = f(t+Dt) - f(t):
@@ -564,7 +600,7 @@ contains
     ! Second order correction
     SumFlux2_G = 0.0
     do iP=1,nP; do k=1,nK; do j=1,nJ; do i =1,nI
-       ! Limit and store fuxes across delta plus H faces ffrom the given cell
+       ! Limit and store fuxes across delta plus H faces from the given cell
        if(SumDeltaHPlus_G(i,j,k,iP)==0.0)CYCLE
        nFlux = 0
        do iDim = 1, nDim
@@ -673,8 +709,8 @@ contains
           end do; end do; end do
        end if
     end if
-    Source_C = Source_C + &
-         Dt*vInv_G(1:nI,1:nJ,1:nK,1:nP)*SumFlux2_G(1:nI,1:nJ,1:nK,1:nP)
+    Source_C = Source_C + TimeStep_G(1:nI,1:nJ,1:nK,1:nP)*         &
+         vInv_G(1:nI,1:nJ,1:nK,1:nP)*SumFlux2_G(1:nI,1:nJ,1:nK,1:nP)
   contains
     !==========================================================================
     real function limiter(iSide,i,j,k,iP)
