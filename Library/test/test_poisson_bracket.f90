@@ -14,10 +14,14 @@ module ModDiffusion
 
   PRIVATE
   public:: advance_diffusion1,tridiag
+  interface advance_diffusion1
+     module procedure advance_diffusion_s
+     module procedure advance_diffusion_arr
+  end interface advance_diffusion1
 
 contains
   !============================================================================
-  subroutine advance_diffusion1(Dt, n, Dist_I, F_I, DOuter_I, DInner_I)
+  subroutine advance_diffusion_s(Dt, n, Dist_I, F_I, DOuter_I, DInner_I)
 
     ! Solve the diffusion equation:
     !         f_t-D_outer(D_inner*f_x)_x=0,
@@ -33,9 +37,31 @@ contains
 
     ! Laplace multiplier and diffusion coefficient.
     real,   intent(in   ):: DOuter_I(n), DInner_I(n)
+    real :: Dt_I(n)
+    !--------------------------------------------------------------------------
+    Dt_I = Dt
+    call advance_diffusion_arr(Dt_I, n, Dist_I, F_I, DOuter_I, DInner_I)
+  end subroutine advance_diffusion_s
+  !============================================================================
+  subroutine advance_diffusion_arr(Dt_I,  n, Dist_I, F_I, DOuter_I, DInner_I)
+
+    ! Solve the diffusion equation:
+    !         f_t-D_outer(D_inner*f_x)_x=0,
+    ! with zero Neumann boundary condition. The solution is advanced in time
+    ! using fully implicit scheme.
+
+    use ModNumConst, ONLY: cTiny
+
+    integer,intent(in   ):: n      ! Number of meshes along the x-coordinate
+    real,   intent(in   ):: Dt_I(n)   ! Time step
+    real,   intent(in   ):: Dist_I(1:n) ! Distance to the next mesh
+    real,   intent(inout):: F_I(n) ! In:sol.to be advanced; Out:advanced sol
+
+    ! Laplace multiplier and diffusion coefficient.
+    real,   intent(in   ):: DOuter_I(n), DInner_I(n)
 
     ! Mesh spacing and face spacing.
-    real                 :: DsMesh_I(2:n), DsFace_I(2:n-1)
+    real                 :: DsFace_I(2:n-1)
 
     ! Main, upper, and lower diagonals.
     real, dimension(n)   :: Main_I,Upper_I,Lower_I, R_I
@@ -45,15 +71,11 @@ contains
     ! In M-FLAMPA D_I(i) is the distance between meshes i   and i+1
     ! while DsMesh_I(i) is the distance between centers of meshes
     ! i-1 and i. Therefore,
-    DsMesh_I = 0.0
     DsFace_I = 0.0
     Lower_I = 0.0
     Main_I = 0.0
     Upper_I = 0.0
-    R_I = 0.0
-    do i=2,n
-       DsMesh_I(i) = max(Dist_I(i-1),cTiny)
-    end do
+    R_I = F_I
     ! Within the framework of finite volume method, the cell
     ! volume is used, which is proportional to  the distance between
     ! the faces bounding the volume with an index, i, which is half of
@@ -80,29 +102,27 @@ contains
     !     DInner_(i-1/2)*(f^(n+1)_i -f^(n+1)_(i-1)/DsMesh_(i ))=f^n_i
     Main_I = 1.0
     ! For i=1:
-    Aux1 = Dt*DOuter_I(1)*0.50*(DInner_I(1)+DInner_I(2))/&
-         DsMesh_I(2)**2
-    Main_I( 1) = Main_I(1)+Aux1
+    Aux1 = Dt_I(1)*DOuter_I(1)*0.50*(DInner_I(1) + DInner_I(2))/&
+         (Dist_I(1)**2)
+    Main_I( 1) = Main_I(1) + Aux1
     Upper_I(1) = -Aux1
     ! For i=2,n-1:
     do i=2,n-1
-       Aux1 = Dt*DOuter_I(i)*0.50*(DInner_I(i  ) + DInner_I(i+1))/&
-            (DsMesh_I(i+1)*DsFace_I(i))
-       Aux2 = Dt*DOuter_I(i)*0.50*(DInner_I(i-1) + DInner_I(i  ))/&
-            (DsMesh_I(i  )*DsFace_I(i))
+       Aux1 = Dt_I(i)*DOuter_I(i)*0.50*(DInner_I(i  ) + DInner_I(i+1))/&
+            (Dist_I(i)*DsFace_I(i))
+       Aux2 = Dt_I(i)*DOuter_I(i)*0.50*(DInner_I(i-1) + DInner_I(i  ))/&
+            (Dist_I(i-1)*DsFace_I(i))
        Main_I(i)  = Main_I(i) + Aux1 + Aux2
        Upper_I(i) = -Aux1
        Lower_I(i) = -Aux2
     end do
     ! For i=n:
-    Aux2 = Dt*DOuter_I(n)*0.50*(DInner_I(n-1) + DInner_I(n))/&
-         DsMesh_I(n)**2
+    Aux2 = Dt_I(n)*DOuter_I(n)*0.50*(DInner_I(n-1) + DInner_I(n))/&
+         (Dist_I(n-1)**2)
     Main_I( n) = Main_I(n) + Aux2
     Lower_I(n) = -Aux2
-    ! Update the solution from f^(n) to f^(n+1):
-    R_I = F_I
     call tridiag(n,Lower_I,Main_I,Upper_I,R_I,F_I)
-  end subroutine advance_diffusion1
+  end subroutine advance_diffusion_arr
   !============================================================================
   subroutine tridiag(n, L_I, M_I, U_I, R_I, W_I)
 
@@ -155,9 +175,6 @@ module ModTestPoissonBracket
   use ModPlotFile,       ONLY: save_plot_file
   use ModConst
   implicit none
-  integer, parameter :: nX = 10000 !# of Lagrangian points
-  integer, parameter :: nP = 40    ! 80  - for Fig5.Right Panel!# momentum bins
-  real ::  VDFOld_G(-1:nX+2, -1:nP+2)
 contains
   !============================================================================
   subroutine test_poisson_bracket(tFinal)
@@ -635,7 +652,8 @@ contains
   subroutine test_dsa_poisson
 
     use ModDiffusion
-
+    integer, parameter :: nX = 10000 ! # of Lagrangian points
+    integer, parameter :: nP = 40    ! # momentum bins
     real,    parameter :: pMax = 100, pMin = 1
     real,    parameter :: tFinal = 6000.00
     real,    parameter :: DtTrial = 1.0
@@ -735,7 +753,6 @@ contains
          StringFormatIn = '(2F16.9)',                    &
          Coord1In_I = LogMomentum_I(1:nP),               &
          VarIn_I = alog10(VDF_G(5000,1:nP)))
-    VDFOld_G = VDF_G
   contains
     !==========================================================================
     subroutine update_coords(Time)
@@ -774,7 +791,8 @@ contains
   subroutine test_dsa_sa_mhd
 
     use ModDiffusion
-
+    integer, parameter :: nX = 10000 ! # of Lagrangian points
+    integer, parameter :: nP = 40    ! # momentum bins
     real,    parameter :: pMax = 100, pMin = 1
     real,    parameter :: tFinal = 6000.00
     real ::  MomentumRatio, MomentumMin, MomentumMax
@@ -786,7 +804,7 @@ contains
     real ::  DOuter_I(nX) = 1.0, dInner_I(nX) = 200.0
     real ::  LogMomentum_I(0:nP+1)     ! Cell centered, for plots
     real ::  Momentum3_I(-1:nP+1)
-    real ::  Time = 0.0, Dt, Source_C(nX,nP), CFL
+    real ::  Time = 0.0, Dt, Source_C(nX,nP)
     real ::  Coord_I(-1:nX+2)  ! Time-dependent coordinate of a mesh
     real ::  Dist_I(-1:nX+1)   ! Distance from mesh i to mesh i+1
 
@@ -812,8 +830,7 @@ contains
        ! Only for visualization log10 of the cell centered momentum
        LogMomentum_I(iP) = 0.50*log10(MomentumMin*MomentumMax)
     end do
-    VDF_G = VDFOld_G
-
+    VDF_G = 1.0e-8; VDF_G(:,1) = 1/VolumeP_I(1)
     Time = 0.0; iStep = 0
     call update_coords(6000.0)
     ! Figure 5, left panel
@@ -823,7 +840,6 @@ contains
     ! end do
     ! stop
     do
-       VDFOld_G = VDF_G
        call explicit(nX, nP, VDF_G, Volume_G, Source_C, &
             Hamiltonian12_N=Hamiltonian_N,              &
             CFLIn=0.98, DtOut=Dt)
@@ -841,6 +857,7 @@ contains
           Time = tFinal
           EXIT
        end if
+
        VDF_G(1:nX, 1:nP) = VDF_G(1:nX, 1:nP) + Source_C
        do iP =1, nP
           call advance_diffusion1(Dt,nX,Dist_I(1:nX),VDF_G(1:nX,&
@@ -851,8 +868,7 @@ contains
        VDF_G(1:nX,nP+1:nP+2) = 1.0e-8
        VDF_G( 0,      :) = VDF_G(1,       :)
        VDF_G(-1,      :) = VDF_G(1,       :)
-       VDF_G(nX+1,    :) = max(VDF_G(nX,      :), 1.0e-8)
-       VDF_G(nX+2,    :) = max(VDF_G(nX,      :), 1.0e-8)
+       VDF_G(nX+1:nX+2,    :) = 1.0e-8
        VDF_G(nX+1:nX+2,1) = 1/VolumeP_I(1)
     end do
     call save_plot_file(NameFile='test_dsa_sa_mhd.out', &

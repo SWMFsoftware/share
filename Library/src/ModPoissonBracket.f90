@@ -100,7 +100,7 @@ contains
        Hamiltonian12_N, dHamiltonian01_FX, dHamiltonian02_FY,&
        DVolumeDt_G,                                          &
        IsSteadyState,                                        &
-       DtIn, CFLIn, DtOut, IsPeriodicIn_D)
+       DtIn, CFLIn, DtOut, DtOut_C, IsPeriodicIn_D)
     ! solve the contribution to the
     ! numerical flux from a single Poisson bracket,
     ! df/dq_l dH/dp_l - df/dp_l dH/dq_l
@@ -134,6 +134,7 @@ contains
     real, optional, intent(inout) :: DtIn   ! Options to set time step
     real, optional, intent(in)    :: CFLIn  ! Options to set time step
     real, optional, intent(out)   :: DtOut  ! Option to report time step
+    real, optional, intent(out)   :: DtOut_C(nI,nJ)
     logical, optional, intent(in) :: IsPeriodicIn_D(:)
     character(len=*), parameter:: NameSub = 'explicit2'
     !--------------------------------------------------------------------------
@@ -146,6 +147,7 @@ contains
          DtIn=DtIn,                                          &
          CFLIn=CFLIn,                                        &
          DtOut=DtOut,                                        &
+         DtOut_C=DtOut_C,                                    &
          IsPeriodicIn_D=IsPeriodicIn_D)
   end subroutine explicit2
   !============================================================================
@@ -154,7 +156,7 @@ contains
        dHamiltonian01_FX, dHamiltonian02_FY, dHamiltonian03_FZ,          &
        DVolumeDt_G,                                                      &
        IsSteadyState,                                                    &
-       DtIn, CFLIn, DtOut, IsPeriodicIn_D)
+       DtIn, CFLIn, DtOut, DtOut_C, IsPeriodicIn_D)
 
     ! solve the contribution to the numerical flux from multiple Poisson
     ! brackets, 1,2,3 enumerate phase coordinates,  0 relating to time.
@@ -206,6 +208,7 @@ contains
     real, optional, intent(inout) :: DtIn    ! Options to set time step
     real, optional, intent(in)    :: CFLIn   ! Options to set time step
     real, optional, intent(out)   :: DtOut   ! Option to report time step
+    real, optional, intent(out)   :: DtOut_C(nI,nJ,nK)
     logical, optional, intent(in) :: IsPeriodicIn_D(:)
     character(len=*), parameter:: NameSub = 'explicit3'
     !--------------------------------------------------------------------------
@@ -221,6 +224,7 @@ contains
          DtIn=DtIn,                                          &
          CFLIn=CFLIn,                                        &
          DtOut=DtOut,                                        &
+         DtOut_C=DtOut_C,                                    &
          IsPeriodicIn_D=IsPeriodicIn_D)
   end subroutine explicit3
   !============================================================================
@@ -230,7 +234,7 @@ contains
        dHamiltonian01_FX, dHamiltonian02_FY, dHamiltonian03_FZ,          &
        dHamiltonian04_FP, DVolumeDt_G,                                   &
        IsSteadyState,                                                    &
-       DtIn, CFLIn, DtOut, IsPeriodicIn_D)
+       DtIn, CFLIn, DtOut, DtOut_C, IsPeriodicIn_D)
 
     ! solve the contribution to the numerical flux from multiple Poisson
     ! brackets, 1,2,3 enumerate phase coordinates,  0 relating to time.
@@ -311,6 +315,7 @@ contains
     real, optional, intent(inout) :: DtIn    ! Options to set time step
     real, optional, intent(in)    :: CFLIn   ! Options to set time step
     real, optional, intent(out)   :: DtOut   ! Option to report time step
+    real, optional, intent(out)   :: DtOut_C(nI,nJ,nK,nP)
     logical, optional, intent(in) :: IsPeriodicIn_D(:)
     ! Local variables
     logical :: UseTimeDependentVolume = .false. !=present(DVolumeDt_G)
@@ -593,6 +598,7 @@ contains
           CFLCoef_G = TimeStep_G*CFLCoef_G
        end if
     end if
+    if(present(DtOut_C))DtOut_C = TimeStep_G(1:nI,1:nJ,1:nK,1:nP)
     ! Calculate source = f(t+Dt) - f(t):
     ! First order monotone scheme
     Source_C = -CFLCoef_G(1:nI,1:nJ,1:nK,1:nP)*&
