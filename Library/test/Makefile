@@ -60,6 +60,7 @@ test:
 	-@make test_lookup_table
 	-@make test_planet_field
 	-@make test_plot_file
+	-@make test_poisson_bracket
 	-@make test_random_number
 	-@make test_ray_trace
 	-@make test_sort
@@ -68,8 +69,6 @@ test:
 	-@make test_utilities
 	@echo ---------------------------------------------------------
 	@ls -l *.diff
-
-#	-@make test_poisson_bracket # too slow for a unit test
 
 clean: cleanfiles
 
@@ -534,7 +533,7 @@ test_poisson_bracket_exe:
 		-L${LIBDIR} -lSHARE ${Lflag}
 
 test_poisson_bracket:
-	rm -f test_poisson.out test_poisson2d.out
+	rm -f test_poisson*.out test_dsa_*.out
 	@echo test_poisson_bracket starting	>  test_poisson.diff
 	@make test_poisson_bracket_exe		>> test_poisson.diff
 	@echo './test_poisson.exe'		>> test_poisson.diff
@@ -548,7 +547,8 @@ test_poisson_bracket_check:
 		test_poisson2d.out test_poisson2d.ref.out.gz \
 		>> test_poisson.diff)
 	-@(${DIFFNUM} -b -a=1e-7 \
-		test_dsa_poisson.out test_dsa_poisson.ref >> test_poisson.diff)
+		test_dsa_sa_mhd.out test_dsa_poisson.ref \
+		>> test_poisson.diff)
 	@ls -l test_poisson.diff
 
 #######################################################################
