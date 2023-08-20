@@ -9,7 +9,7 @@ module ModDiffusion
   ! Adapted for the use in MFLAMPA (Dist_I is an input paramater,
   ! fixed contributions to M_I in the end points)-D.Borovikov, 2017
   ! Updated (identation, comments):  I.Sokolov, Dec.17, 2017
-
+  use ModUtilities,      ONLY: CON_stop
   implicit none
 
   PRIVATE
@@ -21,29 +21,40 @@ module ModDiffusion
 
 contains
   !============================================================================
-  subroutine advance_diffusion_s(Dt, n, Dist_I, F_I, DOuter_I, DInner_I)
+  subroutine advance_diffusion_s(Dt, GcnL, nI, GcnR, Dist_I, F_I, &
+       DOuter_I, DInner_I)
 
     ! Solve the diffusion equation:
     !         f_t-D_outer(D_inner*f_x)_x=0,
-    ! with zero Neumann boundary condition. The solution is advanced in time
-    ! using fully implicit scheme.
+    ! with zero Neumann boundary condition, if GcnL=GcnR=0.
+    ! With given Dirichlet CB at the left bondary, if GcnL=1.
+    ! With given Dirichlet CB at the rightt bondary, if GcnR=1.
+    ! The solution is advanced in time using fully implicit scheme.
 
     use ModNumConst, ONLY: cTiny
 
     real,   intent(in   ):: Dt     ! Time step
-    integer,intent(in   ):: n      ! Number of meshes along the x-coordinate
-    real,   intent(in   ):: Dist_I(n) ! Distance to the next mesh
-    real,   intent(inout):: F_I(n) ! In:sol.to be advanced; Out:advanced sol
+    integer,intent(in   ):: GcnL, GcnR ! Number of left and right ghost cells
+    integer,intent(in   ):: nI     ! Number of physical cells meshes
+    ! Distance to the next mesh
+    real,   intent(in   ):: Dist_I(1-GcnL:nI-1+GcnR)
+    ! In:sol.to be advanced (including ghost cells)
+    ! Out:advanced sol (only physical cells)
+    real,   intent(inout):: F_I(1-GcnL:nI+GcnR)
 
-    ! Laplace multiplier and diffusion coefficient.
-    real,   intent(in   ):: DOuter_I(n), DInner_I(n)
-    real :: Dt_I(n)
+    ! Laplace multiplier.
+    real,   intent(in   ):: DOuter_I(nI)
+    ! Diffusion coefficient
+    real,   intent(in   ):: DInner_I(1-GcnL:nI+GcnR)
+    real :: Dt_I(nI)
     !--------------------------------------------------------------------------
     Dt_I = Dt
-    call advance_diffusion_arr(Dt_I, n, Dist_I, F_I, DOuter_I, DInner_I)
+    call advance_diffusion_arr(Dt_I, GcnL, nI, GcnR, Dist_I, F_I, &
+         DOuter_I, DInner_I)
   end subroutine advance_diffusion_s
   !============================================================================
-  subroutine advance_diffusion_arr(Dt_I,  n, Dist_I, F_I, DOuter_I, DInner_I)
+  subroutine advance_diffusion_arr(Dt_I, GcnL, nI, GcnR, Dist_I, F_I, &
+         DOuter_I, DInner_I)
 
     ! Solve the diffusion equation:
     !         f_t-D_outer(D_inner*f_x)_x=0,
@@ -52,62 +63,50 @@ contains
 
     use ModNumConst, ONLY: cTiny
 
-    integer,intent(in   ):: n      ! Number of meshes along the x-coordinate
-    real,   intent(in   ):: Dt_I(n)   ! Time step
-    real,   intent(in   ):: Dist_I(1:n) ! Distance to the next mesh
-    real,   intent(inout):: F_I(n) ! In:sol.to be advanced; Out:advanced sol
+    integer,intent(in   ):: GcnL, GcnR ! Number of left and right ghost cells
+    integer,intent(in   ):: nI     ! Number of physical cells meshes
+    real,   intent(in   ):: Dt_I(nI)   ! Time step
+    ! Distance to the next mesh
+    real,   intent(in   ):: Dist_I(1-GcnL:nI-1+GcnR)
+    ! In:sol.to be advanced (including ghost cells)
+    ! Out:advanced sol (only physical cells)
+    real,   intent(inout):: F_I(1-GcnL:nI+GcnR)
 
-    ! Laplace multiplier and diffusion coefficient.
-    real,   intent(in   ):: DOuter_I(n), DInner_I(n)
-
+    ! Laplace multiplier.
+    real,   intent(in   ):: DOuter_I(nI)
+    ! Diffusion coefficient
+    real,   intent(in   ):: DInner_I(1-GcnL:nI+GcnR)
     ! Mesh spacing and face spacing.
-    real                 :: DsFace_I(2:n-1)
+    real                 :: DsFace_I(nI)
 
     ! Main, upper, and lower diagonals.
-    real, dimension(n)   :: Main_I,Upper_I,Lower_I, R_I
+    real, dimension(nI)   :: Main_I,Upper_I,Lower_I, R_I
     integer:: i
     real:: Aux1,Aux2
     !--------------------------------------------------------------------------
-    ! In M-FLAMPA D_I(i) is the distance between meshes i   and i+1
-    ! while DsMesh_I(i) is the distance between centers of meshes
-    ! i-1 and i. Therefore,
-    DsFace_I = 0.0
-    Lower_I = 0.0
-    Main_I = 0.0
-    Upper_I = 0.0
-    R_I = F_I
+    Lower_I = 0.0; Main_I  = 1.0; Upper_I = 0.0; R_I = F_I(1:nI)
     ! Within the framework of finite volume method, the cell
     ! volume is used, which is proportional to  the distance between
     ! the faces bounding the volume with an index, i, which is half of
     ! sum of distance between meshes i-1 and i (i.e. D_I(i-1) and that
     ! between meshes i and i+1 (which is D_I(i)):
-    do i=2,n-1
+    do i=2,nI-1
        DsFace_I(i) = max(0.5*(Dist_I(i) + Dist_I(i-1)),cTiny)
-    end do
-
-    ! In flux coordinates, the control volume associated with the
-    ! given cell has a cross-section equal to (Magnetic Flux)/B,
-    ! where the flux is a constant along the magnetic field line,
-    ! set to one hereafter. Therefore, the diffusion equation has
-    ! a following form:
-    ! (DsFace_i/B_i)(f^(n+1) - f^n) = Flux_(i-1/2) - Flux_(i+1/2),
-    ! where the particle density flux should be multiplied by the
-    ! cross-section area too (magnetic flux factor is one!):
-    !  Flux_(i-1/2) = (diffusion coefficient)_(i-1/2)/B_(i-1/2)*&
-    !                 (f^(n+1)_(i-1) - f^(n+1)_i),
-    !  The multiplier, DsFace_i/B_i, is denoted as DsFace_i/DOuter_i
-    !  The face-centered combination,
-    ! f^(n+1)_i-Dt*DOuter_I/DsFace_I*(&
-    !     DInner_(i+1/2)*(f^(n+1)_(i+1)-f^(n+1)_i)/DsMesh_(i+1)-&
-    !     DInner_(i-1/2)*(f^(n+1)_i -f^(n+1)_(i-1)/DsMesh_(i ))=f^n_i
-    Main_I = 1.0
-    ! For i=1:
-    Aux1 = Dt_I(1)*DOuter_I(1)*0.50*(DInner_I(1) + DInner_I(2))/&
-         (Dist_I(1)**2)
-    Main_I( 1) = Main_I(1) + Aux1
-    Upper_I(1) = -Aux1
-    ! For i=2,n-1:
-    do i=2,n-1
+       ! In flux coordinates, the control volume associated with the
+       ! given cell has a cross-section equal to (Magnetic Flux)/B,
+       ! where the flux is a constant along the magnetic field line,
+       ! set to one hereafter. Therefore, the diffusion equation has
+       ! a following form:
+       ! (DsFace_i/B_i)(f^(n+1) - f^n) = Flux_(i-1/2) - Flux_(i+1/2),
+       ! where the particle density flux should be multiplied by the
+       ! cross-section area too (magnetic flux factor is one!):
+       !  Flux_(i-1/2) = (diffusion coefficient)_(i-1/2)/B_(i-1/2)*&
+       !                 (f^(n+1)_(i-1) - f^(n+1)_i),
+       !  The multiplier, DsFace_i/B_i, is denoted as DsFace_i/DOuter_i
+       !  The face-centered combination,
+       ! f^(n+1)_i-Dt*DOuter_I/DsFace_I*(&
+       !     DInner_(i+1/2)*(f^(n+1)_(i+1)-f^(n+1)_i)/DsMesh_(i+1)-&
+       !     DInner_(i-1/2)*(f^(n+1)_i -f^(n+1)_(i-1)/DsMesh_(i ))=f^n_i
        Aux1 = Dt_I(i)*DOuter_I(i)*0.50*(DInner_I(i  ) + DInner_I(i+1))/&
             (Dist_I(i)*DsFace_I(i))
        Aux2 = Dt_I(i)*DOuter_I(i)*0.50*(DInner_I(i-1) + DInner_I(i  ))/&
@@ -116,12 +115,45 @@ contains
        Upper_I(i) = -Aux1
        Lower_I(i) = -Aux2
     end do
-    ! For i=n:
-    Aux2 = Dt_I(n)*DOuter_I(n)*0.50*(DInner_I(n-1) + DInner_I(n))/&
-         (Dist_I(n-1)**2)
-    Main_I( n) = Main_I(n) + Aux2
-    Lower_I(n) = -Aux2
-    call tridiag(n,Lower_I,Main_I,Upper_I,R_I,F_I)
+    ! For i=1:
+    if(GcnL==0)then
+       Aux1 = Dt_I(1)*DOuter_I(1)*0.50*(DInner_I(1) + DInner_I(2))/&
+            (Dist_I(1)**2)
+       Main_I( 1) = Main_I(1) + Aux1
+       Upper_I(1) = -Aux1
+    elseif(GcnL>0)then
+       DsFace_I(1) = max(0.5*(Dist_I(1) + Dist_I(0)),cTiny)
+       Aux1 = Dt_I(1)*DOuter_I(1)*0.50*(DInner_I(1) + DInner_I(2))/&
+            (Dist_I(1)*DsFace_I(1))
+       Aux2 = Dt_I(1)*DOuter_I(1)*0.50*(DInner_I(0) + DInner_I(1))/&
+            (Dist_I(0)*DsFace_I(1))
+       Main_I(1)  = Main_I(1) + Aux1 + Aux2
+       Upper_I(1) = -Aux1
+       Lower_I(1) = -Aux2
+       R_I(1) = R_I(1) - Lower_I(1)*F_I(0)
+    else
+       call CON_stop('SP_advance_diffusion: ghost cell number can be 0 or 1!')
+    end if
+    ! For i=nI
+    if(GcnR==0)then
+       Aux2 = Dt_I(nI)*DOuter_I(nI)*0.50*(DInner_I(nI-1) + DInner_I(nI))/&
+         (Dist_I(nI-1)**2)
+       Main_I( nI) = Main_I(nI) + Aux2
+       Lower_I(nI) = -Aux2
+    elseif(GcnR>0)then
+       DsFace_I(nI) = max(0.5*(Dist_I(nI) + Dist_I(nI-1)),cTiny)
+       Aux1 = Dt_I(nI)*DOuter_I(nI)*0.50*(DInner_I(nI) + DInner_I(nI+1))/&
+            (Dist_I(nI)*DsFace_I(nI))
+       Aux2 = Dt_I(nI)*DOuter_I(nI)*0.50*(DInner_I(nI-1) + DInner_I(nI))/&
+            (Dist_I(nI-1)*DsFace_I(nI))
+       Main_I(nI)  = Main_I(nI) + Aux1 + Aux2
+       Upper_I(nI) = -Aux1
+       Lower_I(nI) = -Aux2
+       R_I(nI) = R_I(nI) - Upper_I(nI)*F_I(nI+1)
+    else
+       call CON_stop('SP_advance_diffusion: ghost cell number can be 0 or 1!')
+    end if 
+    call tridiag(nI,Lower_I,Main_I,Upper_I,R_I,F_I(1:nI))
   end subroutine advance_diffusion_arr
   !============================================================================
   subroutine tridiag(n, L_I, M_I, U_I, R_I, W_I)
@@ -175,6 +207,10 @@ module ModTestPoissonBracket
   use ModPlotFile,       ONLY: save_plot_file
   use ModConst
   implicit none
+  ! Pass the VDF from test_dsa_poisson to restart test_dsa_sa_mhd
+  integer, parameter :: nX = 1000  !# of Lagrangian points
+  integer, parameter :: nP = 40    ! 80  - for Fig5.Right Panel!# momentum bins
+  real ::  VDFOld_G(-1:nX+2, -1:nP+2)
 contains
   !============================================================================
   subroutine test_poisson_bracket(tFinal)
@@ -652,10 +688,9 @@ contains
   subroutine test_dsa_poisson
 
     use ModDiffusion
-    integer, parameter :: nX = 10000 ! # of Lagrangian points
-    integer, parameter :: nP = 40    ! # momentum bins
+
     real,    parameter :: pMax = 100, pMin = 1
-    real,    parameter :: tFinal = 6000.00
+    real,    parameter :: tFinal = 600.00
     real,    parameter :: DtTrial = 1.0
     real ::  DtInv = 1/DtTrial
     real ::  MomentumRatio, MomentumMin, MomentumMax
@@ -664,7 +699,7 @@ contains
     real ::  VolumeX_I(0:nX+1), VolumeNewX_I(0:nX+1)
     real ::  VolumeP_I(0:nP+1)
     real ::  dVolumeDt_G(0:nX+1, 0:nP+1), dVolumeXDt_G(0:nX+1)
-    real ::  DOuter_I(nX) = 1.0, dInner_I(nX) = 100.0 ! 200.0 For Fig5
+    real ::  DOuter_I(nX) = 1.0, dInner_I(0:nX+1) = 20.0 ! 20.0 For Fig5
     real ::  dHamiltonian02_FY(0:nX+1, -1:nP+1)
     real ::  LogMomentum_I(0:nP+1)     ! Cell centered, for plots
     real ::  Momentum3_I(-1:nP+1)
@@ -702,12 +737,6 @@ contains
 
     Time = 0.0; iStep = 0; DtNext = DtTrial
     call update_coords(Time)
-    ! Figure 4, left panel
-    ! call update_coords(6000.0)
-    ! do iX = 5982,6005
-    !   write(*,*)Coord_I(iX),1/VolumeNewX_I(iX)
-    ! end do
-    ! stop
     do
        Volume_G = VolumeNew_G
        VolumeX_I= VolumeNewX_I
@@ -730,8 +759,8 @@ contains
        iStep = iStep +1
        VDF_G(1:nX, 1:nP) = VDF_G(1:nX, 1:nP) + Source_C
        do iP =1, nP
-          call advance_diffusion1(Dt,nX,Dist_I(1:nX),VDF_G(1:nX,&
-               iP),DOuter_I(1:nX),DInner_I(1:nX))
+          call advance_diffusion1(Dt,0,nX,1,Dist_I(1:nX),VDF_G(1:nX+1,&
+               iP),DOuter_I(1:nX),DInner_I(1:nX+1))
        end do
        Time = Time + Dt
        if(Time> tFinal - 1.0e-8*DtNext)EXIT
@@ -739,12 +768,9 @@ contains
        VDF_G(1:nX,nP+1:nP+2) = 1.0e-8
        VDF_G( 0,      :) = VDF_G(1,       :)
        VDF_G(-1,      :) = VDF_G(1,       :)
-       VDF_G(nX+1,    :) = VDF_G(nX,      :)
-       VDF_G(nX+2,    :) = VDF_G(nX,      :)
+       VDF_G(nX+1:nX+2,:) = 1.0e-8
+       VDF_G(nX+1:nX+2,1) = 1/VolumeP_I(1)
     end do
-    ! do iP =1, nP
-    !   write(*,*)LogMomentum_I(iP),alog10(VDF_G(5000,iP)*VolumeNew_G(5000,iP))
-    ! end do
     call save_plot_file(NameFile='test_dsa_poisson.out', &
          TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
          NameVarIn='LogMomentum VDF'  ,                  &
@@ -752,7 +778,8 @@ contains
          CoordMaxIn_D=[ LogMomentum_I(nP) ],             &
          StringFormatIn = '(2F16.9)',                    &
          Coord1In_I = LogMomentum_I(1:nP),               &
-         VarIn_I = alog10(VDF_G(5000,1:nP)))
+         VarIn_I = alog10(VDF_G(500,1:nP)))
+    VDFOld_G = VDF_G
   contains
     !==========================================================================
     subroutine update_coords(Time)
@@ -791,20 +818,19 @@ contains
   subroutine test_dsa_sa_mhd
 
     use ModDiffusion
-    integer, parameter :: nX = 10000 ! # of Lagrangian points
-    integer, parameter :: nP = 40    ! # momentum bins
+
     real,    parameter :: pMax = 100, pMin = 1
-    real,    parameter :: tFinal = 6000.00
+    integer,    parameter :: nStep = 1000
     real ::  MomentumRatio, MomentumMin, MomentumMax
-    real ::  VDF_G(-1:nX+2, -1:nP+2)
+    real ::  VDF_G(-1:nX+2, -1:nP+2), Dt_C(nX,nP)
     real ::  Hamiltonian_N(-1:nX+1, -1:nP+1)
     real ::  Volume_G(0:nX+1, 0:nP+1)
     real ::  VolumeX_I(-1:nX+2)
     real ::  VolumeP_I(0:nP+1)
-    real ::  DOuter_I(nX) = 1.0, dInner_I(nX) = 200.0
+    real ::  DOuter_I(nX) = 1.0, dInner_I(0:nX+1) = 20.0
     real ::  LogMomentum_I(0:nP+1)     ! Cell centered, for plots
     real ::  Momentum3_I(-1:nP+1)
-    real ::  Time = 0.0, Dt, Source_C(nX,nP)
+    real ::  Source_C(nX,nP)
     real ::  Coord_I(-1:nX+2)  ! Time-dependent coordinate of a mesh
     real ::  Dist_I(-1:nX+1)   ! Distance from mesh i to mesh i+1
 
@@ -830,55 +856,34 @@ contains
        ! Only for visualization log10 of the cell centered momentum
        LogMomentum_I(iP) = 0.50*log10(MomentumMin*MomentumMax)
     end do
-    VDF_G = 1.0e-8; VDF_G(:,1) = 1/VolumeP_I(1)
-    Time = 0.0; iStep = 0
-    call update_coords(6000.0)
-    ! Figure 5, left panel
-    ! do iX = 5982,6005
-    !   write(*,*)0.50*(Coord_I(iX)+Coord_I(iX+1)),&
-    !        1/(Coord_I(iX+1)-Coord_I(iX))
-    ! end do
-    ! stop
-    do
+    VDF_G = VDFOld_G
+    
+    call update_coords(600.0)
+    do iStep = 1, nStep
        call explicit(nX, nP, VDF_G, Volume_G, Source_C, &
-            Hamiltonian12_N=Hamiltonian_N,              &
-            CFLIn=0.98, DtOut=Dt)
-       iStep = iStep +1
-       if(Time + Dt>= tFinal)then
-          Dt = tFinal - Time
-          call explicit(nX, nP, VDF_G, Volume_G, Source_C, &
-               Hamiltonian12_N=Hamiltonian_N,              &
-               DtIn=Dt)
-          VDF_G(1:nX, 1:nP) = VDF_G(1:nX, 1:nP) + Source_C
-          do iP =1, nP
-             call advance_diffusion1(Dt,nX,Dist_I(1:nX),VDF_G(1:nX,&
-                  iP),DOuter_I(1:nX),DInner_I(1:nX))
-          end do
-          Time = tFinal
-          EXIT
-       end if
-
+            Hamiltonian12_N=Hamiltonian_N, CFLIn=0.98,  &
+            IsSteadyState=.true., DtOut_C=Dt_C)
+ 
        VDF_G(1:nX, 1:nP) = VDF_G(1:nX, 1:nP) + Source_C
        do iP =1, nP
-          call advance_diffusion1(Dt,nX,Dist_I(1:nX),VDF_G(1:nX,&
-               iP),DOuter_I(1:nX),DInner_I(1:nX))
+          call advance_diffusion1(Dt_C(:,iP),0,nX,1,Dist_I(1:nX),VDF_G(1:nX+1,&
+               iP),DOuter_I(1:nX),DInner_I(1:nX+1))
        end do
-       Time = Time + Dt
+       ! Time = Time + Dt
        VDF_G(1:nX,-1:0 ) = 1.0e-8
        VDF_G(1:nX,nP+1:nP+2) = 1.0e-8
        VDF_G( 0,      :) = VDF_G(1,       :)
        VDF_G(-1,      :) = VDF_G(1,       :)
-       VDF_G(nX+1:nX+2,    :) = 1.0e-8
        VDF_G(nX+1:nX+2,1) = 1/VolumeP_I(1)
     end do
     call save_plot_file(NameFile='test_dsa_sa_mhd.out', &
-         TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
+         TypeFileIn='ascii', nStepIn = nStep, &
          NameVarIn='LogMomentum VDF'  ,                  &
          CoordMinIn_D=[ LogMomentum_I(1 ) ],             &
          CoordMaxIn_D=[ LogMomentum_I(nP) ],             &
          StringFormatIn = '(2F16.9)',                    &
          Coord1In_I = LogMomentum_I(1:nP),               &
-         VarIn_I = alog10(VDF_G(5000,1:nP)))
+         VarIn_I = alog10(VDF_G(500,1:nP)))
   contains
     !==========================================================================
     subroutine update_coords(Time)
@@ -1344,7 +1349,7 @@ program test_program
   ! call test_hill_vortex
   ! call test_energy_conservation(cTwoPi)
   ! call test_in_action_angle(cTwoPi)
-  ! call test_dsa_sa_mhd ! for Fig5.Right Panel
+  call test_dsa_sa_mhd ! for Fig5.Right Panel
   ! call test_multipoisson_bracket(50.0)
 
   ! Test for comparing two diffusions is long. It should be repeated twice with
