@@ -29,7 +29,7 @@ MPILIB =
 # INCL_EXTRA can be defined to add more search directories.
 SEARCH =  -mdir ${INCLDIR} -I${INCLDIR} ${INCL_EXTRA}
 
-DEBUGFLAG = -C -gline -nan
+DEBUGFLAG = -C -gline -nan -ieee=stop
 DEBUG     = 
 
 OPT0 = -O0
