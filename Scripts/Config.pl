@@ -145,6 +145,7 @@ my $NewOpenMp;
 my $NewOpenACC;
 my $NewHypre;
 my $NewAmrex;
+my $NewAmrexDim;
 my $NewFishpak;
 my $NewSpice;
 my $IsCompilerSet;
@@ -201,7 +202,9 @@ foreach (@Arguments){
     if(/^-fishpak$/i)         {$NewFishpak="yes";               next};
     if(/^-nohypre$/i)         {$NewHypre="no";                  next};
     if(/^-nofishpak$/i)       {$NewFishpak="no";                next};
-    if(/^-amrex$/i)           {$NewAmrex="yes";                 next};
+    if(/^-amrex(.*)$/i)       {$NewAmrex="yes";
+			       $NewAmrexDim = (uc($1) eq "2D") ? 2:3;
+			       next};
     if(/^-noamrex$/i)         {$NewAmrex="no";                  next};
     if(/^-spice=(.*)$/i)      {$NewSpice=$1;                    next};
     if(/^-nospice$/i)         {$NewSpice="no";                  next};
@@ -918,7 +921,7 @@ sub set_hypre_{
 ##############################################################################
 
 sub set_amrex_{
-
+    
     # Check if library is present
     if($NewAmrex eq "yes" and not -d "util/AMREX"){
 	&shell_command("$gitclone AMREX util/AMREX");
@@ -927,9 +930,9 @@ sub set_amrex_{
 	    return;
 	}
     }
-    
-    if($NewAmrex eq "yes" and not -e "util/AMREX/InstallDir/lib/libamrex.a"){
-	my $installdir = "InstallDir";
+
+    my $InstallDir = "InstallDir${NewAmrexDim}D";
+    if($NewAmrex eq "yes" and not -e "util/AMREX/InstallDir${NewAmrexDim}D/lib/libamrex.a"){
 	my $AmrexCompiler="intel";
 	if($Compiler eq "gfortran"){
 	    if(index(`mpicxx -show`, "clang") != -1){
@@ -941,16 +944,14 @@ sub set_amrex_{
 	}
 	
 	$AmrexCompiler="nag" if $Compiler eq "nagfor";
-	$AmrexCompiler="pgi" if $Compiler eq "pgf90" or $Compiler eq "nvfortran";
-	
-	my $AmrexDim = 3;
+	$AmrexCompiler="pgi" if $Compiler eq "pgf90" or $Compiler eq "nvfortran";       
 
 	&shell_command("cd util/AMREX;", 
-		       "./configure --prefix $installdir --comp $AmrexCompiler --enable-fortran-api no --debug $Debug --enable-tiny-profile yes --dim $AmrexDim;",
-		       "rm -rf util/AMREX/InstallDir");
+		       "./configure --prefix $InstallDir --comp $AmrexCompiler --enable-fortran-api no --debug $Debug --enable-tiny-profile yes --dim $NewAmrexDim;",
+		       "rm -rf util/AMREX/$InstallDir");
 	
 	$IsStrict = 0;
-	&shell_command("cd util/AMREX; make -j 4; make install");
+	&shell_command("cd util/AMREX; make clean; make -j 4; make install");
 	$IsStrict = 1;
 	if($ErrorCode){
 	    print "$ERROR cd util/AMREX; make install failed with ".
@@ -960,6 +961,12 @@ sub set_amrex_{
 			  "mv util/AMREX util/AMREX_FAILED");
 	    return;
 	}
+    }
+
+    if($NewAmrex eq "yes"){
+	&shell_command("cd util/AMREX;",
+		       "rm -rf InstallDir;",
+ 		       "ln -s $InstallDir InstallDir");
     }
 
     $Amrex = $NewAmrex;
@@ -1270,9 +1277,10 @@ Usage: Config.pl [-help] [-verbose] [-dryrun] [-gitinfo] [-show] [-compiler]
                  [[-install[=s|=c] [-compiler=FC[,CC] [-nompi]] | -uninstall]
                  [-single|-double] [-debug|-nodebug] 
 		 [-mpi|-nompi] [-openmp|-noopenmp] [-openacc|-noopenacc]
-                 [-hdf5|-nohdf5] [-hypre|-nohypre] [-amrex|-noamrex] 
+                 [-hdf5|-nohdf5] [-hypre|-nohypre] 
 		 [-spice=SPICELIB|-nospice]
                  [-O0|-O1|-O2|-O3|-O4|-O5]
+		 [-amrex|-amrex2d|-amrex3d|-noamrex]
 
 If called without arguments, the current settings are shown.
 
@@ -1317,7 +1325,9 @@ Compilation:
 -noopenacc      compile and link without OpenACC flag
 -openmp         compile and link with OpenMP flag
 -noopenmp       compile and link without the OpenMP flag
--amrex          link with AMREX library 
+-amrex          link with 3D AMREX library
+-amrex3d        link with 3D AMREX library
+-amrex2d        link with 2D AMREX library 
 -noamrex        do not link with AMREX library 
 -hdf5           compile and link with HDF5 library for HDF5 plot output
 -nohdf5         do not compile with HDF5 library
