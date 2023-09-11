@@ -6052,6 +6052,8 @@ pro read_log_line, line, array, firstcolumn, rowname
 ; Convert date-time string in ISO format into Julian day.
 ; If firstcolumn is not 0, set the rowname string from the actual 1st column
 
+  if line eq '' or line eq ' ' then return
+  
   if not keyword_set(firstcolumn) then firstcolumn = 0
   
   columns = strsplit(line,'[ ,	]',/extract,/regex)
