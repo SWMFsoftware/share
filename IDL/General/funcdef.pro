@@ -104,8 +104,8 @@ function funcdef,xx,w,func
      ['pbeta'    , '2*mu0*p/bb'                              ], $ ; plasma beta
      ['s'        , 'p/rho^gamma'                             ], $ ; entropy
      ['se'       , '{pe}/rho^gamma'                          ], $ ; electron entropy
-     ['spar'     , '{ppar}*bb/rho^2'                         ], $ ; parallel entropy
-     ['sperp'    , '{pperp}/b'                               ], $ ; perp. entropy
+     ['spar'     , '{ppar}*bb/rho^3'                         ], $ ; parallel entropy
+     ['sperp'    , '{pperp}/b/rho'                           ], $ ; perp. entropy
      ['Ti'       , 'ti0*p/rho'                               ], $ ; ion temperature [K]
      ['Te'       , 'ti0*{pe}/rho'                            ], $ ; electron temp. [K]
      ['calfvenx' , 'bx/sqrt(rho*mu0A)'                       ], $ ; Alfven velocity
