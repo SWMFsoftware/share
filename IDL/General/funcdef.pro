@@ -103,7 +103,7 @@ function funcdef,xx,w,func
      ['e'        , 'p/(gamma-1)+0.5*(rho*uu + bb)'           ], $ ; energy density
      ['pbeta'    , '2*mu0*p/bb'                              ], $ ; plasma beta
      ['s'        , 'p/rho^gamma'                             ], $ ; entropy
-     ['se'       , '{pe}/rho^gamma'                          ], $ ; electron entropy
+     ['se'       , '{pe}/rho^gammae'                         ], $ ; electron entropy
      ['spar'     , '{ppar}*bb/rho^3'                         ], $ ; parallel entropy
      ['sperp'    , '{pperp}/b/rho'                           ], $ ; perp. entropy
      ['Ti'       , 'ti0*p/rho'                               ], $ ; ion temperature [K]
