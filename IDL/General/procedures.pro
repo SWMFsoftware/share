@@ -6603,8 +6603,9 @@ pro plot_log
                 /noerase, xstyle=-1, ystyle=-1
            
                                 ; print out legend or logfile name
-           if n_elements(legends) eq nlog then legend=legends(ilog) $
-           else                                legend=logfilenames(ilog)
+           if n_elements(legends) eq nlog and total(strlen(legends)) gt 0 $
+           then legend=legends(ilog) $
+           else legend=logfilenames(ilog)
            xyouts,legendpos(1), $
                   ypos - float(!d.y_ch_size)/float(!d.y_size)*!p.charsize/2, $
                   '  '+legend
