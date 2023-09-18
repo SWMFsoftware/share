@@ -2,8 +2,8 @@
 ;  portions used with permission 
 ;  For more information, see http://csem.engin.umich.edu/tools/swmf
 ;===========================================================================
-function funcdef,xx,w,func
-;
+function funcdef, xx, w, func
+
 ; Originally developed for the Versatile Advection Code by G. Toth (1996-99).
 ; Rewritten for the BATSRUS code by G. Toth (2000).
 ;
