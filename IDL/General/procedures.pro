@@ -14,7 +14,7 @@
 ;
 ; fixing things if animate or slice crashes
 ;   reset_axis, slice_data_restore
-; reading ascii and binary data produced by VAC, BATSRUS, PWOM, IPIC3D etc:
+; reading ascii and binary data produced by VAC, BATSRUS, PWOM, FLEKS etc:
 ;    open_file, get_file_types, get_file_head, get_pict, 
 ;    get_pict_asc, get_pict_bin, get_pict_log, get_log, read_log_line
 ; showing / overwriting information read from last file:
@@ -329,7 +329,7 @@ pro set_default_values
      Qi, Qe, mS0, mS1, qS0, qS1, gamma, gammae, clight
 
   fixunits   = 0                ; fix units (do not overwrite) if true
-  typeunit   = 'NORMALIZED'     ; 'SI'/'NORMALIZED'/'PIC'/'PLANETARY'/'SOLAR'
+  typeunit   = 'NORMALIZED'     ; 'SI'/'NORMALIZED'/'PLANETARY'/'SOLAR'
   xSI        = 1.0              ; distance unit in SI
   tSI        = 1.0              ; time unit in SI
   rhoSI      = 1.0              ; density unit in SI
@@ -786,7 +786,7 @@ pro plot_data
   read_limits
 
   if noautorange eq 0 then begin
-     get_limits,1
+     get_limits, 1
 
      print
      for ifunc=0,nfunc-1 do $
@@ -820,7 +820,7 @@ pro plot_data
   if !d.name eq 'X' and !d.window ge 0 then wshow
 
   plot_func
-  
+
   putbottom,1,1,0,0,bottomline,nx,it,time,npict
   putheader,1,1,0,0,headerline,headline,nx
 
@@ -937,11 +937,20 @@ pro animate_data
   endfor
 
   print,'======= PLOTTING PARAMETERS ========================='
-  if keyword_set(func_file) then func = func_file[0]
-  if keyword_set(plotmode_file) then plotmode = plotmode_file[0]
-  if keyword_set(plottitle_file) then plottitle = plottitle_file[0]
-
-  read_plot_param
+  if keyword_set(func_file) then begin
+     nfunc_file = intarr(nfile)
+     for ifile = 0, nfile-1 do begin
+        func = func_file[ifile]
+        if keyword_set(plotmode_file) then plotmode = plotmode_file[ifile]
+        if keyword_set(plottitle_file) then plottitle = plottitle_file[ifile]
+        read_plot_param
+        nfunc_file[ifile] = nfunc
+     endfor
+     nfuncmax = max(nfunc_file)
+     fmin_file = dblarr(nfuncmax,nfile)
+     fmax_file = dblarr(nfuncmax,nfile)
+  endif else $
+     read_plot_param
 
   read_transform_param
 
@@ -959,15 +968,10 @@ pro animate_data
         open_file,ifile+10,filenames(ifile),filetypes(ifile)
      error=0
      while npict lt npictmax and not error do begin
-
         for ifile = 0, nfile-1 do begin
 
            if npict eq 0 then nextpict=firstpict(ifile) $
            else               nextpict=dpict(ifile)
-
-           ;; IPIC3D reader always counts from the beginning
-           if filetypes(ifile) eq 'IPIC3D' then $
-              nextpict = firstpict(ifile) + npict*dpict(ifile)
 
            get_pict, ifile+10, filenames(ifile), filetypes(ifile), nextpict, err
 
@@ -1004,15 +1008,19 @@ pro animate_data
 
            if not error then begin
               do_transform,ifile
-
               if keyword_set(func_file) then begin
                  func = func_file(ifile)
-                 string_to_array,func,funcs,nfunc
-              end
-
-              first= npict eq 0 and ifile eq 0
-              get_limits, first
-
+                 read_plot_param
+                 first = npict eq 0
+                 fmin = fmin_file(0:nfunc-1,ifile)
+                 fmax = fmax_file(0:nfunc-1,ifile)
+                 get_limits, first
+                 fmin_file(0:nfunc-1,ifile) = fmin
+                 fmax_file(0:nfunc-1,ifile) = fmax
+              endif else begin
+                 first= npict eq 0 and ifile eq 0
+                 get_limits, first
+              endelse
               if ifile eq nfile-1 then begin
                  if npict eq 0 then print,FORMAT='("ipict:    ",$)'
                  npict=npict+1
@@ -1021,6 +1029,7 @@ pro animate_data
            endif
         endfor
      endwhile
+
      print
      for ifunc=0,nfunc-1 do $
         print,'Min and max value for ',funcs(ifunc),':',fmin(ifunc),fmax(ifunc)
@@ -1113,10 +1122,6 @@ pro animate_data
            if ipict eq 0 then nextpict=firstpict(ifile) $
            else               nextpict=dpict(ifile)
 
-           ;; IPIC3D reader always counts from the beginning
-           if filetypes(ifile) eq 'IPIC3D' then $
-              nextpict = firstpict(ifile) + ipict*dpict(ifile)
-
            get_pict, ifile+10, filenames(ifile),filetypes(ifile), nextpict, err
 
            error=error or err
@@ -1173,8 +1178,10 @@ pro animate_data
            end
 
            if keyword_set(func_file) then begin
-              func = func_file(ifile)
-              string_to_array,func,funcs,nfunc
+              func = func_file[ifile]
+              read_plot_param
+              fmin = fmin_file[0:nfunc-1,ifile]
+              fmax = fmax_file[0:nfunc-1,ifile]
            end
 
            if keyword_set(plotmode_file) then begin
@@ -1362,18 +1369,18 @@ pro slice_data
   print,'======= PLOTTING PARAMETERS ========================='
   read_plot_param
 
-  usereg=0
+  usereg = 0
 
   if keyword_set(multiplot) then begin
-     multix=multiplot(0)
-     multiy=multiplot(1)
-     nslice1=(multix*multiy)/(nplot*nfile)
-     !p.multi=[0,multix,multiy,0,multiplot(2)]
+     multix = multiplot(0)
+     multiy = multiplot(1)
+     nslice1 = (multix*multiy)/(nplot*nfile)
+     !p.multi = [0,multix,multiy,0,multiplot(2)]
   endif else begin
-     multix=long(sqrt(nplot-1)+1)
-     multiy=long((nplot-1)/multix+1)
-     nslice1=1
-     !p.multi=[0,multix,multiy,0,0]
+     multix = long(sqrt(nplot-1)+1)
+     multiy = long((nplot-1)/multix+1)
+     nslice1 = 1
+     !p.multi = [0,multix,multiy,0,0]
   endelse
 
   print,'======= DETERMINE PLOTTING RANGES ==================='
@@ -1399,7 +1406,7 @@ pro slice_data
      endcase
      
      first= islice eq 1
-     get_limits,first
+     get_limits, first
 
   endfor
 
@@ -1622,7 +1629,7 @@ function date_to_julday, date
 
 end
 ;=============================================================================
-function log_time,wlog,wlognames,timeunit
+function log_time, wlog, wlognames, timeunit
 
 ; Obtain time in hours from wlog and wlognames
 ; If the log file contains 't' or 'time', simply convert seconds to hours
@@ -1843,7 +1850,6 @@ pro open_file,unit,filename,filetype
        'real8' :openr,unit,filename,/f77_unf
        'REAL4' :openr,unit,filename,/f77_unf
        'REAL8' :openr,unit,filename,/f77_unf
-       'IPIC3D':
        else    :print,'open_file: unknown filetype:',filetype
    endcase
 end
@@ -1864,70 +1870,49 @@ pro get_file_types
         filetypes(ifile)    = 'log'
         npictinfiles(ifile) = 1
      endif else begin
-        if strpos(filenames(ifile),'setting') ge 0 then begin
-                                ; For example if 
-                                ; filenames(ifile) = 'output/settings_region0.hdf'   then 
-                                ; dirname          = 'output/'                       and
-                                ; regionname       =                '_region0.hdf'.                      
-           ibegin     = strpos(filenames(ifile), 'settings')
-           dirname    = strmid(filenames(ifile), 0, ibegin)
-
-           regionname ='.hdf'
-           if strpos(filenames(ifile),'settings_region') ge 0 then begin
-              regionname = strmid(filenames(ifile), ibegin  + strlen('settings'))
-           endif
-           file_id    = H5F_OPEN(dirname+'proc0'+regionname)
-           group_id   = H5G_OPEN(file_id, '/fields/Bx')
-           npictinfiles(ifile) = H5G_GET_NUM_OBJS(group_id)
-           h5G_CLOSE, group_id
-           H5F_CLOSE, file_id
-           filetypes(ifile)   ='IPIC3D'
-
-        endif else begin
-           ;; Obtain filetype based on the length info in the first 4 bytes
-           close,10
-           openr,10,filenames(ifile)
-           lenhead=1L
-           readu,10,lenhead
-           if lenhead ne 79 and lenhead ne 500 then ftype='ascii' else begin
-              ;; The length of the 2nd line decides between real4 and real8
-              ;; since it contains the time, which is real*4 or real*8
-              head=bytarr(lenhead+4)
-              len=1L
-              readu,10,head,len
-              case len of
-                 20: ftype='real4'
-                 24: ftype='real8'
-                 else: begin
-                    print,'Error in get_file_types: strange unformatted file:',$
-                          filenames(ifile)
-                    retall
-                 end
-              endcase
-              if lenhead eq 500 then ftype = strupcase(ftype)
-           endelse
-           close,10
-           
-           ;; Obtain file size and number of snapshots
-           open_file,1,filenames(ifile),ftype
-           status=fstat(1)
-           fsize=status.size
-
-           pointer=long64(0)
-           pictsize=long64(1)
-           ipict=0
-           while pointer lt fsize do begin
-                                ; Obtain size of a single snapshot
-              point_lun,1,pointer
-              get_file_head,1,filenames(ifile),ftype,pictsize=pictsize
-              ipict   = ipict+1
-              pointer = pointer + pictsize
-           endwhile
-           close,1
-
-           npictinfiles(ifile)=ipict
-           filetypes(ifile)   =ftype
+        ;; Obtain filetype based on the length info in the first 4 bytes
+        close,10
+        openr,10,filenames(ifile)
+        lenhead=1L
+        readu,10,lenhead
+        if lenhead ne 79 and lenhead ne 500 then ftype='ascii' else begin
+           ;; The length of the 2nd line decides between real4 and real8
+           ;; since it contains the time, which is real*4 or real*8
+           head=bytarr(lenhead+4)
+           len=1L
+           readu,10,head,len
+           case len of
+              20: ftype='real4'
+              24: ftype='real8'
+              else: begin
+                 print,'Error in get_file_types: strange unformatted file:',$
+                       filenames(ifile)
+                 retall
+              end
+           endcase
+           if lenhead eq 500 then ftype = strupcase(ftype)
         endelse
+        close,10
+        
+        ;; Obtain file size and number of snapshots
+        open_file,1,filenames(ifile),ftype
+        status=fstat(1)
+        fsize=status.size
+
+        pointer=long64(0)
+        pictsize=long64(1)
+        ipict=0
+        while pointer lt fsize do begin
+                                ; Obtain size of a single snapshot
+           point_lun,1,pointer
+           get_file_head,1,filenames(ifile),ftype,pictsize=pictsize
+           ipict   = ipict+1
+           pointer = pointer + pictsize
+        endwhile
+        close,1
+
+        npictinfiles(ifile)=ipict
+        filetypes(ifile)   =ftype
      endelse
   endfor
 end
@@ -1983,15 +1968,10 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
   for i=1, lenstr do varname=varname+' '
 
   ;; Remember pointer position at beginning of header
-  if ftype ne 'ipic3d' then point_lun,-unit,pointer0
+  point_lun,-unit,pointer0
 
   ;; Read header
   case ftype of
-     'ipic3d':begin
-        tmppict = 0
-        tmperror = 0
-        get_pict_hdf, filename, tmppict, tmperror, 0
-     end
      'log': begin
         readf,unit,headline
         readf,unit,varname
@@ -2000,7 +1980,7 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
                                 ; reset pointer
         point_lun,unit,pointer0
         it=0
-        time=0.0
+        ;; time=0.0
         gencoord=0
         ndim=1
         nx=lonarr(1)
@@ -2076,334 +2056,13 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
 end
 
 ;=============================================================================
-pro get_pict_hdf, filename, npict, error, getdata
-
-  common debug_param & on_error, onerror
-
-  common file_head
-  common plot_data
-
-    ;;;;;;;;;;;;;;;;; SIM PARAMETERS ;;;;;;;;;;;;;;;;;;;;;;;;;;
-  
-  ibegin     = strpos(filename, 'settings')
-  dirname    = strmid(filename, 0, ibegin)
-  regionname ='.hdf'
-  if strpos(filename,'settings_region') ge 0 then begin
-     regionname = strmid(filename, ibegin  + strlen('settings'))
-  endif
-
-  Param = H5_PARSE(filename) 
-
-  nxyz_D = [Param.COLLECTIVE.NXC._DATA(0),Param.COLLECTIVE.NYC._DATA(0),$
-            Param.COLLECTIVE.NZC._DATA(0)]    
-
-  gencoord = 0
-  headline = 'PIC CGS units'
-
-  idims = where(nxyz_D GT 1, ndim)
-  nx = nxyz_D(idims)
-  ;; Bx By Bz Ex Ey Ez + [rho] + [Jx,Jy,Jz]. rho, Jx, Jy, Jz are optional.
-  nw =10 + Param.COLLECTIVE.NS._DATA(0)*10
-
-  eqpar = [Param.COLLECTIVE.BX0._DATA(0),Param.COLLECTIVE.BY0._DATA(0),$
-           Param.COLLECTIVE.BZ0._DATA(0)]
-  neqpar= 3
-  
-  dxyz_D = [Param.COLLECTIVE.Dx._DATA(0),$
-            Param.COLLECTIVE.Dy._DATA(0),$
-            Param.COLLECTIVE.Dz._DATA(0)]   
-
-  if getdata then begin
-     case ndim of
-        1:begin
-           x=DBLARR(nx(0),ndim)
-           w=DBLARR(nx(0),nw)
-           for x0=0L,nx(0)-1 do begin
-              x(x0,0:ndim-1) = x0*dxyz_D(0:nDim-1)
-           endfor
-        end
-        2:begin
-           x=DBLARR(nx(0),nx(1),ndim)
-           w=DBLARR(nx(0),nx(1),nw)
-           for x1=0L,nx(1)-1 do begin
-              for x0=0L,nx(0)-1 do begin
-                 x(x0,x1,0:ndim-1) = [x0,x1]*dxyz_D(0:nDim-1)
-              endfor
-           endfor
-        end
-        3:begin
-           x=DBLARR(nx(0),nx(1),nx(2),ndim)
-           w=DBLARR(nx(0),nx(1),nx(2),nw)
-           for x2=0L,nx(2)-1 do begin
-              for x1=0L,nx(1)-1 do begin
-                 for x0=0L,nx(0)-1 do begin
-                    x(x0,x1,x2,0:ndim-1) = [x0,x1,x2]*dxyz_D(0:nDim-1)
-                 endfor
-              endfor
-           endfor
-        end
-     endcase
-  endif
-
-  ;; processor layout
-  nproc = Param.TOPOLOGY.Nprocs._DATA(0)
-
-  Proc_D = [Param.TOPOLOGY.XLEN._DATA(0),$
-            Param.TOPOLOGY.YLEN._DATA(0),$
-            Param.TOPOLOGY.ZLEN._DATA(0)]
-
-  nExtra_D     = INTARR(3)
-  iCrowd_D     = INTARR(3)
-  nxyzLocal_PD = INTARR(nproc,3)
-  nxyzLocal0_D = nxyz_D/Proc_D
-  nCrowded_D   = nxyz_D - nxyzLocal0_D*Proc_D
-  
-  ;; index range
-  MinIJK_PD = INTARR(nproc,3)
-  MaxIJK_PD = INTARR(nproc,3)
-  iproc=0
-  for ip=0,Proc_D(0)-1 do begin
-     for jp=0,Proc_D(1)-1 do begin
-        for kp=0,Proc_D(2)-1 do begin
-           iCrowd_D(*) = 0
-           nExtra_D = nCrowded_D
-           if ip LT nCrowded_D(0) then begin
-              iCrowd_D(0) = 1
-              nExtra_D(0) = ip
-           endif
-           if jp LT nCrowded_D(1) then begin
-              iCrowd_D(1) = 1
-              nExtra_D(1) = jp
-           endif
-           if kp LT nCrowded_D(2) then begin
-              iCrowd_D(2) = 1
-              nExtra_D(2) = kp 
-           endif
-           nxyzLocal_PD(iproc,*) = nxyzLocal0_D + iCrowd_D           
-           MinIJK_PD(iproc,*) = [ip,jp,kp]*nxyzLocal0_D + nExtra_D
-           MaxIJK_PD(iproc,*) = MinIJK_PD(iproc,*) + nxyzLocal_PD(iproc,*) - 1
-           iproc=iproc+1
-        endfor
-     endfor
-  endfor
-
-  MinIJK_PD = MinIJK_PD(0:nproc-1,idims)
-  MaxIJK_PD = MaxIJK_PD(0:nproc-1,idims)
-
-  ;;;;;;;;;;;;;;;;; GETTING TIMELINE ++ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-  filename= dirname+'proc0' + regionname
-  file_id = H5F_OPEN(filename)
-  
-  ;; Find the cronological timeline index SortIdx_I
-  group_id = H5G_OPEN(file_id, '/fields/Bx')
-  nObj = H5G_GET_NUM_OBJS(group_id)
-  Step_I = LONARR(nObj)         ;; store time index of saved snapshots
-  for iObj=0,nObj-1 do begin
-     ObjName = H5G_GET_OBJ_NAME_BY_IDX(group_id,iObj)
-     Step_I(iObj) = STRMID(ObjName,6)
-  endfor
-  h5G_CLOSE, group_id
-  H5F_CLOSE, file_id
-  SortIdx_I = SORT(Step_I)
-  
-  ;;bounding npict
-  if npict lt 1 then npict=1
-  if npict gt nObj then begin
-     error = 1
-     return
-  endif
-
-  ;; Find iteration and time 
-  it= Step_I[SortIdx_I(npict-1)]
-  time =  it*Param.COLLECTIVE.Dt._DATA(0)
-  
-  ;; Setting up "variables"
-  nVar = nw +ndim + neqpar
-  variables = STRARR(nVAr)
-  DimName = ['x','y','z']
-  variables(0:ndim-1) = DimName(0:ndim-1)
-  variables(nVar-neqpar:nVar-1) = ['B0x','B0y','B0z']
-  
-  ;;;;;;;;;;;;;;;;; DATA GATHERING ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-  ;; loop over all files
-  for iproc=0,nproc-1 do begin
-     
-     filename = dirname+'proc' + string(iproc,FORMAT='(I0)') + regionname
-
-     file_id = H5F_OPEN(filename)
-     iMin = MinIJK_PD(iproc,0)
-     iMax = MaxIJK_PD(iproc,0)
-     nxyz_D  = nxyzLocal_PD(iproc,*)
-
-     if ndim gt 1 then begin 
-        jMin = MinIJK_PD(iproc,1)
-        jMax = MaxIJK_PD(iproc,1)
-     end
-
-     if ndim gt 2 then begin
-        kMin = MinIJK_PD(iproc,2)
-        kMax = MaxIJK_PD(iproc,2)
-     end
-
-     iw = 0
-     ; Go through all field variables
-     group_id = H5G_OPEN(file_id, '/fields')
-     nFields = H5G_GET_NUM_OBJS(group_id)
-     for iFields=0, nFields-1 do begin
-        get_hdf_pict,group_id,iFields, SortIdx_I(npict-1), nxyz_D,$
-                     -1, pict, varname, getdata
-
-        if getdata then begin
-           case ndim of
-              1:w(iMin:iMax,iw) = pict
-              2:w(iMin:iMax,jMin:jMax,iw) = pict
-              3:w(iMin:iMax,jMin:jMax,kMin:kMax,iw) = pict
-           endcase
-        end
-        variables(ndim+iw) = varname
-        iw = iw +1
-     endfor
-     h5G_CLOSE, group_id  
-
-     ;; Get all moments of the distribution function
-     group_id = H5G_OPEN(file_id, '/moments')
-     nVarable = H5G_GET_NUM_OBJS(group_id)     
-
-     iSpecies = 0
-     for iVar=0,nVarable-1 do begin
-                                ; Read rho Jx Jy Jz...
-        VarName = H5G_GET_OBJ_NAME_BY_IDX(group_id,iVar)
-        if strmid(VarName,0,7) ne 'species' then begin
-           get_hdf_pict,group_id,iVar,SortIdx_I(npict-1),nxyz_D,$
-                        -1,pict,varname,getdata           
-           if getdata then begin
-              case ndim of
-                 1:w(iMin:iMax,iw) = pict
-                 2:w(iMin:iMax,jMin:jMax,iw) = pict
-                 3:w(iMin:iMax,jMin:jMax,kMin:kMax,iw) = pict
-              endcase
-           end
-           variables(ndim+iw) = varname
-           iw = iw +1
-        endif else begin
-           SpeciesName = H5G_GET_OBJ_NAME_BY_IDX(group_id,iVar)
-           Moment_id = H5G_OPEN(group_id, SpeciesName)
-           nMoment = H5G_GET_NUM_OBJS(Moment_id)
-           for iMoment=0, nMoment-1 do begin
-              get_hdf_pict,Moment_id,iMoment,SortIdx_I(npict-1),nxyz_D,$
-                           iSpecies,pict,varname,getdata
-              if getdata then begin
-                 case ndim of
-                    1:w(iMin:iMax,iw) = pict
-                    2:w(iMin:iMax,jMin:jMax,iw) = pict
-                    3:w(iMin:iMax,jMin:jMax,kMin:kMax,iw) = pict
-                 endcase
-              end
-              variables(ndim+iw) = varname
-              iw = iw +1
-           endfor
-           iSpecies = iSpecies + 1
-           h5G_CLOSE, Moment_id  
-        endelse 
-     endfor
-     h5G_CLOSE, group_id  
-     H5F_CLOSE, file_id
-  endfor
-end 
-
-;=============================================================================
-pro get_hdf_pict,group_id,iGroup,ipict,nx,iSpecies,pictout,name,getdata
-
-  common debug_param & on_error, onerror
-
-  GroupName = H5G_GET_OBJ_NAME_BY_IDX(group_id,iGroup)
-  name= GroupName
-  if iSpecies ge 0 then $
-     name= GroupName +"S"+STRING(iSpecies,FORMAT='(I02)')
-  moment_id = H5G_OPEN(group_id, GroupName)
-  ; get field data form npict time pict
-  pictname = H5G_GET_OBJ_NAME_BY_IDX(moment_id,ipict)
-  if getdata then begin
-     pict_id = H5D_OPEN(moment_id,pictname)
-     pict = H5D_READ(pict_id)
-     pict = 0.5*(pict(0:nx(2)-1,*,*) + pict(1:nx(2),*,*))
-     pict = 0.5*(pict(0:nx(2)-1,0:nx(1)-1,*) + pict(0:nx(2)-1,1:nx(1),*))
-     pict = 0.5*(pict(0:nx(2)-1,0:nx(1)-1,0:nx(0)-1) + pict(0:nx(2)-1,0:nx(1)-1,1:nx(0)))
-     pictout = reform(TRANSPOSE(pict(0:nx(2)-1,0:nx(1)-1,0:nx(0)-1),[2,1,0]))
-     H5D_CLOSE, pict_id
-  endif
-  h5G_CLOSE, moment_id
-
-end
-;=============================================================================
-pro get_pict, unit, filename, filetype, npict, error
-
-  common debug_param & on_error, onerror
-
-  if filetype eq 'IPIC3D' then begin 
-     error=0
-     get_pict_hdf, filename, npict, error, 1
-
-  endif else begin
-
-     error=0
-
-     if(eof(unit))then begin
-        error=1
-        return
-     endif
-
-                                ; Get current pointer position
-     point_lun,-unit,pointer
-
-                                ; Skip npict-1 snapshots
-     ipict=0
-     pictsize=1
-     while ipict lt npict-1 and not eof(unit) do begin
-        ipict=ipict+1
-        get_file_head,unit,filename,filetype,pictsize=pictsize
-        pointer=long64(pointer) + pictsize
-        point_lun,unit,pointer
-     endwhile
-
-                                ; Backup 1 snapshot if end of file
-     if eof(unit) then begin
-        error=1
-        point_lun,unit,pointer-pictsize
-     endif
-
-                                ; Read header information
-     get_file_head, unit, filename, filetype
-
-                                ; Read data
-     case strlowcase(filetype) of
-        'log':   get_pict_log ,unit
-        'ascii': get_pict_asc ,unit, npict
-        'real8': get_pict_bin ,unit, npict
-        'real4': get_pict_real,unit, npict
-        else:    begin
-           print,'get_pict: unknown filetype:',filetype
-           error=1
-           close,unit
-        end
-     endcase
-
-  endelse
-
-  set_units
-
-end
-
-;=============================================================================
 pro get_pict_log, unit
 
   common debug_param & on_error, onerror
 
   common plot_data
   common file_head
-  common log_data,timeunit
+  common log_data, timeunit
 
   get_log, unit, w, wlognames, x, timeunit
 
@@ -2991,7 +2650,7 @@ pro read_limits
 
 end
 ;===========================================================================
-pro get_limits,first
+pro get_limits, first
 
   common debug_param & on_error, onerror
 
@@ -3005,27 +2664,27 @@ pro get_limits,first
   for ifunc=0,nfunc-1 do begin
      if autoranges(ifunc) eq 'n' then begin
         if first then begin
-           f_min=fmin(ifunc)
-           f_max=fmax(ifunc)
+           f_min = fmin(ifunc)
+           f_max = fmax(ifunc)
            asknum,'Min value for '+funcs(ifunc),f_min,doask
            asknum,'Max value for '+funcs(ifunc),f_max,doask
-           fmin(ifunc)=f_min
-           fmax(ifunc)=f_max
+           fmin(ifunc) = f_min
+           fmax(ifunc) = f_max
         endif
      endif else begin
         if usereg then $
            get_func,ifunc,xreg,wreg $
         else $
            get_func,ifunc,x,w
-
+        
         f_max=max(f)
         f_min=min(f)
         if first then begin
-           fmax(ifunc)=f_max
-           fmin(ifunc)=f_min
+           fmin(ifunc) = f_min
+           fmax(ifunc) = f_max
         endif else begin
-           if f_max gt fmax(ifunc) then fmax(ifunc)=f_max
-           if f_min lt fmin(ifunc) then fmin(ifunc)=f_min
+           if f_min lt fmin(ifunc) then fmin(ifunc) = f_min
+           if f_max gt fmax(ifunc) then fmax(ifunc) = f_max
         endelse
      endelse
   endfor
@@ -3668,7 +3327,7 @@ end
 pro set_units, type, distunit=distunit, Mion=Mion, Melectron=Melectron
 
   ;; If type is given as 
-  ;; 'SI', 'CGS', 'NORMALIZED', 'PIC', 'PLANETARY', or 'SOLAR',
+  ;; 'SI', 'CGS', 'NORMALIZED', 'PLANETARY', or 'SOLAR',
   ;; set typeunit = type otherwise try to guess from the fileheader.
 
   ;; Based on typeunit set units for distance (xSI), time (tSI), 
@@ -3692,8 +3351,6 @@ pro set_units, type, distunit=distunit, Mion=Mion, Melectron=Melectron
      typeunit = strupcase(type) $
   else if fixunits then $
      return $
-  else if strpos(headline, 'PIC') ge 0 then $
-     typeunit = 'PIC' $
   else if strpos(headline,' AU ') ge 0 then $
      typeunit = 'OUTERHELIO' $
   else if strpos(headline, 'kg/m3') ge 0 or strpos(headline,' m/s') ge 0 then $
@@ -3723,17 +3380,6 @@ pro set_units, type, distunit=distunit, Mion=Mion, Melectron=Melectron
         pSI   = 0.1             ; dyne/cm^2
         bSI   = 1.0e-4          ; G
         jSI   = 10*cSI          ; Fr/s/cm^2
-     end
-     'PIC': begin
-        ;; Normalized PIC units
-        xSI   = 1.0             ; cm
-        tSI   = 1.0             ; s
-        rhoSI = 1.0             ; g/cm^3
-        uSI   = 1.0             ; cm/s
-        pSI   = 1.0             ; dyne/cm^2
-        bSI   = 1.0             ; G
-        jSI   = 1.0             ; Fr/s/cm^2
-        c0    = 1.0             ; speed of light always 1 for iPIC3D
      end
      'NORMALIZED': begin
         xSI   = 1.0             ; distance unit in SI
@@ -3850,17 +3496,6 @@ pro set_units, type, distunit=distunit, Mion=Mion, Melectron=Melectron
      rg0  = Mi                  ; rg = sqrt(p/rho)/b          = rg0*sqrt(p/rho)/b
      di0  = c0*Mi               ; di = c0/sqrt(rho)*Mi        = di0/sqrt(rho)
      ld0  = Mi                  ; ld = sqrt(p)/(rho*c0)*Mi    = ld0*sqrt(p)/rho
-  endif else if typeunit eq 'PIC' then begin
-     ti0  = 1.0/Mi              ; T      = p/rho*Mi           = ti0*p/rho        
-     cs0  = 1.0                 ; cs     = sqrt(gamma*p/rho)  = sqrt(gs*p/rho)   
-     mu0A = 4*!pi               ; vA     = sqrt(b/(4*!pi*rho))= sqrt(bb/mu0A/rho)
-     mu0  = 4*!pi               ; beta   = p/(bb/(8*!pi))     = p/(bb/(2*mu0))   
-     uH0  = Mi                  ; uH     = j/rho*Mi           = uH0*j/rho        
-     op0  = sqrt(4*!pi)/Mi      ; omegap = sqrt(4*!pi*rho)/Mi = op0*sqrt(rho)    
-     oc0  = 1.0/Mi              ; omegac = b/Mi               = oc0*b            
-     rg0  = Mi                  ; rg = sqrt(p/rho)/b          = rg0*sqrt(p/rho)/b
-     di0  = 1.0/sqrt(4*!pi)     ; di = 1/sqrt(4*!pi*rho)*Mi   = di0/sqrt(rho)
-     ld0  = 1.0/sqrt(4*!pi)     ; ld = sqrt(p/(4*!pi))/rho*Mi = ld0*sqrt(p)/rho
   endif else begin
      qom  = eSI/(Mi*mpSI) & moq = 1/qom
      ti0  = mpSI/kbSI*pSI/rhoSI*Mi          ; T[K]=p/(nk) = ti0*p/rho
@@ -4079,7 +3714,7 @@ pro plot_func
         plotmod=strmid(plotmod,0,i)+strmid(plotmod,i+4)
         showbody=1
      endif else showbody=0
-
+     
      i=strpos(plotmod,'map')
      if i ge 0 then begin
         plotmod=strmid(plotmod,0,i)+strmid(plotmod,i+3)
@@ -4130,6 +3765,12 @@ pro plot_func
         lgy=1
      endif else lgy=0
 
+     i = strpos(plotmod,'time')
+     if i ge 0 then begin
+        plotmod = strmid(plotmod,0,i) + strmid(plotmod,i+4)
+        showtime = 1
+     endif else showtime = 0
+     
      i=strpos(plotmod,'max')
      if i ge 0 then begin
         plotmod=strmid(plotmod,0,i)+strmid(plotmod,i+3)
@@ -4558,6 +4199,8 @@ pro plot_func
         endcase
         else:print,'Unknown axistype:',axistype
      endcase
+
+     if showtime then oplot, [time,time], [f_min,f_max], linestyle=2
 
      if showbody and axistype eq 'coord' then $
         if rBody gt abs(rSlice) then begin
@@ -6095,7 +5738,7 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
   if not keyword_set(source) then begin
      print, $
         'Usage: get_log, source, wlog, wlognames [,logtime, timeunit] [,verbose=verbose]'
-     help,source,wlog,wlognames
+     help, source, wlog, wlognames
      retall
   endif
 
