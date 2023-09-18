@@ -954,7 +954,6 @@ pro animate_data
      nfuncmax = max(nfunc_file)
      nplotmax = max(nplot_file)
      nplotall = total(nplot_file,/int)
-     help,nplotall,nplotmax,nfuncmax
      fmin_file = dblarr(nfuncmax,nfile)
      fmax_file = dblarr(nfuncmax,nfile)
   endif else begin
@@ -2482,7 +2481,7 @@ pro read_plot_param, quiet=quiet
      if plotdim eq 1 then begin
         if strmid(plotmode,0,4) ne 'plot' then plotmode='default'
         print,'1D plotmode: plot/plot_io/plot_oi/plot_oo'
-        print,'1D +options: max,mean,log,noaxis,over,dot,dash,#c999,#ct999'
+        print,'1D +options: max,mean,log,noaxis,over,dot,dash,time,#c999,#ct999'
         askstr,'plotmode(s)                ',plotmode,doask
      endif else begin
         if strmid(plotmode,0,4) eq 'plot' then plotmode='default'
