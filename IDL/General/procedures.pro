@@ -1904,15 +1904,15 @@ pro get_file_types
         ipict=0
         while pointer lt fsize do begin
                                 ; Obtain size of a single snapshot
-           point_lun,1,pointer
-           get_file_head,1,filenames(ifile),ftype,pictsize=pictsize
+           point_lun, 1, pointer
+           get_file_head, 1, filenames(ifile), ftype, pictsize=pictsize
            ipict   = ipict+1
            pointer = pointer + pictsize
         endwhile
         close,1
 
-        npictinfiles(ifile)=ipict
-        filetypes(ifile)   =ftype
+        npictinfiles(ifile) = ipict
+        filetypes(ifile)    = ftype
      endelse
   endfor
 end
@@ -1968,7 +1968,7 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
   for i=1, lenstr do varname=varname+' '
 
   ;; Remember pointer position at beginning of header
-  point_lun,-unit,pointer0
+  point_lun, -unit, pointer0
 
   ;; Read header
   case ftype of
@@ -1977,8 +1977,8 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
         readf,unit,varname
         nw=n_elements(strsplit(varname))-2
         varname = timeunit+' '+varname
-                                ; reset pointer
-        point_lun,unit,pointer0
+        ;; reset pointer
+        point_lun, unit, pointer0
         it=0
         ;; time=0.0
         gencoord=0
@@ -2035,14 +2035,14 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
   endcase
 
   if keyword_set(pictsize) then begin
-                                ; Calculate the picture size
-                                ; Header length
-     point_lun,-unit,pointer1
-     headlen=pointer1-pointer0
-                                ; Number of cells
-     nxs=long64(1)
-     for idim=1,ndim do nxs=nxs*nx(idim-1)
-                                ; Snapshot size = header + data + recordmarks
+     ;; Calculate the picture size
+     ;; Header length
+     point_lun, -unit, pointer1
+     headlen = pointer1 - pointer0
+     ;; Number of cells
+     nxs = long64(1)
+     for idim = 1, ndim do nxs = nxs*nx(idim-1)
+     ;; Snapshot size = header + data + recordmarks
      case ftype of
         'log'  : pictsize = 1
         'ascii': pictsize = headlen + (18*(ndim+nw)+1)*nxs
@@ -2053,6 +2053,65 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
 
   ;; Set variables array
   string_to_array,varname,variables,nvar,/arraysyntax
+end
+
+;=============================================================================
+pro get_pict, unit, filename, filetype, npict, error
+
+  common debug_param & on_error, onerror
+
+  if filetype eq 'IPIC3D' then begin 
+     error=0
+     get_pict_hdf, filename, npict, error, 1
+
+  endif else begin
+
+     error=0
+
+     if(eof(unit))then begin
+        error=1
+        return
+     endif
+
+                                ; Get current pointer position
+     point_lun,-unit,pointer
+
+                                ; Skip npict-1 snapshots
+     ipict=0
+     pictsize=1
+     while ipict lt npict-1 and not eof(unit) do begin
+        ipict=ipict+1
+        get_file_head,unit,filename,filetype,pictsize=pictsize
+        pointer=long64(pointer) + pictsize
+        point_lun,unit,pointer
+     endwhile
+
+                                ; Backup 1 snapshot if end of file
+     if eof(unit) then begin
+        error=1
+        point_lun,unit,pointer-pictsize
+     endif
+
+                                ; Read header information
+     get_file_head, unit, filename, filetype
+
+                                ; Read data
+     case strlowcase(filetype) of
+        'log':   get_pict_log ,unit
+        'ascii': get_pict_asc ,unit, npict
+        'real8': get_pict_bin ,unit, npict
+        'real4': get_pict_real,unit, npict
+        else:    begin
+           print,'get_pict: unknown filetype:',filetype
+           error=1
+           close,unit
+        end
+     endcase
+
+  endelse
+
+  set_units
+
 end
 
 ;=============================================================================
