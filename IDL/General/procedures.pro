@@ -191,7 +191,7 @@ pro set_default_values
   logfilenames=0                ; array of log filenames
 
   common log_data, $
-     timeunit, $
+     timeunit, timeunitsc, $
      wlog , logtime , wlognames , $
      wlog1, logtime1, wlognames1, $
      wlog2, logtime2, wlognames2, $
@@ -626,11 +626,11 @@ pro read_data
 
      print
 
-     open_file,10,filenames(ifile),filetypes(ifile)
+     open_file, 10, filenames(ifile), filetypes(ifile)
      if n_elements(firstpict) eq nfile $
         and max(firstpict) ne min(firstpict) then npict=firstpict[ifile]
-     get_pict,10,filenames(ifile),filetypes(ifile),npict<npictinfiles(ifile),$
-              error
+     get_pict, 10, filenames(ifile), filetypes(ifile), $
+               npict<npictinfiles(ifile), error
 
      show_head, ifile
 
@@ -921,16 +921,16 @@ pro animate_data
   print, 'npictinfile(s)=', npictinfiles
 
   ;; Extend firstpict and dpict into arrays of size nfile
-  arr2arr,firstpict,nfile
-  arr2arr,dpict,nfile
+  arr2arr, firstpict, nfile
+  arr2arr, dpict, nfile
 
   ;;====== OPEN FILE(S) AND READ AND PRINT HEADER(S)
 
   anygencoord=0
-  for ifile=0,nfile-1 do begin
-     open_file,10,filenames(ifile),filetypes(ifile)
-     get_file_head,10,filenames(ifile),filetypes(ifile)
-     anygencoord=anygencoord or gencoord
+  for ifile = 0, nfile-1 do begin
+     open_file, 10, filenames(ifile), filetypes(ifile)
+     get_file_head, 10, filenames(ifile), filetypes(ifile)
+     anygencoord = anygencoord or gencoord
      print,         'headline                  =',strtrim(headline,2)
      print,FORMAT='("variables                 =",100(a," "),$)',variables
      print,FORMAT='(" (ndim=",i2,", nw=",i2,")")',ndim,nw
@@ -939,18 +939,30 @@ pro animate_data
   print,'======= PLOTTING PARAMETERS ========================='
   if keyword_set(func_file) then begin
      nfunc_file = intarr(nfile)
+     nplot_file = intarr(nfile)
      for ifile = 0, nfile-1 do begin
+        open_file, 10, filenames(ifile), filetypes(ifile)
+        get_file_head, 10, filenames(ifile), filetypes(ifile)
+        close, 10
         func = func_file[ifile]
         if keyword_set(plotmode_file) then plotmode = plotmode_file[ifile]
         if keyword_set(plottitle_file) then plottitle = plottitle_file[ifile]
         read_plot_param
         nfunc_file[ifile] = nfunc
+        nplot_file[ifile] = nplot
      endfor
      nfuncmax = max(nfunc_file)
+     nplotmax = max(nplot_file)
+     nplotall = total(nplot_file,/int)
+     help,nplotall,nplotmax,nfuncmax
      fmin_file = dblarr(nfuncmax,nfile)
      fmax_file = dblarr(nfuncmax,nfile)
-  endif else $
+  endif else begin
      read_plot_param
+     nfuncmax = nfunc
+     nplotmax = nplot
+     nplotall = nplot
+  endelse 
 
   read_transform_param
 
@@ -965,7 +977,7 @@ pro animate_data
   endif else begin
      npict=0
      for ifile=0,nfile-1 do $
-        open_file,ifile+10,filenames(ifile),filetypes(ifile)
+        open_file, ifile+10, filenames(ifile), filetypes(ifile)
      error=0
      while npict lt npictmax and not error do begin
         for ifile = 0, nfile-1 do begin
@@ -1010,7 +1022,7 @@ pro animate_data
               do_transform,ifile
               if keyword_set(func_file) then begin
                  func = func_file(ifile)
-                 read_plot_param
+                 read_plot_param, /quiet
                  first = npict eq 0
                  fmin = fmin_file(0:nfunc-1,ifile)
                  fmax = fmax_file(0:nfunc-1,ifile)
@@ -1053,24 +1065,24 @@ pro animate_data
      ;; scalar multiplot value is converted to a row (+) or a column (-)
      if size(multiplot,/n_dim) eq 0 then begin
         if multiplot gt 0 then       multiplot = [multiplot,1,1] $
-        else if multiplot eq -1 then multiplot = [1,nplot,1] $
+        else if multiplot eq -1 then multiplot = [1,nplotall,1] $
         else                         multiplot = [1,-multiplot,1]
      endif
      multix   = multiplot(0)
      multiy   = multiplot(1)
      multidir = multiplot(2)
-     npict1=(multix*multiy)/(nplot*nfile)
+     npict1=(multix*multiy)/(nplotmax*nfile)
      if npict1 eq 0 then npict1=1
   endif else if nfile eq 1 then begin
-     multix=long(sqrt(nplot-1)+1)
-     multiy=long((nplot-1)/multix+1)
-     multidir=0
-     npict1=1
+     multix = long(sqrt(nplot-1)+1)
+     multiy = long((nplot-1)/multix+1)
+     multidir = 0
+     npict1 = 1
   endif else begin
-     multix=nfile
-     multiy=nplot
-     multidir=1
-     npict1=1
+     multix = nfile
+     multiy = nplotmax
+     multidir = 1
+     npict1 = 1
   endelse
 
   if videosave then begin
@@ -1094,7 +1106,7 @@ pro animate_data
   ipict=0
   ipict1=0
   iplot=0
-  for ifile=0,nfile-1 do open_file,ifile+10,filenames(ifile),filetypes(ifile)
+  for ifile=0,nfile-1 do open_file, ifile+10, filenames(ifile), filetypes(ifile)
   error=0
   while ipict lt npict and not error do begin
      if ipict1 eq 0 then begin
@@ -1122,7 +1134,7 @@ pro animate_data
            if ipict eq 0 then nextpict=firstpict(ifile) $
            else               nextpict=dpict(ifile)
 
-           get_pict, ifile+10, filenames(ifile),filetypes(ifile), nextpict, err
+           get_pict, ifile+10, filenames(ifile), filetypes(ifile), nextpict, err
 
            error=error or err
         endif
@@ -1179,7 +1191,7 @@ pro animate_data
 
            if keyword_set(func_file) then begin
               func = func_file[ifile]
-              read_plot_param
+              read_plot_param, /quiet
               fmin = fmin_file[0:nfunc-1,ifile]
               fmax = fmax_file[0:nfunc-1,ifile]
            end
@@ -1189,6 +1201,9 @@ pro animate_data
               string_to_array,plotmode,plotmodes,nfunc
            end
 
+           if filetypes[ifile] eq 'log' and plotmode eq 'default' then $
+              string_to_array,'plottime', plotmodes,nfunc
+           
            nfilestore = nfile
            ifilestore = ifile
 
@@ -1629,7 +1644,7 @@ function date_to_julday, date
 
 end
 ;=============================================================================
-function log_time, wlog, wlognames, timeunit
+function log_time, wlog, wlognames
 
 ; Obtain time in hours from wlog and wlognames
 ; If the log file contains 't' or 'time', simply convert seconds to hours
@@ -1637,6 +1652,7 @@ function log_time, wlog, wlognames, timeunit
 ; the beginning of the first day. 
 ; This algorithm works only if the whole file is in the same month.
 
+  common log_data, timeunit, timeunitsc
   common debug_param & on_error, onerror
   common start_date
 
@@ -1738,36 +1754,44 @@ function log_time, wlog, wlognames, timeunit
 
   if n_elements(timeunit) gt 0 then begin
      case timeunit of
-        'y'      : logtime = hours/(24*365.25)
-        'year'   : logtime = hours/(24*365.25)
-        'd'      : logtime = hours/24
-        'day'    : logtime = hours/24
-        '1'      : logtime = hours*3600
-        's'      : logtime = hours*3600
-        'second' : logtime = hours*3600
-        'm'      : logtime = hours*60
-        'minute' : logtime = hours*60
-        'millisec': logtime = hours*3600e3
-        'microsec': logtime = hours*3600e6
-        'ns'    : logtime = hours*3600e9
-        'date'  : begin
+        'y'       : timeunithr = 1./(24*365.25)
+        'year'    : timeunithr = 1./(24*365.25)
+        'd'       : timeunithr = 1./24
+        'day'     : timeunithr = 1./24
+        '1'       : timeunithr = 3600
+        's'       : timeunithr = 3600
+        'second'  : timeunithr = 3600
+        'm'       : timeunithr = 60
+        'minute'  : timeunithr = 60
+        'millisec': timeunithr = 3600e3
+        'microsec': timeunithr = 3600e6
+        'ns'      : timeunithr = 3600e9
+        'date'    : begin
            if idate gt -1 then begin
-              logtime = hours/24.0
-           endif else begin $
+              timeunithr = 1/24.0
+           endif else begin
               if imon eq -1 or iday eq -1 or iyear eq -1 then   $
                  print, ' Warning: check start time: ', start_year, $
-                   start_month, start_day, start_hour, start_minute, $
-                   start_second, $
-                   format='(a,i04,"-",i02,"-",i02,"T",i02,":",i02,":",i02)'
+                        start_month, start_day, start_hour, start_minute, $
+                        start_second, $
+                        format='(a,i04,"-",i02,"-",i02,"T",i02,":",i02,":",i02)'
+
+              timeunithr = -1.0
+              timeunitsc = -1.0
               logtime = JULDAY(start_month, start_day, start_year, $
                                start_hour + start_minute/60.0 + $
                                start_second/3600.0 + hours)
            endelse
         end
-        else: 
+        else: timeunithr = 1
      endcase
   endif
 
+  if timeunithr gt 0 then begin
+     timeunitsc = timeunithr/3600d0
+     logtime    = hours*timeunithr
+  endif
+  
   return, logtime
 end
 
@@ -2128,11 +2152,13 @@ pro get_pict_log, unit
   ndim = 1
   nx(0)= n_elements(x)
   nw   = n_elements(wlognames)
-  
+
+  ;; rewind to beginning of file (for animation)
+  point_lun, unit, 0
 end
 
 ;=============================================================================
-pro get_pict_asc,unit,npict
+pro get_pict_asc, unit, npict
 
   common debug_param & on_error, onerror
 
@@ -2431,7 +2457,7 @@ else if k lt n then for i = k, n-1 do a = [a, a(k-1)] ; extend array
 
 end
 ;===========================================================================
-pro read_plot_param
+pro read_plot_param, quiet=quiet
 
   common ask_param, doask
   common plot_param
@@ -2451,35 +2477,37 @@ pro read_plot_param
      cut0=0
   endelse
 
-  askstr,'func(s) (e.g. rho p ux;uz bx+by -T) ',func,doask
-  if plotdim eq 1 then begin
-     if strmid(plotmode,0,4) ne 'plot' then plotmode='default'
-     print,'1D plotmode: plot/plot_io/plot_oi/plot_oo'
-     print,'1D +options: max,mean,log,noaxis,over,dot,dash,#c999,#ct999'
-     askstr,'plotmode(s)                ',plotmode,doask
-  endif else begin
-     if strmid(plotmode,0,4) eq 'plot' then plotmode='default'
-     print,'2D plotmode: shade/surface/cont/tv/polar/lonlatn/lonlats/velovect/vector/stream/scatter'
-     print,'2D +options: degree/radian/hour'
-     print,'2D +options: bar,body,fill,grid,irr,label,max,mean,log,lgx,lgy'
-     print,'2D +options: map,mesh,noaxis,over,usa,white,#c999,#ct999'
-     askstr,'plotmode(s)                ',plotmode,doask
-  endelse
-  askstr,'plottitle(s) (e.g. B [G];J)',plottitle,doask
-  askstr,'autorange(s) (y/n)         ',autorange,doask
-
+  if not keyword_set(quiet) then begin
+     askstr,'func(s) (e.g. rho p ux;uz bx+by -T) ',func,doask
+     if plotdim eq 1 then begin
+        if strmid(plotmode,0,4) ne 'plot' then plotmode='default'
+        print,'1D plotmode: plot/plot_io/plot_oi/plot_oo'
+        print,'1D +options: max,mean,log,noaxis,over,dot,dash,#c999,#ct999'
+        askstr,'plotmode(s)                ',plotmode,doask
+     endif else begin
+        if strmid(plotmode,0,4) eq 'plot' then plotmode='default'
+        print,'2D plotmode: shade/surface/cont/tv/polar/lonlatn/lonlats/velovect/vector/stream/scatter'
+        print,'2D +options: degree/radian/hour'
+        print,'2D +options: bar,body,fill,grid,irr,label,max,mean,log,lgx,lgy'
+        print,'2D +options: map,mesh,noaxis,over,usa,white,#c999,#ct999'
+        askstr,'plotmode(s)                ',plotmode,doask
+     endelse
+     askstr,'plottitle(s) (e.g. B [G];J)',plottitle,doask
+     askstr,'autorange(s) (y/n)         ',autorange,doask
+  endif
+     
   nfunc=0
-  string_to_array,func,funcs,nfunc
-  string_to_array,plotmode,plotmodes,nfunc
-  string_to_array,plottitle,plottitles,nfunc,';'
-  string_to_array,autorange,autoranges,nfunc
+  string_to_array, func, funcs, nfunc
+  string_to_array, plotmode, plotmodes, nfunc
+  string_to_array, plottitle, plottitles, nfunc, ';'
+  string_to_array, autorange, autoranges, nfunc
 
   nplot = nfunc
   funcs1=strarr(nfunc)
   funcs2=strarr(nfunc)
   for ifunc=0,nfunc-1 do begin
-     func12=strsplit(funcs(ifunc),';',/extract)
-     funcs1(ifunc)=func12(0)
+     func12 = strsplit(funcs(ifunc),';',/extract)
+     funcs1(ifunc) = func12(0)
      if n_elements(func12) eq 2 then funcs2(ifunc)=func12(1)
 
      if plotmodes(ifunc) eq 'default' then begin
@@ -2494,7 +2522,7 @@ pro read_plot_param
         endif
      endif
 
-     if strpos(plotmodes(ifunc),'over') ge 0 then nplot=nplot-1
+     if strpos(plotmodes(ifunc),'over') ge 0 then nplot -= 1
      
   endfor
 
@@ -3651,7 +3679,8 @@ pro plot_func
   common plotfunc_param
   common plot_store
   common file_head
-
+  common log_data, timeunit, timeunitsc
+  
   ;; Get grid dimensions and set irr=1 
   ;; if it is an irregular grid
 
@@ -3883,7 +3912,7 @@ pro plot_func
      if i ge 0 then begin
         plotmod=strmid(plotmod,0,i)+strmid(plotmod,i+4)
         if strmid(plotmod,0,4) eq 'plot' then plotmod = 'o'+plotmod
-        !p.multi(0) = !p.multi(0)+1
+        !p.multi(0) += 1
         if !p.multi(0) ge !p.multi(1)*!p.multi(2) then !p.multi(0)=0
         !p.title = ''
      endif
@@ -4259,7 +4288,8 @@ pro plot_func
         else:print,'Unknown axistype:',axistype
      endcase
 
-     if showtime then oplot, [time,time], [f_min,f_max], linestyle=2
+     if showtime then oplot, [time*timeunitsc,time*timeunitsc], $
+                             [f_min,f_max], linestyle=2
 
      if showbody and axistype eq 'coord' then $
         if rBody gt abs(rSlice) then begin
@@ -5580,16 +5610,16 @@ pro compare,w0,w1,wnames,scalar=scalar
            wdif1=total(abs(w0(*,iw)-w1(*,iw)))
         end
         2: begin
-           wsum=max(abs(w0(*,*,iw))+abs(w1(*,*,iw)))/2
-           wdif=max(abs(w0(*,*,iw)-w1(*,*,iw)))
-           wsum1=total(abs(w0(*,*,iw))+abs(w1(*,*,iw)))/2
-           wdif1=total(abs(w0(*,*,iw)-w1(*,*,iw)))
+           wsum = max(abs(w0(*,*,iw)) + abs(w1(*,*,iw)))/2
+           wdif = max(abs(w0(*,*,iw) - w1(*,*,iw)))
+           wsum1 = total(abs(w0(*,*,iw)) + abs(w1(*,*,iw)))/2
+           wdif1 = total(abs(w0(*,*,iw) - w1(*,*,iw)))
         end
         3: begin
-           wsum=max(abs(w0(*,*,*,iw))+abs(w1(*,*,*,iw)))/2
-           wdif=max(abs(w0(*,*,*,iw)-w1(*,*,*,iw)))
-           wsum1=total(abs(w0(*,*,*,iw))+abs(w1(*,*,*,iw)))/2
-           wdif1=total(abs(w0(*,*,*,iw)-w1(*,*,*,iw)))
+           wsum = max(abs(w0(*,*,*,iw)) + abs(w1(*,*,*,iw)))/2
+           wdif = max(abs(w0(*,*,*,iw) - w1(*,*,*,iw)))
+           wsum1 = total(abs(w0(*,*,*,iw)) + abs(w1(*,*,*,iw)))/2
+           wdif1 = total(abs(w0(*,*,*,iw) - w1(*,*,*,iw)))
         end
      endcase
 
@@ -5872,7 +5902,7 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
                  format='(a,i8)'
 	endif
         
-        logtime = log_time(wlog,wlognames,timeunit)
+        logtime = log_time(wlog, wlognames)
         return
      endif
      filesource=1
@@ -6029,7 +6059,7 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
   endif else $
      rownames = ''
 
-  logtime = log_time(wlog,wlognames,timeunit)
+  logtime = log_time(wlog, wlognames)
   if verbose then print,'Setting logtime',index
 
 end
@@ -6212,7 +6242,7 @@ pro plot_log
            end
         endcase
 
-        hour = log_time(wlog,wlognames,timeunit) + timeshifts(ilog)
+        hour = log_time(wlog, wlognames) + timeshifts(ilog)
 
         if(dofft)then begin
            n = n_elements(hour)
@@ -6305,7 +6335,7 @@ pro plot_log
                 /noerase, xstyle=-1, ystyle=-1
            
                                 ; print out legend or logfile name
-           if n_elements(legends) eq nlog and total(strlen(legends)) gt 0 $
+           if n_elements(legends) eq nlog and total(strlen(legends),/int) gt 0 $
            then legend=legends(ilog) $
            else legend=logfilenames(ilog)
            xyouts,legendpos(1), $
@@ -6335,12 +6365,12 @@ pro rms_logfiles,logfilename,varname,tmin=tmin,tmax=tmax,verbose=verbose
 
   print,'var rms(A-B) rsm(A) rms(B)'
   for ivar=0,nvar-1 do $
-     print,varnames(ivar),sqrt(total((var0(*,ivar)-var1(*,ivar))^2)/ntime), $
+     print, varnames(ivar), sqrt(total((var0(*,ivar) - var1(*,ivar))^2)/ntime), $
            sqrt(total(var0(*,ivar)^2)/ntime), sqrt(total(var1(*,ivar)^2)/ntime)
 
   print,'var |A-B| |A| |B|'
   for ivar=0,nvar-1 do $
-     print,varnames(ivar),total(abs(var0(*,ivar)-var1(*,ivar)))/ntime, $
+     print,varnames(ivar), total(abs(var0(*,ivar) - var1(*,ivar)))/ntime, $
            total(abs(var0(*,ivar)))/ntime, total(abs(var1(*,ivar)))/ntime
 
 end
@@ -6403,8 +6433,8 @@ pro interpol_log,wlog0,wlog1,var0,var1,varname,varnames0,varnames1,time,$
      retall
   endif
 
-  time0 = log_time(wlog0,varnames0,timeunit)
-  time1 = log_time(wlog1,varnames1,timeunit)
+  time0 = log_time(wlog0, varnames0)
+  time1 = log_time(wlog1, varnames1)
 
   if not keyword_set(tmin) then tmin = max([ min(time0), min(time1) ])
   if not keyword_set(tmax) then tmax = min([ max(time0), max(time1) ])
