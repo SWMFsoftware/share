@@ -99,11 +99,11 @@ pro set_default_values
 
 ; Parameters for plot_data
   common plotfunc_param, $
-     func, func_file, nfunc, funcs, funcs1, funcs2, $
+     func, func_file, nfunc, nfuncall, funcs, funcs1, funcs2, $
      plotmode, plotmode_file, plotmodes, nplot, $
      plottitle, plottitle_file, plottitles, $
      timetitle, timetitleunit, timetitlestart, $
-     autorange, autoranges, noautorange, fmin, fmax, $
+     autorange, autoranges, noautorange, fmin, fmax, fmin_file, fmax_file, $
      axistype, bottomline, headerline
   func=''              ; space separated list of functions to be plotted
   nfunc=0              ; number of functions to be plotted
@@ -124,6 +124,8 @@ pro set_default_values
   noautorange=0        ; true if all autoranges are 'n'
   fmin=0               ; array of minimum values for each function
   fmax=0               ; array of maximum values for each function
+  fmin_file=0          ; array of minimum values for each function and file
+  fmax_file=0          ; array of maximum values for each function and file
   axistype='coord'     ; 'cells' or 'coord'
   headerline=0         ; Number of items to show at the top
   bottomline=3         ; Number of items or a string to show at the bottom
@@ -952,13 +954,15 @@ pro animate_data
         nplot_file[ifile] = nplot
      endfor
      nfuncmax = max(nfunc_file)
+     nfuncall = total(nfunc_file,/int)
      nplotmax = max(nplot_file)
      nplotall = total(nplot_file,/int)
-     fmin_file = dblarr(nfuncmax,nfile)
-     fmax_file = dblarr(nfuncmax,nfile)
+     if n_elements(fmin_file) ne nfuncall then fmin_file = dblarr(nfuncall)
+     if n_elements(fmax_file) ne nfuncall then fmax_file = dblarr(nfuncall)
   endif else begin
      read_plot_param
      nfuncmax = nfunc
+     nfuncall = nfunc
      nplotmax = nplot
      nplotall = nplot
   endelse 
@@ -1023,11 +1027,13 @@ pro animate_data
                  func = func_file(ifile)
                  read_plot_param, /quiet
                  first = npict eq 0
-                 fmin = fmin_file(0:nfunc-1,ifile)
-                 fmax = fmax_file(0:nfunc-1,ifile)
+                 if ifile eq 0 then ifunc = 0 $
+                 else ifunc = total(nfunc_file[0:ifile-1],/int)
+                 fmin = fmin_file(ifunc:ifunc+nfunc-1)
+                 fmax = fmax_file(ifunc:ifunc+nfunc-1)
                  get_limits, first
-                 fmin_file(0:nfunc-1,ifile) = fmin
-                 fmax_file(0:nfunc-1,ifile) = fmax
+                 fmin_file(ifunc:ifunc+nfunc-1) = fmin
+                 fmax_file(ifunc:ifunc+nfunc-1) = fmax
               endif else begin
                  first= npict eq 0 and ifile eq 0
                  get_limits, first
@@ -1191,8 +1197,10 @@ pro animate_data
            if keyword_set(func_file) then begin
               func = func_file[ifile]
               read_plot_param, /quiet
-              fmin = fmin_file[0:nfunc-1,ifile]
-              fmax = fmax_file[0:nfunc-1,ifile]
+              if ifile eq 0 then ifunc = 0 $
+              else ifunc = total(nfunc_file[0:ifile-1],/int)
+              fmin = fmin_file[ifunc:ifunc+nfunc-1]
+              fmax = fmax_file[ifunc:ifunc+nfunc-1]
            end
 
            if keyword_set(plotmode_file) then begin
@@ -1891,7 +1899,7 @@ pro get_file_types
      if   strpos(filenames(ifile),'.log') eq l $
         or strpos(filenames(ifile),'.sat') eq l then begin
         filetypes(ifile)    = 'log'
-        npictinfiles(ifile) = 1
+        npictinfiles(ifile) = 1000
      endif else begin
         ;; Obtain filetype based on the length info in the first 4 bytes
         close,10
@@ -2468,11 +2476,11 @@ pro read_plot_param, quiet=quiet
   ;; Determine dimension of plots based on cut or ndim,
   ;; calculate reduced cut0 array by eliminating degenerate dimensions
   if keyword_set(cut) then begin
-     cut0=reform2(cut)
-     siz=size(cut0)
-     plotdim=siz(0)
+     cut0 = reform2(cut)
+     siz = size(cut0)
+     plotdim = siz(0)
   endif else begin
-     plotdim=ndim
+     plotdim = ndim
      cut0=0
   endelse
 
@@ -6087,7 +6095,7 @@ pro plot_log
   common debug_param & on_error, onerror
 
   common log_data, $
-     timeunit, $
+     timeunit, timeunitsc, $
      wlog0, logtime0, wlognames0, $ ; renamed from wlog, logtime, wlognames
      wlog1, logtime1, wlognames1, $
      wlog2, logtime2, wlognames2, $
