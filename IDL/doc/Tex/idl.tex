@@ -318,8 +318,13 @@ IDL> filename='example?.out'
 IDL> filename='exampl*.out'
 \end{verbatim}
 Note that if any wild card character is used then the order of the files will 
-be alphabetical.
-
+be alphabetical. To read different snapshots from different files, use the
+{\bf firstpict} array:
+\begin{verbatim}
+filename='RESULTS/run[12]*/GM/z=0*.outs'
+firstpict=[2,5]
+read_data
+\end{verbatim}
 After reading the files with read\_data, 
 the coordinates and the conservative variables 
 will be put into {\bf x0, x1} and {\bf w0, w1} respectively, however, 
@@ -399,14 +404,19 @@ wreg=wreg1-wreg0
 if the files use different unstructured grids but they are 
 interpolated onto the same regular grid.
 
-\section{Plotting data with plot\_data \label{s-plot_data}}
+\section{Plotting data with plot\_data and show\_data \label{s-plot_data}}
 
-   Once the data is read by {\bf read\_data} or {\bf animate\_data} you can plot 
-   functions of {\bf w} with
+Once the data is read by {\bf read\_data} or {\bf animate\_data} you can plot 
+functions of {\bf w} with
 \begin{verbatim}
 plot_data
 \end{verbatim}
-   You will see some plotting parameters with their current values:
+Alternatively, you can use
+\begin{verbatim}
+show_data
+\end{verbatim}
+to read (or re-read) the file and plot it immediately. In both cases
+you will see some plotting parameters with their current values:
 \begin{verbatim}
 ======= CURRENT PLOTTING PARAMETERS ================
 ax,az=  30, 30, contourlevel= 30, velvector= 200, velspeed (0..5)= 5
@@ -541,30 +551,25 @@ procedures.
 For 2D data there are many more possibilities.
 For scalar functions the main plotting modes are 
 \begin{verbatim}
-Plotmode   Parameters     Description
+Plotmode   Parameters                Description
 ----------------------------------------------------------------------
-contour    contourlevel   contourlines
-contlabel  contourlevel   contourlines labeled by value
-contfill   contourlevel   levels colored by value
-contbar    contourlevel   levels colored by value plus colorbar
-polar                     polar contous plot with guessed angle unit
-polarrad                  polar contour plot with angles in radians
-polardeg                  polar contour plot with angles in degrees
-polarhour                 polar contour plot with angles in hours
-polarlabel contourlevel   polar contour plot with labels
-polarfill  contourlevel   polar plot colored by value
-polarbar   contourlevel   polar plot colored by value plus colorbar
-tv                        grid cells colored by value
-tvbar                     grid cells colored by value plus colorbar
-surface    ax az          surface mesh, height proportional to value
-shade      ax az          shaded surface, height proportional to value
+contour    contourlevel/colorlevel   contourlines
+cont       contourlevel/colorlevel   contourlines or color map
+lonlatn    contourlevel/colorlevel   lon-lat grid for north polar cap
+lonlatd    contourlevel/colorlevel   lon-lat grid for south polar cap
+polar      contourlevel/colorlevel   polar plot
+scatter                              scatter plot
+shade      ax az                     shaded surface, height proportional to value
+surface    ax az                     surface mesh, height proportional to value
+tv                                   grid cells colored by value
 \end{verbatim}
 The parameters {\bf ax} and {\bf az} define the viewing angle,
-while the {\bf contourlevel} parameter determines the number 
-of contourlevels. The 'tv','tvbar','surface' and 'shade' plotting modes
+while the {\bf contourlevel} and {\bf contourlevel} parameters
+determines the number of contourlevel and colors, respectively.
+The 'tv','surface' and 'shade' plotting modes
 can be used for Cartesian grids only (or grids transformed to Cartesian).
 
-For functions with 2 components (e.g. 'bx;bz') the following plotting
+For functions with two components (e.g. 'bx;bz') the following plotting
 modes are available
 \begin{verbatim}
 Plotmode  Parameters  Description
@@ -616,20 +621,34 @@ max     plot maximum of the last "nplotstore" snapshots
 mean    plot average of the last "nplotstore" snapshots
 \end{verbatim}
 
-For 2D plots there are a few more options
+For 1D plots:
 \begin{verbatim}
 Option  Description
 ---------------------------------------------------------------------
-irr     force triangulation for irregular (non-Cartesian) grid
+dash    dashed line style
+dot     dotted line style
+time    vertical dashed line at current time (for log/sat files)
+\end{verbatim}
+
+For 2D plots:
+\begin{verbatim}
+Option  Description
+---------------------------------------------------------------------
+bar     fill contour plot and show colorbar (also for "tv")
+fill    fill contour plot without colorbar
+label   contour plot with labels
+deg     angle in degrees for plolar plots
+rad     angle in radians for polar plots
+hour    angle in hour for polar plots
+lgx     logarithmic X axis
+lgy     logarithmic Y axis
+body    show the spherical body with radius rBody as a black circle
 grid    show grid points with plus signs
-mesh    show the mesh (lines connecting grid points) 
-           only for structured grid
-white   draw vectors, stream lines and the grid/mesh with white color even 
-           for postscript output
-body    show the spherical body with radius rBody 
-           at the origin as a black circle
+mesh    show the mesh (lines connecting grid points) for structured grid
 map     draw a world map under the plot
 usa     draw the USA map under the plot
+irr     force triangulation for irregular (non-Cartesian) grid
+white   draw vectors, stream lines and the grid/mesh with white lines
 \end{verbatim}
 Note that it makes no sense to overplot the grid for the 
 {\tt surface} plotting mode, on the other hand {\tt plotmode='shademesh'}
@@ -653,10 +672,15 @@ changed by one of the
 \begin{verbatim}
 xloadct
 loadct,3
+loadct_bw,70,/reverse
 makect,'red'
 \end{verbatim}
 commands. The {\tt xloadct} and {\tt loadct} commands are part of IDL, while
-the {\tt makect} procedure is defined in {\bf procedures.pro}.
+the {\tt loadct\_bw} and {\tt makect} procedure is defined in
+{\bf procedures.pro}.
+The {\tt loadct\_bw} takes the same arguments as {\tt loadct}, but it ensures
+that the first and last colors are black/white depending on the background.
+The /reverse argument swaps the order of colors.
 When no argument is given for {\tt loadct} or {\tt makect}, 
 all the available color tables are listed
 and the choice can be made interactively.
@@ -795,7 +819,7 @@ plotmode='stream' and 'stream2'.
 Finally the {\bf rcut} parameter can be used to cut out a circle around
 the origin. While the {\bf body} modifier in the plotting mode simply covers
 the circle, the {\bf rcut} removes all the data inside that radius,
-so it has no effect on the range of values.
+so it has an effect on the range of values.
 
 \section{Multiplot \label{s-multiplot}}
 
@@ -859,10 +883,9 @@ functions, so the curves can be distinguished.
 
 If you type
 \begin{verbatim}
-read_data
-plot_data
+show_data
 \end{verbatim}
-again, the data will be read and plotted again without any questions asked,
+the data will be read and plotted again without any questions asked,
 since IDL remembers the previous settings. 
 
 If you want to read another frame, say the second, from the same file, type
@@ -1057,6 +1080,11 @@ derivative by subtracting the previous plot data stored as {\bf wprev}
 from the current one and dividing by the elapsed time {\bf time-timeprev}. 
 Again, derived quantities may not be meaningful.
 Set {\bf timediff=0} to switch off this feature.
+
+The {\bf pictdiff=1} setting is similar to {\bf timediff=1}, but there is
+no division by the time difference. This can be useful for looking at
+the changes in a ``steady state'' run. Set {\bf pictdiff=0} to switch off this
+feature.
 
 Note that the {\bf wsubtract} and {\bf timediff} features are only 
 used by "animate\_data", since a single snapshot can be easily 
@@ -1268,11 +1296,16 @@ checks the global mass conservation.
 The {\bf plot\_log\_data} procedure described next can be used to get 
 much more sophisticated plots. 
 
-\section{Plotting logfile data with plot\_log\_data \label{s-plotlog}}
+\section{Plotting with plot\_log\_data or show\_log\_data \label{s-plotlog}}
 
 Once the data in the logfile(s) have been read with {\bf read\_log\_data},
 it can be easily visualized with the {\bf plot\_log\_data} procedure.
-It will prompt for the names of the log functions that is
+Alternatively, use
+\begin{verbatim}
+show_log_data
+\end{verbatim}
+to (re)read and plot the logfile data. 
+The code will prompt for the names of the log functions that is
 a space separated list of a subset of the strings in the wlognames array:
 \begin{verbatim}
 plot_log_data
