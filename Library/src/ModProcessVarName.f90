@@ -141,7 +141,7 @@ module ModProcessVarName
        'ehot ', &
        'hyp  ', &
        'hype ', &
-       'sign ', &
+       'bperu', &
        'wd   ', &
        'lperp' ]
 
@@ -193,7 +193,7 @@ module ModProcessVarName
        'Ehot ', &
        'Hyp  ', &
        'HypE ', &
-       'Sign ', &
+       'BperU', &
        'wD   ', &
        'Lperp' ]
 
