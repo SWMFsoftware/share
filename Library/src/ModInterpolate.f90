@@ -2,9 +2,6 @@
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 
-!  Copyright (C) 2002 Regents of the University of Michigan,
-!  portions used with permission
-!  For more information, see http://csem.engin.umich.edu/tools/swmf
 module ModInterpolateScalar
 
   ! Calculate second order accurate interpolation for
@@ -31,18 +28,18 @@ module ModInterpolateScalar
   ! Cell based 2D uniform grid with ghost cells, scalar valued:
   !
   !     InterpolatedValue = bilinear(Value_II, 0, nI+1, 0, nJ+1, &
-  !                         (/ (x - x0)/DeltaX, (y - y0)/DeltaY) /) )
+  !                         [ (x - x0)/DeltaX, (y - y0)/DeltaY) ] )
   !
   ! Node based 2D grid with x(1)=y(1)=0.0, vector valued:
   !
   !     InterpolatedValue_V = bilinear(Value_VII, nVar, 1, nI, 1, nJ, &
-  !                        (/ x/DeltaX+1, y/DeltaY+1 /) )
+  !                        [ x/DeltaX+1, y/DeltaY+1 ] )
   !
   ! Nonuniform 3D grid with ghost cells, third coordinate is uniform,
   ! scalar valued:
   !
   !     InterpolatedValue = trilinear(Value_III, -1, nI+2, -1, nJ+2, -1, nK+2,&
-  !                       (/ x, y, (z - z0)/DeltaZ /), x_I, y_I)
+  !                       [ x, y, (z - z0)/DeltaZ ], x_I, y_I)
   !
 
   use ModUtilities, ONLY: CON_stop, find_cell
@@ -989,18 +986,18 @@ module ModInterpolate
   ! Cell based 2D uniform grid with ghost cells, scalar valued:
   !
   !     InterpolatedValue = bilinear(Value_II, 0, nI+1, 0, nJ+1, &
-  !                         (/ (x - x0)/DeltaX, (y - y0)/DeltaY) /) )
+  !                         [ (x - x0)/DeltaX, (y - y0)/DeltaY) ] )
   !
   ! Node based 2D grid with x(1)=y(1)=0.0, vector valued:
   !
   !     InterpolatedValue_V = bilinear(Value_VII, nVar, 1, nI, 1, nJ, &
-  !                        (/ x/DeltaX+1, y/DeltaY+1 /) )
+  !                        [ x/DeltaX+1, y/DeltaY+1 ] )
   !
   ! Nonuniform 3D grid with ghost cells, third coordinate is uniform,
   ! scalar valued:
   !
   !     InterpolatedValue = trilinear(Value_III, -1, nI+2, -1, nJ+2, -1, nK+2,&
-  !                       (/ x, y, (z - z0)/DeltaZ /), x_I, y_I)
+  !                       [ x, y, (z - z0)/DeltaZ ], x_I, y_I)
   !
 
   use ModInterpolateScalar
