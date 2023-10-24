@@ -342,8 +342,8 @@ foreach $source (@source){
 	    $usemodmain=1 if /^\s+use ModMain/i;
 	    if($usemodmain){
 		$usemodmain = 0 unless /\&$/;
-		s/\blVerbose|(String|i|j|k|iBlock|iProc|iVar|iDim|y|z)Test\b\s*,//g;
-		s/(,\s*)?(lVerbose|String|i|j|k|iBlock|iProc|iVar|iDim|y|z)Test\b//;
+		s/\blVerbose|\b(String|i|j|k|iBlock|iProc|iVar|iDim|x|y|z)Test\b\s*,//g;
+		s/\b(,\s*)?(lVerbose|String|i|j|k|iBlock|iProc|iVar|iDim|x|y|z)Test\b//;
 		s/,\s*$/\n/;
 
 		# remove line if no variables are left in it
