@@ -99,7 +99,7 @@ $MethodType =~ s/^n.*/none/;
 my @testvar = 
     ("test_start", "test_stop", "lVerbose", "StringTest", 
      "iTest", "jTest", "kTest", "iBlockTest", "iProcTest", "iVarTest", 
-     "iDimTest", "xTest", "yTest", "zTest"), 
+     "iDimTest", "yTest", "zTest"),
 
 # Simple Fortran types with possible (len=..) and (kind=..) attributes:
 my $SimpleType = '(double +precision|real|integer|logical|character)(\s*\([^\)]+\))?\b';
@@ -198,7 +198,6 @@ foreach $source (@source){
 	s/\bItest\b/iTest/gi;
 	s/\bJtest\b/jTest/gi;
 	s/\bKtest\b/kTest/gi;
-	s/\bXtest\b/xTest/gi;
 	s/\bYtest\b/yTest/gi;
 	s/\bZtest\b/zTest/gi;
 	s/\bBLKtest\b/iBlockTest/gi;
@@ -343,8 +342,8 @@ foreach $source (@source){
 	    $usemodmain=1 if /^\s+use ModMain/i;
 	    if($usemodmain){
 		$usemodmain = 0 unless /\&$/;
-		s/\blVerbose|(String|i|j|k|iBlock|iProc|iVar|iDim|x|y|z)Test\b\s*,//g;
-		s/(,\s*)?(lVerbose|String|i|j|k|iBlock|iProc|iVar|iDim|x|y|z)Test\b//;
+		s/\blVerbose|(String|i|j|k|iBlock|iProc|iVar|iDim|y|z)Test\b\s*,//g;
+		s/(,\s*)?(lVerbose|String|i|j|k|iBlock|iProc|iVar|iDim|y|z)Test\b//;
 		s/,\s*$/\n/;
 
 		# remove line if no variables are left in it
