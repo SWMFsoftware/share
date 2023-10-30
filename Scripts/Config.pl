@@ -143,6 +143,7 @@ my $NewDebug;
 my $NewMpi;
 my $NewOpenMp;
 my $NewOpenACC;
+my $NewOpenCL;
 my $NewHypre;
 my $NewAmrex;
 my $NewAmrexDim;
@@ -152,6 +153,7 @@ my $IsCompilerSet;
 my $Debug;
 my $OpenMp;
 my $OpenACC;
+my $OpenCL;
 my $Mpi;
 my $Fcompiler;
 my $Ccompiler;
@@ -194,6 +196,8 @@ foreach (@Arguments){
     if(/^-noopenmp$/i)        {$NewOpenMp="no";                 next};
     if(/^-(open)?acc$/i)      {$NewOpenACC="yes";               next};
     if(/^-no(open)?acc$/i)    {$NewOpenACC="no";                next};
+    if(/^-(open)?cl$/i)       {$NewOpenCL="yes";                next};
+    if(/^-no(open)?cl$/i)     {$NewOpenCL="no";                 next};
     if(/^-debug$/i)           {$NewDebug="yes";                 next};
     if(/^-nodebug$/i)         {$NewDebug="no";                  next};
     if(/^-hdf5$/i)            {$NewHdf5="yes";                  next};
@@ -344,6 +348,9 @@ if($Compiler eq "nagfor" and $Debug eq "yes" and
 # Switch on or off the OPENACCFLAG
 &set_openacc_ if $NewOpenACC and $NewOpenACC ne $OpenACC;
 
+# Switch on or off the CLFLAG
+&set_opencl_ if $NewOpenCL and $NewOpenCL ne $OpenCL;
+
 # Link with HDF5 library if required
 &set_hdf5_ 
     if ($Install and not $IsComponent) or ($NewHdf5 and $NewHdf5 ne $Hdf5);
@@ -410,6 +417,7 @@ sub get_settings_{
     $Debug     = "no";
     $OpenMp    = "no";
     $OpenACC   = "no";
+    $OpenCL    = "no";
     $Mpi       = "yes";
     $Hdf5      = "no";
     $Hypre     = "no";
@@ -440,6 +448,7 @@ sub get_settings_{
           $Debug = "yes" if /^\s*DEBUG\s*=\s*\$\{DEBUGFLAG\}/;
 	  $OpenMp = "yes" if /^OPENMPFLAG/;
 	  $OpenACC = "yes" if /^ACCFLAG/;
+	  $OpenCL = "yes" if /^CLFLAG/;
 	  $Mpi   = "no"  if /^\s*MPILIB\s*=.*\-lNOMPI/;
 	  $Hdf5  = "yes" if /^\# HDF5=YES/;
 	  $Hypre = "yes" if /^\s*HYPRELIB/;
@@ -495,6 +504,7 @@ The maximum optimization level is $Optimize
 Debugging flags:   $Debug
 OpenMP flags:      $OpenMp
 OpenACC flags:     $OpenACC
+OpenCL flags:      $OpenCL
 Linked with MPI:   $Mpi
 Linked with HDF5:  $Hdf5
 Linked with HYPRE: $Hypre
@@ -709,6 +719,36 @@ sub set_openacc_{
 	    s/^(ACCFLAG)/#$1/ if $OpenACC eq "no";
 	    print;
 	}
+    }
+}
+
+##############################################################################
+
+sub set_opencl_{
+
+    # Set the OpenCL compilation flags in $MakefileConf
+
+    # Check if OpenCL is available at all
+    if(not `grep CLFLAG $MakefileConf`){
+      warn "$WARNING there is no CLFLAG in $MakefileConf\n";
+	    $OpenCL = "no"; $NewOpenCL = "no";
+	    return;
+    }
+
+    # Clean the code so it gets recompiled with consistent openacc flag
+    &shell_command('make clean');
+
+    # OpenCL will be NewOpenACC after changes
+    $OpenCL = $NewOpenCL;
+
+    print "Setting OpenCL flags to '$OpenCL' in $MakefileConf\n";
+    if(not $DryRun){
+	    @ARGV = ($MakefileConf);
+	    while(<>){
+	      s/^#(CLFLAG)/$1/ if $OpenCL eq "yes";
+	      s/^(CLFLAG)/#$1/ if $OpenCL eq "no";
+	      print;
+	    }
     }
 }
 
@@ -1129,6 +1169,7 @@ sub create_makefile_rules{
 		    Mpi        => $Mpi,
 		    MPI        => $Mpi,
 		    OpenACC    => $OpenACC,
+		    OpenCL    => $OpenCL,
 		    OpenMP     => $OpenMp,
 		    OpenMp     => $OpenMp,
 		    Debug      => $Debug,
