@@ -5,7 +5,7 @@ my $History = $history;
 
 use strict;
 
-my $mstemquda_software = 'https://github.com/MSTEM-QUDA';
+my $mstemquda_software = 'git@github.com:MSTEM-QUDA';
 
 # The project name should be all capitalized.
 my %url = (
