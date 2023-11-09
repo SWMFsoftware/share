@@ -102,7 +102,7 @@ program post_idl
   integer            :: nByteRealRead
 
   ! Variables for generalized coordinates
-  character (len=79) :: TypeGeometry='cartesian'
+  character (len=79) :: TypeGeometry = 'cartesian'
   logical            :: UseDoubleCut = .false.
 
   ! Logarithmic radial coordinate
@@ -261,7 +261,7 @@ program post_idl
 
      case('#PERIODIC')
         do i = 1, nDimSim
-           call read_var('IsPeriodic',IsPeriodic_D(i))
+           call read_var('IsPeriodic', IsPeriodic_D(i))
         enddo
 
      case('#OUTPUTFORMAT')
@@ -273,8 +273,8 @@ program post_idl
      case('#TECPLOTCONVERT')
         call read_var('DoReadTecplot', DoReadTecplot)
         call read_var('nHeaderTec', nHeaderTec)
-        call read_var('nNodeTec',  nNodeTec)
-        call read_var('nCellTec',  nCellTec)
+        call read_var('nNodeTec', nNodeTec)
+        call read_var('nCellTec', nCellTec)
 
      case default
         write(*,*) 'WARNING: unknown command ', NameCommand
@@ -283,10 +283,10 @@ program post_idl
   enddo READPARAM
 
   if(NameFileHead(1:3) == 'sph')then
-     NameCoord_D    = ['r    ','theta','phi  ']
+     NameCoord_D = ['r    ','theta','phi  ']
   elseif(TypeGeometry == 'rz' .or. TypeGeometry == 'xr')then
      TypeGeometry = 'cartesian'
-     NameCoord_D    = ['x    ','r    ','phi  ']
+     NameCoord_D = ['x    ','r    ','phi  ']
   elseif(NameFileHead(1:3) == 'cut')then
      select case(TypeGeometry(1:5))
      case('spher')
@@ -982,6 +982,13 @@ contains
        else
           GenCoord_D = 0.0
        end if
+       RETURN
+    end if
+
+    if(TypeGeometry(1:5) == 'cubed')then
+       GenCoord_D(1) = norm2(Xyz_D)
+       GenCoord_D(2) = atan2(Xyz_D(2), Xyz_D(1))
+       GenCoord_D(3) = atan2(Xyz_D(3), Xyz_D(1))
        RETURN
     end if
 
