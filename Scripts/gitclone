@@ -12,11 +12,12 @@ my $swmf_software     = "git\@github.com:SWMFsoftware";
 my %url = (
     "BATSRUS.JL"         => "https://github.com/henry2004y",
     "GITM"               => "https://github.com/GITMCode",
+    "MGITM"              => "https://github.com/dpawlows",
     "VAC"                => "https://github.com/gtoth-umich",
     "VISANAMATLAB"       => "https://github.com/henry2004y",
     );
 
-my @repo = ("SWMF, AMPS, BATSRUS, CIMI, FSAM, FLEKS, GITM2, MFLAMPA, PWOM ...", 
+my @repo = ("SWMF, AMPS, BATSRUS, CIMI, FSAM, FLEKS, GITM2, MGITM, MFLAMPA, PWOM ...", 
             sort keys %url);
 
 if($Help or not @ARGV){

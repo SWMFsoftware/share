@@ -10,6 +10,7 @@ my $mstemquda_software = 'git@github.com:MSTEM-QUDA';
 # The project name should be all capitalized.
 my %url = (
     "GITM"         => "https://github.com/aaronjridley",
+    "MGITM"        => "https://github.com/dpawlows",
     "VISANAMATLAB" => "https://github.com/henry2004y",
     "BATSRUS.jl"   => "https://github.com/henry2004y",
     );
