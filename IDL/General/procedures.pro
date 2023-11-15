@@ -255,7 +255,7 @@ pro set_default_values
      fixaspect, noerase, $ 
      cut, cut0, plotdim, rcut, rbody, $
      velvector, velpos, velpos0, velrandom, velspeed, velx, vely, veltri, $
-     viewanglex, viewanglez, colorlevel, contourlevel, linestyle
+     viewanglex, viewanglez, colorlevel, contourlevel, linestyle, colorbarsize
 
 ; multiplot=0         - default subplot arrangement based on nfile,nfunc
 ; multiplot=-1        - arrange subplots vertically
@@ -296,6 +296,7 @@ pro set_default_values
   colorlevel=30                 ; Number of color levels for contfill/contbar
   contourlevel=30               ; Number of contour levels for contour
   linestyle=0                   ; line style for plot
+  colorbarsize=0.04             ; size of the color bar
 
 ; store plot function values from plotting and animations
 ; calculate running max or mean of functions during animation
@@ -4154,7 +4155,8 @@ pro plot_func
      endif
 
      if showbar then plot_color_bar, $
-        [pos(2)+0.005, pos(1), pos(2)+0.025, pos(3)], [f_min,f_max]
+        [pos(2)+(pos(2)-pos(0))*0.04,                pos(1),                 $
+         pos(2)+(pos(2)-pos(0))*(0.04+colorbarsize), pos(3)], [f_min,f_max]
 
      case axistype of
         'cells': case plotmod of
