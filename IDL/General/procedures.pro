@@ -4155,8 +4155,8 @@ pro plot_func
      endif
 
      if showbar then plot_color_bar, $
-        [pos(2)+(pos(2)-pos(0))*0.04,                pos(1),                 $
-         pos(2)+(pos(2)-pos(0))*(0.04+colorbarsize), pos(3)], [f_min,f_max]
+        [pos(2)+(pos(2)-pos(0))*0.025,                pos(1),                 $
+         pos(2)+(pos(2)-pos(0))*(0.025+colorbarsize), pos(3)], [f_min,f_max]
 
      case axistype of
         'cells': case plotmod of
