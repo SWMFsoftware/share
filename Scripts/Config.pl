@@ -1004,9 +1004,31 @@ sub set_amrex_{
     }
 
     if($NewAmrex eq "yes"){
+	my $nDimOld = 0;
+	my $AmrexConfig = "util/AMREX/InstallDir/include/AMReX_Config.H";
+	if(-e $AmrexConfig){	    
+	    open(FILE, $AmrexConfig) or die "$ERROR could not open $AmrexConfig \n";
+	    while(<FILE>){
+		$nDimOld = $1 if/^#define AMREX_SPACEDIM (\S*)/i; 
+	    }
+	    close $AmrexConfig;	    	    
+	}
+	
 	&shell_command("cd util/AMREX;",
 		       "rm -rf InstallDir;",
  		       "ln -s $InstallDir InstallDir");
+
+	my $nDimNew = 0;
+	open(FILE, $AmrexConfig) or die "$ERROR could not open $AmrexConfig \n";
+	while(<FILE>){
+	    $nDimNew = $1 if/^#define AMREX_SPACEDIM (\S*)/i; 
+	}
+	close $AmrexConfig;
+
+	if($nDimOld ne $nDimNew){
+		# If the AMREX dimension changes, touch $AmrexConfig to recompile FLEKS
+	    &shell_command("touch $AmrexConfig");
+	}
     }
 
     $Amrex = $NewAmrex;

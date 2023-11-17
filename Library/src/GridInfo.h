@@ -96,7 +96,7 @@ public:
     return;
   }
 
-  int get_status(int i, int j, int k) {
+  int get_status(int i, int j, int k = 0) {
     // i, j, k: FLEKS cell index. NOT patch index.
     int iPatch = i / patchSize[ix];
     int jPatch = j / patchSize[iy];
