@@ -1168,7 +1168,7 @@ end
 ;--------------------------------------------------------------------
 
 pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
-                   ut, ur, bt, btotal, nvars, data, varnames,                     $
+                   ut, ur, bt, btotal, br, nvars, data, varnames,         $
                    DoContainData=DoContainData, nData=nData,              $
                    TypeData=TypeData, TypePlot=TypePlot, start_time=start_time,   $
                    end_time=end_time, DoPlotDeltaB=DoPlotDeltaB
@@ -1417,6 +1417,7 @@ pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
   bt=sqrt(bx*bx+by*by+bz*bz)
   ut=sqrt(ux*ux+uy*uy+uz*uz)
   ur=(ux*x+uy*y+uz*z)/sqrt(x*x+y*y+z*z)
+  br=(bx*x+by*y+bz*z)/sqrt(x*x+y*y+z*z)
 
   ProtonMass =1.67e-24          ;g
 
@@ -1708,10 +1709,10 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
                                     EventTimeDist, TimeWindowDist)
      endelse
      openw, lun_dist, file_dist, /get_lun
-     printf,lun_dist, 'Dist_U ='+STRING(trim(dist_int_u),format='(f6.3)')
-     printf,lun_dist, 'Dist_N ='+STRING(trim(dist_int_n),format='(f6.3)')
-     printf,lun_dist, 'Dist_T ='+STRING(trim(dist_int_t),format='(f6.3)')
-     printf,lun_dist, 'Dist_B ='+STRING(trim(dist_int_b),format='(f6.3)')
+     printf,lun_dist, 'Dist_U ='+STRING(trim(dist_int_u),format='(f7.4)')
+     printf,lun_dist, 'Dist_N ='+STRING(trim(dist_int_n),format='(f7.4)')
+     printf,lun_dist, 'Dist_T ='+STRING(trim(dist_int_t),format='(f7.4)')
+     printf,lun_dist, 'Dist_B ='+STRING(trim(dist_int_b),format='(f7.4)')
      close, lun_dist
      free_lun,lun_dist
   endif
@@ -2275,8 +2276,8 @@ end
 
 ;--------------------------------------------------------------------
 
-pro get_insitu_data, start_time, end_time, TypeData, u_obs, $
-                     n_obs, tem_obs, mag_obs, time_obs, $
+pro get_insitu_data, start_time, end_time, TypeData, u_obs,     $
+                     n_obs, tem_obs, mag_obs, time_obs, br_obs, $
                      DoContainData=DoContainData
 
   DoContainData = 1
@@ -2284,7 +2285,7 @@ pro get_insitu_data, start_time, end_time, TypeData, u_obs, $
   case TypeData of
      'OMNI': begin
         obs_data=spdfgetdata('OMNI_COHO1HR_MERGED_MAG_PLASMA', $
-                             ['ABS_B' , 'V', 'N','T'],         $
+                             ['ABS_B' , 'V', 'N','T','BR'],    $
                              [start_time, end_time])
 
         if(not isa(obs_data)) then begin
@@ -2296,13 +2297,14 @@ pro get_insitu_data, start_time, end_time, TypeData, u_obs, $
         n_obs    = obs_data.n.dat
         tem_obs  = obs_data.t.dat
         mag_obs  = obs_data.abs_b.dat
+        br_obs   = obs_data.BR.dat
         time_obs = obs_data.epoch.dat
      end
 
      'solo': begin
-        obs_data=spdfgetdata('SOLO_COHO1HR_MERGED_MAG_PLASMA', $
+        obs_data=spdfgetdata('SOLO_COHO1HR_MERGED_MAG_PLASMA',      $
                              ['B' , 'ProtonSpeed', 'protonDensity', $
-                              'protonTemp'],[start_time, end_time])
+                              'protonTemp','BR'],[start_time, end_time])
 
         if(not isa(obs_data)) then begin
            print, ' Could not obtain Solar Orbiter data.'
@@ -2313,13 +2315,14 @@ pro get_insitu_data, start_time, end_time, TypeData, u_obs, $
         n_obs    = obs_data.protonDensity.dat
         tem_obs  = obs_data.protonTemp.dat
         mag_obs  = obs_data.B.dat
+        br_obs   = obs_data.BR.dat
         time_obs = obs_data.epoch.dat
      end
 
      'psp': begin
-        obs_data=spdfgetdata('PSP_COHO1HR_MERGED_MAG_PLASMA', $
-                             ['B' , 'ProtonSpeed', 'protonDensity', $
-                              'protonTemp'],[start_time, end_time])
+        obs_data=spdfgetdata('PSP_COHO1HR_MERGED_MAG_PLASMA',          $
+                             ['B' , 'ProtonSpeed', 'protonDensity',    $
+                              'protonTemp','BR'],[start_time, end_time])
 
         if(not isa(obs_data)) then begin
            print, ' Could not obtain Parker Solar Probe data.'
@@ -2330,13 +2333,14 @@ pro get_insitu_data, start_time, end_time, TypeData, u_obs, $
         n_obs    = obs_data.protonDensity.dat
         tem_obs  = obs_data.protonTemp.dat
         mag_obs  = obs_data.B.dat
+        br_obs   = obs_data.BR.dat
         time_obs = obs_data.epoch.dat
      end
 
      'Stereo A': begin
         obs_data=spdfgetdata('STA_COHO1HR_MERGED_MAG_PLASMA',       $
                              ['B' , 'plasmaSpeed', 'plasmaDensity', $
-                              'plasmaTemp'],[start_time, end_time])
+                              'plasmaTemp','BR'],[start_time, end_time])
 
         if(not isa(obs_data)) then begin
            DoContainData = 0
@@ -2348,13 +2352,14 @@ pro get_insitu_data, start_time, end_time, TypeData, u_obs, $
         n_obs    = obs_data.plasmaDensity.dat
         tem_obs  = obs_data.plasmaTemp.dat
         mag_obs  = obs_data.B.dat
+        br_obs   = obs_data.BR.dat
         time_obs = obs_data.epoch.dat
      end
 
      'Stereo B': begin
         obs_data=spdfgetdata('STB_COHO1HR_MERGED_MAG_PLASMA',       $
                              ['B' , 'plasmaSpeed', 'plasmaDensity', $
-                              'plasmaTemp'],[start_time, end_time])
+                              'plasmaTemp','BR'],[start_time, end_time])
 
         if(not isa(obs_data)) then begin
            DoContainData = 0
@@ -2366,6 +2371,7 @@ pro get_insitu_data, start_time, end_time, TypeData, u_obs, $
         n_obs    = obs_data.plasmaDensity.dat
         tem_obs  = obs_data.plasmaTemp.dat
         mag_obs  = obs_data.B.dat
+        br_obs   = obs_data.BR.dat
         time_obs = obs_data.epoch.dat
      end
 
