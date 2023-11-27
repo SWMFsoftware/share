@@ -120,12 +120,12 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
 
            read_swmf_sat, file_sim_adapt, time_swmf, n_swmf, ux_swmf, uy_swmf,        $
                           uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf,       $
-                          ut_swmf, ur_swmf, B_swmf, Btotal_swmf,                      $
+                          ut_swmf, ur_swmf, B_swmf, Btotal_swmf, br_swmf,             $
                           DoContainData=DoContainData,                                $
                           TypeData=TypeData, TypePlot=TypePlot,                       $
                           start_time=start_time, end_time=end_time,                   $
                           DoPlotDeltaB=DoPlotDeltaB
-           
+
            if DoContainData ne 1 then begin
               print, " Error: filename=", file_sim_adapt, " does not contain any data"
               continue
@@ -139,7 +139,7 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
         endfor
         
         get_insitu_data, start_time, end_time, TypeData, u_obs, n_obs, tem_obs,  $
-                         mag_obs, time_obs, DoContainData=DoContainData
+                         mag_obs, time_obs, br_obs, DoContainData=DoContainData
 
         if DoContainData ne 1 then begin
            print, " Error: no observational data are found."
@@ -156,12 +156,12 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
 
            read_swmf_sat, file_sim_adapt, time_swmf, n_swmf, ux_swmf, uy_swmf,        $
                           uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf,       $
-                          ut_swmf, ur_swmf, B_swmf, Btotal_swmf,                      $
+                          ut_swmf, ur_swmf, B_swmf, Btotal_swmf, br_swmf,             $
                           DoContainData=DoContainData,                                $
                           TypeData=TypeData, TypePlot=TypePlot,                       $
                           start_time=start_time, end_time=end_time,                   $
                           DoPlotDeltaB=DoPlotDeltaB
-           
+
            plot_insitu, time_obs, u_obs,  n_obs,  tem_obs, mag_obs,                 $
                         time_swmf, ut_swmf, n_swmf,  ti_swmf,  te_swmf, B_swmf,     $
                         Btotal_swmf, start_time, end_time, typeData=typeData,       $
