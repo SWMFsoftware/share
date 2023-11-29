@@ -72,9 +72,9 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
         filename_sat = filename_sat_I(ifile-1)
         read_swmf_sat, filename_sat, time_swmf, n_swmf, ux_swmf, uy_swmf,       $
                        uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf,    $
-                       ut_swmf, ur_swmf, B_swmf, Btotal_swmf, DoContainData=DoContainData,   $
-                       TypeData=TypeData, TypePlot=TypePlot,                    $
-                       start_time=start_time, end_time=end_time
+                       ut_swmf, ur_swmf, B_swmf, Btotal_swmf, br_swmf,          $
+                       DoContainData=DoContainData, TypeData=TypeData,          $
+                       TypePlot=TypePlot, start_time=start_time, end_time=end_time
 
         if DoContainData ne 1 then begin
            print, " Error: filename=", filename_sat, " does not contain any data"
@@ -104,7 +104,7 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
         ;; no need to download if time_obs is defined (already downloaded)
         if (not isa(time_obs)) then begin
            get_insitu_data, start_time, end_time, TypeData, u_obs, n_obs, tem_obs,  $
-                            mag_obs, time_obs, DoContainData=DoContainData
+                            mag_obs, time_obs, br_obs, DoContainData=DoContainData
 
            if DoContainData ne 1 then begin
               print, " Error: no observational data are found."
@@ -189,9 +189,9 @@ pro compare_insitu_from_list, filename_list=filename_list, dir_plot=dir_plot,   
      
         read_swmf_sat, filename_sat, time_swmf, n_swmf, ux_swmf, uy_swmf,       $
                        uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf,    $
-                       ut_swmf, ur_swmf, B_swmf, Btotal_swmf, DoContainData=DoContainData,   $
-                       TypeData=TypeData, TypePlot=TypePlot,                    $
-                       start_time=start_time, end_time=end_time
+                       ut_swmf, ur_swmf, B_swmf, Btotal_swmf, br_swmf,          $
+                       DoContainData=DoContainData, TypeData=TypeData,          $
+                       TypePlot=TypePlot, start_time=start_time, end_time=end_time
 
         if DoContainData ne 1 then begin
            print, " Error: filename=", filename_sat, " does not contain any data"

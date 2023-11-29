@@ -35,7 +35,7 @@ pro compare_insitu_one, file_sim=file_sim,                      $
 
   read_swmf_sat, file_sim, time_swmf, n_swmf, ux_swmf, uy_swmf,        $
                  uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf, $
-                 ut_swmf, ur_swmf, B_swmf, Btotal_swmf,                $
+                 ut_swmf, ur_swmf, B_swmf, Btotal_swmf, br_swmf,       $
                  DoContainData=DoContainData,                          $
                  TypeData=TypeData, TypePlot=TypePlot,                 $
                  start_time=start_time, end_time=end_time
@@ -47,7 +47,7 @@ pro compare_insitu_one, file_sim=file_sim,                      $
   endif
 
   get_insitu_data, start_time, end_time, TypeData, u_obs, n_obs, tem_obs,  $
-                   mag_obs, time_obs, DoContainData=DoContainData
+                   mag_obs, time_obs, br_obs, DoContainData=DoContainData
 
   if DoContainData ne 1 then begin
      print, "compare_insitu_one: error: no observational data are found."
@@ -72,10 +72,10 @@ pro compare_insitu_one, file_sim=file_sim,                      $
 
      ObsFileName = dir_obs + '/' + strmid(TypePlot,1) + '_' +EventTime + '.out'
      w = fltarr(n_elements(u_obs),5)
-     w = [[yy], [mo], [dy], [hh], [mm], [ss], [n_obs], [u_obs], [tem_obs], [mag_obs]]
+     w = [[yy], [mo], [dy], [hh], [mm], [ss], [n_obs], [u_obs], [tem_obs], [mag_obs],[br_obs]]
      x = indgen(n_elements(u_obs))
      varname = ['count', 'year', 'mo', 'dy', 'hr', 'mn', 'sc', 'Rho', $
-                'V_tot', 'Temperature', 'B_tot']
+                'V_tot', 'Temperature', 'B_tot','Br']
      save_pict,ObsFileName,TypeData+' Observational data',varname,w,x
      print, 'compare_insitu_one: saving the observation file to ObsFileName: ', ObsFileName
   endif
