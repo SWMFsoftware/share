@@ -129,7 +129,7 @@ cd $PBS_O_WORKDIR
 setenv MPI_TYPE_DEPTH 20
 
 # Start PostProc.pl in the background
-#./PostProc.pl -n=16 -g -r=60 &> PostProc.log &
+#./PostProc.pl -n=16 -g -r=60 >& PostProc.log &
 
 # Running with OpenMP may require the following settings
 # (For the SWMF use the #COMPONENTMAP command to define threads)
