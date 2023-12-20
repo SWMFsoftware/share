@@ -332,8 +332,8 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
                                 ; Random positions within (xmin-xmax,ymin-ymax) if x0 is not defined
                                 ;
      x0=fltarr(nvecs,2)
-     x0(*,0)=xmin+xdel*randomu(seed,nvecs)
-     x0(*,1)=ymin+ydel*randomu(seed,nvecs)
+     x0(*,0)=xmin + xdel*randomu(seed,nvecs)
+     x0(*,1)=ymin + ydel*randomu(seed,nvecs)
   endif else begin
                                 ; Put the x0 arrow positions inside the box by applying a mod function
                                 ;
@@ -465,11 +465,20 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
 ; Draw arrows
   if keyword_set(white) then begin
      tvlct,bytarr(256,3)+255    ; change to white
-     for i=0,nvecs-1 do plots,x(i,*,0),x(i,*,1),NOCLIP=0,color=127
+     for i=0,nvecs-1 do begin
+        if abs(x(i,0,0) - x(i,nsteps-1,0)) gt xdel*1e-6 or $
+           abs(x(i,0,1) - x(i,nsteps-1,1)) gt ydel*1e-6 then $
+              plots,x(i,*,0),x(i,*,1),NOCLIP=0,color=127
+     endfor
      tvlct,r_curr,g_curr,b_curr ; restore colors
-  endif else $
-     for i=0,nvecs-1 do plots,x(i,*,0),x(i,*,1),NOCLIP=0
-
+  endif else begin
+     for i=0,nvecs-1 do begin
+        if abs(x(i,0,0) - x(i,nsteps-1,0)) gt xdel*1e-6 or $
+           abs(x(i,0,1) - x(i,nsteps-1,1)) gt ydel*1e-6 then $
+              plots,x(i,*,0),x(i,*,1),NOCLIP=0
+     endfor
+  endelse
+  
   return
 end
 ;=============================================================================
