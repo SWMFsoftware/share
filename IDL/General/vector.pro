@@ -332,8 +332,8 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
                                 ; Random positions within (xmin-xmax,ymin-ymax) if x0 is not defined
                                 ;
      x0=fltarr(nvecs,2)
-     x0(*,0)=xmin+xdel*randomu(seed,nvecs)
-     x0(*,1)=ymin+ydel*randomu(seed,nvecs)
+     x0(*,0)=xmin + xdel*randomu(seed,nvecs)
+     x0(*,1)=ymin + ydel*randomu(seed,nvecs)
   endif else begin
                                 ; Put the x0 arrow positions inside the box by applying a mod function
                                 ;
@@ -342,14 +342,15 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
   endelse
 
 ; For a presumably regular grid, check if it is regular or not
-  if not irregular then $
-                                ; Check if there is a grid passed in XX, YY
-     if n_elements(xx) gt 2 and n_elements(yy) gt 2 then $
-                                ; Check if the grid is uniform by calculating maximum grid spacing
-     if min(xx(1:nx-1,*)-xx(0:nx-2,*)) lt xdel/(nx-0.99999d0) or $
-     min(yy(*,1:ny-1)-yy(*,0:ny-2)) lt ydel/(ny-0.99999d0) then $
-        irregular = 1
-
+  if not irregular then begin
+     ;; Check if there is a grid passed in XX, YY
+     if n_elements(xx) gt 2 and n_elements(yy) gt 2 then begin
+        ;; Check if the grid is uniform by calculating maximum grid spacing
+        if min(xx(1:nx-1,*)-xx(0:nx-2,*)) lt xdel/(nx-0.99999d0) or $
+           min(yy(*,1:ny-1)-yy(*,0:ny-2)) lt ydel/(ny-0.99999d0) then $
+              irregular = 1
+     endif
+  endif
   if not (irregular or limitrange) then begin
      ureg=u
      vreg=v
@@ -381,7 +382,7 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
      vreg=trigrid(xx,yy,v,triangles,[dx,dy],[xmin,ymin,xmax,ymax])
   endelse
 
-  minval=maxval*1e-4
+  minval = maxval*1e-4
 
 ; Calculate the coordinates forming the arrows: X(nvecs,nsteps+4,2)
 ; --> nvecs arrows to be drawn as 
@@ -401,19 +402,19 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
 
 ; Integrate the velocity field for nsteps
 ;
-  for i=1,nsteps do begin
-     xt=(nx-1)*(x(*,i-1,0)-xmin)/xdel
-     yt=(ny-1)*(x(*,i-1,1)-ymin)/ydel
-     ut=interpolate(ureg,xt,yt)
-     vt=interpolate(vreg,xt,yt)
+  for i = 1,nsteps do begin
+     xt = (nx-1)*(x(*,i-1,0)-xmin)/xdel
+     yt = (ny-1)*(x(*,i-1,1)-ymin)/ydel
+     ut = interpolate(ureg,xt,yt)
+     vt = interpolate(vreg,xt,yt)
      if irregular and i eq 1 then for ivec=0,nvecs-1 do begin
         if random and abs(ut(ivec)) lt minval and abs(vt(ivec)) lt minval then $
            begin
-           xivec=randomu(seed)         & yivec=randomu(seed)
-           x(ivec,0,0)=xmin+xdel*xivec & x(ivec,0,1)=ymin+ydel*yivec
-           xivec=xivec*(nx-1)          & yivec=yivec*(ny-1)
-           ut(ivec)=interpolate(ureg,xivec,yivec)
-           vt(ivec)=interpolate(vreg,xivec,yivec)
+           xivec = randomu(seed)         & yivec = randomu(seed)
+           x(ivec,0,0) = xmin+xdel*xivec & x(ivec,0,1)=ymin+ydel*yivec
+           xivec = xivec*(nx-1)          & yivec=yivec*(ny-1)
+           ut(ivec) = interpolate(ureg,xivec,yivec)
+           vt(ivec) = interpolate(vreg,xivec,yivec)
         endif
      endfor
 
@@ -425,8 +426,8 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
         vt=interpolate(vreg,xt1,yt1)
      endif
 
-     x(*,i,0)=x(*,i-1,0)+ut*dt
-     x(*,i,1)=x(*,i-1,1)+vt*dt
+     x(*,i,0)=x(*,i-1,0) + ut*dt
+     x(*,i,1)=x(*,i-1,1) + vt*dt
   endfor
 
 ; Put the position of the arrowhead into the elements nsteps+1..nsteps+3.
@@ -465,11 +466,20 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
 ; Draw arrows
   if keyword_set(white) then begin
      tvlct,bytarr(256,3)+255    ; change to white
-     for i=0,nvecs-1 do plots,x(i,*,0),x(i,*,1),NOCLIP=0,color=127
+     for i=0,nvecs-1 do begin
+        if abs(x(i,0,0) - x(i,nsteps-1,0)) gt xdel*1e-6 or $
+           abs(x(i,0,1) - x(i,nsteps-1,1)) gt ydel*1e-6 then $
+              plots,x(i,*,0),x(i,*,1),NOCLIP=0,color=127
+     endfor
      tvlct,r_curr,g_curr,b_curr ; restore colors
-  endif else $
-     for i=0,nvecs-1 do plots,x(i,*,0),x(i,*,1),NOCLIP=0
-
+  endif else begin
+     for i=0,nvecs-1 do begin
+        if abs(x(i,0,0) - x(i,nsteps-1,0)) gt xdel*1e-3 or $
+           abs(x(i,0,1) - x(i,nsteps-1,1)) gt ydel*1e-3 then $
+              plots,x(i,*,0),x(i,*,1),NOCLIP=0
+     endfor
+  endelse
+  
   return
 end
 ;=============================================================================
