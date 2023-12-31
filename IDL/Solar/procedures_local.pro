@@ -1168,7 +1168,7 @@ end
 ;--------------------------------------------------------------------
 
 pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
-                   ut, ur, bt, btotal, br, nvars, data, varnames,         $
+                   ut, ur, bt, btotal, br, deltab, nvars, data, varnames, $
                    DoContainData=DoContainData, nData=nData,              $
                    TypeData=TypeData, TypePlot=TypePlot, start_time=start_time,   $
                    end_time=end_time, DoPlotDeltaB=DoPlotDeltaB
@@ -1579,7 +1579,8 @@ end
 
 pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
                  time_simu, u_simu, n_simu, ti_simu, te_simu, b_simu,         $
-                 btotal_simu, start_time, end_time, fileplot=fileplot,         $
+                 btotal_simu, deltab_simu, start_time, end_time,              $
+                 fileplot=fileplot,                                           $
                  typeData=typeData, charsize=charsize, colorLocal=colorLocal, $
                  DoPlotTe=DoPlotTe, legendNames = legendNames,                $
                  legendPosL=legendPosL, legendPosR=legendPosR,                $
@@ -1891,7 +1892,9 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   ymax = ymax_I[3]
 
   pos=[x1[0],y1[0],x2[0],y2[0]]
-
+  if (DoPlotDeltaB) then begin
+     ytitle_b = 'B+deltaB [nT]'
+  endif else ytitle_b = 'B [nT]'
   if IsOverPlot ne 1 then begin
      if max(index_cme) ge 0 then begin
         utplot,utc_obs(index_B),B_obs(index_B),background=7,                    $
@@ -1900,13 +1903,13 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
         plot_CME_interval, start_time_CME_epoch_I, end_time_CME_epoch_I, index_cme, $
                            start_time_epoch, end_time_epoch, ymin, ymax
         utplot,utc_obs(index_B),B_obs(index_B),background=7,color=0,            $
-               ytitle='B [nT]',thick=9,                                         $
+               ytitle=ytitle_b,thick=9,                                         $
                timerange=[start_time,end_time],xstyle=1,yrange=[ymin,ymax],     $
                ysytle=1, charsize=charsize,                                     $
                charthick=5,xthick=5,ythick=5,position=pos,/noerase
      endif else begin
         utplot,utc_obs(index_B),B_obs(index_B),background=7,color=0,            $
-               ytitle='B [nT]',thick=9,                                         $
+               ytitle=ytitle_b,thick=9,                                         $
                timerange=[start_time,end_time],xstyle=1,yrange=[ymin,ymax],     $
                ystyle=1, charsize=charsize,                                     $
                charthick=5,xthick=5,ythick=5,position=pos
@@ -1917,6 +1920,9 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
             thick=linethick, timerange=[start_time,end_time],                $
             yrange=[ymin,ymax],xstyle=5,ystyle=5, position=pos, /noerase,    $
             linestyle=0
+     utplot,time_simu, deltab_simu*1.e5, background=7, color=colorLocal,     $
+            thick=linethick, timerange=[start_time,end_time],linestyle=2,    $
+            yrange=[ymin,ymax],xstyle=5,ystyle=5, position=pos, /noerase     
   endif else begin
      utplot,time_simu, b_simu*1.e5, background=7, color=colorLocal,             $
             thick=linethick, timerange=[start_time,end_time],                   $
