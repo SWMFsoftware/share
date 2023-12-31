@@ -12,9 +12,7 @@ COMPILE.mpicxx= mpicxx
 
 LINK.cpp = ${COMPILE.c} -lstdc++
 
-#CLFLAG = -lOpenCL
-
-CPPLIB = -lstdc++ -lmpi_cxx -lmpi++ ${CLFLAG}
+CPPLIB = -lstdc++ -lmpi_cxx -lmpi++
 
 #DEBUGC =  -g -Wall -Wextra -Wno-unused-parameter
 
