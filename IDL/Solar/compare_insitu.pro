@@ -121,7 +121,7 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
            read_swmf_sat, file_sim_adapt, time_swmf, n_swmf, ux_swmf, uy_swmf,        $
                           uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf,       $
                           ut_swmf, ur_swmf, B_swmf, Btotal_swmf, br_swmf,             $
-                          DoContainData=DoContainData,                                $
+                          deltaB_swmf,DoContainData=DoContainData,                    $
                           TypeData=TypeData, TypePlot=TypePlot,                       $
                           start_time=start_time, end_time=end_time,                   $
                           DoPlotDeltaB=DoPlotDeltaB
@@ -135,9 +135,13 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
            n_max = max([n_max, n_swmf])
            T_max = max([T_max, ti_swmf])
            B_max = max([B_max, B_swmf*1e5])
-           if DoPlotDeltaB then Btotal_max = max([B_max, Btotal_swmf*1e5])
+           if DoPlotDeltaB then begin
+              Btotal_max = max([B_max, Btotal_swmf*1e5])
+              deltaB_max = max([Btotal_max,deltaB_swmf])
+           endif   
         endfor
         
+           
         get_insitu_data, start_time, end_time, TypeData, u_obs, n_obs, tem_obs,  $
                          mag_obs, time_obs, br_obs, DoContainData=DoContainData
 
@@ -157,15 +161,16 @@ pro compare_insitu, dir_sim=dir_sim, dir_plot=dir_plot,     $
            read_swmf_sat, file_sim_adapt, time_swmf, n_swmf, ux_swmf, uy_swmf,        $
                           uz_swmf, bx_swmf, by_swmf, bz_swmf, ti_swmf, te_swmf,       $
                           ut_swmf, ur_swmf, B_swmf, Btotal_swmf, br_swmf,             $
-                          DoContainData=DoContainData,                                $
+                          deltaB_swmf, DoContainData=DoContainData,                   $
                           TypeData=TypeData, TypePlot=TypePlot,                       $
                           start_time=start_time, end_time=end_time,                   $
                           DoPlotDeltaB=DoPlotDeltaB
 
            plot_insitu, time_obs, u_obs,  n_obs,  tem_obs, mag_obs,                 $
                         time_swmf, ut_swmf, n_swmf,  ti_swmf,  te_swmf, B_swmf,     $
-                        Btotal_swmf, start_time, end_time, typeData=typeData,       $
-                        charsize=CharSizeLocal, DoPlotTe = DoPlotTe,                $
+                        Btotal_swmf, deltaB_swmf, start_time, end_time,             $
+                        typeData=typeData,charsize=CharSizeLocal,                   $
+                        DoPlotTe = DoPlotTe,                                        $
                         legendNames=Model, DoShowDist=0, IsOverPlot=IsOverPlot,     $
                         DoLegend=DoLegend,ymax_I=[u_max,n_max,T_max,B_max],         $
                         DoLogT=1, linethick=5, DoPlotDeltaB=DoPlotDeltaB,           $
