@@ -148,6 +148,7 @@ foreach $source (@source){
 	print "nline=$nline ilast=$ilast\n";
 
 	next if $line =~ /IMPLEMENTED/; # do not remove these in ModUser
+	next if $line =~ /=>\s*$var\b/i; # do not remove => VAR
 
 	print "original line $ilast:$line";
 
