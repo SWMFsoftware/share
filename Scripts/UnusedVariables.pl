@@ -80,6 +80,7 @@ my $source;
 foreach $source (@source){
 
     next if $source eq "MpiTemplate.f90";
+    next if $source eq "ModHdf5_orig.f90";
 
     `touch $source`;
     
