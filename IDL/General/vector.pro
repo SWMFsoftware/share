@@ -1,4 +1,5 @@
-;  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+;  Copyright (C) 2002 Regents of the University of Michigan,
+;  portions used with permission 
 ;  For more information, see http://csem.engin.umich.edu/tools/swmf
 ;^CFG COPYRIGHT VAC_UM
 ;=============================================================================
@@ -271,16 +272,17 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
 
   sizes=size(U)
   if sizes(0) eq 1 then begin
-                                ; U is a 1D array (possibly an irregular grid)
+     ;; U is a 1D array (possibly an irregular grid)
      irregular = 1
      nx = sizes(1)
      ny = 1
      if n_elements(XX) eq 0 or n_elements(YY) eq 0 then begin
-        print,'Error in vector: one dimensional array without X and Y coordinates'
+        print,'Error in vector: ' + $
+              'one dimensional array without X and Y coordinates'
         retall
      endif
   endif else begin
-                                ; U is a 2D array, assume regular
+     ;; U is a 2D array, assume regular
      irregular = 0
      nx = sizes(1)
      ny = sizes(2)
@@ -316,7 +318,7 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
      ymin = max([ymin, min(!y.range)]) & ymax = min([ymax, max(!y.range)])
      limitrange=1
   endif
-  xdel=xmax-xmin & ydel=ymax-ymin
+  xdel = xmax - xmin & ydel = ymax - ymin
 
   if dynamic lt 0      then dynamic=0
   if dynamic gt nsteps then dynamic=nsteps
@@ -329,16 +331,14 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
      ' Using random positions.'
 
   if random then begin
-                                ; Random positions within (xmin-xmax,ymin-ymax) if x0 is not defined
-                                ;
+     ;; Random positions within (xmin-xmax,ymin-ymax) if x0 is not defined
      x0=fltarr(nvecs,2)
-     x0(*,0)=xmin + xdel*randomu(seed,nvecs)
-     x0(*,1)=ymin + ydel*randomu(seed,nvecs)
+     x0(*,0) = xmin + xdel*randomu(seed,nvecs)
+     x0(*,1) = ymin + ydel*randomu(seed,nvecs)
   endif else begin
-                                ; Put the x0 arrow positions inside the box by applying a mod function
-                                ;
-     x0(*,0)=x0(*,0)-xdel*floor((x0(*,0)-xmin)/xdel)
-     x0(*,1)=x0(*,1)-ydel*floor((x0(*,1)-ymin)/ydel)
+     ;; Put the x0 arrow positions inside the box by applying a mod function
+     x0(*,0) = x0(*,0) - xdel*floor((x0(*,0) - xmin)/xdel)
+     x0(*,1) = x0(*,1) - ydel*floor((x0(*,1) - ymin)/ydel)
   endelse
 
 ; For a presumably regular grid, check if it is regular or not
@@ -346,16 +346,16 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
      ;; Check if there is a grid passed in XX, YY
      if n_elements(xx) gt 2 and n_elements(yy) gt 2 then begin
         ;; Check if the grid is uniform by calculating maximum grid spacing
-        if min(xx(1:nx-1,*)-xx(0:nx-2,*)) lt xdel/(nx-0.99999d0) or $
-           min(yy(*,1:ny-1)-yy(*,0:ny-2)) lt ydel/(ny-0.99999d0) then $
+        if min(xx(1:nx-1,*)-xx(0:nx-2,*)) lt xdel/(nx - 0.99999d0) or $
+           min(yy(*,1:ny-1)-yy(*,0:ny-2)) lt ydel/(ny - 0.99999d0) then $
               irregular = 1
      endif
   endif
   if not (irregular or limitrange) then begin
-     ureg=u
-     vreg=v
+     ureg = u
+     vreg = v
   endif else begin
-                                ; Check if the triangulation has already been done
+     ;; Check if the triangulation has already been done
      newx=1
      if keyword_set(triangles) and $
         n_elements(xxold) eq nx*ny and n_elements(yyold) eq nx*ny then $
@@ -366,20 +366,20 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
         xxold=xx
         yyold=yy
      endif
-                                ; Calculate optimal size for regular grid. Overwrite nx and ny!
-                                ; (i) Number of regular cells is the same as number of irregular points
-                                ; (ii) cells should be squares
+     ;; Calculate optimal size for regular grid. Overwrite nx and ny!
+     ;; (i) Number of regular cells is the same as number of irregular points
+     ;; (ii) cells should be squares
      aspect = xdel/ydel
      nx     = floor(sqrt(aspect*nx*ny))
      ny     = floor(nx/aspect)
 
-                                ; Interpolate velocity arrays onto a REGULAR grid with nx'*ny' spacing
-     dx     = xdel/(nx-1.00001d0)
-     dy     = ydel/(ny-1.00001d0)
+     ;; Interpolate velocity arrays onto a REGULAR grid with nx*ny spacing
+     dx     = xdel/(nx - 1.00001d0)
+     dy     = ydel/(ny - 1.00001d0)
 
-                                ; Interpolate
-     ureg=trigrid(xx,yy,u,triangles,[dx,dy],[xmin,ymin,xmax,ymax])
-     vreg=trigrid(xx,yy,v,triangles,[dx,dy],[xmin,ymin,xmax,ymax])
+     ;; Interpolate
+     ureg = trigrid(xx, yy, u, triangles,[dx,dy], [xmin,ymin,xmax,ymax])
+     vreg = trigrid(xx, yy, v, triangles,[dx,dy], [xmin,ymin,xmax,ymax])
   endelse
 
   minval = maxval*1e-4
@@ -393,23 +393,22 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
 
 ; Starting positions
 ;
-  x=fltarr(nvecs,nsteps+4,2)
+  x = fltarr(nvecs,nsteps+4,2)
   x(*,0,*)=x0
 
 ; The time step based on the length of the longest arrow and the maxval speed
-;
-  dt=length*sqrt(xdel^2+ydel^2)/nsteps/maxval
+  dt = length*sqrt(xdel^2+ydel^2)/nsteps/maxval
 
 ; Integrate the velocity field for nsteps
-;
   for i = 1,nsteps do begin
-     xt = (nx-1)*(x(*,i-1,0)-xmin)/xdel
-     yt = (ny-1)*(x(*,i-1,1)-ymin)/ydel
-     ut = interpolate(ureg,xt,yt)
-     vt = interpolate(vreg,xt,yt)
-     if irregular and i eq 1 then for ivec=0,nvecs-1 do begin
-        if random and abs(ut(ivec)) lt minval and abs(vt(ivec)) lt minval then $
-           begin
+     xt = ((nx-1)*(x(*,i-1,0) - xmin)/xdel)
+     yt = ((ny-1)*(x(*,i-1,1) - ymin)/ydel)
+     ut = interpolate(ureg, xt, yt)
+     vt = interpolate(vreg, xt, yt)
+
+     if irregular and i eq 1 then for ivec = 0, nvecs - 1 do begin
+        if random and abs(ut(ivec)) lt minval and abs(vt(ivec)) lt minval $
+        then begin
            xivec = randomu(seed)         & yivec = randomu(seed)
            x(ivec,0,0) = xmin+xdel*xivec & x(ivec,0,1)=ymin+ydel*yivec
            xivec = xivec*(nx-1)          & yivec=yivec*(ny-1)
@@ -418,16 +417,21 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
         endif
      endfor
 
-                                ; Second order for stream line integration
+     ;; Second order for stream line integration
      if nsteps gt 5 then begin
-        xt1=xt+0.5*dt*ut*(nx-1)/xdel
-        yt1=yt+0.5*dt*vt*(ny-1)/ydel
-        ut=interpolate(ureg,xt1,yt1)
-        vt=interpolate(vreg,xt1,yt1)
+        xt1 = xt + 0.5*dt*ut*(nx-1)/xdel
+        yt1 = yt + 0.5*dt*vt*(ny-1)/ydel
+        ut = interpolate(ureg,xt1,yt1)
+        vt = interpolate(vreg,xt1,yt1)
+        ;; stop lines that reached edge of domain
+        jj = where(xt1 lt 0 or xt1 gt nx-1 or yt1 lt 0 or yt1 gt ny-1, /null)
+        ut(jj) = 0.0
+        vt(jj) = 0.0
      endif
 
-     x(*,i,0)=x(*,i-1,0) + ut*dt
-     x(*,i,1)=x(*,i-1,1) + vt*dt
+     x(*,i,0) = (x(*,i-1,0) + ut*dt)
+     x(*,i,1) = (x(*,i-1,1) + vt*dt)
+
   endfor
 
 ; Put the position of the arrowhead into the elements nsteps+1..nsteps+3.
@@ -444,24 +448,25 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
 
   dx = scal*(x(*,i,0)-x(*,h,0)) ; Vector of the projected wings
   dy = scal*(x(*,i,1)-x(*,h,1))
-  xm = x(*,i,0)-dx                 ; The coordinates of the midpoint
-  ym = x(*,i,1)-dy                 ; between the two 'wings'
+  xm = x(*,i,0) - dx            ; The coordinates of the midpoint
+  ym = x(*,i,1) - dy            ; between the two 'wings'
   dx = dx*tant/aspect
   dy = dy*tant*aspect           ; Contract by tan(theta) and use aspect.
 
-  x(*,i+1,0) = xm-dy               ; (dx,dy) is rotated to (-dy,dx) and added
-  x(*,i+2,0) = x(*,i,0)		   ; to and subtracted from (xm,ym).
-  x(*,i+3,0) = xm+dy
+  x(*,i+1,0) = xm - dy          ; (dx,dy) is rotated to (-dy,dx) and added
+  x(*,i+2,0) = x(*,i,0)         ; to and subtracted from (xm,ym).
+  x(*,i+3,0) = xm + dy
 
-  x(*,i+1,1) = ym+dx
+  x(*,i+1,1) = ym + dx
   x(*,i+2,1) = x(*,i,1)
-  x(*,i+3,1) = ym-dx
+  x(*,i+3,1) = ym - dx
 
 ; Put new arrow positions into X0 for next call based on dynamic [0..nsteps]
   x0(*,*) = x(*,dynamic,*)
 
 ; Draw box
-  plot,[xmin,xmax],[ymin,ymax],/nodata,XSTYLE=xstyle,YSTYLE=ystyle,NOERASE=noerase
+  plot, [xmin,xmax], [ymin,ymax], /nodata, XSTYLE=xstyle, YSTYLE=ystyle, $
+        NOERASE=noerase
 
 ; Draw arrows
   if keyword_set(white) then begin
@@ -473,10 +478,11 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
      endfor
      tvlct,r_curr,g_curr,b_curr ; restore colors
   endif else begin
-     for i=0,nvecs-1 do begin
+     for i = 0,nvecs-1 do begin
         if abs(x(i,0,0) - x(i,nsteps-1,0)) gt xdel*1e-3 or $
-           abs(x(i,0,1) - x(i,nsteps-1,1)) gt ydel*1e-3 then $
-              plots,x(i,*,0),x(i,*,1),NOCLIP=0
+           abs(x(i,0,1) - x(i,nsteps-1,1)) gt ydel*1e-3 then begin
+           plots, x(i,*,0), x(i,*,1), NOCLIP=0
+        endif
      endfor
   endelse
   
