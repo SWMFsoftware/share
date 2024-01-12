@@ -80,6 +80,7 @@ my $source;
 foreach $source (@source){
 
     next if $source eq "MpiTemplate.f90";
+    next if $source eq "ModHdf5_orig.f90";
 
     `touch $source`;
     
@@ -148,6 +149,7 @@ foreach $source (@source){
 	print "nline=$nline ilast=$ilast\n";
 
 	next if $line =~ /IMPLEMENTED/; # do not remove these in ModUser
+	next if $line =~ /=>\s*$var\b/i; # do not remove => VAR
 
 	print "original line $ilast:$line";
 
