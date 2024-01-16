@@ -1,6 +1,9 @@
 *~
 *.o
 *.mod
+*.aux
+*.toc
+idl.log
 *.exe
 *.pyc
 *.diff
