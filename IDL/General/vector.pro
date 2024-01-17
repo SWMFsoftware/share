@@ -378,8 +378,8 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
      dy     = ydel/(ny - 1.00001d0)
 
      ;; Interpolate
-     ureg = trigrid(xx, yy, u, triangles,[dx,dy], [xmin,ymin,xmax,ymax])
-     vreg = trigrid(xx, yy, v, triangles,[dx,dy], [xmin,ymin,xmax,ymax])
+     ureg = trigrid(xx, yy, u, triangles, [dx,dy], [xmin,ymin,xmax,ymax])
+     vreg = trigrid(xx, yy, v, triangles, [dx,dy], [xmin,ymin,xmax,ymax])
   endelse
 
   minval = maxval*1e-4
@@ -403,17 +403,17 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
   for i = 1,nsteps do begin
      xt = ((nx-1)*(x(*,i-1,0) - xmin)/xdel)
      yt = ((ny-1)*(x(*,i-1,1) - ymin)/ydel)
-     ut = interpolate(ureg, xt, yt)
-     vt = interpolate(vreg, xt, yt)
+     ut = interpolate(ureg, xt, yt, missing=0.0)
+     vt = interpolate(vreg, xt, yt, missing=0.0)
 
      if irregular and i eq 1 then for ivec = 0, nvecs - 1 do begin
         if random and abs(ut(ivec)) lt minval and abs(vt(ivec)) lt minval $
         then begin
-           xivec = randomu(seed)         & yivec = randomu(seed)
-           x(ivec,0,0) = xmin+xdel*xivec & x(ivec,0,1)=ymin+ydel*yivec
-           xivec = xivec*(nx-1)          & yivec=yivec*(ny-1)
-           ut(ivec) = interpolate(ureg,xivec,yivec)
-           vt(ivec) = interpolate(vreg,xivec,yivec)
+           xivec = randomu(seed)           & yivec = randomu(seed)
+           x(ivec,0,0) = xmin + xdel*xivec & x(ivec,0,1) = ymin + ydel*yivec
+           xivec = xivec*(nx-1)            & yivec=yivec*(ny-1)
+           ut(ivec) = interpolate(ureg, xivec, yivec)
+           vt(ivec) = interpolate(vreg, xivec, yivec)
         endif
      endfor
 
@@ -421,12 +421,8 @@ PRO VECTOR,U,V,XX,YY,NVECS=nvecs,MAXVAL=maxval,LENGTH=length,HEAD=head,$
      if nsteps gt 5 then begin
         xt1 = xt + 0.5*dt*ut*(nx-1)/xdel
         yt1 = yt + 0.5*dt*vt*(ny-1)/ydel
-        ut = interpolate(ureg,xt1,yt1)
-        vt = interpolate(vreg,xt1,yt1)
-        ;; stop lines that reached edge of domain
-        jj = where(xt1 lt 0 or xt1 gt nx-1 or yt1 lt 0 or yt1 gt ny-1, /null)
-        ut(jj) = 0.0
-        vt(jj) = 0.0
+        ut = interpolate(ureg, xt1, yt1, missing=0.0)
+        vt = interpolate(vreg, xt1, yt1, missing=0.0)
      endif
 
      x(*,i,0) = (x(*,i-1,0) + ut*dt)
