@@ -7,22 +7,24 @@
 #define IM 2147483647
 #define AM (1.0 / IM)
 #define IQ 127773
-#define invIQ (1.0 / IQ) 
+#define invIQ (1.0 / IQ)
 #define IR 2836
 #define MASK 123459876
 
 class RandNum {
 private:
-  // This algorithm requires the seed occupies 4 bytes. It can be negative. 
+  // This algorithm requires the seed occupies 4 bytes. It can be negative.
   int32_t idum;
 
 public:
   RandNum() { idum = 1; }
   ~RandNum() {}
-  void set_seed(long in) { 
-    // The input seed 'in' can larger than 2^31-1, it will be truncated and 
+  void set_seed(long in) {
+    // The input seed 'in' can larger than 2^31-1, it will be truncated and
     // asigned to idum.
-    idum = in; 
+    idum = in;
+    if (idum == MASK)
+      idum = MASK + 1;
   }
 
   // Overloaded the () operator. Then argument list is empty
@@ -39,7 +41,7 @@ public:
     double ans;
 
     idum ^= MASK;
-    k = (idum) * invIQ;
+    k = (idum)*invIQ;
     idum = IA * (idum - k * IQ) - IR * k;
     if (idum < 0)
       idum += IM;

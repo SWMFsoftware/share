@@ -1649,7 +1649,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
                max([max(n_obs[index_n]), max(n_simu)])*1.3,      $
                max([max(T_obs[index_T]), max(ti_simu)])*1.3,     $
                max([max(B_obs[index_B]), max(b_simu)*1.e5])*1.3]
-
+  
   utc_obs = anytim2utc(cdf2utc(time_obs),/external)
 
   ;; utc_obs is in epoch time already, convet the simulation time
@@ -1657,10 +1657,12 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   cdf_epoch,time_simu_epoch,yy,mo,dy,hh,mm,ss,/compute_epoch
 
   if (start_time_CME_I(0)) then begin
-     TIMESTAMPTOVALUES,start_time_CME_I+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
+     TIMESTAMPTOVALUES,start_time_CME_I+'Z',year=yy,month=mo,day=dy,$
+                       hour=hh,min=mm,sec=ss
      cdf_epoch,start_time_CME_epoch_I,yy,mo,dy,hh,mm,ss,/compute_epoch
 
-     TIMESTAMPTOVALUES,end_time_CME_I+'Z',year=yy,month=mo,day=dy,hour=hh,min=mm,sec=ss
+     TIMESTAMPTOVALUES,end_time_CME_I+'Z',year=yy,month=mo,day=dy,$
+                       hour=hh,min=mm,sec=ss
      cdf_epoch,end_time_CME_epoch_I,yy,mo,dy,hh,mm,ss,/compute_epoch
   endif
 
@@ -1670,41 +1672,84 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   ;; downloaded based on the start/end time of the simulation.
   start_time_epoch = time_simu_epoch(0)
   end_time_epoch   = time_simu_epoch(-1)
-
+  
   for i=0,n_elements(start_time_CME_epoch_I)-1 do begin
      start_time_cme_local = start_time_CME_epoch_I(i)
      end_time_cme_local   = end_time_CME_epoch_I(i)
      ;; 1. CME is fully within the plot
      ;; 2. the beginning is within the plot
      ;; 3. the end is within the plot
-     if ((start_time_cme_local ge start_time_epoch and start_time_cme_local le end_time_epoch) or $
-         (end_time_cme_local ge start_time_epoch and end_time_cme_local le end_time_epoch)) then begin
+     if ((start_time_cme_local ge start_time_epoch and $
+          start_time_cme_local le end_time_epoch) or $
+         (end_time_cme_local ge start_time_epoch and $
+          end_time_cme_local le end_time_epoch)) then begin
         ;; add to the array
         index_cme = [index_cme,i]
      endif
   endfor
 
-  ;; the first element is -1, need to be removed
   if n_elements(index_cme) gt 1 then begin
      index_cme = index_cme[1:-1]
-
+     ;; extract CME indices for both observations & sims
+     index_obs = -1
+     index_sim = -1
      ;; print the CME info
      for i=0,n_elements(index_cme)-1 do begin
-        print, 'CME is between ', start_time_CME_I(index_cme(i)),' and ', end_time_CME_I(index_cme(i))
+        print, 'CME is between ', start_time_CME_I(index_cme(i)),$
+               ' and ', end_time_CME_I(index_cme(i))
+        index_obs = [index_obs,$
+                     where(time_obs ge start_time_CME_epoch_I(index_cme(i)) $
+                           and time_obs le end_time_CME_epoch_I(index_cme(i)))]
+        index_sim = [index_sim, where(time_simu_epoch ge $
+                                      start_time_CME_epoch_I(index_cme(i)) $
+                                      and time_simu_epoch le $
+                                      end_time_CME_epoch_I(index_cme(i)))]
      endfor
   endif
+;; the first element is -1, need to be removed
+  if n_elements(index_obs) gt 1 then begin
+     index_obs = index_obs[1:-1]
+     index_sim = index_sim[1:-1]
+  endif
+
+  ; extracting non-cme indices from obs and sims
+  time_obs_local = time_obs
+  time_obs_local(index_obs) = -1
+  index_nocme = where(time_obs_local gt -1) 
+;  print,'Final Indices for OBS=',index_nocme
+  time_obs_local = time_obs[index_nocme]
+  u_obs_local = u_obs[index_nocme]
+  n_obs_local = n_obs[index_nocme]
+  T_obs_local = T_obs[index_nocme]
+  B_obs_local = B_obs[index_nocme]
+  
+  time_simu_local = time_simu
+  time_simu_local(index_sim) = -1
+  index_nocme= where(time_simu_local gt -1) 
+;  print,'Final Indices for SIM =',index_nocme
+  time_simu_local = time_simu[index_nocme]
+  u_simu_local = u_simu[index_nocme]
+  n_simu_local = n_simu[index_nocme]
+  ti_simu_local = ti_simu[index_nocme]
+  btotal_simu_local = btotal_simu[index_nocme]
+  b_simu_local = b_simu[index_nocme]
 
   if DoShowDist then begin
      if (DoPlotDeltaB) then begin
-        dist_int = calc_dist_insitu(time_obs, u_obs, n_obs, T_obs, B_obs,     $
-                                    time_simu,u_simu,n_simu,ti_simu,          $
-                                    btotal_simu,                     $
+        print,'Dist is calculated for regions outside the CME'
+        dist_int = calc_dist_insitu(time_obs_local, u_obs_local, n_obs_local,$
+                                    T_obs_local, B_obs_local,     $
+                                    time_simu_local,u_simu_local,n_simu_local,$
+                                    ti_simu_local,          $
+                                    btotal_simu_local,                     $
                                     dist_int_u, dist_int_t,                   $
                                     dist_int_n, dist_int_b,                   $
                                     EventTimeDist, TimeWindowDist)
      endif else begin
-        dist_int = calc_dist_insitu(time_obs, u_obs, n_obs, T_obs, B_obs,     $
-                                    time_simu,u_simu,n_simu,ti_simu,b_simu,   $
+        dist_int = calc_dist_insitu(time_obs_local, u_obs_local, n_obs_local,$
+                                    T_obs_local, B_obs_local,     $
+                                    time_simu_local,u_simu_local,n_simu_local,$
+                                    ti_simu_local,b_simu_local,   $
                                     dist_int_u, dist_int_t,                   $
                                     dist_int_n, dist_int_b,                   $
                                     EventTimeDist, TimeWindowDist)
@@ -1718,7 +1763,7 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
      free_lun,lun_dist
   endif
 
-  loadcolors
+  loadcolors 
 
   nx=1 & ny=4
   if IsOverPlot ne 1 then !p.multi=[0,1,4]
