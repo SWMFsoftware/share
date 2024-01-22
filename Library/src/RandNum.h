@@ -23,8 +23,13 @@ public:
     // The input seed 'in' can larger than 2^31-1, it will be truncated and
     // asigned to idum.
     idum = in;
-    if (idum == MASK)
-      idum = MASK + 1;
+
+    if ((*this)() == 0) {
+      // Ensure operator() does NOT always generate 0
+      idum = in % MASK;
+    } else {
+      idum = in;
+    }
   }
 
   // Overloaded the () operator. Then argument list is empty
