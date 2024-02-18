@@ -125,9 +125,9 @@ module ModConst
   real(Real8_), parameter:: cRyToEV = (0.50/cElectronMass)*&
        (cPlanckHBar/cBohrRadius)**2/cEV
 
-  ! Here RME stands for Rest Mass Energy.
-  real, parameter:: cRMEProton   = cProtonMass   * cLightSpeed**2
-  real, parameter:: cRMEElectron = cElectronMass * cLightSpeed**2
+  ! Here Rme stands for Rest Mass Energy.
+  real, parameter:: cRmeProton   = cProtonMass   * cLightSpeed**2
+  real, parameter:: cRmeElectron = cElectronMass * cLightSpeed**2
 
   ! Non-relativistic formulae for gyrofrequencies:
   ! Gyrofrequency = cGyroParticle * |B|
@@ -203,10 +203,10 @@ contains
     select case(NameParticle)
     case('e','Electron','electron','ELECTRON')
        momentum_to_energy=sqrt((Momentum*cLightSpeed)**2+&
-            cRMEElectron**2)
+            cRmeElectron**2)
     case('p','Proton','proton','PROTON')
        momentum_to_energy=sqrt((Momentum*cLightSpeed)**2+&
-            cRMEProton**2)
+            cRmeProton**2)
     case default
        call CON_stop(&
             'Do not know the rest mass energy for '//NameParticle)
@@ -222,12 +222,12 @@ contains
     select case(NameParticle)
     case('e','Electron','electron','ELECTRON')
        momentum_to_kinetic_energy=(Momentum*cLightSpeed)**2/(&
-            sqrt((Momentum*cLightSpeed)**2+cRMEElectron**2) +&
-            cRMEElectron)
+            sqrt((Momentum*cLightSpeed)**2+cRmeElectron**2) +&
+            cRmeElectron)
     case('p','Proton','proton','PROTON')
        momentum_to_kinetic_energy=(Momentum*cLightSpeed)**2/(&
-            sqrt((Momentum*cLightSpeed)**2+cRMEProton**2)   +&
-            cRMEProton)
+            sqrt((Momentum*cLightSpeed)**2+cRmeProton**2)   +&
+            cRmeProton)
     case default
        call CON_stop(&
             'Do not know the rest mass energy for '//NameParticle)
@@ -242,10 +242,10 @@ contains
     !--------------------------------------------------------------------------
     select case(NameParticle)
     case('e','Electron','electron','ELECTRON')
-       energy_to_momentum=sqrt(Energy**2-cRMEElectron**2)/&
+       energy_to_momentum=sqrt(Energy**2-cRmeElectron**2)/&
             cLightSpeed
     case('p','Proton','proton','PROTON')
-       energy_to_momentum=sqrt(Energy**2 - cRMEProton**2)/&
+       energy_to_momentum=sqrt(Energy**2 - cRmeProton**2)/&
             cLightSpeed
     case default
        call CON_stop(&
@@ -262,10 +262,10 @@ contains
     select case(NameParticle)
     case('e','Electron','electron','ELECTRON')
        kinetic_energy_to_momentum=sqrt(&
-            Energy*(Energy + 2*cRMEElectron))/cLightSpeed
+            Energy*(Energy + 2*cRmeElectron))/cLightSpeed
     case('p','Proton','proton','PROTON')
        kinetic_energy_to_momentum=sqrt(&
-            Energy*(Energy + 2*cRMEProton  ))/cLightSpeed
+            Energy*(Energy + 2*cRmeProton  ))/cLightSpeed
     case default
        call CON_stop(&
             'Do not know the rest mass energy for '//NameParticle)
