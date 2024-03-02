@@ -1540,7 +1540,7 @@ pro slice_data_restore
 end
 
 ;=============================================================================
-pro read_log_data
+pro read_log_data, scalar=scalar
 
 ; Read the log data from 1, 2, or 3 files into the wlog, wlog1, wlog2 arrays
 ; Store the names of the variables into wlognames, wlognames1 and wlognames2
@@ -1575,7 +1575,7 @@ pro read_log_data
   
   ; First time read the row names into wlogrownames
   get_log, logfilenames(0), wlog,  wlognames,  logtime, timeunit, $
-           wlogrownames, /verbose
+           wlogrownames, /verbose, scalar=scalar
 
   if nlogfile ge 2 then get_log, $
      logfilenames(1), wlog1, wlognames1, logtime1, timeunit, verbose='1'
@@ -5820,7 +5820,7 @@ end
      
 ;=============================================================================
 pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
-             rownames, verbose=verbose
+             rownames, verbose=verbose, scalar=scalar
 
 ; Read the log data from source. If source is an integer, it is 
 ; interpreted as a unit number. If it is a string, it is taken as the
@@ -5934,6 +5934,8 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
   ;; If verbose is a string set the index string to it
   if size(verbose,/type) eq 7 then index=verbose else index=''
 
+  if not keyword_set(scalar) then scalar = 0
+  
   ;; Use buffers for efficient reading
   line  = ''
   firstcolumn = 0 ; first column with numbers
@@ -5969,7 +5971,7 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
         if not isheader then begin
            n = 0
            string_to_array, line, numbers, n
-           if n le 1 then isheader=1
+           if n le 1 and not scalar then isheader=1
         endif
         
         if isheader then begin
