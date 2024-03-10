@@ -1243,9 +1243,10 @@ pro animate_data
         endif else if savemovie ne 'n' and !d.name eq 'X' then begin
            imagefile=string(FORMAT='("Movie/",i4.4,".",a)',iplot+1,savemovie)
            print,FORMAT='("(",a,")",$)',imagefile
-           write_image, imagefile, savemovie, $
-                       tvrd( order=(savemovie eq 'tiff'), true=1), $
-                       r_curr, g_curr, b_curr
+           if savemovie eq 'png' then write_png, imagefile, tvrd(/true) $
+           else write_image, imagefile, savemovie, $
+                             tvrd( order=(savemovie eq 'tiff'), true=1), $
+                             r_curr, g_curr, b_curr
         endif
      endif
 
