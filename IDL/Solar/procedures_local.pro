@@ -1688,6 +1688,9 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
      endif
   endfor
 
+  index_obs = -1
+  index_sim = -1
+  
   if n_elements(index_cme) gt 1 then begin
      index_cme = index_cme[1:-1]
      ;; extract CME indices for both observations & sims
@@ -1716,7 +1719,6 @@ pro plot_insitu, time_obs,  u_obs,  n_obs,  T_obs,   B_obs,                   $
   time_obs_local = time_obs
   time_obs_local(index_obs) = -1
   index_nocme = where(time_obs_local gt -1) 
-;  print,'Final Indices for OBS=',index_nocme
   time_obs_local = time_obs[index_nocme]
   u_obs_local = u_obs[index_nocme]
   n_obs_local = n_obs[index_nocme]
@@ -2338,12 +2340,11 @@ pro get_insitu_data, start_time, end_time, TypeData, u_obs,     $
         obs_data=spdfgetdata('OMNI_COHO1HR_MERGED_MAG_PLASMA', $
                              ['ABS_B' , 'V', 'N','T','BR'],    $
                              [start_time, end_time])
-
+        
         if(not isa(obs_data)) then begin
            print, ' Could not obtain OMNI data.'
            RETURN
         endif
-
         u_obs    = obs_data.v.dat
         n_obs    = obs_data.n.dat
         tem_obs  = obs_data.t.dat
