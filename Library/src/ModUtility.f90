@@ -423,7 +423,7 @@ contains
   end subroutine fix_dir_name
   !============================================================================
   subroutine open_file(iUnitIn, File, Form, Status, Position, Access, Recl, &
-       iComm, NameCaller)
+       iComm, NameCaller, iErrorOut)
 
     ! Interface for the Fortran open statement with error checking.
     ! If an error occurs, the code stops and writes out the unit number,
@@ -449,6 +449,7 @@ contains
     integer,          optional, intent(in):: Recl
     integer,          optional, intent(in):: iComm
     character(len=*), optional, intent(in):: NameCaller
+    integer,          optional, intent(out):: iErrorOut
 
     character(len=20):: TypeForm, TypeStatus, TypePosition, TypeAccess
 
@@ -471,6 +472,8 @@ contains
 
     TypeAccess = 'sequential'
     if(present(Access)) TypeAccess = Access
+
+    if(present(iErrorOut))iErrorOut = 0
 
     if(present(Recl))then
        if(present(iComm))then
@@ -506,9 +509,13 @@ contains
     end if
 
     if(iError /= 0)then
-       write(*,*) NameSub,' iUnit, iError=', iUnit, iError
-       if(present(NameCaller)) write(*,*) 'NameCaller=', NameCaller
-       call CON_stop(NameSub//' could not open file='//trim(File))
+       if(present(iErrorOut))then
+          iErrorOut = iError
+       else
+          write(*,*) NameSub,' iUnit, iError=', iUnit, iError
+          if(present(NameCaller)) write(*,*) 'NameCaller=', NameCaller
+          call CON_stop(NameSub//' could not open file='//trim(File))
+       end if
     end if
 
   end subroutine open_file
