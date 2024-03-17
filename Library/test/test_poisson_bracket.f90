@@ -940,16 +940,17 @@ module ModTestMultiPoisson
   use ModUtilities,      ONLY: CON_stop
   use ModNumConst,       ONLY: cTwoPi
   use ModPlotFile,       ONLY: save_plot_file
-  use ModConst,          ONLY: cRmeProton, cGeV, rSun, cLightSpeed, cTiny
+  use ModConst,          ONLY: cRmeProton, cGeV, rSun, cLightSpeed
   implicit none
-  integer, parameter :: nQ = 132   ! Number of grid of s_L
+  integer, parameter :: nQ = 160   ! Number of grid of s_L
   integer, parameter :: nP = 20    ! Number of grid of \mu = cos(pitch angle)
-  integer, parameter :: nR = 40    ! Number of grid of ln(p^3/3) axis
+  integer, parameter :: nR = 60    ! Number of grid of ln(p^3/3) axis
 contains
   !============================================================================
   subroutine test_multi_poisson(tFinal)
     real, intent(in) :: tFinal
     ! Local VARs:
+    real, parameter  :: cMinVal = 1.0e-8  ! We set Min Value of VDF as 1.0e-8
     ! ------------ File ------------
     ! Unit for field line files: Old and new field lines
     integer, parameter :: nInFileOld = 8, nInFileNew = 9
@@ -959,7 +960,7 @@ contains
     integer, parameter :: x_ = 2, y_ = 3, z_ = 4, ux_ = 7, uy_ = 8, &
          uz_ = 9, Bx_ = 10, By_= 11, Bz_ = 12, Wave1_ = 13, Wave2_ = 14
     ! Stride of line of the data reading
-    integer, parameter :: nStride = 30
+    integer, parameter :: nStride = 25
     ! Lagr index that is gaped for field line at each time
     integer, parameter :: iLagrIdSkip = 20
     ! Read the redundant data
@@ -975,6 +976,12 @@ contains
     ! The data calculated directly from RawData (MHD data)
     real :: DeltaSOverB_C(1:nQ), dDeltaSOverBDt_C(1:nQ), &
          InvB_C(1:nQ), bDuDt_C(1:nQ), dLnBDeltaS2Dt_C(1:nQ)
+    ! \Deltas/b, 1/(2B), ln(B\deltas^2) at Old time
+    real :: DeltaSOverBOld_C(nQ), InvBOld_C(nQ), LnBDeltaS2Old_C(nQ)
+    ! \Deltas/b, 1/(2B), ln(B\deltas^2) at New time
+    real :: DeltaSOverBNew_C(nQ), InvBNew_C(nQ), LnBDeltaS2New_C(nQ)
+    ! Midpoint for to consecutive points, \deltas
+    real :: MidPoint_ID(nQ-1, x_:z_), DeltaS_I(nQ)
 
     ! ------------ Pitch angle ------------
     ! Now we have the parameters for "Q"-coordinate (s_L)
@@ -1067,8 +1074,18 @@ contains
          VarIn_II = log10(VDFOutput_II(1:nQ,1:nR)))
 
     ! Start the main simulation loop
-    ! In the loop, we output several snapshots of VDF
     iStep = 0; Time = 0.0
+    call calc_data_states
+    call update_states(Time, dDeltaSOverBDt_C = dDeltaSOverBDt_C)
+    ! Calculate the total control volume
+    do iR = 1, nR
+       do iQ = 1, nQ
+          DVolumeDt_G(iQ, 0:nP+1, iR) = &
+               dDeltaSOverBDt_C(iQ)*DeltaMu*DeltaP3_I(iR)
+       end do
+    end do
+
+    ! In the loop, we output several snapshots of VDF
     do iOutputFile = 1, nOutputFile
        tOutput = tFinal/real(nOutputFile)*real(iOutputFile)
        ! In this loop, we first update the RawData and calculate three
@@ -1077,7 +1094,7 @@ contains
        do
           write(*,*) iStep, Time
           ! Import MHD data at all the calculation time
-          call calc_initial_data(Time,                &
+          call update_states(Time,                    &
                DeltaSOverB_C = DeltaSOverB_C,         &
                dDeltaSOverBDt_C = dDeltaSOverBDt_C,   &
                InvB_C = InvB_C, bDuDt_C = bDuDt_C,    &
@@ -1100,8 +1117,6 @@ contains
           do iR = 1, nR
              do iQ = 1, nQ
                 Volume_G(iQ, 0:nP+1, iR) = DeltaSOverB_C(iQ)*  &
-                     DeltaMu*DeltaP3_I(iR)
-                DVolumeDt_G(iQ, 0:nP+1, iR) = dDeltaSOverBDt_C(iQ)*  &
                      DeltaMu*DeltaP3_I(iR)
              end do
           end do
@@ -1141,7 +1156,7 @@ contains
              Time = Time + Dt
              Source_C = Source_C*Volume_G(1:nQ,1:nP,1:nR)
              ! Update DeltaSOverB_C for the calculation of volume
-             call calc_initial_data(Time, DeltaSOverB_C = DeltaSOverB_C)
+             call update_states(Time, DeltaSOverB_C = DeltaSOverB_C)
              ! Calculate the total control volume
              do iR = 1, nR
                 do iQ = 1, nQ
@@ -1166,7 +1181,7 @@ contains
        end do
 
        ! Set a min value for VDF_G
-       VDF_G = max(VDF_G, cTiny)
+       VDF_G = max(VDF_G, cMinVal)
        ! Set the name of files, with the largest number being 999
        write(NameFileSuffix, '(I3.3)') iOutputFile
        ! Calculate VDF for output: integrate over the \mu axis
@@ -1228,7 +1243,7 @@ contains
     subroutine init_test_VDF
       ! Initialize the distribution function VDF_G
       !------------------------------------------------------------------------
-      VDF_G = cTiny
+      VDF_G = cMinVal
 
       ! Assign the VDF at positive \mu
       do iR = 1, nR
@@ -1236,12 +1251,12 @@ contains
             if(iQ <= ParticleRange1) then
                ! Assume momentum follow a power distribution: f ~ p^-5
                VDF_G(iQ, nP/2:nP, iR) = max(0.1*exp(-5.0/3.0* &
-                    (LnP3min + iR*DeltaLnP3)), cTiny)
+                    (LnP3min + iR*DeltaLnP3)), cMinVal)
             elseif(iQ <= ParticleRange2) then
                ! Use a linear slope for the middle part
                VDF_G(iQ, nP/2:nP, iR) = max(0.1*exp(-5.0/3.0* &
                     (LnP3min + iR*DeltaLnP3))*(ParticleRange2 - real(iQ))/ &
-                    (ParticleRange2 - ParticleRange1), cTiny)
+                    (ParticleRange2 - ParticleRange1), cMinVal)
             end if
          end do
       end do
@@ -1273,25 +1288,11 @@ contains
       VDF_G(:, :, nR+2) = VDF_G(:, :,   nR)
     end subroutine set_VDF_Bc
     !==========================================================================
-    subroutine calc_initial_data(Time, DeltaSOverB_C, &
-         dDeltaSOverBDt_C, InvB_C, bDuDt_C, dLnBDeltaS2Dt_C)
-      ! Calculate data from the input files
-
-      real, intent(in)    :: Time
-      real, optional, intent(inout) :: DeltaSOverB_C(nQ),   &
-           dDeltaSOverBDt_C(nQ), InvB_C(nQ), bDuDt_C(nQ), DLnBdeltaS2Dt_C(nQ)
-      ! \Deltas/b, 1/(2B), ln(B\deltas^2) at Old time
-      real :: DeltaSOverBOld_C(nQ), InvBOld_C(nQ), LnBDeltaS2Old_C(nQ)
-      ! \Deltas/b, 1/(2B), ln(B\deltas^2) at New time
-      real :: DeltaSOverBNew_C(nQ), InvBNew_C(nQ), LnBDeltaS2New_C(nQ)
-      ! Magnetic field strength B at cell center
-      real :: B_C(nQ, 3)
-      ! Midpoint for to consecutive points, \deltas
-      real :: MidPoint_ID(nQ-1, x_:z_), DeltaS_I(nQ)
+    subroutine calc_data_states
+      ! Calculate data states from the input files
 
       ! Calculate values at OLD time
       ! Calculate midpoints
-      !------------------------------------------------------------------------
       MidPoint_ID(1:nQ-1, x_:z_) = (RawData1_II(2:nQ,x_:z_) &
            + RawData1_II(1:nQ-1,x_:z_))*0.5
       ! Calculate DeltaS
@@ -1340,6 +1341,19 @@ contains
       LnBDeltaS2New_C = log(sqrt(RawData2_II(:, Bx_)**2 +&
            RawData2_II(:, By_)**2 + RawData2_II(:, Bz_)**2)*DeltaS_I**2)
 
+    end subroutine calc_data_states
+    !==========================================================================
+    subroutine update_states(Time, DeltaSOverB_C, &
+         dDeltaSOverBDt_C, InvB_C, bDuDt_C, dLnBDeltaS2Dt_C)
+      ! Update states according to the current time
+
+      real, intent(in)    :: Time
+      real, optional, intent(inout) :: DeltaSOverB_C(nQ),   &
+           dDeltaSOverBDt_C(nQ), InvB_C(nQ), bDuDt_C(nQ), dLnBdeltaS2Dt_C(nQ)
+      ! Magnetic field strength B at cell center
+      real :: B_C(nQ, 3)
+
+      !------------------------------------------------------------------------
       ! Calculate values for CURRENT time: here we use linear interpolation
       ! to get the data of each time step from every to consecutive files
       ! Calculate B at cell center
@@ -1352,10 +1366,10 @@ contains
       if (present(DeltaSOverB_C)) DeltaSOverB_C = DeltaSOverBOld_C + &
            (DeltaSOverBNew_C - DeltaSOverBOld_C)/tEachFile*Time
       ! Calculate \deltas/B time derivative (for next time)
-      if (present(DdeltaSOverBDt_C)) dDeltaSOverBDt_C =  &
+      if (present(dDeltaSOverBDt_C)) dDeltaSOverBDt_C =  &
            (DeltaSOverBNew_C - DeltaSOverBOld_C)/tEachFile
       ! Calculate Dln(B\deltas^2)/Dt
-      if (present(DLnBdeltaS2Dt_C)) DLnBdeltaS2Dt_C = &
+      if (present(dLnBdeltaS2Dt_C)) DLnBdeltaS2Dt_C = &
            (LnBDeltaS2New_C - LnBDeltaS2Old_C)/tEachfile
       ! Calculate b*Du/Dt
       if (present(bDuDt_C)) bDuDt_C = (&
@@ -1363,7 +1377,7 @@ contains
            B_C(:, 2)*(RawData2_II(:, By_) - RawData1_II(:, By_)) +   &
            B_C(:, 3)*(RawData2_II(:, Bz_) - RawData1_II(:, Bz_)))*   &
            2.0*InvB_C/tEachFile
-    end subroutine calc_initial_data
+    end subroutine update_states
     !==========================================================================
     subroutine calc_hamiltonian_1
       ! Calculate the 1st Hamiltonian function with time:
