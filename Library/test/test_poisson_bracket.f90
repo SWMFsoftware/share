@@ -943,11 +943,31 @@ module ModTestMultiPoisson
   use ModConst,          ONLY: cRmeProton, cGeV, &
        cMu, cAtomicMass, rSun, cLightSpeed
   implicit none
+  ! Grid setups
   integer, parameter :: nQ = 160   ! Number of grid of s_L
   integer, parameter :: nP = 20    ! Number of grid of \mu = cos(pitch angle)
   integer, parameter :: nR = 60    ! Number of grid of ln(p^3/3) axis
+  ! Unit setups
   real, parameter :: cRmeProtonGeV = cRmeProton/cGeV ! Proton mass: GeV/c^2
   real, parameter :: CoeffMuToxx = 27.0/14.0         ! DMuMu => Dxx constant
+  ! Physical parameter reading setups
+  real, parameter :: tEachFile = 100.0    ! Time range of each input file
+  ! Number of variables in each line of the input files
+  integer, parameter :: nVar = 14
+  ! Position of the variables in the input line
+  integer, parameter :: x_ = 2, y_ = 3, z_ = 4,    &
+       rho_ = 5, ux_ = 7, uy_ = 8, uz_ = 9,        &
+       Bx_ = 10, By_= 11, Bz_ = 12, Wave1_ = 13, Wave2_ = 14
+  ! OLD and NEW variables from raw data files
+  ! Raw data imported from MHD files
+  real :: RawData1_II(nQ, nVar), RawData2_II(nQ, nVar)
+  ! \Deltas/b, 1/(2B), ln(B\deltas^2) at Old time
+  real :: DeltaSOverBOld_C(nQ), InvBOld_C(nQ), LnBDeltaS2Old_C(nQ)
+  ! \Deltas/b, 1/(2B), ln(B\deltas^2) at New time
+  real :: DeltaSOverBNew_C(nQ), InvBNew_C(nQ), LnBDeltaS2New_C(nQ)
+  ! Midpoint for to consecutive points, \deltas
+  real :: MidPoint_ID(nQ-1, x_:z_), DeltaS_I(nQ), DeltaSface_I(1:nQ-1)
+
 contains
   !============================================================================
   subroutine test_multi_poisson(tFinal, TypeScatter)
@@ -962,20 +982,12 @@ contains
     ! ------------ File ------------
     ! Unit for field line files: Old and new field lines
     integer, parameter :: nInFileOld = 8, nInFileNew = 9
-    ! Number of variables in each line of the input files
-    integer, parameter :: nVar = 14
-    ! Position of the variables in the input line
-    integer, parameter :: x_ = 2, y_ = 3, z_ = 4,     &
-         rho_ = 5, ux_ = 7, uy_ = 8, uz_ = 9,         &
-         Bx_ = 10, By_= 11, Bz_ = 12, Wave1_ = 13, Wave2_ = 14
     ! Stride of line of the data reading
     integer, parameter :: nStride = 25
     ! Lagr index that is gaped for field line at each time
     integer, parameter :: iLagrIdSkip = 20
     ! Read the redundant data
     real               :: GapData
-    ! Raw data imported from MHD files
-    real               :: RawData1_II(nQ, nVar), RawData2_II(nQ, nVar)
     ! Heliocentric distance, for visualization
     real               :: HelioDist_I(nQ)
     ! Number of outputs:
@@ -985,12 +997,6 @@ contains
     ! The data calculated directly from RawData (MHD data)
     real :: DeltaSOverB_C(nQ), dDeltaSOverBDt_C(nQ),  &
          InvB_C(nQ), bDuDt_C(nQ), dLnBDeltaS2Dt_C(nQ)
-    ! \Deltas/b, 1/(2B), ln(B\deltas^2) at Old time
-    real :: DeltaSOverBOld_C(nQ), InvBOld_C(nQ), LnBDeltaS2Old_C(nQ)
-    ! \Deltas/b, 1/(2B), ln(B\deltas^2) at New time
-    real :: DeltaSOverBNew_C(nQ), InvBNew_C(nQ), LnBDeltaS2New_C(nQ)
-    ! Midpoint for to consecutive points, \deltas
-    real :: MidPoint_ID(nQ-1, x_:z_), DeltaS_I(nQ), DeltaSface_I(1:nQ-1)
 
     ! ------------ Pitch angle ------------
     ! Now we have the parameters for "Q"-coordinate (s_L)
@@ -1035,7 +1041,6 @@ contains
     real :: LambdaMuMu_II(nQ, nR)            ! lambda_\mu\mu from raw data
 
     ! ------------ Time variables ------------
-    real, parameter :: tEachFile = 100.0     ! Time range of each input file
     real            :: Time, Dt, DtNext      ! Simulation time, time step
     real            :: tOutput               ! Time of each output file
     logical         :: DoExit                ! Exit time marching
@@ -1099,7 +1104,7 @@ contains
     ! Start the main simulation loop
     iStep = 0; Time = 0.0
     call calc_data_states
-    call update_states(Time, dDeltaSOverBDt_C = dDeltaSOverBDt_C)
+    call update_states(nQ, Time, dDeltaSOverBDt_C = dDeltaSOverBDt_C)
     ! Calculate the total control volume
     do iR = 1, nR
        do iQ = 1, nQ
@@ -1107,8 +1112,19 @@ contains
                dDeltaSOverBDt_C(iQ)*DeltaMu*DeltaP3_I(iR)
        end do
     end do
+    ! Boundary conditions for total control volume time derivative
+    DVolumeDt_G(0,    :,    :) = DVolumeDt_G(1 , :,  :)
+    DVolumeDt_G(nQ+1, :,    :) = DVolumeDt_G(nQ, :,  :)
+    DVolumeDt_G(:,    :,    0) = DVolumeDt_G(: , :,  1)
+    DVolumeDt_G(:,    :, nR+1) = DVolumeDt_G(: , :, nR)
 
-    call advance_advect          ! Set up first trial to get DtNext
+    ! Set up first trial to get DtNext
+    call advance_advect(nP, nQ, nR, DeltaMu,                      &
+         MomentumFace_I, dDeltaSOverBDt_C, DeltaHamiltonian1_N,   &
+         DeltaP3_I, Velocity_I, InvB_C, Hamiltonian2_N,           &
+         DeltaSOverB_C, dLnBDeltaS2Dt_C, bDuDt_C, Hamiltonian3_N, &
+         iStep, Time, Dt, DtNext, Cfl,                            &
+         Volume_G, DVolumeDt_G, VDF_G, Source_C)
     call init_test_VDF           ! Recover VDF to its initial state
     Source_C = 0.0               ! Recover source to its initial state
 
@@ -1130,14 +1146,23 @@ contains
           if (trim(TypeScatter)=='no' .or.   &
                trim(TypeScatter)=='advect_scatter') then
              ! Use Poisson scheme for advection, and calculate Source_C
-             call advance_advect
+             call advance_advect(nP, nQ, nR, DeltaMu,                      &
+                  MomentumFace_I, dDeltaSOverBDt_C, DeltaHamiltonian1_N,   &
+                  DeltaP3_I, Velocity_I, InvB_C, Hamiltonian2_N,           &
+                  DeltaSOverB_C, dLnBDeltaS2Dt_C, bDuDt_C, Hamiltonian3_N, &
+                  iStep, Time, Dt, DtNext, Cfl,                            &
+                  Volume_G, DVolumeDt_G, VDF_G, Source_C)
 
              if (DoExit) then
+                ! This step is at tOutput
                 VDF_G(1:nQ, 1:nP, 1:nR) = VDF_G(1:nQ, 1:nP, 1:nR) + Source_C
              else
+                ! This step is not at tOutput
+                ! Update VDF_G considering the time-dependent Volume_G
+
                 Source_C = Source_C*Volume_G(1:nQ,1:nP,1:nR)
                 ! Update DeltaSOverB_C for the calculation of volume
-                call update_states(Time, DeltaSOverB_C = DeltaSOverB_C)
+                call update_states(nQ, Time, DeltaSOverB_C = DeltaSOverB_C)
                 ! Calculate the total control volume
                 do iR = 1, nR
                    Volume_G(1:nQ, 0, iR) = DeltaSOverB_C*   &
@@ -1159,16 +1184,20 @@ contains
              end if
 
              Source_C = 0.0
+             ! If there is no scatter, there is only advection
+             ! If there is advect_scatter, we will include scattering effect
              if (trim(TypeScatter)=='advect_scatter') then
                 call calc_scatter(nQ, nP, nR, Dt, DeltaMu,     &
                      Velocity_I, InvB_C, RawData1_II(:, rho_), &
                      LambdaMuMu_II, VDF_G(1:nQ, 1:nP, 1:nR))
              end if
           elseif (trim(TypeScatter)=='diffuse_scatter') then
+             ! There is only scattering by diffusion
              call diffuse_scatter(nP, nQ, nR, Dt, DeltaMu,  &
                   Velocity_I, InvB_C, DeltaSface_I,         &
                   LambdaMuMu_II, VDF_G(1:nQ, 1:nP, 1:nR))
           else
+             ! Unrecognized specified scatter type
              call CON_stop('test_multi_poisson: '//   &
                   'Unknown TypeScatter = '//TypeScatter)
           end if
@@ -1177,7 +1206,7 @@ contains
           iStep = iStep + 1    ! March step
           Time = Time + DtNext ! March time
           write(*,*) iStep, Time
-          if(DoExit) EXIT      ! Till tOutput, exit the current loop
+          if(DoExit) EXIT      ! Reach tOutput, exit the current loop
 
        end do
 
@@ -1348,106 +1377,42 @@ contains
 
     end subroutine calc_data_states
     !==========================================================================
-    subroutine update_states(Time, DeltaSOverB_C, &
-         dDeltaSOverBDt_C, InvB_C, bDuDt_C, dLnBDeltaS2Dt_C)
-      ! Update states according to the current time
-
-      real, intent(in)    :: Time
-      real, optional, intent(inout) :: DeltaSOverB_C(nQ),   &
-           dDeltaSOverBDt_C(nQ), InvB_C(nQ), bDuDt_C(nQ), dLnBdeltaS2Dt_C(nQ)
-      ! Magnetic field strength B at cell center
-      real :: B_C(nQ, 3)
-
-      ! Calculate values for CURRENT time: here we use linear interpolation
-      ! to get the data of each time step from every to consecutive files
-      !------------------------------------------------------------------------
-      ! Calculate B at cell center
-      if (present(bDuDt_C)) B_C = RawData1_II(:, Bx_:Bz_) + &
-           (RawData2_II(:, Bx_:Bz_) - RawData1_II(:, Bx_:Bz_))/tEachFile*Time
-      ! Calculate 1/2B
-      if (present(InvB_C)) InvB_C = InvBOld_C + &
-           (InvBNew_C - InvBOld_C)/tEachFile*Time
-      ! Calculate \deltas/B
-      if (present(DeltaSOverB_C)) DeltaSOverB_C = DeltaSOverBOld_C + &
-           (DeltaSOverBNew_C - DeltaSOverBOld_C)/tEachFile*Time
-      ! Calculate \deltas/B time derivative (for next time)
-      if (present(dDeltaSOverBDt_C)) dDeltaSOverBDt_C =  &
-           (DeltaSOverBNew_C - DeltaSOverBOld_C)/tEachFile
-      ! Calculate Dln(B\deltas^2)/Dt
-      if (present(dLnBdeltaS2Dt_C)) DLnBdeltaS2Dt_C = &
-           (LnBDeltaS2New_C - LnBDeltaS2Old_C)/tEachfile
-      ! Calculate b*Du/Dt
-      if (present(bDuDt_C)) bDuDt_C = sum(B_C *                         &
-           (RawData2_II(:, Bx_:Bz_) - RawData1_II(:, Bx_:Bz_)), dim=2)* &
-           2.0*InvB_C/tEachFile
-    end subroutine update_states
-    !==========================================================================
-    subroutine advance_advect
-      ! Advect transport equation by multi_Poisson scheme
-
-      ! Import MHD data at all the calculation time
-      call update_states(Time,                    &
-           DeltaSOverB_C = DeltaSOverB_C,         &
-           dDeltaSOverBDt_C = dDeltaSOverBDt_C,   &
-           InvB_C = InvB_C, bDuDt_C = bDuDt_C,    &
-           dLnBDeltaS2Dt_C = dLnBDeltaS2Dt_C)
-      Hamiltonian2_N = 0.0
-      Hamiltonian3_N = 0.0
-
-      ! Calculate 1st Hamiltonian function used in the time-dependent
-      ! poisson bracket: {f_jk, (p^3/3)*(DeltaS/B)}_{tau, p^3/3}
-      call calc_hamiltonian_1(nP, nQ, nR, DeltaMu,   &
-           MomentumFace_I, dDeltaSOverBDt_C, DeltaHamiltonian1_N)
-      ! Calculate 2nd Hamiltonian function used in the time-dependent
-      ! poisson bracket: {f_jk, (mu^2-1)*v/(2B)}_{s_L, mu}
-      call calc_hamiltonian_2(nP, nQ, nR, DeltaMu,   &
-           DeltaP3_I, Velocity_I, InvB_C, Hamiltonian2_N)
-      ! Calculate 3rd Hamiltonian function used in the time-dependent
-      ! poisson bracket: {f_jk, (1-mu^2)/2 * [ mu*(p^3/3)*
-      ! d(ln(B*ds^2))/dt + ProtonMass*p^2*bDuDt_C ]}_{p^3/3, mu}
-      call calc_hamiltonian_3(nP, nQ, nR, DeltaMu, MomentumFace_I,  &
-           DeltaSOverB_C, dLnBDeltaS2Dt_C, bDuDt_C, Hamiltonian3_N)
-
-      ! Calculate the total control volume
-      do iR = 1, nR
-         Volume_G(1:nQ, 0, iR) = DeltaSOverB_C*DeltaMu*DeltaP3_I(iR)
-         do iP = 1, nP+1
-            Volume_G(1:nQ, iP, iR) = Volume_G(1:nQ, 0, iR)
-         end do
-      end do
-
-      ! Boundary conditions for total control volume
-      Volume_G(0,    :,    :) = Volume_G(1 , :,  :)
-      Volume_G(nQ+1, :,    :) = Volume_G(nQ, :,  :)
-      Volume_G(:,    :,    0) = Volume_G(: , :,  1)
-      Volume_G(:,    :, nR+1) = Volume_G(: , :, nR)
-      ! Boundary conditions for total control volume time derivative
-      DVolumeDt_G(0,    :,    :) = DVolumeDt_G(1 , :,  :)
-      DVolumeDt_G(nQ+1, :,    :) = DVolumeDt_G(nQ, :,  :)
-      DVolumeDt_G(:,    :,    0) = DVolumeDt_G(: , :,  1)
-      DVolumeDt_G(:,    :, nR+1) = DVolumeDt_G(: , :, nR)
-
-      ! First trial: Need DtNext as DtOut
-      if (iStep == 0) then
-         call explicit(nQ, nP, nR, VDF_G, Volume_G, Source_C, &
-              Hamiltonian12_N = Hamiltonian2_N,               &
-              Hamiltonian23_N = -Hamiltonian3_N,              &
-              dHamiltonian03_FZ = DeltaHamiltonian1_N,        &
-              DVolumeDt_G = DVolumeDt_G,                      &
-              DtOut = DtNext, CFLIn=Cfl)
-         ! Subsequent trials: with DtIn=Dt and DtOut=DtNext
-      else
-         call explicit(nQ, nP, nR, VDF_G, Volume_G, Source_C, &
-              Hamiltonian12_N = Hamiltonian2_N,               &
-              Hamiltonian23_N = -Hamiltonian3_N,              &
-              dHamiltonian03_FZ = DeltaHamiltonian1_N,        &
-              DVolumeDt_G = DVolumeDt_G,                      &
-              DtIn = Dt, DtOut = DtNext, CFLIn=Cfl)
-      end if
-
-    end subroutine advance_advect
-    !==========================================================================
   end subroutine test_multi_poisson
+  !============================================================================
+  subroutine update_states(nQ, Time, DeltaSOverB_C, &
+       dDeltaSOverBDt_C, InvB_C, bDuDt_C, dLnBDeltaS2Dt_C)
+    ! Update states according to the current time
+
+    integer, intent(in) :: nQ     ! Number of grid along s_L axis
+    real, intent(in)    :: Time   ! Current time
+    real, optional, intent(inout) :: DeltaSOverB_C(nQ),   &
+         dDeltaSOverBDt_C(nQ), InvB_C(nQ), bDuDt_C(nQ), dLnBdeltaS2Dt_C(nQ)
+    ! Magnetic field strength B at cell center
+    real :: B_C(nQ, 3)
+
+    ! Calculate values for CURRENT time: here we use linear interpolation
+    ! to get the data of each time step from every to consecutive files
+    !--------------------------------------------------------------------------
+    ! Calculate B at cell center
+    if (present(bDuDt_C)) B_C = RawData1_II(:, Bx_:Bz_) + &
+         (RawData2_II(:, Bx_:Bz_) - RawData1_II(:, Bx_:Bz_))/tEachFile*Time
+    ! Calculate 1/2B
+    if (present(InvB_C)) InvB_C = InvBOld_C + &
+         (InvBNew_C - InvBOld_C)/tEachFile*Time
+    ! Calculate \deltas/B
+    if (present(DeltaSOverB_C)) DeltaSOverB_C = DeltaSOverBOld_C + &
+         (DeltaSOverBNew_C - DeltaSOverBOld_C)/tEachFile*Time
+    ! Calculate \deltas/B time derivative (for next time)
+    if (present(dDeltaSOverBDt_C)) dDeltaSOverBDt_C =  &
+         (DeltaSOverBNew_C - DeltaSOverBOld_C)/tEachFile
+    ! Calculate Dln(B\deltas^2)/Dt
+    if (present(dLnBdeltaS2Dt_C)) DLnBdeltaS2Dt_C = &
+         (LnBDeltaS2New_C - LnBDeltaS2Old_C)/tEachfile
+    ! Calculate b*Du/Dt
+    if (present(bDuDt_C)) bDuDt_C = sum(B_C *                         &
+         (RawData2_II(:, Bx_:Bz_) - RawData1_II(:, Bx_:Bz_)), dim=2)* &
+         2.0*InvB_C/tEachFile
+  end subroutine update_states
   !============================================================================
   subroutine calc_hamiltonian_1(nP, nQ, nR, DeltaMu,  &
        MomentumFace_I, dDeltaSOverBDt_C, DeltaHamiltonian1_N)
@@ -1494,8 +1459,8 @@ contains
     real, intent(inout) :: Hamiltonian2_N(-1:nQ+1, -1:nP+1, 0:nR+1)
     real                :: InvB_F(0:nQ)   ! Intermediate array
     integer             :: iP, iR         ! Loop variables
-    ! Calculate 1/(2B) on the boundary of grid
     !--------------------------------------------------------------------------
+    ! Calculate 1/(2B) on the boundary of grid
     InvB_F(1:nQ-1) = (InvB_C(2:nQ) + InvB_C(1:nQ-1))*0.5
     InvB_F(0 )     = InvB_C(1 ) - (InvB_C(2 ) - InvB_C(1   ))*0.5
     InvB_F(nQ)     = InvB_C(nQ) + (InvB_C(nQ) - InvB_C(nQ-1))*0.5
@@ -1563,6 +1528,94 @@ contains
     Hamiltonian3_N(:   , :   , -1  ) = Hamiltonian3_N(: , :   , 0 )
     Hamiltonian3_N(:   , :   , nR+1) = Hamiltonian3_N(: , :   , nR)
   end subroutine calc_hamiltonian_3
+  !============================================================================
+  subroutine advance_advect(nP, nQ, nR, DeltaMu,               &
+       MomentumFace_I, dDeltaSOverBDt_C, DeltaHamiltonian1_N,  &
+       DeltaP3_I, Velocity_I, InvB_C, Hamiltonian2_N,          &
+       DeltaSOverB_C, dLnBDeltaS2Dt_C, bDuDt_C, Hamiltonian3_N,&
+       iStep, Time, Dt, DtNext, CflIn,                         &
+       Volume_G, DVolumeDt_G, VDF_G, Source_C)
+    ! Advect transport equation by multi_Poisson scheme
+
+    integer, intent(in) :: nP, nQ, nR     ! Number of s_L, mu, ln(p^3/3) grids
+    real, intent(in)    :: DeltaMu        ! Distance of adjacent two mu's
+    real, intent(in)    :: MomentumFace_I(0:nR) ! Momentum at cell face
+    real, intent(inout) :: dDeltaSOverBDt_C(nQ) ! D[delta(s_L)/B]/Dt
+    real, intent(inout) :: DeltaHamiltonian1_N(0:nQ+1, 0:nP+1, -1:nR+1)
+    real, intent(in)    :: DeltaP3_I(nR)  ! Distance of adjacent two p^3/3
+    real, intent(in)    :: Velocity_I(nR) ! Particle velocity array
+    real, intent(inout) :: InvB_C(nQ)     ! 1/(2B) array
+    real, intent(inout) :: Hamiltonian2_N(-1:nQ+1, -1:nP+1, 0:nR+1)
+    real, intent(inout) :: DeltaSOverB_C(nQ), dLnBDeltaS2Dt_C(nQ), bDuDt_C(nQ)
+    real, intent(inout) :: Hamiltonian3_N(0:nQ+1, -1:nP+1, -1:nR+1)
+    integer, intent(in) :: iStep          ! Current step index
+    real, intent(in)    :: Time           ! Current physical time
+    real, intent(inout) :: Dt             ! DtIn, can be reduced
+    real, intent(inout) :: DtNext         ! DtOut, i.e., DtNext
+    real, intent(in)    :: CflIn          ! Input CFL number
+    real, intent(inout) :: Volume_G(0:nQ+1, 0:nP+1, 0:nR+1)    ! Control Volume
+    real, intent(in)    :: DVolumeDt_G(0:nQ+1, 0:nP+1, 0:nR+1) ! dVolume/dt
+    real, intent(inout) :: VDF_G(-1:nQ+2, -1:nP+2, -1:nR+2)    ! VDF
+    real, intent(inout) :: Source_C(nQ, nP, nR) ! Source at each time step
+    integer             :: iP, iR         ! Loop variables
+
+    ! Advect by multiple Poisson bracket considering the pitch angle
+    !--------------------------------------------------------------------------
+    call update_states(nQ, Time,                &
+         DeltaSOverB_C = DeltaSOverB_C,         &
+         dDeltaSOverBDt_C = dDeltaSOverBDt_C,   &
+         InvB_C = InvB_C, bDuDt_C = bDuDt_C,    &
+         dLnBDeltaS2Dt_C = dLnBDeltaS2Dt_C)     ! Update states first
+    Hamiltonian2_N = 0.0
+    Hamiltonian3_N = 0.0
+
+    ! Calculate 1st Hamiltonian function used in the time-dependent
+    ! poisson bracket: {f_jk, (p^3/3)*(DeltaS/B)}_{tau, p^3/3}
+    call calc_hamiltonian_1(nP, nQ, nR, DeltaMu,   &
+         MomentumFace_I, dDeltaSOverBDt_C, DeltaHamiltonian1_N)
+    ! Calculate 2nd Hamiltonian function used in the time-dependent
+    ! poisson bracket: {f_jk, (mu^2-1)*v/(2B)}_{s_L, mu}
+    call calc_hamiltonian_2(nP, nQ, nR, DeltaMu,   &
+         DeltaP3_I, Velocity_I, InvB_C, Hamiltonian2_N)
+    ! Calculate 3rd Hamiltonian function used in the time-dependent
+    ! poisson bracket: {f_jk, (1-mu^2)/2 * [ mu*(p^3/3)*
+    ! d(ln(B*ds^2))/dt + ProtonMass*p^2*bDuDt_C ]}_{p^3/3, mu}
+    call calc_hamiltonian_3(nP, nQ, nR, DeltaMu, MomentumFace_I,  &
+         DeltaSOverB_C, dLnBDeltaS2Dt_C, bDuDt_C, Hamiltonian3_N)
+
+    ! Calculate the total control volume
+    do iR = 1, nR
+       Volume_G(1:nQ, 0, iR) = DeltaSOverB_C*DeltaMu*DeltaP3_I(iR)
+       do iP = 1, nP+1
+          Volume_G(1:nQ, iP, iR) = Volume_G(1:nQ, 0, iR)
+       end do
+    end do
+
+    ! Boundary conditions for total control volume
+    Volume_G(0,    :,    :) = Volume_G(1 , :,  :)
+    Volume_G(nQ+1, :,    :) = Volume_G(nQ, :,  :)
+    Volume_G(:,    :,    0) = Volume_G(: , :,  1)
+    Volume_G(:,    :, nR+1) = Volume_G(: , :, nR)
+
+    ! First trial: Need DtNext as DtOut
+    if (iStep == 0) then
+       call explicit(nQ, nP, nR, VDF_G, Volume_G, Source_C, &
+            Hamiltonian12_N = Hamiltonian2_N,               &
+            Hamiltonian23_N = -Hamiltonian3_N,              &
+            dHamiltonian03_FZ = DeltaHamiltonian1_N,        &
+            DVolumeDt_G = DVolumeDt_G,                      &
+            DtOut = DtNext, CFLIn=CflIn)
+       ! Subsequent trials: with DtIn=Dt and DtOut=DtNext
+    else
+       call explicit(nQ, nP, nR, VDF_G, Volume_G, Source_C, &
+            Hamiltonian12_N = Hamiltonian2_N,               &
+            Hamiltonian23_N = -Hamiltonian3_N,              &
+            dHamiltonian03_FZ = DeltaHamiltonian1_N,        &
+            DVolumeDt_G = DVolumeDt_G,                      &
+            DtIn = Dt, DtOut = DtNext, CFLIn=CflIn)
+    end if
+
+  end subroutine advance_advect
   !============================================================================
   subroutine calc_scatter(nQ, nP, nR, Dt, DeltaMu,    &
        Velocity_I, InvB_C, n_I, LambdaMuMu_II, VDF_G)
@@ -2103,7 +2156,7 @@ program test_program
   ! call test_hill_vortex
   ! call test_energy_conservation(cTwoPi)
   ! call test_in_action_angle(cTwoPi)
-  call test_dsa_sa_mhd ! for Fig5.Right Panel
+  call test_dsa_sa_mhd                    ! for Fig 5.Right Panel
 
   ! Tests of focused transport equation:
   ! Advection without any scattering
