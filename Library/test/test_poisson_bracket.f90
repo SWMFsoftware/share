@@ -117,12 +117,12 @@ contains
        Lower_I(i) = -Aux2
     end do
     ! For i=1:
-    if(GcnL==0)then
+    if(GcnL==0) then
        Aux1 = Dt_I(1)*DOuter_I(1)*0.50*(DInner_I(1) + DInner_I(2))/&
             (Dist_I(1)**2)
        Main_I( 1) = Main_I(1) + Aux1
        Upper_I(1) = -Aux1
-    elseif(GcnL>0)then
+    elseif(GcnL>0) then
        DsFace_I(1) = max(0.5*(Dist_I(1) + Dist_I(0)),cTiny)
        Aux1 = Dt_I(1)*DOuter_I(1)*0.50*(DInner_I(1) + DInner_I(2))/&
             (Dist_I(1)*DsFace_I(1))
@@ -136,12 +136,12 @@ contains
        call CON_stop('SP_advance_diffusion: ghost cell number can be 0 or 1!')
     end if
     ! For i=nI
-    if(GcnR==0)then
+    if(GcnR==0) then
        Aux2 = Dt_I(nI)*DOuter_I(nI)*0.50*(DInner_I(nI-1) + DInner_I(nI))/&
             (Dist_I(nI-1)**2)
        Main_I( nI) = Main_I(nI) + Aux2
        Lower_I(nI) = -Aux2
-    elseif(GcnR>0)then
+    elseif(GcnR>0) then
        DsFace_I(nI) = max(0.5*(Dist_I(nI) + Dist_I(nI-1)),cTiny)
        Aux1 = Dt_I(nI)*DOuter_I(nI)*0.50*(DInner_I(nI) + DInner_I(nI+1))/&
             (Dist_I(nI)*DsFace_I(nI))
@@ -745,7 +745,7 @@ contains
        call update_coords(Time + Dt)
        dVolumeDt_G  = DtInv*(VolumeNew_G  - Volume_G)
        dVolumeXDt_G = DtInv*(VolumeNewX_I - VolumeX_I)
-       do iP = -1, nP + 1
+       do iP = -1, nP+1
           dHamiltonian02_FY(:,iP) = - Momentum3_I(iP)*dVolumeXDt_G
        end do
        call explicit(nX, nP, VDF_G, Volume_G, Source_C, &
@@ -799,9 +799,9 @@ contains
       !------------------------------------------------------------------------
       do iX = -1, nX +2
          CoordLagr = iX - 0.50 -Time
-         if(CoordLagr>=0.0)then
+         if(CoordLagr>=0.0) then
             Coord_I(iX) = CoordLagr + Time
-         elseif(CoordLagr>=-real(nWidth))then
+         elseif(CoordLagr>=-real(nWidth)) then
             Coord_I(iX) = CoordLagr + Time + cQuad*CoordLagr**2
          else
             Coord_I(iX) = 0.250*CoordLagr -cConst + Time
@@ -950,9 +950,13 @@ module ModTestMultiPoisson
   real, parameter :: CoeffMuToxx = 27.0/14.0         ! DMuMu => Dxx constant
 contains
   !============================================================================
-  subroutine test_multi_poisson(tFinal, UseDiffusion)
-    real, intent(in) :: tFinal
-    logical, intent(in) :: UseDiffusion
+  subroutine test_multi_poisson(tFinal, TypeScatter)
+    ! Test for multiple Poisson bracket
+
+    real, intent(in) :: tFinal            ! Overall final Time
+    ! No scatter, or advect and scatter, or only diffusion scatter
+    character(LEN=*), intent(in) :: TypeScatter
+
     ! Local VARs:
     real, parameter  :: cMinVal = 1.0e-8  ! We set Min Value of VDF as 1.0e-8
     ! ------------ File ------------
@@ -961,8 +965,9 @@ contains
     ! Number of variables in each line of the input files
     integer, parameter :: nVar = 14
     ! Position of the variables in the input line
-    integer, parameter :: x_ = 2, y_ = 3, z_ = 4, ux_ = 7, uy_ = 8, &
-         uz_ = 9, Bx_ = 10, By_= 11, Bz_ = 12, Wave1_ = 13, Wave2_ = 14
+    integer, parameter :: x_ = 2, y_ = 3, z_ = 4,     &
+         rho_ = 5, ux_ = 7, uy_ = 8, uz_ = 9,         &
+         Bx_ = 10, By_= 11, Bz_ = 12, Wave1_ = 13, Wave2_ = 14
     ! Stride of line of the data reading
     integer, parameter :: nStride = 25
     ! Lagr index that is gaped for field line at each time
@@ -1031,8 +1036,10 @@ contains
 
     ! ------------ Time variables ------------
     real, parameter :: tEachFile = 100.0     ! Time range of each input file
-    real            :: Time, Dt              ! Simulation time, time step
+    real            :: Time, Dt, DtNext      ! Simulation time, time step
     real            :: tOutput               ! Time of each output file
+    logical         :: DoExit                ! Exit time marching
+    real            :: Cfl = 0.99            ! CFL number
 
     ! ------------ Loop variables ------------
     integer :: iQ, iP, iR           ! For VDF variables
@@ -1074,8 +1081,8 @@ contains
     ! speed here, so we do not need to multiply c^2 in the following steps
     Velocity_I = 1.0/sqrt(1.0 + cRmeProtonGeV**2/Momentum_I**2)
 
-    call init_test_VDF              ! Initialize the VDF
-    Source_C = 0.0                  ! Initialize source
+    call init_test_VDF           ! Initialize the VDF
+    Source_C = 0.0               ! Initialize source
 
     ! Calculate VDF for output: integrate over the \mu axis
     VDFOutput_II = sum(VDF_G(1:nQ, 1:nP, 1:nR), dim=2)*DeltaMu
@@ -1101,6 +1108,10 @@ contains
        end do
     end do
 
+    call advance_advect          ! Set up first trial to get DtNext
+    call init_test_VDF           ! Recover VDF to its initial state
+    Source_C = 0.0               ! Recover source to its initial state
+
     ! In the loop, we output several snapshots of VDF
     do iOutputFile = 1, nOutputFile
        tOutput = tFinal/real(nOutputFile)*real(iOutputFile)
@@ -1108,95 +1119,66 @@ contains
        ! Hamiltonian functions and the total control volume; then, we
        ! use subroutine explicit3 to calculate Source_C and update VDF
        do
-          write(*,*) iStep, Time
-          ! Import MHD data at all the calculation time
-          call update_states(Time,                    &
-               DeltaSOverB_C = DeltaSOverB_C,         &
-               dDeltaSOverBDt_C = dDeltaSOverBDt_C,   &
-               InvB_C = InvB_C, bDuDt_C = bDuDt_C,    &
-               dLnBDeltaS2Dt_C = dLnBDeltaS2Dt_C)
-          Hamiltonian2_N = 0.0
-          Hamiltonian3_N = 0.0
-
-          ! Calculate 1st Hamiltonian function used in the time-dependent
-          ! poisson bracket: {f_jk, (p^3/3)*(DeltaS/B)}_{tau, p^3/3}
-          call calc_hamiltonian_1(nP, nQ, nR, DeltaMu,   &
-               MomentumFace_I, dDeltaSOverBDt_C, DeltaHamiltonian1_N)
-          ! Calculate 2nd Hamiltonian function used in the time-dependent
-          ! poisson bracket: {f_jk, (mu^2-1)*v/(2B)}_{s_L, mu}
-          call calc_hamiltonian_2(nP, nQ, nR, DeltaMu,   &
-               DeltaP3_I, Velocity_I, InvB_C, Hamiltonian2_N)
-          ! Calculate 3rd Hamiltonian function used in the time-dependent
-          ! poisson bracket: {f_jk, (1-mu^2)/2 * [ mu*(p^3/3)*
-          ! d(ln(B*ds^2))/dt + ProtonMass*p^2*bDuDt_C ]}_{p^3/3, mu}
-          call calc_hamiltonian_3(nP, nQ, nR, DeltaMu, MomentumFace_I,  &
-               DeltaSOverB_C, dLnBDeltaS2Dt_C, bDuDt_C, Hamiltonian3_N)
-
-          ! Calculate the total control volume
-          do iR = 1, nR
-             do iQ = 1, nQ
-                Volume_G(iQ, 0:nP+1, iR) = DeltaSOverB_C(iQ)*  &
-                     DeltaMu*DeltaP3_I(iR)
-             end do
-          end do
-          ! Boundary conditions for total control volume
-          Volume_G(0,    :,    :) = Volume_G(1 , :,  :)
-          Volume_G(nQ+1, :,    :) = Volume_G(nQ, :,  :)
-          Volume_G(:,    :,    0) = Volume_G(: , :,  1)
-          Volume_G(:,    :, nR+1) = Volume_G(: , :, nR)
-          ! Boundary conditions for total control volume time derivative
-          DVolumeDt_G(0,    :,    :) = DVolumeDt_G(1 , :,  :)
-          DVolumeDt_G(nQ+1, :,    :) = DVolumeDt_G(nQ, :,  :)
-          DVolumeDt_G(:,    :,    0) = DVolumeDt_G(: , :,  1)
-          DVolumeDt_G(:,    :, nR+1) = DVolumeDt_G(: , :, nR)
-
-          ! Use Poisson scheme for advection, and calculate Source_C
-          call explicit(nQ, nP, nR, VDF_G, Volume_G, Source_C, &
-               Hamiltonian12_N = Hamiltonian2_N,               &
-               Hamiltonian23_N = -Hamiltonian3_N,              &
-               dHamiltonian03_FZ = DeltaHamiltonian1_N,        &
-               DVolumeDt_G = DVolumeDt_G,                      &
-               DtOut = Dt, CFLIn=0.99)
-          iStep = iStep + 1
-
-          if(Time + Dt >= tOutput) then
+          if(Time + DtNext >= tOutput) then
              Dt = tOutput - Time
-             call explicit(nQ, nP, nR, VDF_G, Volume_G, Source_C, &
-                  Hamiltonian12_N = Hamiltonian2_N,               &
-                  Hamiltonian23_N = -Hamiltonian3_N,              &
-                  dHamiltonian03_FZ = DeltaHamiltonian1_N,        &
-                  DVolumeDt_G = DVolumeDt_G,                      &
-                  DtIn = Dt)
-             VDF_G(1:nQ, 1:nP, 1:nR) = VDF_G(1:nQ, 1:nP, 1:nR) + Source_C
-             Time = tOutput
-             Source_C = 0.0
-             EXIT
+             DoExit = .true.
           else
-             Time = Time + Dt
-             Source_C = Source_C*Volume_G(1:nQ,1:nP,1:nR)
-             ! Update DeltaSOverB_C for the calculation of volume
-             call update_states(Time, DeltaSOverB_C = DeltaSOverB_C)
-             ! Calculate the total control volume
-             do iR = 1, nR
-                do iQ = 1, nQ
-                   Volume_G(iQ, 0:nP+1, iR) = DeltaSOverB_C(iQ)*  &
-                        DeltaMu*DeltaP3_I(iR)
-                end do
-             end do
-
-             ! Boundary conditions for total control volume
-             Volume_G(0,    :,    :) = Volume_G(1 , :,  :)
-             Volume_G(nQ+1, :,    :) = Volume_G(nQ, :,  :)
-             Volume_G(:,    :,    0) = Volume_G(: , :,  1)
-             Volume_G(:,    :, nR+1) = Volume_G(: , :, nR)
-
-             ! Update VDF_G to the CURRENT time
-             VDF_G(1:nQ, 1:nP, 1:nR) = VDF_G(1:nQ, 1:nP, 1:nR) +  &
-                  Source_C/Volume_G(1:nQ,1:nP,1:nR)
-             Source_C = 0.0
-             ! Set VDF Boundary Conditions (mu: reflection; others: outflow)
-             call set_VDF_Bc
+             DoExit = .false.
+             Dt = DtNext
           end if
+
+          if (trim(TypeScatter)=='no' .or.   &
+               trim(TypeScatter)=='advect_scatter') then
+             ! Use Poisson scheme for advection, and calculate Source_C
+             call advance_advect
+
+             if (DoExit) then
+                VDF_G(1:nQ, 1:nP, 1:nR) = VDF_G(1:nQ, 1:nP, 1:nR) + Source_C
+             else
+                Source_C = Source_C*Volume_G(1:nQ,1:nP,1:nR)
+                ! Update DeltaSOverB_C for the calculation of volume
+                call update_states(Time, DeltaSOverB_C = DeltaSOverB_C)
+                ! Calculate the total control volume
+                do iR = 1, nR
+                   Volume_G(1:nQ, 0, iR) = DeltaSOverB_C*   &
+                        DeltaMu*DeltaP3_I(iR)
+                   do iP = 1, nP+1
+                      Volume_G(1:nQ, iP, iR) = Volume_G(1:nQ, 0, iR)
+                   end do
+                end do
+
+                ! Boundary conditions for total control volume
+                Volume_G(0,    :,    :) = Volume_G(1 , :,  :)
+                Volume_G(nQ+1, :,    :) = Volume_G(nQ, :,  :)
+                Volume_G(:,    :,    0) = Volume_G(: , :,  1)
+                Volume_G(:,    :, nR+1) = Volume_G(: , :, nR)
+
+                ! Update VDF_G to the CURRENT time
+                VDF_G(1:nQ, 1:nP, 1:nR) = VDF_G(1:nQ, 1:nP, 1:nR) +  &
+                     Source_C/Volume_G(1:nQ,1:nP,1:nR)
+             end if
+
+             Source_C = 0.0
+             if (trim(TypeScatter)=='advect_scatter') then
+                call calc_scatter(nQ, nP, nR, Dt, DeltaMu,     &
+                     Velocity_I, InvB_C, RawData1_II(:, rho_), &
+                     LambdaMuMu_II, VDF_G(1:nQ, 1:nP, 1:nR))
+             end if
+          elseif (trim(TypeScatter)=='diffuse_scatter') then
+             call diffuse_scatter(nP, nQ, nR, Dt, DeltaMu,  &
+                  Velocity_I, InvB_C, DeltaSface_I,         &
+                  LambdaMuMu_II, VDF_G(1:nQ, 1:nP, 1:nR))
+          else
+             call CON_stop('test_multi_poisson: '//   &
+                  'Unknown TypeScatter = '//TypeScatter)
+          end if
+
+          call set_VDF_Bc      ! Set VDF BCs (mu: reflection; others: outflow)
+          iStep = iStep + 1    ! March step
+          Time = Time + DtNext ! March time
+          write(*,*) iStep, Time
+          if(DoExit) EXIT      ! Till tOutput, exit the current loop
+
        end do
 
        ! Set a min value for VDF_G
@@ -1339,6 +1321,7 @@ contains
            cMu*sum(RawData1_II(:, wave1_:wave2_), dim=2))/     &
            (cMu*sum(RawData1_II(:, wave1_:wave2_), dim=2))
       LarmorRadius13_C = (1.0e9/(cLightSpeed**2/(2.0*InvBOld_C)))**(1.0/3.0)
+      ! Mean free path in the unit of Rsun, i.e., Lmax = 0.03*Rsun
       Lmax_C = 0.03*sqrt(sum(RawData1_II(:, x_:z_)**2, dim=2))
       ! Calculate \lambda_mumu and \lambda_xx
       do iR = 1, nR
@@ -1398,6 +1381,71 @@ contains
            (RawData2_II(:, Bx_:Bz_) - RawData1_II(:, Bx_:Bz_)), dim=2)* &
            2.0*InvB_C/tEachFile
     end subroutine update_states
+    !==========================================================================
+    subroutine advance_advect
+      ! Advect transport equation by multi_Poisson scheme
+
+      ! Import MHD data at all the calculation time
+      call update_states(Time,                    &
+           DeltaSOverB_C = DeltaSOverB_C,         &
+           dDeltaSOverBDt_C = dDeltaSOverBDt_C,   &
+           InvB_C = InvB_C, bDuDt_C = bDuDt_C,    &
+           dLnBDeltaS2Dt_C = dLnBDeltaS2Dt_C)
+      Hamiltonian2_N = 0.0
+      Hamiltonian3_N = 0.0
+
+      ! Calculate 1st Hamiltonian function used in the time-dependent
+      ! poisson bracket: {f_jk, (p^3/3)*(DeltaS/B)}_{tau, p^3/3}
+      call calc_hamiltonian_1(nP, nQ, nR, DeltaMu,   &
+           MomentumFace_I, dDeltaSOverBDt_C, DeltaHamiltonian1_N)
+      ! Calculate 2nd Hamiltonian function used in the time-dependent
+      ! poisson bracket: {f_jk, (mu^2-1)*v/(2B)}_{s_L, mu}
+      call calc_hamiltonian_2(nP, nQ, nR, DeltaMu,   &
+           DeltaP3_I, Velocity_I, InvB_C, Hamiltonian2_N)
+      ! Calculate 3rd Hamiltonian function used in the time-dependent
+      ! poisson bracket: {f_jk, (1-mu^2)/2 * [ mu*(p^3/3)*
+      ! d(ln(B*ds^2))/dt + ProtonMass*p^2*bDuDt_C ]}_{p^3/3, mu}
+      call calc_hamiltonian_3(nP, nQ, nR, DeltaMu, MomentumFace_I,  &
+           DeltaSOverB_C, dLnBDeltaS2Dt_C, bDuDt_C, Hamiltonian3_N)
+
+      ! Calculate the total control volume
+      do iR = 1, nR
+         Volume_G(1:nQ, 0, iR) = DeltaSOverB_C*DeltaMu*DeltaP3_I(iR)
+         do iP = 1, nP+1
+            Volume_G(1:nQ, iP, iR) = Volume_G(1:nQ, 0, iR)
+         end do
+      end do
+
+      ! Boundary conditions for total control volume
+      Volume_G(0,    :,    :) = Volume_G(1 , :,  :)
+      Volume_G(nQ+1, :,    :) = Volume_G(nQ, :,  :)
+      Volume_G(:,    :,    0) = Volume_G(: , :,  1)
+      Volume_G(:,    :, nR+1) = Volume_G(: , :, nR)
+      ! Boundary conditions for total control volume time derivative
+      DVolumeDt_G(0,    :,    :) = DVolumeDt_G(1 , :,  :)
+      DVolumeDt_G(nQ+1, :,    :) = DVolumeDt_G(nQ, :,  :)
+      DVolumeDt_G(:,    :,    0) = DVolumeDt_G(: , :,  1)
+      DVolumeDt_G(:,    :, nR+1) = DVolumeDt_G(: , :, nR)
+
+      ! First trial: Need DtNext as DtOut
+      if (iStep == 0) then
+         call explicit(nQ, nP, nR, VDF_G, Volume_G, Source_C, &
+              Hamiltonian12_N = Hamiltonian2_N,               &
+              Hamiltonian23_N = -Hamiltonian3_N,              &
+              dHamiltonian03_FZ = DeltaHamiltonian1_N,        &
+              DVolumeDt_G = DVolumeDt_G,                      &
+              DtOut = DtNext, CFLIn=Cfl)
+         ! Subsequent trials: with DtIn=Dt and DtOut=DtNext
+      else
+         call explicit(nQ, nP, nR, VDF_G, Volume_G, Source_C, &
+              Hamiltonian12_N = Hamiltonian2_N,               &
+              Hamiltonian23_N = -Hamiltonian3_N,              &
+              dHamiltonian03_FZ = DeltaHamiltonian1_N,        &
+              DVolumeDt_G = DVolumeDt_G,                      &
+              DtIn = Dt, DtOut = DtNext, CFLIn=Cfl)
+      end if
+
+    end subroutine advance_advect
     !==========================================================================
   end subroutine test_multi_poisson
   !============================================================================
@@ -1581,9 +1629,9 @@ contains
           end do
 
           ! Set up coefficients for solving linear equation sets
-          L_I = - DMuMu_I(0:nP - 1)
-          U_I = - DMuMu_I(1:nP)
-          M_I = 1 - L_I - U_I
+          L_I = - DMuMu_I(0:nP-1)
+          U_I = - DMuMu_I(1:nP  )
+          M_I = 1.0 - L_I - U_I
           W_I = VDF_G(iQ, 1:nP, iR)
 
           ! For each pitch angle, we finally solve VDF for scattering effect
@@ -1846,7 +1894,7 @@ contains
             ParamIn_I=[Error, Error2],&
             VarIn_VII = PlotVar_VC )
        write(*,*)'Error=', Error, ' Error2=', Error2
-    !!! stop
+       ! stop
     end if
     ! Computation
     do iPlot = 0, 99
@@ -2042,7 +2090,6 @@ program test_program
   use ModHillVortex,         ONLY: test_hill_vortex
   use ModStochastic,         ONLY: test_stochastic
   use ModTestMultiPoisson,   ONLY: test_multi_poisson
-  ! use ModTestPoissonBracketAndScatter, ONLY: test_scatter
 
   implicit none
   !----------------------------------------------------------------------------
@@ -2058,12 +2105,13 @@ program test_program
   ! call test_in_action_angle(cTwoPi)
   call test_dsa_sa_mhd ! for Fig5.Right Panel
 
-  ! Test for comparing two diffusions is long. It should be repeated
-  ! twice with Diffuornot = 0 or 1
-
-  ! Tests of focused transport equation
-  ! call test_multi_poisson(100.0, .false.) ! No diffusion or scattering
-  ! call test_scatter(50.0, .true.)         ! With diffusion and scattering
+  ! Tests of focused transport equation:
+  ! Advection without any scattering
+  ! call test_multi_poisson(100.0, TypeScatter='no')
+  ! Advection and scattering
+  ! call test_multi_poisson(100.0, TypeScatter='advect_scatter')
+  ! Scatter only by diffusion
+  ! call test_multi_poisson(100.0, TypeScatter='diffuse_scatter')
   write(*,*)' Finish poisson bracket tests'
 
 end program test_program
