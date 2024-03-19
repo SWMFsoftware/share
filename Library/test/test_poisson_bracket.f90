@@ -6,7 +6,7 @@ module ModDiffusion
 
   ! Solve the diffusion term in the Parker equation
   ! Revision history:
-  ! Prototype:Sp/FLAMPA/src/SP_ModDiffusion.f90
+  ! Prototype:SP/FLAMPA/src/SP_ModDiffusion.f90
   ! Adapted for the use in MFLAMPA (Dist_I is an input paramater,
   ! fixed contributions to M_I in the end points)-D.Borovikov, 2017
   ! Updated (identation, comments):  I.Sokolov, Dec.17, 2017
@@ -31,8 +31,6 @@ contains
     ! With given Dirichlet CB at the left bondary, if GcnL=1.
     ! With given Dirichlet CB at the rightt bondary, if GcnR=1.
     ! The solution is advanced in time using fully implicit scheme.
-
-    use ModNumConst, ONLY: cTiny
 
     real,   intent(in   ):: Dt     ! Time step
     integer,intent(in   ):: GcnL, GcnR ! Number of left and right ghost cells
@@ -81,9 +79,9 @@ contains
     real                 :: DsFace_I(nI)
 
     ! Main, upper, and lower diagonals.
-    real, dimension(nI)   :: Main_I,Upper_I,Lower_I, R_I
+    real, dimension(nI)  :: Main_I, Upper_I, Lower_I, R_I
     integer:: i
-    real:: Aux1,Aux2
+    real:: Aux1, Aux2
     !--------------------------------------------------------------------------
     Lower_I = 0.0; Main_I  = 1.0; Upper_I = 0.0; R_I = F_I(1:nI)
     ! Within the framework of finite volume method, the cell
@@ -91,7 +89,7 @@ contains
     ! the faces bounding the volume with an index, i, which is half of
     ! sum of distance between meshes i-1 and i (i.e. D_I(i-1) and that
     ! between meshes i and i+1 (which is D_I(i)):
-    do i=2,nI-1
+    do i=2, nI-1
        DsFace_I(i) = max(0.5*(Dist_I(i) + Dist_I(i-1)),cTiny)
        ! In flux coordinates, the control volume associated with the
        ! given cell has a cross-section equal to (Magnetic Flux)/B,
@@ -174,7 +172,7 @@ contains
     real, intent(out):: W_I(n)
     ! Misc
     integer:: j
-    real:: Aux,Aux_I(2:n)
+    real:: Aux, Aux_I(2:n)
     !--------------------------------------------------------------------------
     if (M_I(1)==0.0) then
        write(*,*)' Error in tridiag: M_I(1)=0'
@@ -991,7 +989,7 @@ contains
     ! Heliocentric distance, for visualization
     real               :: HelioDist_I(nQ)
     ! Number of outputs:
-    integer, parameter :: nOutputFile = 10
+    integer, parameter :: nOutputFile = 100
     ! The number index of output files in character
     character(LEN=3)   :: NameFileSuffix
     ! The data calculated directly from RawData (MHD data)
@@ -1028,7 +1026,7 @@ contains
 
     ! ------------ Control volume ------------
     real :: Volume_G(0:nQ+1, 0:nP+1, 0:nR+1)    ! Control volume (phase)
-    real :: DVolumeDt_G(0:nQ+1, 0:nP+1, 0:nR+1) ! Derivative regarding to time
+    real :: dVolumeDt_G(0:nQ+1, 0:nP+1, 0:nR+1) ! Derivative regarding to time
 
     ! ------------ Distribution functions ------------
     real :: VDF_G(-1:nQ+2, -1:nP+2, -1:nR+2) ! Velocity distribution function
@@ -1108,15 +1106,15 @@ contains
     ! Calculate the total control volume
     do iR = 1, nR
        do iQ = 1, nQ
-          DVolumeDt_G(iQ, 0:nP+1, iR) = &
+          dVolumeDt_G(iQ, 0:nP+1, iR) = &
                dDeltaSOverBDt_C(iQ)*DeltaMu*DeltaP3_I(iR)
        end do
     end do
     ! Boundary conditions for total control volume time derivative
-    DVolumeDt_G(0,    :,    :) = DVolumeDt_G(1 , :,  :)
-    DVolumeDt_G(nQ+1, :,    :) = DVolumeDt_G(nQ, :,  :)
-    DVolumeDt_G(:,    :,    0) = DVolumeDt_G(: , :,  1)
-    DVolumeDt_G(:,    :, nR+1) = DVolumeDt_G(: , :, nR)
+    dVolumeDt_G(0,    :,    :) = dVolumeDt_G(1 , :,  :)
+    dVolumeDt_G(nQ+1, :,    :) = dVolumeDt_G(nQ, :,  :)
+    dVolumeDt_G(:,    :,    0) = dVolumeDt_G(: , :,  1)
+    dVolumeDt_G(:,    :, nR+1) = dVolumeDt_G(: , :, nR)
 
     ! Set up first trial to get DtNext
     call advance_advect(nP, nQ, nR, DeltaMu,                      &
@@ -1124,7 +1122,7 @@ contains
          DeltaP3_I, Velocity_I, InvB_C, Hamiltonian2_N,           &
          DeltaSOverB_C, dLnBDeltaS2Dt_C, bDuDt_C, Hamiltonian3_N, &
          iStep, Time, Dt, DtNext, Cfl,                            &
-         Volume_G, DVolumeDt_G, VDF_G, Source_C)
+         Volume_G, dVolumeDt_G, VDF_G, Source_C)
     call init_test_VDF           ! Recover VDF to its initial state
     Source_C = 0.0               ! Recover source to its initial state
 
@@ -1151,7 +1149,7 @@ contains
                   DeltaP3_I, Velocity_I, InvB_C, Hamiltonian2_N,           &
                   DeltaSOverB_C, dLnBDeltaS2Dt_C, bDuDt_C, Hamiltonian3_N, &
                   iStep, Time, Dt, DtNext, Cfl,                            &
-                  Volume_G, DVolumeDt_G, VDF_G, Source_C)
+                  Volume_G, dVolumeDt_G, VDF_G, Source_C)
 
              if (DoExit) then
                 ! This step is at tOutput
@@ -1406,11 +1404,11 @@ contains
     if (present(dDeltaSOverBDt_C)) dDeltaSOverBDt_C =  &
          (DeltaSOverBNew_C - DeltaSOverBOld_C)/tEachFile
     ! Calculate Dln(B\deltas^2)/Dt
-    if (present(dLnBdeltaS2Dt_C)) DLnBdeltaS2Dt_C = &
+    if (present(dLnBdeltaS2Dt_C)) dLnBdeltaS2Dt_C = &
          (LnBDeltaS2New_C - LnBDeltaS2Old_C)/tEachfile
     ! Calculate b*Du/Dt
     if (present(bDuDt_C)) bDuDt_C = sum(B_C *                         &
-         (RawData2_II(:, Bx_:Bz_) - RawData1_II(:, Bx_:Bz_)), dim=2)* &
+         (RawData2_II(:, ux_:uz_) - RawData1_II(:, ux_:uz_)), dim=2)* &
          2.0*InvB_C/tEachFile
   end subroutine update_states
   !============================================================================
@@ -1430,7 +1428,7 @@ contains
 
     do iR = 0, nR
        do iP = 0, nP+1
-          DeltaHamiltonian1_N(1:nQ,iP,iR) =     &
+          DeltaHamiltonian1_N(1:nQ, iP, iR) =   &
                -MomentumFace_I(iR)**3.0/3.0*dDeltaSOverBDt_C
        end do
     end do
@@ -1534,7 +1532,7 @@ contains
        DeltaP3_I, Velocity_I, InvB_C, Hamiltonian2_N,          &
        DeltaSOverB_C, dLnBDeltaS2Dt_C, bDuDt_C, Hamiltonian3_N,&
        iStep, Time, Dt, DtNext, CflIn,                         &
-       Volume_G, DVolumeDt_G, VDF_G, Source_C)
+       Volume_G, dVolumeDt_G, VDF_G, Source_C)
     ! Advect transport equation by multi_Poisson scheme
 
     integer, intent(in) :: nP, nQ, nR     ! Number of s_L, mu, ln(p^3/3) grids
@@ -1554,7 +1552,7 @@ contains
     real, intent(inout) :: DtNext         ! DtOut, i.e., DtNext
     real, intent(in)    :: CflIn          ! Input CFL number
     real, intent(inout) :: Volume_G(0:nQ+1, 0:nP+1, 0:nR+1)    ! Control Volume
-    real, intent(in)    :: DVolumeDt_G(0:nQ+1, 0:nP+1, 0:nR+1) ! dVolume/dt
+    real, intent(in)    :: dVolumeDt_G(0:nQ+1, 0:nP+1, 0:nR+1) ! dVolume/dt
     real, intent(inout) :: VDF_G(-1:nQ+2, -1:nP+2, -1:nR+2)    ! VDF
     real, intent(inout) :: Source_C(nQ, nP, nR) ! Source at each time step
     integer             :: iP, iR         ! Loop variables
@@ -1603,7 +1601,7 @@ contains
             Hamiltonian12_N = Hamiltonian2_N,               &
             Hamiltonian23_N = -Hamiltonian3_N,              &
             dHamiltonian03_FZ = DeltaHamiltonian1_N,        &
-            DVolumeDt_G = DVolumeDt_G,                      &
+            dVolumeDt_G = dVolumeDt_G,                      &
             DtOut = DtNext, CFLIn=CflIn)
        ! Subsequent trials: with DtIn=Dt and DtOut=DtNext
     else
@@ -1611,7 +1609,7 @@ contains
             Hamiltonian12_N = Hamiltonian2_N,               &
             Hamiltonian23_N = -Hamiltonian3_N,              &
             dHamiltonian03_FZ = DeltaHamiltonian1_N,        &
-            DVolumeDt_G = DVolumeDt_G,                      &
+            dVolumeDt_G = dVolumeDt_G,                      &
             DtIn = Dt, DtOut = DtNext, CFLIn=CflIn)
     end if
 
@@ -1654,7 +1652,7 @@ contains
     ! Calculate factorized diffusion coefficient
     LowerLimitMu = (1.0 - DeltaMu**2)*abs(DeltaMu)**(2.0/3.0)
     do iP = 0, nP
-       Mu_I(iP) = -1.0 + (real(iP))*DeltaMu
+       Mu_I(iP) = -1.0 + real(iP)*DeltaMu
        FactorMu_F(iP) = (1.0 - Mu_I(iP)**2)*abs(Mu_I(iP))**(2.0/3.0)
     end do
 
