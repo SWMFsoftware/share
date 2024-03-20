@@ -3,9 +3,10 @@
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 !===========================TESTS==============================================
 module ModDiffusion
+
   ! Solve the diffusion term in the Parker equation
   ! Revision history:
-  ! Prototype:Sp/FLAMPA/src/SP_ModDiffusion.f90
+  ! Prototype:SP/FLAMPA/src/SP_ModDiffusion.f90
   ! Adapted for the use in MFLAMPA (Dist_I is an input paramater,
   ! fixed contributions to M_I in the end points)-D.Borovikov, 2017
   ! Updated (identation, comments):  I.Sokolov, Dec.17, 2017
@@ -13,7 +14,7 @@ module ModDiffusion
   implicit none
 
   PRIVATE
-  public:: advance_diffusion1,tridiag
+  public:: advance_diffusion1, tridiag
   interface advance_diffusion1
      module procedure advance_diffusion_s
      module procedure advance_diffusion_arr
@@ -30,8 +31,6 @@ contains
     ! With given Dirichlet CB at the left bondary, if GcnL=1.
     ! With given Dirichlet CB at the rightt bondary, if GcnR=1.
     ! The solution is advanced in time using fully implicit scheme.
-
-    use ModNumConst, ONLY: cTiny
 
     real,   intent(in   ):: Dt     ! Time step
     integer,intent(in   ):: GcnL, GcnR ! Number of left and right ghost cells
@@ -54,7 +53,7 @@ contains
   end subroutine advance_diffusion_s
   !============================================================================
   subroutine advance_diffusion_arr(Dt_I, GcnL, nI, GcnR, Dist_I, F_I, &
-         DOuter_I, DInner_I)
+       DOuter_I, DInner_I)
 
     ! Solve the diffusion equation:
     !         f_t-D_outer(D_inner*f_x)_x=0,
@@ -80,9 +79,9 @@ contains
     real                 :: DsFace_I(nI)
 
     ! Main, upper, and lower diagonals.
-    real, dimension(nI)   :: Main_I,Upper_I,Lower_I, R_I
+    real, dimension(nI)  :: Main_I, Upper_I, Lower_I, R_I
     integer:: i
-    real:: Aux1,Aux2
+    real:: Aux1, Aux2
     !--------------------------------------------------------------------------
     Lower_I = 0.0; Main_I  = 1.0; Upper_I = 0.0; R_I = F_I(1:nI)
     ! Within the framework of finite volume method, the cell
@@ -90,7 +89,7 @@ contains
     ! the faces bounding the volume with an index, i, which is half of
     ! sum of distance between meshes i-1 and i (i.e. D_I(i-1) and that
     ! between meshes i and i+1 (which is D_I(i)):
-    do i=2,nI-1
+    do i=2, nI-1
        DsFace_I(i) = max(0.5*(Dist_I(i) + Dist_I(i-1)),cTiny)
        ! In flux coordinates, the control volume associated with the
        ! given cell has a cross-section equal to (Magnetic Flux)/B,
@@ -116,12 +115,12 @@ contains
        Lower_I(i) = -Aux2
     end do
     ! For i=1:
-    if(GcnL==0)then
+    if(GcnL==0) then
        Aux1 = Dt_I(1)*DOuter_I(1)*0.50*(DInner_I(1) + DInner_I(2))/&
             (Dist_I(1)**2)
        Main_I( 1) = Main_I(1) + Aux1
        Upper_I(1) = -Aux1
-    elseif(GcnL>0)then
+    elseif(GcnL>0) then
        DsFace_I(1) = max(0.5*(Dist_I(1) + Dist_I(0)),cTiny)
        Aux1 = Dt_I(1)*DOuter_I(1)*0.50*(DInner_I(1) + DInner_I(2))/&
             (Dist_I(1)*DsFace_I(1))
@@ -135,12 +134,12 @@ contains
        call CON_stop('SP_advance_diffusion: ghost cell number can be 0 or 1!')
     end if
     ! For i=nI
-    if(GcnR==0)then
+    if(GcnR==0) then
        Aux2 = Dt_I(nI)*DOuter_I(nI)*0.50*(DInner_I(nI-1) + DInner_I(nI))/&
-         (Dist_I(nI-1)**2)
+            (Dist_I(nI-1)**2)
        Main_I( nI) = Main_I(nI) + Aux2
        Lower_I(nI) = -Aux2
-    elseif(GcnR>0)then
+    elseif(GcnR>0) then
        DsFace_I(nI) = max(0.5*(Dist_I(nI) + Dist_I(nI-1)),cTiny)
        Aux1 = Dt_I(nI)*DOuter_I(nI)*0.50*(DInner_I(nI) + DInner_I(nI+1))/&
             (Dist_I(nI)*DsFace_I(nI))
@@ -152,7 +151,7 @@ contains
        R_I(nI) = R_I(nI) - Upper_I(nI)*F_I(nI+1)
     else
        call CON_stop('SP_advance_diffusion: ghost cell number can be 0 or 1!')
-    end if 
+    end if
     call tridiag(nI,Lower_I,Main_I,Upper_I,R_I,F_I(1:nI))
   end subroutine advance_diffusion_arr
   !============================================================================
@@ -173,7 +172,7 @@ contains
     real, intent(out):: W_I(n)
     ! Misc
     integer:: j
-    real:: Aux,Aux_I(2:n)
+    real:: Aux, Aux_I(2:n)
     !--------------------------------------------------------------------------
     if (M_I(1)==0.0) then
        write(*,*)' Error in tridiag: M_I(1)=0'
@@ -744,7 +743,7 @@ contains
        call update_coords(Time + Dt)
        dVolumeDt_G  = DtInv*(VolumeNew_G  - Volume_G)
        dVolumeXDt_G = DtInv*(VolumeNewX_I - VolumeX_I)
-       do iP = -1, nP + 1
+       do iP = -1, nP+1
           dHamiltonian02_FY(:,iP) = - Momentum3_I(iP)*dVolumeXDt_G
        end do
        call explicit(nX, nP, VDF_G, Volume_G, Source_C, &
@@ -771,13 +770,13 @@ contains
        VDF_G(nX+1:nX+2,:) = 1.0e-8
        VDF_G(nX+1:nX+2,1) = 1/VolumeP_I(1)
     end do
-    call save_plot_file(NameFile='test_dsa_poisson.out', &
-         TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep, &
-         NameVarIn='LogMomentum VDF'  ,                  &
-         CoordMinIn_D=[ LogMomentum_I(1 ) ],             &
-         CoordMaxIn_D=[ LogMomentum_I(nP) ],             &
-         StringFormatIn = '(2F16.9)',                    &
-         Coord1In_I = LogMomentum_I(1:nP),               &
+    call save_plot_file(NameFile='test_dsa_poisson.out',       &
+         TypeFileIn='ascii', TimeIn=tFinal, nStepIn = iStep,   &
+         NameVarIn='LogMomentum VDF'  ,                        &
+         CoordMinIn_D=[ LogMomentum_I(1 ) ],                   &
+         CoordMaxIn_D=[ LogMomentum_I(nP) ],                   &
+         StringFormatIn = '(2F16.9)',                          &
+         Coord1In_I = LogMomentum_I(1:nP),                     &
          VarIn_I = alog10(VDF_G(500,1:nP)))
     VDFOld_G = VDF_G
   contains
@@ -798,9 +797,9 @@ contains
       !------------------------------------------------------------------------
       do iX = -1, nX +2
          CoordLagr = iX - 0.50 -Time
-         if(CoordLagr>=0.0)then
+         if(CoordLagr>=0.0) then
             Coord_I(iX) = CoordLagr + Time
-         elseif(CoordLagr>=-real(nWidth))then
+         elseif(CoordLagr>=-real(nWidth)) then
             Coord_I(iX) = CoordLagr + Time + cQuad*CoordLagr**2
          else
             Coord_I(iX) = 0.250*CoordLagr -cConst + Time
@@ -857,13 +856,13 @@ contains
        LogMomentum_I(iP) = 0.50*log10(MomentumMin*MomentumMax)
     end do
     VDF_G = VDFOld_G
-    
+
     call update_coords(600.0)
     do iStep = 1, nStep
        call explicit(nX, nP, VDF_G, Volume_G, Source_C, &
             Hamiltonian12_N=Hamiltonian_N, CFLIn=0.98,  &
             IsSteadyState=.true., DtOut_C=Dt_C)
- 
+
        VDF_G(1:nX, 1:nP) = VDF_G(1:nX, 1:nP) + Source_C
        do iP =1, nP
           call advance_diffusion1(Dt_C(:,iP),0,nX,1,Dist_I(1:nX),VDF_G(1:nX+1,&
@@ -928,6 +927,812 @@ contains
   !============================================================================
 end module ModTestPoissonBracket
 !==============================================================================
+module ModTestMultiPoisson
+  ! Solve energetic particle transport (focused transport equation) via the
+  ! numerical particle-conserved scheme with multi Poisson bracket:
+  !   {f,H_1}_t,p^3/3 + {f,H_2}_s_L,\mu + {f,H_3}_p^3/3,\mu = 0
+  ! Dimensionless parameters: Energy: GeV, Speed: c Mass: GeV/c^2 Length: c*sec
+  ! In the code, label Q: s_L  P: \mu  R: ln(P^3/3)  NLoop: t
+  ! this code consider only the most simple equation
+  use ModPoissonBracket, ONLY: explicit
+  use ModUtilities,      ONLY: CON_stop
+  use ModNumConst,       ONLY: cTwoPi, cPi
+  use ModPlotFile,       ONLY: save_plot_file
+  use ModConst,          ONLY: cRmeProton, cGeV, &
+       cMu, cAtomicMass, rSun, cLightSpeed
+  implicit none
+  ! Grid setups
+  integer, parameter :: nQ = 160   ! Number of grid of s_L
+  integer, parameter :: nP = 20    ! Number of grid of \mu = cos(pitch angle)
+  integer, parameter :: nR = 60    ! Number of grid of ln(p^3/3) axis
+  ! Unit setups
+  real, parameter :: cRmeProtonGeV = cRmeProton/cGeV ! Proton mass: GeV/c^2
+  real, parameter :: CoeffMuToxx = 27.0/14.0         ! DMuMu => Dxx constant
+  ! Physical parameter reading setups
+  real, parameter :: tEachFile = 100.0    ! Time range of each input file
+  ! Number of variables in each line of the input files
+  integer, parameter :: nVar = 14
+  ! Position of the variables in the input line
+  integer, parameter :: x_ = 2, y_ = 3, z_ = 4,    &
+       rho_ = 5, ux_ = 7, uy_ = 8, uz_ = 9,        &
+       Bx_ = 10, By_= 11, Bz_ = 12, Wave1_ = 13, Wave2_ = 14
+  ! OLD and NEW variables from raw data files
+  ! Raw data imported from MHD files
+  real :: RawData1_II(nQ, nVar), RawData2_II(nQ, nVar)
+  ! \Deltas/b, 1/(2B), ln(B\deltas^2) at Old time
+  real :: DeltaSOverBOld_C(nQ), InvBOld_C(nQ), LnBDeltaS2Old_C(nQ)
+  ! \Deltas/b, 1/(2B), ln(B\deltas^2) at New time
+  real :: DeltaSOverBNew_C(nQ), InvBNew_C(nQ), LnBDeltaS2New_C(nQ)
+  ! Midpoint for to consecutive points, \deltas
+  real :: MidPoint_ID(nQ-1, x_:z_), DeltaS_I(nQ), DeltaSface_I(1:nQ-1)
+
+contains
+  !============================================================================
+  subroutine test_multi_poisson(tFinal, TypeScatter)
+    ! Test for multiple Poisson bracket
+
+    real, intent(in) :: tFinal            ! Overall final Time
+    ! No scatter, or advect and scatter, or only diffusion scatter
+    character(LEN=*), intent(in) :: TypeScatter
+
+    ! Local VARs:
+    real, parameter  :: cMinVal = 1.0e-8  ! We set Min Value of VDF as 1.0e-8
+    ! ------------ File ------------
+    ! Unit for field line files: Old and new field lines
+    integer, parameter :: nInFileOld = 8, nInFileNew = 9
+    ! Stride of line of the data reading
+    integer, parameter :: nStride = 25
+    ! Lagr index that is gaped for field line at each time
+    integer, parameter :: iLagrIdSkip = 20
+    ! Read the redundant data
+    real               :: GapData
+    ! Heliocentric distance, for visualization
+    real               :: HelioDist_I(nQ)
+    ! Number of outputs:
+    integer, parameter :: nOutputFile = 100
+    ! The number index of output files in character
+    character(LEN=3)   :: NameFileSuffix
+    ! The data calculated directly from RawData (MHD data)
+    real :: DeltaSOverB_C(nQ), dDeltaSOverBDt_C(nQ),  &
+         InvB_C(nQ), bDuDt_C(nQ), dLnBDeltaS2Dt_C(nQ)
+
+    ! ------------ Pitch angle ------------
+    ! Now we have the parameters for "Q"-coordinate (s_L)
+    ! We then consider the "P"-coordinate (mu)
+    ! It is the cosine value of the pitch angle, varying from -1 to 1
+    ! Here we calculate \delta\mu for each grid along the \mu axis
+    real :: DeltaMu = 2.0/nP
+
+    ! ------------ Energy and momentum ------------
+    ! Last but not least, we focus on the "R"-coordinate (p^3/3)
+    ! Min and Max value of particle kinetic energy, in units of GeV
+    real, parameter :: EkMin = 1.0e-3, EkMax = 1.0
+    ! Ln(P^3/3)_min, Ln(P^3/3)_max, \deltaLn(P^3/3)
+    real            :: LnP3min, LnP3max, DeltaLnP3
+    ! Momentum and velocity at the center of each cell
+    real            :: Momentum_I(nR),  Velocity_I(nR)
+    ! Momentum at the face of each cell and their distance \delta(P^3/3)
+    real            :: MomentumFace_I(0:nR), DeltaP3_I(nR)
+    ! Energy in unit of KeV, for output
+    real            :: Energy_I(nR)
+
+    ! ------------ Hamiltonian functions ------------
+    ! Poisson bracket with regard to the first and second vars
+    ! considering the case when there are more than one Poisson bracket
+    ! and when there is a Poisson bracket with respect to the time
+    real :: DeltaHamiltonian1_N(0:nQ+1, 0:nP+1, -1:nR+1)
+    real :: Hamiltonian2_N(-1:nQ+1, -1:nP+1, 0:nR+1)
+    real :: Hamiltonian3_N(0:nQ+1, -1:nP+1, -1:nR+1)
+
+    ! ------------ Control volume ------------
+    real :: Volume_G(0:nQ+1, 0:nP+1, 0:nR+1)    ! Control volume (phase)
+    real :: dVolumeDt_G(0:nQ+1, 0:nP+1, 0:nR+1) ! Derivative regarding to time
+
+    ! ------------ Distribution functions ------------
+    real :: VDF_G(-1:nQ+2, -1:nP+2, -1:nR+2) ! Velocity distribution function
+    real :: VDFOutput_II(nQ, nR)             ! VDF outputs
+    real :: Source_C(nQ, nP, nR)             ! Source at each time step
+    ! Parameters of the place of initial particles, for initial VDF_G in test
+    real, parameter :: ParticleRange1 = 2.0, ParticleRange2 = 4.0
+
+    ! ------------ Diffusion ------------
+    real :: LambdaMuMu_II(nQ, nR)            ! lambda_\mu\mu from raw data
+
+    ! ------------ Time variables ------------
+    real            :: Time, Dt, DtNext      ! Simulation time, time step
+    real            :: tOutput               ! Time of each output file
+    logical         :: DoExit                ! Exit time marching
+    real            :: Cfl = 0.99            ! CFL number
+
+    ! ------------ Loop variables ------------
+    integer :: iQ, iP, iR           ! For VDF variables
+    integer :: iStep                ! For time marching
+    integer :: iStride, iVar        ! For reading files
+    integer :: iOutputFile          ! For output files
+    !--------------------------------------------------------------------------
+
+    call read_fieldline             ! Read MhData from saved files
+    ! Calculate the Lagrangian particle positions
+    do iQ = 1, nQ
+       HelioDist_I(iQ) = sqrt(RawData1_II(iQ, x_)**2 + &
+            RawData1_II(iQ, y_)**2 + RawData1_II(iQ, z_)**2)*cLightSpeed/rSun
+    end do
+    write(*,*) RawData1_II(nQ, x_:z_)*cLightSpeed/rSun
+
+    ! Kinetic energy convert to momentum (1 MeV – 1 GeV) => (Pmin, Pmax)
+    LnP3min = log(sqrt((EkMin + cRmeProtonGeV)**2 - cRmeProtonGeV**2)**3.0/3)
+    LnP3max = log(sqrt((EkMax + cRmeProtonGeV)**2 - cRmeProtonGeV**2)**3.0/3)
+    ! Get \DeltaLn(P^3/3)
+    DeltaLnP3 = (LnP3max - LnP3min)/nR
+
+    ! Then we can culculate P and deltaP^3/3
+    MomentumFace_I(0) = (3.0*exp(LnP3min))**(1.0/3.0)
+    do iR = 1, nR
+       ! The momentum is calculated at each center of the cell
+       Momentum_I(iR) = (3.0*exp(LnP3min + (iR-0.5)*DeltaLnP3))**(1.0/3.0)
+       ! The momentum is calculated at the face of the cell
+       MomentumFace_I(iR) = (3.0*exp(LnP3min + iR*DeltaLnP3))**(1.0/3.0)
+    end do
+
+    ! Calculate \deltaP^3/3 for each grid: Face - Face, like the Volume_P
+    DeltaP3_I = MomentumFace_I(1:nR)**3.0/3 - MomentumFace_I(0:nR-1)**3.0/3
+    ! Calculate the position for ln(p^3/3) axis, in the unit of KeV now
+    Energy_I = 6.0 + log10(sqrt(Momentum_I**2 + &
+         cRmeProtonGeV**2) - cRmeProtonGeV)
+    ! Considering the law of relativity, v=1/sqrt(1+m^2*c^2/p^2), v can be
+    ! calculated as a function of p. Note that light speed is the unit of
+    ! speed here, so we do not need to multiply c^2 in the following steps
+    Velocity_I = 1.0/sqrt(1.0 + cRmeProtonGeV**2/Momentum_I**2)
+
+    call init_test_VDF           ! Initialize the VDF
+    Source_C = 0.0               ! Initialize source
+
+    ! Calculate VDF for output: integrate over the \mu axis
+    VDFOutput_II = sum(VDF_G(1:nQ, 1:nP, 1:nR), dim=2)*DeltaMu
+    ! Save the initial outpur of VDF
+    call save_plot_file(NameFile='test_multipoisson_000.out',  &
+         TypeFileIn='ascii', TimeIn=Time, nStepIn = iStep,     &
+         NameVarIn='sL logE VDF',                              &
+         CoordMinIn_D=[HelioDist_I(1) ,      Energy_I(1)],     &
+         CoordMaxIn_D=[HelioDist_I(nQ),      Energy_I(nR)],    &
+         StringFormatIn = '(3F15.7)',                          &
+         Coord1In_I = HelioDist_I,  Coord2In_I = Energy_I,     &
+         VarIn_II = log10(VDFOutput_II(1:nQ,1:nR)))
+
+    ! Start the main simulation loop
+    iStep = 0; Time = 0.0
+    call calc_data_states
+    call update_states(nQ, Time, dDeltaSOverBDt_C = dDeltaSOverBDt_C)
+    ! Calculate the total control volume
+    do iR = 1, nR
+       do iQ = 1, nQ
+          dVolumeDt_G(iQ, 0:nP+1, iR) = &
+               dDeltaSOverBDt_C(iQ)*DeltaMu*DeltaP3_I(iR)
+       end do
+    end do
+    ! Boundary conditions for total control volume time derivative
+    dVolumeDt_G(0,    :,    :) = dVolumeDt_G(1 , :,  :)
+    dVolumeDt_G(nQ+1, :,    :) = dVolumeDt_G(nQ, :,  :)
+    dVolumeDt_G(:,    :,    0) = dVolumeDt_G(: , :,  1)
+    dVolumeDt_G(:,    :, nR+1) = dVolumeDt_G(: , :, nR)
+
+    ! Set up first trial to get DtNext
+    call advance_advect(nP, nQ, nR, DeltaMu,                      &
+         MomentumFace_I, dDeltaSOverBDt_C, DeltaHamiltonian1_N,   &
+         DeltaP3_I, Velocity_I, InvB_C, Hamiltonian2_N,           &
+         DeltaSOverB_C, dLnBDeltaS2Dt_C, bDuDt_C, Hamiltonian3_N, &
+         iStep, Time, Dt, DtNext, Cfl,                            &
+         Volume_G, dVolumeDt_G, VDF_G, Source_C)
+    call init_test_VDF           ! Recover VDF to its initial state
+    Source_C = 0.0               ! Recover source to its initial state
+
+    ! In the loop, we output several snapshots of VDF
+    do iOutputFile = 1, nOutputFile
+       tOutput = tFinal/real(nOutputFile)*real(iOutputFile)
+       ! In this loop, we first update the RawData and calculate three
+       ! Hamiltonian functions and the total control volume; then, we
+       ! use subroutine explicit3 to calculate Source_C and update VDF
+       do
+          if(Time + DtNext >= tOutput) then
+             Dt = tOutput - Time
+             DoExit = .true.
+          else
+             DoExit = .false.
+             Dt = DtNext
+          end if
+
+          if (trim(TypeScatter)=='no' .or.   &
+               trim(TypeScatter)=='advect_scatter') then
+             ! Use Poisson scheme for advection, and calculate Source_C
+             call advance_advect(nP, nQ, nR, DeltaMu,                      &
+                  MomentumFace_I, dDeltaSOverBDt_C, DeltaHamiltonian1_N,   &
+                  DeltaP3_I, Velocity_I, InvB_C, Hamiltonian2_N,           &
+                  DeltaSOverB_C, dLnBDeltaS2Dt_C, bDuDt_C, Hamiltonian3_N, &
+                  iStep, Time, Dt, DtNext, Cfl,                            &
+                  Volume_G, dVolumeDt_G, VDF_G, Source_C)
+
+             if (DoExit) then
+                ! This step is at tOutput
+                VDF_G(1:nQ, 1:nP, 1:nR) = VDF_G(1:nQ, 1:nP, 1:nR) + Source_C
+             else
+                ! This step is not at tOutput
+                ! Update VDF_G considering the time-dependent Volume_G
+
+                Source_C = Source_C*Volume_G(1:nQ,1:nP,1:nR)
+                ! Update DeltaSOverB_C for the calculation of volume
+                call update_states(nQ, Time, DeltaSOverB_C = DeltaSOverB_C)
+                ! Calculate the total control volume
+                do iR = 1, nR
+                   Volume_G(1:nQ, 0, iR) = DeltaSOverB_C*   &
+                        DeltaMu*DeltaP3_I(iR)
+                   do iP = 1, nP+1
+                      Volume_G(1:nQ, iP, iR) = Volume_G(1:nQ, 0, iR)
+                   end do
+                end do
+
+                ! Boundary conditions for total control volume
+                Volume_G(0,    :,    :) = Volume_G(1 , :,  :)
+                Volume_G(nQ+1, :,    :) = Volume_G(nQ, :,  :)
+                Volume_G(:,    :,    0) = Volume_G(: , :,  1)
+                Volume_G(:,    :, nR+1) = Volume_G(: , :, nR)
+
+                ! Update VDF_G to the CURRENT time
+                VDF_G(1:nQ, 1:nP, 1:nR) = VDF_G(1:nQ, 1:nP, 1:nR) +  &
+                     Source_C/Volume_G(1:nQ,1:nP,1:nR)
+             end if
+
+             Source_C = 0.0
+             ! If there is no scatter, there is only advection
+             ! If there is advect_scatter, we will include scattering effect
+             if (trim(TypeScatter)=='advect_scatter') then
+                call calc_scatter(nQ, nP, nR, Dt, DeltaMu,     &
+                     Velocity_I, InvB_C, RawData1_II(:, rho_), &
+                     LambdaMuMu_II, VDF_G(1:nQ, 1:nP, 1:nR))
+             end if
+          elseif (trim(TypeScatter)=='diffuse_scatter') then
+             ! There is only scattering by diffusion
+             call diffuse_scatter(nP, nQ, nR, Dt, DeltaMu,  &
+                  Velocity_I, InvB_C, DeltaSface_I,         &
+                  LambdaMuMu_II, VDF_G(1:nQ, 1:nP, 1:nR))
+          else
+             ! Unrecognized specified scatter type
+             call CON_stop('test_multi_poisson: '//   &
+                  'Unknown TypeScatter = '//TypeScatter)
+          end if
+
+          call set_VDF_Bc      ! Set VDF BCs (mu: reflection; others: outflow)
+          iStep = iStep + 1    ! March step
+          Time = Time + DtNext ! March time
+          write(*,*) iStep, Time
+          if(DoExit) EXIT      ! Reach tOutput, exit the current loop
+
+       end do
+
+       ! Set a min value for VDF_G
+       VDF_G = max(VDF_G, cMinVal)
+       ! Set the name of files, with the largest number being 999
+       write(NameFileSuffix, '(I3.3)') iOutputFile
+       ! Calculate VDF for output: integrate over the \mu axis
+       VDFOutput_II = sum(VDF_G(1:nQ, 1:nP, 1:nR), dim=2)*DeltaMu
+
+       ! Save the files
+       call save_plot_file(NameFile='test_multipoisson_'          &
+            //NameFileSuffix//'.out',   TypeFileIn='ascii',       &
+            TimeIn=Time, nStepIn=iStep, NameVarIn='sL logE VDF',  &
+            CoordMinIn_D=[HelioDist_I(1) ,      Energy_I(1)],     &
+            CoordMaxIn_D=[HelioDist_I(nQ),      Energy_I(nR)],    &
+            StringFormatIn = '(3F15.7)',                          &
+            Coord1In_I = HelioDist_I,   Coord2In_I = Energy_I,    &
+            VarIn_II = log10(VDFOutput_II(1:nQ,1:nR)))
+    end do
+
+  contains
+    !==========================================================================
+    subroutine read_fieldline
+      ! To read the raw data of fieldlines from the MHD simulations
+      ! Import data from files
+      !------------------------------------------------------------------------
+      open(unit=nInFileOld, file='FieldLineOld.in')
+      open(unit=nInFileNew, file='FieldLineNew.in')
+
+      ! Get the lines that we need from the OLD data at OLD time
+      GapData = 0.0
+      do while(nint(GapData) /= iLagrIdSkip)
+         read(nInFileOld, *) GapData
+      end do
+      do iQ = 1, nQ
+         read(nInFileOld,*) (RawData1_II(iQ, iVar), iVar = 1, nVar)
+         do iStride = 1, nStride-1
+            read(nInFileOld,*)
+         end do
+      end do
+      close(nInFileOld)
+
+      ! Get the lines that we need from the NEW data at NEW time
+      GapData = 0.0
+      do while(nint(GapData) /= iLagrIdSkip)
+         read(nInFileNew, *) GapData
+      end do
+      do iQ = 1, nQ
+         read(nInFileNew,*) (RawData2_II(iQ, iVar), iVar = 1, nVar)
+         do iStride = 1, nStride-1
+            read(nInFileNew,*)
+         end do
+      end do
+      close(nInFileNew)
+
+      ! Normalization process: due to the differences of the units
+      RawData1_II(:, x_ :z_ ) = RawData1_II(:, x_ :z_ )*rSun/cLightSpeed
+      RawData1_II(:, ux_:uz_) = RawData1_II(:, ux_:uz_)/cLightSpeed
+      RawData2_II(:, x_ :z_ ) = RawData2_II(:, x_ :z_ )*rSun/cLightSpeed
+      RawData2_II(:, ux_:uz_) = RawData2_II(:, ux_:uz_)/cLightSpeed
+    end subroutine read_fieldline
+    !==========================================================================
+    subroutine init_test_VDF
+      ! Initialize the distribution function VDF_G
+      !------------------------------------------------------------------------
+      VDF_G = cMinVal
+
+      ! Assign the VDF at positive \mu
+      do iR = 1, nR
+         do iQ = 1, nQ
+            if(iQ <= ParticleRange1) then
+               ! Assume momentum follow a power distribution: f ~ p^{-5}
+               VDF_G(iQ, nP/2:nP, iR) = max(0.1*exp(-5.0/3.0* &
+                    (LnP3min + iR*DeltaLnP3)), cMinVal)
+            elseif(iQ <= ParticleRange2) then
+               ! Use a linear slope for the middle part
+               VDF_G(iQ, nP/2:nP, iR) = max(0.1*exp(-5.0/3.0* &
+                    (LnP3min + iR*DeltaLnP3))*(ParticleRange2 - real(iQ))/ &
+                    (ParticleRange2 - ParticleRange1), cMinVal)
+            end if
+         end do
+      end do
+
+      ! Set VDF Boundary Conditions (reflection for mu; outflow for others)
+      call set_VDF_Bc
+    end subroutine init_test_VDF
+    !==========================================================================
+    subroutine set_VDF_Bc
+      ! Set Boundary Conditions for VDF
+
+      ! Use reflective boundary condition for \mu axis
+      !------------------------------------------------------------------------
+      VDF_G(:,    0, :) = VDF_G(:,    1, :)
+      VDF_G(:,   -1, :) = VDF_G(:,    2, :)
+      VDF_G(:, nP+1, :) = VDF_G(:,   nP, :)
+      VDF_G(:, nP+2, :) = VDF_G(:, nP-1, :)
+
+      ! Use outflow boundary condition for s_L axis
+      VDF_G(-1,   :, :) = VDF_G(1,    :, :)
+      VDF_G(0,    :, :) = VDF_G(1,    :, :)
+      VDF_G(nQ+1, :, :) = VDF_G(nQ,   :, :)
+      VDF_G(nQ+2, :, :) = VDF_G(nQ,   :, :)
+
+      ! Use outflow boundary condition for Ln(p^3/3) axis
+      VDF_G(:, :,   -1) = VDF_G(:, :,    1)
+      VDF_G(:, :,    0) = VDF_G(:, :,    1)
+      VDF_G(:, :, nR+1) = VDF_G(:, :,   nR)
+      VDF_G(:, :, nR+2) = VDF_G(:, :,   nR)
+    end subroutine set_VDF_Bc
+    !==========================================================================
+    subroutine calc_data_states
+      ! Calculate data states from the input files
+      real :: MagneticOverWave_C(nQ), LarmorRadius13_C(nQ), Lmax_C(nQ)
+      real, parameter :: CoeffMu = 6.0/(2.0**(2.0/3.0)*cPi**(5.0/3.0))
+
+      ! Calculate values at OLD time
+      ! Calculate midpoints
+      !------------------------------------------------------------------------
+      MidPoint_ID(1:nQ-1, x_:z_) = (RawData1_II(2:nQ,x_:z_)    &
+           + RawData1_II(1:nQ-1,x_:z_))*0.5
+      ! Calculate DeltaS
+      DeltaS_I(2:nQ-1) = sqrt(sum((MidPoint_ID(2:nQ-1, x_:z_)  &
+           - MidPoint_ID(1:nQ-2, x_:z_))**2, dim=2))
+      ! Linear interpolate the deltas such that there will be nQ deltas
+      DeltaS_I(1 ) = 2*sqrt(sum( &
+           (MidPoint_ID(1, x_:z_) - RawData1_II(1, x_:z_))**2))
+      DeltaS_I(nQ) = 2*sqrt(sum( &
+           (MidPoint_ID(nQ-1, x_:z_) - RawData1_II(nQ, x_:z_))**2))
+      ! Calculate 1/2B and \DeltaS/B at grid center
+      InvBOld_C = 1.0/(2.0*sqrt(sum(RawData1_II(:, Bx_:Bz_)**2, dim=2)))
+      DeltaSOverBOld_C = DeltaS_I*2.0*InvBOld_C
+      LnBDeltaS2Old_C = log(1.0/(2.0*InvBOld_C)*DeltaS_I**2)
+
+      ! At OLD time, we calculate LambdaMuMu_II
+      ! Calculate DeltaSface_I: Distance of face at OLD time
+      DeltaSface_I = sqrt(sum((RawData1_II(2:nQ, x_:z_)        &
+           - RawData1_II(1:nQ-1, x_:z_))**2, dim=2))
+      ! Calculate quantites related to magnetic field
+      MagneticOverWave_C = (1.0/(2.0*InvBOld_C)**2 +           &
+           cMu*sum(RawData1_II(:, wave1_:wave2_), dim=2))/     &
+           (cMu*sum(RawData1_II(:, wave1_:wave2_), dim=2))
+      LarmorRadius13_C = (1.0e9/(cLightSpeed**2/(2.0*InvBOld_C)))**(1.0/3.0)
+      ! Mean free path in the unit of Rsun, i.e., Lmax = 0.03*Rsun
+      Lmax_C = 0.03*sqrt(sum(RawData1_II(:, x_:z_)**2, dim=2))
+      ! Calculate \lambda_mumu and \lambda_xx
+      do iR = 1, nR
+         LambdaMuMu_II(:, iR) = CoeffMu*MagneticOverWave_C*    &
+              LarmorRadius13_C*Lmax_C**(2.0/3.0)*Momentum_I(iR)**(1.0/3.0)
+      end do
+
+      ! Calculate values at NEW time
+      ! Calculate midpoints
+      MidPoint_ID(1:nQ-1, x_:z_) = (RawData2_II(2:nQ,x_:z_)    &
+           + RawData2_II(1:nQ-1,x_:z_))*0.5
+      ! Calculate DeltaS
+      DeltaS_I(2:nQ-1) = sqrt(sum((MidPoint_ID(2:nQ-1, x_:z_)  &
+           - MidPoint_ID(1:nQ-2, x_:z_))**2, dim=2))
+      ! Linear interpolate the deltas such that there will be nQ deltas
+      DeltaS_I(1 ) = 2*sqrt(sum( &
+           (MidPoint_ID(1, x_:z_) - RawData2_II(1, x_:z_))**2))
+      DeltaS_I(nQ) = 2*sqrt(sum( &
+           (MidPoint_ID(nQ-1, x_:z_) - RawData2_II(nQ, x_:z_))**2))
+      ! Calculate 1/2B and \DeltaS/B at grid center
+      InvBNew_C = 1.0/(2.0*sqrt(sum(RawData2_II(:, Bx_:Bz_)**2, dim=2)))
+      DeltaSOverBNew_C = DeltaS_I*2.0*InvBNew_C
+      LnBDeltaS2New_C = log(1.0/(2.0*InvBNew_C)*DeltaS_I**2)
+
+    end subroutine calc_data_states
+    !==========================================================================
+  end subroutine test_multi_poisson
+  !============================================================================
+  subroutine update_states(nQ, Time, DeltaSOverB_C, &
+       dDeltaSOverBDt_C, InvB_C, bDuDt_C, dLnBDeltaS2Dt_C)
+    ! Update states according to the current time
+
+    integer, intent(in) :: nQ     ! Number of grid along s_L axis
+    real, intent(in)    :: Time   ! Current time
+    real, optional, intent(inout) :: DeltaSOverB_C(nQ),   &
+         dDeltaSOverBDt_C(nQ), InvB_C(nQ), bDuDt_C(nQ), dLnBdeltaS2Dt_C(nQ)
+    ! Magnetic field strength B at cell center
+    real :: B_C(nQ, 3)
+
+    ! Calculate values for CURRENT time: here we use linear interpolation
+    ! to get the data of each time step from every to consecutive files
+    !--------------------------------------------------------------------------
+    ! Calculate B at cell center
+    if (present(bDuDt_C)) B_C = RawData1_II(:, Bx_:Bz_) + &
+         (RawData2_II(:, Bx_:Bz_) - RawData1_II(:, Bx_:Bz_))/tEachFile*Time
+    ! Calculate 1/2B
+    if (present(InvB_C)) InvB_C = InvBOld_C + &
+         (InvBNew_C - InvBOld_C)/tEachFile*Time
+    ! Calculate \deltas/B
+    if (present(DeltaSOverB_C)) DeltaSOverB_C = DeltaSOverBOld_C + &
+         (DeltaSOverBNew_C - DeltaSOverBOld_C)/tEachFile*Time
+    ! Calculate \deltas/B time derivative (for next time)
+    if (present(dDeltaSOverBDt_C)) dDeltaSOverBDt_C =  &
+         (DeltaSOverBNew_C - DeltaSOverBOld_C)/tEachFile
+    ! Calculate Dln(B\deltas^2)/Dt
+    if (present(dLnBdeltaS2Dt_C)) dLnBdeltaS2Dt_C = &
+         (LnBDeltaS2New_C - LnBDeltaS2Old_C)/tEachfile
+    ! Calculate b*Du/Dt
+    if (present(bDuDt_C)) bDuDt_C = sum(B_C *                         &
+         (RawData2_II(:, ux_:uz_) - RawData1_II(:, ux_:uz_)), dim=2)* &
+         2.0*InvB_C/tEachFile
+  end subroutine update_states
+  !============================================================================
+  subroutine calc_hamiltonian_1(nP, nQ, nR, DeltaMu,  &
+       MomentumFace_I, dDeltaSOverBDt_C, DeltaHamiltonian1_N)
+    ! Calculate the 1st Hamiltonian function with time:
+    ! p^3/3*\deltas/B, regarding to tau and p^3/3
+
+    integer, intent(in) :: nP, nQ, nR     ! Number of s_L, mu, ln(p^3/3) grids
+    real, intent(in)    :: DeltaMu        ! Distance of adjacent two mu's
+    real, intent(in)    :: MomentumFace_I(0:nR) ! Momentum at cell face
+    real, intent(in)    :: dDeltaSOverBDt_C(nQ) ! D[delta(s_L)/B]/Dt
+    real, intent(inout) :: DeltaHamiltonian1_N(0:nQ+1, 0:nP+1, -1:nR+1)
+    integer             :: iP, iR         ! Loop variables
+    ! Calculate the first Hamiltonian function
+    !--------------------------------------------------------------------------
+
+    do iR = 0, nR
+       do iP = 0, nP+1
+          DeltaHamiltonian1_N(1:nQ, iP, iR) =   &
+               -MomentumFace_I(iR)**3.0/3.0*dDeltaSOverBDt_C
+       end do
+    end do
+
+    ! Calculate the Hamiltonian function used actually：\tilde\deltaH
+    DeltaHamiltonian1_N(1:nQ, 0:nP+1, 0:nR) =   &
+         DeltaHamiltonian1_N(1:nQ, 0:nP+1, 0:nR)*DeltaMu
+
+    ! Boundary condition of Hamiltonian function
+    DeltaHamiltonian1_N(0   , :,    :) = DeltaHamiltonian1_N(1 , :,  :)
+    DeltaHamiltonian1_N(nQ+1, :,    :) = DeltaHamiltonian1_N(nQ, :,  :)
+    DeltaHamiltonian1_N(:   , :,   -1) = DeltaHamiltonian1_N(: , :,  0)
+    DeltaHamiltonian1_N(:   , :, nR+1) = DeltaHamiltonian1_N(: , :, nR)
+  end subroutine calc_hamiltonian_1
+  !============================================================================
+  subroutine calc_hamiltonian_2(nP, nQ, nR, DeltaMu,  &
+       DeltaP3_I, Velocity_I, InvB_C, Hamiltonian2_N)
+    ! Calculate the 2nd Hamiltonian function at each fixed time:
+    ! (mu^2-1)*v/(2B), regarding to s_L and mu
+
+    integer, intent(in) :: nP, nQ, nR     ! Number of s_L, mu, ln(p^3/3) grids
+    real, intent(in)    :: DeltaMu        ! Distance of adjacent two mu
+    real, intent(in)    :: DeltaP3_I(nR)  ! Distance of adjacent two p^3/3
+    real, intent(in)    :: Velocity_I(nR) ! Particle velocity array
+    real, intent(in)    :: InvB_C(nQ)     ! 1/(2B) array
+    real, intent(inout) :: Hamiltonian2_N(-1:nQ+1, -1:nP+1, 0:nR+1)
+    real                :: InvB_F(0:nQ)   ! Intermediate array
+    integer             :: iP, iR         ! Loop variables
+    !--------------------------------------------------------------------------
+    ! Calculate 1/(2B) on the boundary of grid
+    InvB_F(1:nQ-1) = (InvB_C(2:nQ) + InvB_C(1:nQ-1))*0.5
+    InvB_F(0 )     = InvB_C(1 ) - (InvB_C(2 ) - InvB_C(1   ))*0.5
+    InvB_F(nQ)     = InvB_C(nQ) + (InvB_C(nQ) - InvB_C(nQ-1))*0.5
+
+    ! Calculate the second hamiltonian function = (mu^2-1)*v/(2B)
+    do iR = 1, nR
+       do iP = 0, nP
+          Hamiltonian2_N(0:nQ, iP, iR) = ((iP*DeltaMu - 1.0)**2 &
+               - 1.0)*Velocity_I(iR)*InvB_F
+       end do
+    end do
+
+    ! Calculate the Hamiltonian function used actually: \tilde\deltaH
+    do iR = 1, nR
+       Hamiltonian2_N(0:nQ, 0:nP, iR) = &
+            Hamiltonian2_N(0:nQ, 0:nP, iR)*DeltaP3_I(iR)
+    end do
+
+    ! Boundary condition of Hamiltonian function
+    Hamiltonian2_N(-1  , :   , :   ) = Hamiltonian2_N(0 , :   , : )
+    Hamiltonian2_N(nQ+1, :   , :   ) = Hamiltonian2_N(nQ, :   , : )
+    Hamiltonian2_N(:   , -1  , :   ) = Hamiltonian2_N(: , 1   , : )
+    Hamiltonian2_N(:   , nP+1, :   ) = Hamiltonian2_N(: , nP-1, : )
+    Hamiltonian2_N(:   , :   , 0   ) = Hamiltonian2_N(: , :   , 1 )
+    Hamiltonian2_N(:   , :   , nR+1) = Hamiltonian2_N(: , :   , nR)
+  end subroutine calc_hamiltonian_2
+  !============================================================================
+  subroutine calc_hamiltonian_3(nP, nQ, nR, DeltaMu, MomentumFace_I,  &
+       DeltaSOverB_C, dLnBDeltaS2Dt_C, bDuDt_C, Hamiltonian3_N)
+    ! Calculate the 3rd Hamiltonian function at each fixed time:
+    ! (1-mu^2)/2 * [ mu*(p^3/3)*(3\vec{b}\vec{b}:\nabla\vec{u} - div\vec{u})
+    ! + ProtonMass*p^2*(\vec{b}*d\vec{u}/dt) ], regarding to p^3/3 and mu
+    ! Here we list the variables in the analytical function:
+    ! (3\vec{b}\vec{b}:\nabla\vec{u} - div\vec{u}) = d(ln(B*ds^2))/dt
+    ! ProtonMass = cRmeProtonGeV, in the unit of GeV/c^2
+    ! \vec{b}*d\vec{u}/dt = bDuDt_C
+
+    integer, intent(in) :: nP, nQ, nR     ! Number of s_L, mu, ln(p^3/3) grids
+    real, intent(in)    :: DeltaMu        ! Distance of adjacent two mu
+    real, intent(in)    :: MomentumFace_I(0:nR) ! Momentum at cell face
+    real, intent(in)    :: DeltaSOverB_C(nQ), dLnBDeltaS2Dt_C(nQ), bDuDt_C(nQ)
+    real, intent(inout) :: Hamiltonian3_N(0:nQ+1, -1:nP+1, -1:nR+1)
+    integer             :: iP, iQ, iR     ! Loop variables
+    ! Calculate the third hamiltonian function
+    !--------------------------------------------------------------------------
+    do iR = 0, nR
+       do iP = 0, nP
+          Hamiltonian3_N(1:nQ, iP, iR) = 0.5*(1.0 - (iP*DeltaMu-1.0)**2)*   &
+               ((iP*DeltaMu-1.0)*MomentumFace_I(iR)**3.0/3.0*               &
+               dLnBDeltaS2Dt_C + cRmeProtonGeV*MomentumFace_I(iR)**2*bDuDt_C)
+       end do
+    end do
+
+    ! Calculate the Hamiltonian function used actually：\tilde\deltaH
+    do iQ = 1, nQ
+       Hamiltonian3_N(iQ, 0:nP, 0:nR) = &
+            Hamiltonian3_N(iQ,0:nP,0:nR)*DeltaSOverB_C(iQ)
+    end do
+
+    ! Boundary condition of Hamiltonian function
+    Hamiltonian3_N(0   , :   , :   ) = Hamiltonian3_N(1 , :   , : )
+    Hamiltonian3_N(nQ+1, :   , :   ) = Hamiltonian3_N(nQ, :   , : )
+    Hamiltonian3_N(:   , -1  , :   ) = Hamiltonian3_N(: , 1   , : )
+    Hamiltonian3_N(:   , nP+1, :   ) = Hamiltonian3_N(: , nP-1, : )
+    Hamiltonian3_N(:   , :   , -1  ) = Hamiltonian3_N(: , :   , 0 )
+    Hamiltonian3_N(:   , :   , nR+1) = Hamiltonian3_N(: , :   , nR)
+  end subroutine calc_hamiltonian_3
+  !============================================================================
+  subroutine advance_advect(nP, nQ, nR, DeltaMu,               &
+       MomentumFace_I, dDeltaSOverBDt_C, DeltaHamiltonian1_N,  &
+       DeltaP3_I, Velocity_I, InvB_C, Hamiltonian2_N,          &
+       DeltaSOverB_C, dLnBDeltaS2Dt_C, bDuDt_C, Hamiltonian3_N,&
+       iStep, Time, Dt, DtNext, CflIn,                         &
+       Volume_G, dVolumeDt_G, VDF_G, Source_C)
+    ! Advect transport equation by multi_Poisson scheme
+
+    integer, intent(in) :: nP, nQ, nR     ! Number of s_L, mu, ln(p^3/3) grids
+    real, intent(in)    :: DeltaMu        ! Distance of adjacent two mu's
+    real, intent(in)    :: MomentumFace_I(0:nR) ! Momentum at cell face
+    real, intent(inout) :: dDeltaSOverBDt_C(nQ) ! D[delta(s_L)/B]/Dt
+    real, intent(inout) :: DeltaHamiltonian1_N(0:nQ+1, 0:nP+1, -1:nR+1)
+    real, intent(in)    :: DeltaP3_I(nR)  ! Distance of adjacent two p^3/3
+    real, intent(in)    :: Velocity_I(nR) ! Particle velocity array
+    real, intent(inout) :: InvB_C(nQ)     ! 1/(2B) array
+    real, intent(inout) :: Hamiltonian2_N(-1:nQ+1, -1:nP+1, 0:nR+1)
+    real, intent(inout) :: DeltaSOverB_C(nQ), dLnBDeltaS2Dt_C(nQ), bDuDt_C(nQ)
+    real, intent(inout) :: Hamiltonian3_N(0:nQ+1, -1:nP+1, -1:nR+1)
+    integer, intent(in) :: iStep          ! Current step index
+    real, intent(in)    :: Time           ! Current physical time
+    real, intent(inout) :: Dt             ! DtIn, can be reduced
+    real, intent(inout) :: DtNext         ! DtOut, i.e., DtNext
+    real, intent(in)    :: CflIn          ! Input CFL number
+    real, intent(inout) :: Volume_G(0:nQ+1, 0:nP+1, 0:nR+1)    ! Control Volume
+    real, intent(in)    :: dVolumeDt_G(0:nQ+1, 0:nP+1, 0:nR+1) ! dVolume/dt
+    real, intent(inout) :: VDF_G(-1:nQ+2, -1:nP+2, -1:nR+2)    ! VDF
+    real, intent(inout) :: Source_C(nQ, nP, nR) ! Source at each time step
+    integer             :: iP, iR         ! Loop variables
+
+    ! Advect by multiple Poisson bracket considering the pitch angle
+    !--------------------------------------------------------------------------
+    call update_states(nQ, Time,                &
+         DeltaSOverB_C = DeltaSOverB_C,         &
+         dDeltaSOverBDt_C = dDeltaSOverBDt_C,   &
+         InvB_C = InvB_C, bDuDt_C = bDuDt_C,    &
+         dLnBDeltaS2Dt_C = dLnBDeltaS2Dt_C)     ! Update states first
+    Hamiltonian2_N = 0.0
+    Hamiltonian3_N = 0.0
+
+    ! Calculate 1st Hamiltonian function used in the time-dependent
+    ! poisson bracket: {f_jk, (p^3/3)*(DeltaS/B)}_{tau, p^3/3}
+    call calc_hamiltonian_1(nP, nQ, nR, DeltaMu,   &
+         MomentumFace_I, dDeltaSOverBDt_C, DeltaHamiltonian1_N)
+    ! Calculate 2nd Hamiltonian function used in the time-dependent
+    ! poisson bracket: {f_jk, (mu^2-1)*v/(2B)}_{s_L, mu}
+    call calc_hamiltonian_2(nP, nQ, nR, DeltaMu,   &
+         DeltaP3_I, Velocity_I, InvB_C, Hamiltonian2_N)
+    ! Calculate 3rd Hamiltonian function used in the time-dependent
+    ! poisson bracket: {f_jk, (1-mu^2)/2 * [ mu*(p^3/3)*
+    ! d(ln(B*ds^2))/dt + ProtonMass*p^2*bDuDt_C ]}_{p^3/3, mu}
+    call calc_hamiltonian_3(nP, nQ, nR, DeltaMu, MomentumFace_I,  &
+         DeltaSOverB_C, dLnBDeltaS2Dt_C, bDuDt_C, Hamiltonian3_N)
+
+    ! Calculate the total control volume
+    do iR = 1, nR
+       Volume_G(1:nQ, 0, iR) = DeltaSOverB_C*DeltaMu*DeltaP3_I(iR)
+       do iP = 1, nP+1
+          Volume_G(1:nQ, iP, iR) = Volume_G(1:nQ, 0, iR)
+       end do
+    end do
+
+    ! Boundary conditions for total control volume
+    Volume_G(0,    :,    :) = Volume_G(1 , :,  :)
+    Volume_G(nQ+1, :,    :) = Volume_G(nQ, :,  :)
+    Volume_G(:,    :,    0) = Volume_G(: , :,  1)
+    Volume_G(:,    :, nR+1) = Volume_G(: , :, nR)
+
+    ! First trial: Need DtNext as DtOut
+    if (iStep == 0) then
+       call explicit(nQ, nP, nR, VDF_G, Volume_G, Source_C, &
+            Hamiltonian12_N = Hamiltonian2_N,               &
+            Hamiltonian23_N = -Hamiltonian3_N,              &
+            dHamiltonian03_FZ = DeltaHamiltonian1_N,        &
+            dVolumeDt_G = dVolumeDt_G,                      &
+            DtOut = DtNext, CFLIn=CflIn)
+       ! Subsequent trials: with DtIn=Dt and DtOut=DtNext
+    else
+       call explicit(nQ, nP, nR, VDF_G, Volume_G, Source_C, &
+            Hamiltonian12_N = Hamiltonian2_N,               &
+            Hamiltonian23_N = -Hamiltonian3_N,              &
+            dHamiltonian03_FZ = DeltaHamiltonian1_N,        &
+            dVolumeDt_G = dVolumeDt_G,                      &
+            DtIn = Dt, DtOut = DtNext, CFLIn=CflIn)
+    end if
+
+  end subroutine advance_advect
+  !============================================================================
+  subroutine calc_scatter(nQ, nP, nR, Dt, DeltaMu,    &
+       Velocity_I, InvB_C, n_I, LambdaMuMu_II, VDF_G)
+    ! Calculate scatter: \deltaf/\deltat = (Dmumu*f_mu)_mu
+
+    use ModDiffusion, ONLY: advance_diffusion1, tridiag
+    integer, intent(in) :: nQ, nP, nR     ! Number of s_L, mu, ln(p^3/3) grids
+    real, intent(in) :: Dt                ! Time step
+    real, intent(in) :: DeltaMu           ! Distance of adjacent two mu
+    real, intent(in) :: Velocity_I(nR)    ! Particle velocity in units of c
+    real, intent(in) :: InvB_C(nQ)        ! 1/(2B) along s_L axis
+    real, intent(in) :: n_I(nQ)           ! Density in the unit of amu/m^3
+    real, intent(in) :: LambdaMuMu_II(nQ, nR)   ! lambda_\mu\mu from data
+    real, intent(inout) :: VDF_G(nQ, nP, nR)    ! VDF at s_L, mu, ln(p^3/3)
+
+    ! LOCAL VARs
+    ! Dmumu for each fixed iQ and iR. Dmumu is the coefficient
+    ! of diffusion along the pitch angle, \mu
+    real :: DMuMu_I(0:nP)
+    ! Factorize DMuMu, each factor being only a
+    ! function of s_L, \mu, ln(p^3/3)
+    real :: FactorMu_F(0:nP)
+    ! Lower, main, upper diagonal, output value of the scatter calculation
+    real :: L_I(nP), M_I(nP), U_I(nP), W_I(nP)
+    ! Physical VARs
+    real :: LowerLimitMu         ! Lower limit of Factor_mu
+    real :: DtOverDMu2           ! (\Delta t) / (\Delta \mu^2)
+    real :: Mu_I(0:nP)           ! Face centered value of the pitch angle
+    real :: AlfvenSpeed_I(nQ)    ! Alfven wave speed
+    integer :: iQ, iP, iR        ! Loop integers
+    integer :: switch1, Pnumber  ! Control parameter
+    !--------------------------------------------------------------------------
+
+    DtOverDMu2 = Dt/DeltaMu**2   ! (\Delta t) / (\Delta \mu^2)
+
+    ! Calculate factorized diffusion coefficient
+    LowerLimitMu = (1.0 - DeltaMu**2)*abs(DeltaMu)**(2.0/3.0)
+    do iP = 0, nP
+       Mu_I(iP) = -1.0 + real(iP)*DeltaMu
+       FactorMu_F(iP) = (1.0 - Mu_I(iP)**2)*abs(Mu_I(iP))**(2.0/3.0)
+    end do
+
+    ! Get Alfven speed for each s_L
+    AlfvenSpeed_I = 0.5/(InvB_C*cLightSpeed*sqrt(n_I*cAtomicMass*cMu))
+    ! Calculate the effect of scatter along \mu axis for each fixed iR and iQ
+    do iR = 1, nR
+       do iQ = 1, nQ
+          DMuMu_I = 0.0
+          switch1 = 1
+
+          ! For each pitch angle, we will set DMuMu and solve VDF for scatter
+          do iP = 0, nP
+             ! Control whether we will floor the value of D_\mu\mu or not
+             if (Velocity_I(iR)*abs(Mu_I(iP)) >= 10.0*AlfvenSpeed_I(iQ)) then
+                DMuMu_I(iP) = Velocity_I(iR)/LambdaMuMu_II(iQ, iR)*  &
+                     FactorMu_F(iP)*DtOverDMu2
+             else
+                if (switch1==1) Pnumber = iP
+                switch1 = 0
+                ! Set the lower limit of D_\mu\mu when |\mu| is close to zero
+                DMuMu_I(iP) = Velocity_I(iR)/LambdaMuMu_II(iQ,iR)*   &
+                     max(FactorMu_F(Pnumber), LowerLimitMu)*DtOverDMu2
+             end if
+          end do
+
+          ! Set up coefficients for solving linear equation sets
+          L_I = - DMuMu_I(0:nP-1)
+          U_I = - DMuMu_I(1:nP  )
+          M_I = 1.0 - L_I - U_I
+          W_I = VDF_G(iQ, 1:nP, iR)
+
+          ! For each pitch angle, we finally solve VDF for scattering effect
+          call tridiag(nP, L_I, M_I, U_I, W_I, VDF_G(iQ, 1:nP, iR))
+       end do
+    end do
+  end subroutine calc_scatter
+  !============================================================================
+  subroutine diffuse_scatter(nP, nQ, nR, Dt, DeltaMu, &
+       Velocity_I, InvB_C, DeltaSface_I, LambdaMuMu_II, VDF_G)
+    ! Calculate scatter_diffusion: \deltaf/\deltat = (Dmumu*f_mu)_mu
+
+    use ModDiffusion, ONLY: advance_diffusion1
+    integer, intent(in) :: nQ, nP, nR     ! Number of s_L, mu, ln(p^3/3) grids
+    real, intent(in) :: Dt                ! Time step
+    real, intent(in) :: DeltaMu           ! Distance of adjacent two mu
+    real, intent(in) :: Velocity_I(nR)    ! Particle velocity in units of c
+    real, intent(in) :: InvB_C(nQ)        ! 1/(2B) along s_L axis
+    real, intent(in) :: DeltaSface_I(nQ-1)! Distance between s_L centers
+    real, intent(in) :: LambdaMuMu_II(nQ, nR)   ! lambda_\mu\mu from data
+    real, intent(inout) :: VDF_G(nQ, nP, nR)    ! VDF at s_L, mu, ln(p^3/3)
+
+    ! LOCAL VARs
+
+    real :: DInner_I(nQ), DOuter_I(nQ)    ! Inner/Outer diffusion coffecients
+    real :: Dist_I(nQ)                    ! Distance between s_L centers
+    real :: dxx(nQ)                       ! Dxx diffusion coffecient
+    integer :: iQ, iP, iR                 ! Loop integers
+
+    !--------------------------------------------------------------------------
+    Dist_I = 1.0                          ! Initial Dist_I
+    Dist_I(1: nQ-1) = DeltaSface_I        ! Assign DeltaSface_I(1:nQ-1)
+
+    ! Calculate the effect of scatter along s_L axis for each fixed iR and iP
+    do iR = 1, nR
+       do iP = 1, nP
+          ! Set inner and outer coefficients for diffusion equation
+          DInner_I = 2.0/3.0*Velocity_I(iR)*CoeffMuToxx* &
+               LambdaMuMu_II(:, iR)*InvB_C
+          DOuter_I = 0.50/InvB_C          ! There should be no Dt here!!!
+          ! Finally we diffuse the VDF for scattering effect
+          call advance_diffusion1(Dt, 0, nQ, 0, Dist_I,  &
+               VDF_G(1:nQ, iP, iR), DOuter_I, DInner_I)
+       end do
+    end do
+    dxx = DInner_I*0.5/InvB_C
+  end subroutine diffuse_scatter
+  !============================================================================
+end module ModTestMultiPoisson
+!==============================================================================
 module ModHillVortex
 
   use ModPoissonBracket, ONLY: explicit
@@ -971,9 +1776,9 @@ contains
     real :: Error, Error2, URSph, UTheta
     logical :: DoExit
     !--------------------------------------------------------------------------
-    do j = -500,500
+    do j = -500, 500
        r = 0.01*j
-       do i = -500,500
+       do i = -500, 500
           z = 0.01*i
           RSph = sqrt(z**2 + r**2)
           if(RSph < 1.0)then
@@ -984,7 +1789,7 @@ contains
              Uz = 1.0 - 1.0/RSph**3 + 1.50*r**2/RSph**5
              Ur = -1.50*r*z/RSph**5
           end if
-          Vel_VC(Uz_:Ur_,i,j) = [Uz, Ur]
+          Vel_VC(Uz_:Ur_, i, j) = [Uz, Ur]
        end do
     end do
     call save_plot_file( &
@@ -1140,7 +1945,7 @@ contains
             ParamIn_I=[Error, Error2],&
             VarIn_VII = PlotVar_VC )
        write(*,*)'Error=', Error, ' Error2=', Error2
-       !!! stop
+       ! stop
     end if
     ! Computation
     do iPlot = 0, 99
@@ -1333,29 +2138,31 @@ program test_program
        test_dsa_poisson, test_energy_conservation, test_in_action_angle,  &
        test_poisson_2d, test_poisson_2d_smooth
   use ModNumConst,           ONLY: cTwoPi
-  use ModHillVortex, ONLY: test_hill_vortex
-  use ModStochastic, ONLY: test_stochastic
-  ! use ModTestPoissonBracketAndScatter, ONLY: test_scatter
+  use ModHillVortex,         ONLY: test_hill_vortex
+  use ModStochastic,         ONLY: test_stochastic
+  use ModTestMultiPoisson,   ONLY: test_multi_poisson
 
   implicit none
   !----------------------------------------------------------------------------
   write(*,*)' Start poisson bracket tests'
 
-  call test_poisson_bracket(cTwoPi)        ! nightly test1
+  call test_poisson_bracket(cTwoPi)       ! nightly test1
   call test_poisson_2d(cTwoPi)            ! nightly test2
-  call test_dsa_poisson                  ! nightly test3
+  call test_dsa_poisson                   ! nightly test3
   ! call test_poisson_2d_smooth(cTwoPi)
   ! call test_stochastic(1.2)
   ! call test_hill_vortex
   ! call test_energy_conservation(cTwoPi)
   ! call test_in_action_angle(cTwoPi)
-  call test_dsa_sa_mhd ! for Fig5.Right Panel
-  ! call test_multipoisson_bracket(50.0)
+  call test_dsa_sa_mhd                    ! for Fig 5.Right Panel
 
-  ! Test for comparing two diffusions is long. It should be repeated twice with
-  ! Diffuornot = 0 or 1
-
-  ! call test_scatter(50.0)
+  ! Tests of focused transport equation:
+  ! Advection without any scattering
+  ! call test_multi_poisson(100.0, TypeScatter='no')
+  ! Advection and scattering
+  ! call test_multi_poisson(100.0, TypeScatter='advect_scatter')
+  ! Scatter only by diffusion
+  ! call test_multi_poisson(100.0, TypeScatter='diffuse_scatter')
   write(*,*)' Finish poisson bracket tests'
 
 end program test_program

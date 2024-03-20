@@ -1522,7 +1522,7 @@ sub print_help_xml_param{
 
 The following shows the structure of the XML tags which can be interpreted by
 the CheckParam.pl script, partially used by the XmlToLatex.pl script 
-(and it will also be used by the parameter editor of the GUI in the future).
+and also used by the parameter editor GUI.
 
 <commandList name=...>
 <set name=... type=... value=.../>
@@ -1533,43 +1533,42 @@ the CheckParam.pl script, partially used by the XmlToLatex.pl script
 Description for command group.
 
 <command name=... [alias=...] [if=...] [required="T"] [multiple="T"]>
-	<parameter name=... type="logical" default=.../>
-	<parameter name=... type="integer" [min=...] [max=...] [default=...]/>
-	<parameter name=... type="real" [min=...] [max=...] [default=...]/>
-	<parameter name=... type="string" length=... 
-                 [case="upper" | case="lower"] [default=...]/>
-	<parameter name=... type="integer|real|string" input="select"
-							[multiple="T"]>
-		<option name=... [value=...] [default="T"] 
-					[exclusive="T"] [if=...]/>
-		<optioninput name=... type=... [min=...] [max=...] [length=...]
-						[default=...] [if=...]/>
-	<parameter/>
-	<parameter name=... type="strings" min="..." max="..."
-					[ordered="T"] [duplicate="T"]>
-		<part name=... type="string" input="select"
-					[required="T"] [multiple="T"]>
-			<option name=... [value=...] [default="T"] 
-					[exclusive="T"] [if=...]/>
-		</part>
-	</parameter>
-	<if expr=...>
-		<parameter name=... type="real" [min=...] [max=...] 
-							default=... />
-	</if>
-	<foreach [name=...] values=...>
-		<parameter name=... type="logical" default=.../>
-		...
-	</foreach>
-	<for [name=...] from=... to=...>
-		<parameter name=... type="integer" [min=...] [max=...]
-							default=.../>
-		...
-	</for>
-	<set name=... type=... value=.../>
-	<rule expr=...>
-	... error message for command rule ...
-	</rule>
+  <parameter name=... type="logical" default=.../>
+  <parameter name=... type="integer" [min=...] [max=...] [default=...]/>
+  <parameter name=... type="real" [min=...] [max=...] [default=...]/>
+  <parameter name=... type="string" length=... 
+           [case="upper" | case="lower"] [default=...]/>
+  <parameter name=... type="integer|real|string" input="select"
+  						[multiple="T"]>
+    <option name=... [value=...] [default="T"] [exclusive="T"] [if=...]/>
+    ....
+    <optioninput name=... type=... [min=...] [max=...] [length=...]
+  					[default=...] [if=...]/>
+  <parameter/>
+  <parameter name=... type="strings" min="..." max="..."
+  				[ordered="T"] [duplicate="T"]>
+    <part name=... type="string" input="select" [required="T"] [multiple="T"]>
+      <option name=... [value=...] [default="T"] [exclusive="T"] [if=...]/>
+      ...
+    </part>
+    ...
+  </parameter>
+  <if expr=...>
+    <parameter name=... type="real" [min=...] [max=...] default=... />
+    ...
+  </if>
+  <foreach [name=...] values=...>
+    <parameter name=... type="logical" default=.../>
+    ...
+  </foreach>
+  <for [name=...] from=... to=...>
+    <parameter name=... type="integer" [min=...] [max=...] default=.../>
+    ...
+  </for>
+  <set name=... type=... value=.../>
+  <rule expr=...>
+  ... error message for command rule ...
+  </rule>
 
 verbal description of command
 ...
@@ -1582,10 +1581,6 @@ verbal description of command
 </command>
 
 </commandgroup>
-...
-...
-...
-...
 ...
 ...
 <commandgroup name=...>

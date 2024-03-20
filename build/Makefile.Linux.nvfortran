@@ -133,9 +133,6 @@ CFLAGS = ${CFLAG} -Msave
 Lflag    = ${PRECISION} ${OPENMPFLAG} ${ACCFLAG} ${CPPLIB} ${DEBUG}
 LflagMpi = ${Lflag} ${MPILIB}
 
-# For backward compatibility
-Lflag1 = ${LflagMpi}
-Lflag2 = ${Lflag}
 
 #
 # BLAS and LAPACK libraries

@@ -55,9 +55,6 @@ CFLAGS = ${CFLAG} -save
 Lflag    = ${PRECISION} ${OPENMPFLAG} ${CPPLIB} ${DEBUG} -Wl,-w -Wl=`which gcc` ${OMPLIBC}
 LflagMpi = ${Lflag} ${MPILIB}
 
-# For backward compatibility
-Lflag1 = ${LflagMpi}
-Lflag2 = ${Lflag}
 
 # BLAS and LAPACK libraries
 LBLAS =
