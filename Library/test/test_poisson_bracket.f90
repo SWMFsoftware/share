@@ -1057,7 +1057,6 @@ contains
        HelioDist_I(iQ) = sqrt(RawData1_II(iQ, x_)**2 + &
             RawData1_II(iQ, y_)**2 + RawData1_II(iQ, z_)**2)*cLightSpeed/rSun
     end do
-    write(*,*) RawData1_II(nQ, x_:z_)*cLightSpeed/rSun
 
     ! Kinetic energy convert to momentum (1 MeV – 1 GeV) => (Pmin, Pmax)
     LnP3min = log(sqrt((EkMin + cRmeProtonGeV)**2 - cRmeProtonGeV**2)**3.0/3)
@@ -1085,19 +1084,17 @@ contains
     Velocity_I = 1.0/sqrt(1.0 + cRmeProtonGeV**2/Momentum_I**2)
 
     call init_test_VDF           ! Initialize the VDF
-    Source_C = 0.0               ! Initialize source
-
     ! Calculate VDF for output: integrate over the \mu axis
     VDFOutput_II = sum(VDF_G(1:nQ, 1:nP, 1:nR), dim=2)*DeltaMu
     ! Save the initial outpur of VDF
     call save_plot_file(NameFile='test_multipoisson_000.out',  &
-         TypeFileIn='ascii', TimeIn=Time, nStepIn = iStep,     &
-         NameVarIn='sL logE VDF',                              &
-         CoordMinIn_D=[HelioDist_I(1) ,      Energy_I(1)],     &
-         CoordMaxIn_D=[HelioDist_I(nQ),      Energy_I(nR)],    &
+         TypeFileIn = 'ascii', TimeIn = Time, nStepIn = iStep, &
+         NameVarIn = 'sL logE VDF',                            &
+         CoordMinIn_D = [HelioDist_I(1) ,    Energy_I(1)],     &
+         CoordMaxIn_D = [HelioDist_I(nQ),    Energy_I(nR)],    &
          StringFormatIn = '(3F15.7)',                          &
          Coord1In_I = HelioDist_I,  Coord2In_I = Energy_I,     &
-         VarIn_II = log10(VDFOutput_II(1:nQ,1:nR)))
+         VarIn_II = log10(VDFOutput_II(1:nQ, 1:nR)))
 
     ! Start the main simulation loop
     iStep = 0; Time = 0.0
@@ -1123,8 +1120,6 @@ contains
          DeltaSOverB_C, dLnBDeltaS2Dt_C, bDuDt_C, Hamiltonian3_N, &
          iStep, Time, Dt, DtNext, Cfl,                            &
          Volume_G, dVolumeDt_G, VDF_G, Source_C)
-    call init_test_VDF           ! Recover VDF to its initial state
-    Source_C = 0.0               ! Recover source to its initial state
 
     ! In the loop, we output several snapshots of VDF
     do iOutputFile = 1, nOutputFile
@@ -1158,7 +1153,7 @@ contains
                 ! This step is not at tOutput
                 ! Update VDF_G considering the time-dependent Volume_G
 
-                Source_C = Source_C*Volume_G(1:nQ,1:nP,1:nR)
+                Source_C = Source_C*Volume_G(1:nQ, 1:nP, 1:nR)
                 ! Update DeltaSOverB_C for the calculation of volume
                 call update_states(nQ, Time, DeltaSOverB_C = DeltaSOverB_C)
                 ! Calculate the total control volume
@@ -1170,18 +1165,11 @@ contains
                    end do
                 end do
 
-                ! Boundary conditions for total control volume
-                Volume_G(0,    :,    :) = Volume_G(1 , :,  :)
-                Volume_G(nQ+1, :,    :) = Volume_G(nQ, :,  :)
-                Volume_G(:,    :,    0) = Volume_G(: , :,  1)
-                Volume_G(:,    :, nR+1) = Volume_G(: , :, nR)
-
-                ! Update VDF_G to the CURRENT time
+                ! Update VDF_G to CURRENT time: no BCs for (1:nQ, 1:nP, 1;nR)
                 VDF_G(1:nQ, 1:nP, 1:nR) = VDF_G(1:nQ, 1:nP, 1:nR) +  &
-                     Source_C/Volume_G(1:nQ,1:nP,1:nR)
+                     Source_C/Volume_G(1:nQ, 1:nP, 1:nR)
              end if
 
-             Source_C = 0.0
              ! If there is no scatter, there is only advection
              ! If there is advect_scatter, we will include scattering effect
              if (trim(TypeScatter)=='advect_scatter') then
@@ -1217,13 +1205,13 @@ contains
 
        ! Save the files
        call save_plot_file(NameFile='test_multipoisson_'          &
-            //NameFileSuffix//'.out',   TypeFileIn='ascii',       &
+            //NameFileSuffix//'.out',   TypeFileIn = 'ascii',     &
             TimeIn=Time, nStepIn=iStep, NameVarIn='sL logE VDF',  &
-            CoordMinIn_D=[HelioDist_I(1) ,      Energy_I(1)],     &
-            CoordMaxIn_D=[HelioDist_I(nQ),      Energy_I(nR)],    &
+            CoordMinIn_D = [HelioDist_I(1) ,    Energy_I(1)],     &
+            CoordMaxIn_D = [HelioDist_I(nQ),    Energy_I(nR)],    &
             StringFormatIn = '(3F15.7)',                          &
             Coord1In_I = HelioDist_I,   Coord2In_I = Energy_I,    &
-            VarIn_II = log10(VDFOutput_II(1:nQ,1:nR)))
+            VarIn_II = log10(VDFOutput_II(1:nQ, 1:nR)))
     end do
 
   contains
