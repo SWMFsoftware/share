@@ -1,4 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 program process_var_name_test
 
@@ -18,10 +19,11 @@ program process_var_name_test
   integer  :: nWaveName, nMaterialName, nChargeStateName
   character(len=15),allocatable :: NameVarFixed_V(:)
   ! ----------------------------------------------------------
+  !----------------------------------------------------------------------------
   nVar = size(NameVar_V,1)
   ! Replace '?' characters with numbers (for waves/materials)
-  call set_namevar 
- 
+  call set_namevar
+
   ! Fix string array to comply with usual input to process_var_name.
   ! String length should be fixed(=15) regardless of length in ModEquation.
   ! All characters should be lower case.
@@ -43,6 +45,7 @@ program process_var_name_test
   deallocate(NameVarFixed_V)
 
 contains
+  !============================================================================
 
  subroutine set_namevar
 
@@ -50,11 +53,11 @@ contains
     character(len=3):: NameWave
     integer :: iMaterial
     character(len=2):: NameMaterial
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     iWave = 1
     iMaterial = 1
     do iVar = 1, nVar
-  
+
        ! Fix the NameVar_V string for waves
        if(index(NameVar_V(iVar),'I?') >= 1) then
           write(NameWave,'(a,i2.2)') 'i',iWave
@@ -72,7 +75,9 @@ contains
     end do
 
   end subroutine set_namevar
+  !============================================================================
 
 end program process_var_name_test
+!==============================================================================
 ! =================================================================
 ! =================================================================
