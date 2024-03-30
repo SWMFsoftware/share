@@ -1,6 +1,7 @@
-!  Copyright (C) 2002 Regents of the University of Michigan,
-!  portions used with permission
-!  For more information, see http://csem.engin.umich.edu/tools/swmf
+! Copyright (C) 2002 Regents of the University of Michigan,
+! portions used with permission
+! For more information, see http://csem.engin.umich.edu/tools/swmf
+
 program process_var_name_test
 
   ! This test is designed to be perfomed using, in turn, all the ModEquation
@@ -18,7 +19,6 @@ program process_var_name_test
   integer  :: nDensity, nSpeed, nP, nPpar, nVar, iVar
   integer  :: nWaveName, nMaterialName, nChargeStateName
   character(len=15),allocatable :: NameVarFixed_V(:)
-  ! ----------------------------------------------------------
   !----------------------------------------------------------------------------
   nVar = size(NameVar_V,1)
   ! Replace '?' characters with numbers (for waves/materials)
@@ -46,8 +46,7 @@ program process_var_name_test
 
 contains
   !============================================================================
-
- subroutine set_namevar
+  subroutine set_namevar
 
     integer :: iWave
     character(len=3):: NameWave
@@ -76,8 +75,5 @@ contains
 
   end subroutine set_namevar
   !============================================================================
-
 end program process_var_name_test
 !==============================================================================
-! =================================================================
-! =================================================================
