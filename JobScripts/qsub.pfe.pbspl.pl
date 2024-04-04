@@ -129,7 +129,7 @@ LOOP:{
 	my $status = $2;
 	print "id=$id status=$status: $_";
 	$ids .= " $id";
-	$running = $id if $status =~ /R \d\d/;
+	$running = $id if $status =~ /R\s+\d\d/;
     }
     print "-------------------------\n";
     print "running=$running\n" if $running;
