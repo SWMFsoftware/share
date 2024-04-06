@@ -1526,7 +1526,7 @@ contains
                DoExtrapolate, 'Called from '//NameSub)
 
           j2 = j1 + 1; Dy2 = 1.0 - Dy1
-          
+
           ! If value is outside table, use last value (works well for constant)
           Value_V = Dy2*( Dx2*Ptr%Value4_VC(:,i1,j1,1,1,1)   &
                +          Dx1*Ptr%Value4_VC(:,i2,j1,1,1,1))  &
