@@ -1470,10 +1470,9 @@ contains
     end if
   end subroutine interpolate_arg_array
   !============================================================================
-
   subroutine interpolate_with_known_val(&
        iTable, iVal, ValIn, Arg2In, Value_V, &
-       Arg1Out, DoExtrapolate)
+       Arg1Out, Arg1In, Arg2Out, DoExtrapolate)
 
     ! Return the array of values Value_V corresponding to the argument
     ! Arg2In in iTable, with Arg1Out calculated from the condition, that
@@ -1488,13 +1487,15 @@ contains
     integer, intent(in) :: iTable            ! table
     integer, intent(in) :: iVal              ! which value is known
     real,    intent(in) :: ValIn             ! known table value
+    real,    optional,   intent(in) :: Arg1In! first input argument if any
     real,    optional,   intent(in) :: Arg2In! second input argument if any
     real,    intent(out):: Value_V(:)        ! output values
 
     real, optional, intent(out) :: Arg1Out        ! optional calculated Arg
+    real, optional, intent(out) :: Arg2Out        ! optional calculated Arg
     logical, optional, intent(in):: DoExtrapolate ! optional extrapolation
 
-    real :: Arg2
+    real :: Arg1, Arg2
     type(TableType), pointer:: Ptr
 
     real    :: Dx1, Dx2, Dy1, Dy2
@@ -1506,7 +1507,51 @@ contains
          ': incorrect value for iTable=', iTable)
 
     Ptr => Table_I(iTable)
-    if(present(Arg2In))then
+    if(present(Arg1In))then
+       Arg1 = Arg1In
+
+       If(Ptr%IsLogIndex_I(1)) Arg1 = log10(Arg1)
+
+       call find_cell(1, Ptr%nIndex_I(1), &
+            (Arg1- Ptr%IndexMin_I(1))/Ptr%dIndex_I(1)+ 1 , &
+            i1, Dx1, &
+            DoExtrapolate=DoExtrapolate, &
+            StringError = 'Called from '//NameSub)
+
+       i2 = i1 + 1; Dx2 = 1.0 - Dx1
+       if(allocated(Ptr%Value4_VC))then
+          call find_cell(1, Ptr%nIndex_I(2), ValIn, j1, Dy1, &
+               Dx2*Ptr%Value4_VC(iVal,i1,:,1,1,1) + &
+               Dx1*Ptr%Value4_VC(iVal,i2,:,1,1,1), &
+               DoExtrapolate, 'Called from '//NameSub)
+
+          j2 = j1 + 1; Dy2 = 1.0 - Dy1
+
+          ! If value is outside table, use last value (works well for constant)
+          Value_V = Dy2*( Dx2*Ptr%Value4_VC(:,i1,j1,1,1,1)   &
+               +          Dx1*Ptr%Value4_VC(:,i2,j1,1,1,1))  &
+               +    Dy1*( Dx2*Ptr%Value4_VC(:,i1,j2,1,1,1)   &
+               +          Dx1*Ptr%Value4_VC(:,i2,j2,1,1,1))
+       else
+          call find_cell(1, Ptr%nIndex_I(2), ValIn, j1, Dy1, &
+               Dx2*Ptr%Value_VC(iVal,i1,:,1,1,1) + &
+               Dx1*Ptr%Value_VC(iVal,i2,:,1,1,1), &
+               DoExtrapolate, 'Called from '//NameSub)
+
+          j2 = j1 + 1; Dy2 = 1.0 - Dy1
+
+          ! If value is outside table, use last value (works well for constant)
+          Value_V = Dy2*( Dx2*Ptr%Value_VC(:,i1,j1,1,1,1)   &
+               +          Dx1*Ptr%Value_VC(:,i2,j1,1,1,1))  &
+               +    Dy1*( Dx2*Ptr%Value_VC(:,i1,j2,1,1,1)   &
+               +          Dx1*Ptr%Value_VC(:,i2,j2,1,1,1))
+       end if
+       if(present(Arg2Out))then
+          Arg2Out = (j1 - 1 + Dy1)*Ptr%dIndex_I(2) + Ptr%IndexMin_I(2)
+          if(Ptr%IsLogIndex_I(2)) Arg2Out = 10**Arg2Out
+       end if
+       RETURN
+    elseif(present(Arg2In))then
        Arg2 = Arg2In
 
        If(Ptr%IsLogIndex_I(2)) Arg2 = log10(Arg2)
@@ -1739,6 +1784,15 @@ contains
     if(any(abs(Value_I - ValueGood_I) > 1e-5) .or. abs(Arg - 1.0) >  1e-5)then
        write(*,*)'Value_I=',Value_I, ' Arg =', Arg,&
             ' are different from ValueGood_I=',ValueGood_I, ' ArgGood = 1.0'
+       call CON_stop(NameSub)
+    end if
+
+    ! Test with the condition that Value_I(3)=3.0 and find first argument Arg
+    call interpolate_lookup_table(2, 3, 3.0, &
+         Value_V=Value_I, Arg1In=1.0, Arg2Out=Arg)
+    if(any(abs(Value_I - ValueGood_I) > 1e-5) .or. abs(Arg - 2.0) >  1e-5)then
+       write(*,*)'Value_I=',Value_I, ' Arg =', Arg,&
+            ' are different from ValueGood_I=',ValueGood_I, ' ArgGood = 2.0'
        call CON_stop(NameSub)
     end if
 
