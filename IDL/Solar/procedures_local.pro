@@ -1427,7 +1427,7 @@ pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
   ti = p*ProtonMass/rho/k*1.e-7
   te = pe*ProtonMass/rho/k*1.e-7
   if (DoI01 && DoI02) then begin
-     ew = i01 + i01             ;ergs/cc
+     ew = i01 + i02             ;ergs/cc
      deltab = sqrt(4*!pi*ew)    ; Gauss
      deltau = sqrt(ew/rho)      ; cm/s
      btotal = sqrt(bt^2+deltab^2) ; Gauss
