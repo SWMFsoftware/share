@@ -219,6 +219,7 @@ contains
     ! re-usable and can be also applied to calculate the resistivity:
     ! \eta = m \nu_{ei}/(e**2 Ne)
 
+    !--------------------------------------------------------------------------
     te_ti_exchange_rate = &
          CoulombLog/sqrt(cElectronMass)*  &
          ( cElectronCharge**2 / cEps)**2 /&! effective ei collision frequency
