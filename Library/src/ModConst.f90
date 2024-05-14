@@ -194,6 +194,38 @@ contains
          *((cEps/cElectronCharge)*(cBoltzmann/cElectronCharge))**2
   end function kappa_0_e
   !============================================================================
+  real function te_ti_exchange_rate(CoulombLog)
+    real, intent(in):: CoulombLog
+    ! In hydrogen palsma, the electron-ion heat exchange is described by
+    ! the equation as follows:
+    ! dTe/dt = -(Te-Ti)/(tau_{ei})
+    ! dTi/dt = +(Te-Ti)/(tau_{ei})
+    ! The expression for 1/tau_{ei} may be found in
+    ! Lifshitz&Pitaevskii, Physical Kinetics, Eq.42.5
+    ! note that in the Russian edition they denote k_B T as Te and
+    ! the factor 3 is missed in the denominator:
+    ! 1/tau_ei = 2* CoulombLog * sqrt{m_e} (e^2/cEps)**2* Z**2 *Ni /&
+    ! ( 3 * (2\pi k_B Te)**1.5 M_p). This exchange rate scales linearly
+    ! with the plasma density, therefore, we introduce its ratio to
+    ! the particle concentration. We calculate the temperature exchange
+    ! rate by multiplying the expression for electron-ion effective
+    ! collision rate,
+    ! \nu_{ei} = CoulombLog/sqrt(cElectronMass)*  &
+    !            ( cElectronCharge**2 / cEps)**2 /&
+    !            ( 3 *(cTwoPi*cBoltzmann)**1.50 )* Ne/Te**1.5
+    !  and then multiply in by the energy exchange coefficient
+    !            (2*cElectronMass/cProtonMass)
+    ! The calculation of the effective electron-ion collision rate is
+    ! re-usable and can be also applied to calculate the resistivity:
+    ! \eta = m \nu_{ei}/(e**2 Ne)
+
+    te_ti_exchange_rate = &
+         CoulombLog/sqrt(cElectronMass)*  &
+         ( cElectronCharge**2 / cEps)**2 /&! effective ei collision frequency
+         ( 3 *(cTwoPi*cBoltzmann)**1.50 ) &
+         *(2*cElectronMass/cProtonMass)    ! *energy exchange per ei collision
+  end function te_ti_exchange_rate
+  !============================================================================
   real function momentum_to_energy(Momentum, NameParticle)
 
     real,intent(in):: Momentum
