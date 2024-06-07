@@ -188,7 +188,11 @@ function funcdef, xx, w, func
      ['dBn7'     , '{dBnmhd}+{dBnfac}+smooth({dBnhal}+{dBnped},7)'], $ ; dBn smooth 
      ['dBe7'     , '{dBemhd}+{dBefac}+smooth({dBehal}+{dBeped},7)'], $ ; dBn smooth
      ['dBh7'     , 'sqrt({dBn7}^2+{dBe7}^2)'], $  ; dB horizontal with smooth 5
-     ['dBh'      , 'sqrt({dBn}^2+{dBe}^2)']    $  ; dB horizontal
+     ['dBh'      , 'sqrt({dBn}^2+{dBe}^2)'],    $  ; dB horizontal
+     ['ne14ux'   , '({neuux}*{neurho}+{ne4ux}*{ne4rho})/({neurho}+{ne4rho})'], $
+     ['ne14uz'   , '({neuuz}*{neurho}+{ne4uz}*{ne4rho})/({neurho}+{ne4rho})'], $
+     ['uxne14'   , '({uxneu}*{rhoneu}+{uxne4}*{rhone4})/({rhoneu}+{rhone4})'], $
+     ['uzne14'   , '({uzneu}*{rhoneu}+{uzne4}*{rhone4})/({rhoneu}+{rhone4})']  $
                           ]))
 
   common file_head
