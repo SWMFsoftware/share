@@ -17,10 +17,10 @@ module ModPlanetConst
   ! The maximum number of astronomical bodies.  This is set at 200, it can be
   ! increased if necessary
 
-  integer,parameter :: MaxPlanet = 200
+  integer, parameter:: MaxPlanet = 200
 
-  integer, parameter :: lNamePlanet = 40
-  integer, parameter :: lTypeBField = 40
+  integer, parameter:: lNamePlanet = 40
+  integer, parameter:: lTypeBField = 40
 
   ! Declarations for the variables that we are storing to define each body.
   !
@@ -36,21 +36,21 @@ module ModPlanetConst
   real,dimension(0:MaxPlanet+1):: RightAscension_I, Inclination_I, ArgPeriapsis_I
   real,dimension(0:MaxPlanet+1):: OrbitalPeriodPlanet_I, RotationPeriodPlanet_I
 
-  integer,dimension(0:MaxPlanet+1) :: &
+  integer,dimension(0:MaxPlanet+1):: &
        iYearEquinoxPlanet_I, iMonthEquinoxPlanet_I, iDayEquinoxPlanet_I, &
        iHourEquinoxPlanet_I,iMinuteEquinoxPlanet_I,iSecondEquinoxPlanet_I
-  real,dimension(0:MaxPlanet+1)    :: FracSecondEquinoxPlanet_I
-  real,dimension(0:MaxPlanet+1)    :: TiltPlanet_I
+  real,dimension(0:MaxPlanet+1)   :: FracSecondEquinoxPlanet_I
+  real,dimension(0:MaxPlanet+1)   :: TiltPlanet_I
 
-  character (len=lTypeBField)   :: TypeBFieldPlanet_I(0:MaxPlanet+1)
-  real,dimension(0:MaxPlanet+1) :: DipoleStrengthPlanet_I
-  real,dimension(0:MaxPlanet+1) :: bAxisThetaPlanet_I, bAxisPhiPlanet_I
+  character (len=lTypeBField)  :: TypeBFieldPlanet_I(0:MaxPlanet+1)
+  real,dimension(0:MaxPlanet+1):: DipoleStrengthPlanet_I
+  real,dimension(0:MaxPlanet+1):: bAxisThetaPlanet_I, bAxisPhiPlanet_I
 
-  real,dimension(0:MaxPlanet+1) :: IonoHeightPlanet_I
+  real,dimension(0:MaxPlanet+1):: IonoHeightPlanet_I
 
-  character (len=lNamePlanet)   :: NamePlanet_I(0:MaxPlanet+1)
+  character (len=lNamePlanet)  :: NamePlanet_I(0:MaxPlanet+1)
 
-  integer :: Planet_
+  integer:: Planet_
 
   ! Below are defining constants for all astronomical bodies.  They are
   ! grouped using a system similar to JPL's naif/spice toolkit although
@@ -60,39 +60,39 @@ module ModPlanetConst
   ! can easily find the index and can also see the naming system
 
   ! No Planet (in other words, no body)
-  integer,parameter :: NoPlanet_  =  0
+  integer, parameter:: NoPlanet_  =  0
 
   ! New Planet (a body that is not in the database below)
-  integer,parameter :: NewPlanet_  =  MaxPlanet+1
+  integer, parameter:: NewPlanet_  =  MaxPlanet+1
 
   ! Sun, planets + Pluto
-  integer,parameter :: Sun_       =  1
-  integer,parameter :: Mercury_   = 10
-  integer,parameter :: Venus_     = 20
-  integer,parameter :: Earth_     = 30
-  integer,parameter :: Mars_      = 40
-  integer,parameter :: Jupiter_   = 50
-  integer,parameter :: Saturn_    = 60
-  integer,parameter :: Uranus_    = 70
-  integer,parameter :: Neptune_   = 80
-  integer,parameter :: Pluto_     = 90
+  integer, parameter:: Sun_       =  1
+  integer, parameter:: Mercury_   = 10
+  integer, parameter:: Venus_     = 20
+  integer, parameter:: Earth_     = 30
+  integer, parameter:: Mars_      = 40
+  integer, parameter:: Jupiter_   = 50
+  integer, parameter:: Saturn_    = 60
+  integer, parameter:: Uranus_    = 70
+  integer, parameter:: Neptune_   = 80
+  integer, parameter:: Pluto_     = 90
 
   ! Moons of planets (the order of the moons is not in radial distance)
-  integer,parameter :: Moon_      = 31
-  integer,parameter :: Io_        = 51
-  integer,parameter :: Europa_    = 52
-  integer,parameter :: Titan_     = 61
-  integer,parameter :: Enceladus_ = 62
+  integer, parameter:: Moon_      = 31
+  integer, parameter:: Io_        = 51
+  integer, parameter:: Europa_    = 52
+  integer, parameter:: Titan_     = 61
+  integer, parameter:: Enceladus_ = 62
 
   ! For other solar system bodies (comets, asteroids, extra solar planets)
   ! the index is 100 or above
-  integer,parameter :: Halley_               = 100
-  integer,parameter :: Comet1P_              = 100
-  integer,parameter :: Borrelly_             = 101
-  integer,parameter :: Comet19P_             = 101
-  integer,parameter :: CometCG_              = 102
-  integer,parameter :: Comet67P_             = 102
-  integer,parameter :: HaleBopp_             = 103
+  integer, parameter:: Halley_               = 100
+  integer, parameter:: Comet1P_              = 100
+  integer, parameter:: Borrelly_             = 101
+  integer, parameter:: Comet19P_             = 101
+  integer, parameter:: CometCG_              = 102
+  integer, parameter:: Comet67P_             = 102
+  integer, parameter:: HaleBopp_             = 103
 
 contains
   !============================================================================
@@ -103,7 +103,7 @@ contains
     !--------------------------------------------------------------------------
     save
 
-    integer :: i
+    integer:: i
     !-----------------------------------------------------------------------
     ! Initialize all values - below set only the non-default values
     NamePlanet_I                     = ''
@@ -190,8 +190,26 @@ contains
 
     rPlanet_I(Moon_)                    = 1737.0e+3               ! [ m]
     mPlanet_I(Moon_)                    = 7.3477e+22              ! [kg]
-    OrbitalPeriodPlanet_I(Moon_)        = 27.321582 * cDay        ! [ s]
-    RotationPeriodPlanet_I(Moon_)       = 27.321582 * cDay        ! [ s]
+
+    ! Same values as for Earth (relative to the Sun)
+    rOrbitPlanet_I(Moon_)              = cAU                     ! [ m]
+    OrbitalPeriodPlanet_I(Moon_)       = 365.24218967 * cDay     ! [ s]
+    RotationPeriodPlanet_I(Moon_)      = cDay                    ! [ s]
+    Excentricity_I(Moon_)              = 0.016                   ! dimless
+    ! As in geopack
+    RightAscension_I(Moon_)            = 75.77                   ! [Degs]
+    ! As in geopack
+    Inclination_I(Moon_)               = 7.25                    ! [Degs]
+    ! https://data.giss.nasa.gov/cgi-bin/ar5/srorbpar.cgi for year 2023
+    ArgPeriapsis_I(Moon_)              = 283.29                  ! [Degs]
+
+    iYearEquinoxPlanet_I(Moon_)        = 2000                    ! [yr]
+    iMonthEquinoxPlanet_I(Moon_)       =    3                    ! [mo]
+    iDayEquinoxPlanet_I(Moon_)         =   20                    ! [dy]
+    iHourEquinoxPlanet_I(Moon_)        =    7                    ! [hr]
+    iMinuteEquinoxPlanet_I(Moon_)      =   35                    ! [mn]
+    iSecondEquinoxPlanet_I(Moon_)      =    0                    ! [ s]
+    FracSecondEquinoxPlanet_I(Moon_)   =  0.0                    ! [ s]
 
     ! Mars (40)
     NamePlanet_I(Mars_)                 = 'MARS'

@@ -535,7 +535,7 @@ contains
 
   end subroutine lonlat_to_xyz23
   !============================================================================
-  subroutine dir_to_xyz21(Theta,Phi,Xyz_D)
+  subroutine dir_to_xyz21(Theta, Phi, Xyz_D)
     !$acc routine seq
 
     real, intent(in) :: Theta, Phi
@@ -567,7 +567,7 @@ contains
 
   end subroutine dir_to_xyz41
   !============================================================================
-  subroutine dir_to_xyz43(SinTheta,CosTheta,SinPhi,CosPhi,x,y,z)
+  subroutine dir_to_xyz43(SinTheta, CosTheta, SinPhi, CosPhi, x, y, z)
     !$acc routine seq
 
     real, intent(in) :: SinTheta, CosTheta, SinPhi, CosPhi
@@ -578,9 +578,9 @@ contains
     ! given with 4 trigonometric functions or 2 angles.
     ! The Cartesian unit vector can be returned in 1 array or 3 scalars.
     !--------------------------------------------------------------------------
-    x = SinTheta*CosPhi
-    y = SinTheta*SinPhi
-    z = CosTheta
+    x = min(1.0, max(-1.0, SinTheta*CosPhi))
+    y = min(1.0, max(-1.0, SinTheta*SinPhi))
+    z = min(1.0, max(-1.0, CosTheta))
 
   end subroutine dir_to_xyz43
   !============================================================================
@@ -1203,7 +1203,7 @@ contains
     if(x==0 .and. y==0)then
        atan2_check = 0
     else
-       atan2_check = atan2(x,y)
+       atan2_check = atan2(x, y)
     end if
     if(atan2_check < 0.0)atan2_check = atan2_check + cTwoPi
 

@@ -140,7 +140,7 @@ module CON_axes
 
   use ModKind
   use ModCoordTransform, ONLY: rot_matrix_x, rot_matrix_y, rot_matrix_z, &
-       show_rot_matrix, cross_product, dir_to_xyz, xyz_to_dir
+       show_rot_matrix, cross_product, dir_to_xyz, xyz_to_dir, atan2_check
   use ModTimeConvert, ONLY: time_int_to_real,time_real_to_int
   use ModPlanetConst, ONLY: DipoleStrengthPlanet_I, Earth_, CAU
   use CON_planet, ONLY: UseSetMagAxis, UseSetRotAxis, UseAlignedAxes, &
@@ -222,7 +222,6 @@ module CON_axes
 
 contains
   !============================================================================
-
   subroutine init_axes(tStartIn)
 
     real(Real8_) :: tStartIn
@@ -282,9 +281,10 @@ contains
                   cHalfPi - OmegaOrbit*(tStart - TimeEquinox % Time), cTwoPi8)
           end if
           if(DoTest)write(*,*)NameSub, &
-               ': UseRealRotAxis, UseRealMagAxis, TiltRotation, OmegaOrbit, tStart, tEquinox=',&
-                UseRealRotAxis, UseRealMagAxis, TiltRotation*cRadToDeg, OmegaOrbit, tStart, &
-                TimeEquinox % Time
+               ': UseRealRotAxis, UseRealMagAxis, TiltRotation, ', &
+               'OmegaOrbit, tStart, tEquinox=', &
+               UseRealRotAxis, UseRealMagAxis, TiltRotation*cRadToDeg, &
+               OmegaOrbit, tStart, TimeEquinox % Time
        else
           ! Rotational axis must be aligned with magnetic axis
           if(UseSetMagAxis)then
@@ -313,7 +313,7 @@ contains
     ! Calculate initial position for the magnetic axis in GSE and GEI systems
     if(UseRealMagAxis)then
        ! Cartesian coordinates of the magnetic axis unit vector in GEO
-       call dir_to_xyz(MagAxisThetaGeo,MagAxisPhiGeo,MagAxis_D)
+       call dir_to_xyz(MagAxisThetaGeo, MagAxisPhiGeo, MagAxis_D)
 
        if(DoTest)then
           write(*,*)'MagAxisThetaGeo,MagAxisPhiGeo=',&
@@ -411,25 +411,25 @@ contains
     call set_v_planet
 
     ! Set the time dependent axes for the initial time
-    call set_axes(0.0,.true.)
+    call set_axes(0.0, .true.)
 
     if(DoTest)then
        write(*,*)'Final rotation axis:'
        write(*,*)'RotAxisTheta,RotAxisPhi=',&
             RotAxisTheta*cRadToDeg, RotAxisPhi*cRadToDeg
-       write(*,*)'RotAxisGse_D =',RotAxis_D
-       write(*,*)'RotAxisGsm_D =',RotAxisGsm_D
+       write(*,*)'RotAxisGse_D =', RotAxis_D
+       write(*,*)'RotAxisGsm_D =', RotAxisGsm_D
        XyzPlanetHgr_D = matmul(HgrHgi_DD, XyzPlanetHgi_D)
        write(*,*)'dLongitudeHgr,dLongitudeHgi=',&
             dLongitudeHgrDeg, dLongitudeHgiDeg
+       write(*,*)'XyzPlanetHgi_D/rSun = ', XyzPlanetHgi_D/rSun
+       write(*,*)'XyzPlanetHgr_D/rSun = ', XyzPlanetHgr_D/rSun
        write(*,*)'r/AU,HG_lat,HGR_lon,HGI_lon=',&
             sqrt(sum(XyzPlanetHgi_D**2))/cAU,&
             asin(XyzPlanetHgi_D(3)/sqrt(sum(XyzPlanetHgi_D**2)))*cRadToDeg, &
-            atan2(XyzPlanetHgr_D(2),XyzPlanetHgr_D(1))*cRadToDeg,&
-            atan2(XyzPlanetHgi_D(2),XyzPlanetHgi_D(1))*cRadToDeg
-       write(*,*)'XyzPlanetHgi_D/rSun = ',XyzPlanetHgi_D/rSun
-       write(*,*)'XyzPlanetHgr_D/rSun = ',XyzPlanetHgr_D/rSun
-       write(*,*)'vPlanetHgi_D/(km/s) = ',vPlanetHgi_D/1000.0
+            atan2_check(XyzPlanetHgr_D(2), XyzPlanetHgr_D(1))*cRadToDeg, &
+            atan2_check(XyzPlanetHgi_D(2), XyzPlanetHgi_D(1))*cRadToDeg
+       write(*,*)'vPlanetHgi_D/(km/s) = ', vPlanetHgi_D/1000.0
        write(*,*)'HgiGse_DD='
        call show_rot_matrix(HgiGse_DD)
        write(*,*)'GsmGse_DD='
@@ -441,7 +441,6 @@ contains
     !$acc update device(tStart)
   contains
     !==========================================================================
-
     subroutine set_gse_gei_matrix
 
       ! The GseGei_DD matrix converts between GSE and GEI with two rotations:
@@ -451,9 +450,7 @@ contains
       !
       ! The GseGei_DD matrix changes at the order of TimeSimulation/TimeOrbit.
       ! For usual simulations that change can be safely neglected.
-
       !------------------------------------------------------------------------
-
       GseGei_DD = matmul(&
            rot_matrix_z(RotAxisPhi + cHalfPi), &
            rot_matrix_x(RotAxisTheta) &
@@ -461,7 +458,6 @@ contains
 
     end subroutine set_gse_gei_matrix
     !==========================================================================
-
     subroutine set_mag_geo_matrix
 
       ! The first rotation is around the Z_GEO axis with MagAxisPhiGeo,
@@ -471,7 +467,6 @@ contains
       !
       ! This matrix only changes with the slow motion of the magnetix axis
       ! relative to the Earth.
-
       !------------------------------------------------------------------------
       MagGeo_DD = matmul( &
            rot_matrix_y(-MagAxisThetaGeo), &
@@ -479,7 +474,6 @@ contains
 
     end subroutine set_mag_geo_matrix
     !==========================================================================
-
     subroutine set_hgi_gse_d_planet(tSimulation)
 
       ! Calculate HgiGse matrix from geopack_recalc in CON_geopack
@@ -487,7 +481,6 @@ contains
       real, intent(in) :: tSimulation
 
       integer :: iTime_I(1:7)
-
       !------------------------------------------------------------------------
       call time_real_to_int(tStart + tSimulation, iTime_I)
       call geopack_recalc(iTime_I)
@@ -520,8 +513,8 @@ contains
          dLongitudeHgr = modulo( &
               + dLongitudeHgi &                         ! HGI logtitude offset
               + atan2(HgiGse_DD(2,1), HgiGse_DD(1,1)) & ! HGI_lon of anti-Earth
-              - OmegaCarrington*(tStart - tStartCarringtonCoord), & ! HGI-HGR angle
-              cTwoPi8)                                         !     at tSim=0
+              - OmegaCarrington*(tStart - tStartCarringtonCoord), & ! HGI-HGR
+              cTwoPi8)                                     ! angle at tSim=0
 
          ! Reset dLongitudeHgrDeg to be a valid but negative value
          dLongitudeHgrDeg = dLongitudeHgr*cRadToDeg - 360.0
@@ -578,8 +571,10 @@ contains
   end subroutine set_gei_geo_matrix
   !============================================================================
   subroutine set_axes(TimeSim, DoSetAxes)
-    use CON_planet,        ONLY: RightAscension, TimeEquinox, Inclination, &
+
+    use CON_planet, ONLY: RightAscension, TimeEquinox, Inclination, &
          OmegaOrbit, UseOrbitElements, orbit_in_hgi
+
     real,              intent(in) :: TimeSim
     logical, optional, intent(in) :: DoSetAxes
 
@@ -700,7 +695,7 @@ contains
     ! This matrix changes with simulation time unless
     !    UseRotation=.false. or UseAlignedAxes=.true.
 
-    GsmGse_DD = rot_matrix_x( atan2(MagAxis_D(y_),MagAxis_D(z_)) )
+    GsmGse_DD = rot_matrix_x(atan2_check(MagAxis_D(y_), MagAxis_D(z_)))
 
     ! Calculate the rotation matrix to convert between SMG and GSM systems.
     ! This is a rotation around the Y axis with the magnetic tilt_GSM,
@@ -777,7 +772,6 @@ contains
 
   end subroutine get_axes
   !============================================================================
-
   function transform_matrix(TimeSim,TypeCoordIn,TypeCoordOut) result(Rot_DD)
 
     real,             intent(in) :: TimeSim      ! Simulation time
@@ -878,7 +872,6 @@ contains
 
   end function transform_matrix
   !============================================================================
-
   function angular_velocity(TimeSim, NameCoord1, NameCoord2In, iFrame) &
        result(Omega_D)
 
@@ -978,7 +971,6 @@ contains
 
   end function angular_velocity
   !============================================================================
-
   function transform_velocity(TimeSim, v1_D, Xyz1_D, &
        NameCoord1, NameCoord2) result(v2_D)
 
@@ -1009,9 +1001,8 @@ contains
 
     character(len=*), parameter:: NameSub = 'transform_velocity'
     !--------------------------------------------------------------------------
-
-    ! If NameCoord1 is the same as NameCoord2 there is no transformation.
     if(NameCoord1 == NameCoord2)then
+       ! If NameCoord1 is the same as NameCoord2 there is no transformation.
        v2_D = v1_D
        RETURN
     end if
@@ -1084,7 +1075,6 @@ contains
 
   end function transform_velocity
   !============================================================================
-
   subroutine test_axes
 
     ! Do some self consistency checks. Stop with an error message if
@@ -1094,7 +1084,6 @@ contains
     real :: Omega_D(3), v2_D(3), Result_D(3), Position_D(3)
     real :: Epsilon1, Epsilon2, Epsilon3
     !--------------------------------------------------------------------------
-
     if(precision(1.0) >= 12)then
        Epsilon1 = 1e-10
        Epsilon2 = 1e-1
@@ -1332,6 +1321,5 @@ contains
 
   end subroutine test_axes
   !============================================================================
-
 end module CON_axes
 !==============================================================================
