@@ -20,6 +20,8 @@ It uses the output of the NAG Fortran compiler to find the unused variables.
 The script will not work with other compilers.
 The -w compilation flag will be commented out in the CFLAG definition in 
 Makefile.conf so that the compiler warnings about unused variables are kept.
+In addition, the -DTESTACC flag is added, so that variables used inside the
+ifdef TESTACC segments are not flagged as unused.
 It is a good idea to set zero level for optimization for sake of speed.
 
 Usage:
@@ -66,7 +68,7 @@ foreach $level (0..4){
 	    $nag = 1 if $compiler =~ /^(nagfor|f95)$/;
 	}
 	warn "Commenting out the -w flag in $MakefileConf\n" 
-	    if $nag and s/^(CFLAG =.+) \-w(.+)/$1$2 # -w/;
+	    if $nag and s/^(CFLAG =.+) \-w(.+)/$1$2 \-DTESTACC # -w/;
 	print;
     }
     last;
