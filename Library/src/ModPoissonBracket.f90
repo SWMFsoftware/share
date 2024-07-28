@@ -61,7 +61,7 @@ contains
     real, intent(in) :: Cfl, DownwindDeltaMinusF, UpwindDeltaMinusF
     !--------------------------------------------------------------------------
     half_beta = 1.0 - 1.0e-14 - Cfl*(1.0 - minmod( &
-               DownwindDeltaMinusF/UpwindDeltaMinusF, 1.0))
+         DownwindDeltaMinusF/UpwindDeltaMinusF, 1.0))
   end function half_beta
   !============================================================================
   real function betalimiter(DeltaF, UpwindDeltaF,&
@@ -109,8 +109,13 @@ contains
     ! Distribution function with gc. Two layers of face ghostcels
     ! and one level of corner ghost cells are used
     real, intent(in) :: VDF_G(-1:nI+2,-1:nJ+2)
+
     ! Hamiltonian function in nodes. One layer of ghost nodes is used
+    ! Hamiltonian function for the Poisson bracket \{f,H_{12}}_{x,y}
+    !    Node-centered at XY plane, cell-centered with respect to Z
+    !    (In other words, Z-aligned-edge-centered)
     real, optional, intent(in) :: Hamiltonian12_N(-1:nI+1,-1:nJ+1)
+
     ! Increment in the Hamiltonian function for the Poisson bracket
     ! with respect to time, \{f,H_{01}\}_{t,x}. Is face-X centered.
     ! One layer of the ghost faces is needed.
@@ -119,6 +124,7 @@ contains
     ! with respect to time, \{f,H_{02}\}_{t,y}. Is face-Y centered.
     ! One layer of the ghost faces is needed.
     real, optional, intent(in) :: dHamiltonian02_FY( 0:nI+1,-1:nJ+1)
+
     ! Cell volume. One layer of face ghost cells is used
     real,           intent(in) :: Volume_G(0:nI+1,0:nJ+1)
     ! If non-canonical variables are used with time-dependent Jacobian,
@@ -175,23 +181,30 @@ contains
     !    Node-centered at XY plane, cell-centered with respect to Z
     !    (In other words, Z-aligned-edge-centered)
     real, optional, intent(in) :: Hamiltonian12_N(-1:nI+1,-1:nJ+1,0:nK+1)
-
     ! 2. Hamiltonian function for the Poisson bracket \{f,H_{13}}_{x,z}
     !    Node-centered at XZ plane, cell-centered with respect to Y
     !    (In other words, Y-aligned-edge-centered)
     real, optional, intent(in) :: Hamiltonian13_N(-1:nI+1,0:nJ+1,-1:nK+1)
-
     ! 3. Hamiltonian function for the Poisson bracket \{f,H_{23}}_{y,z}
     !    Node-centered at YZ plane, cell-centered with respect to X
     !    (In other words, X-aligned-edge-centered)
     real, optional, intent(in) :: Hamiltonian23_N(0:nI+1,-1:nJ+1,-1:nK+1)
 
+    ! 1. Increment in the Hamiltonian function for the Poisson bracket
+    ! with respect to time, \{f,H_{01}\}_{t,x}. Is face-X centered.
+    ! One layer of the ghost faces is needed.
     real, optional, intent(in) :: dHamiltonian01_FX(-1:nI+1,0:nJ+1,0:nK+1)
+    ! 2. Increment in the Hamiltonian function for the Poisson bracket
+    ! with respect to time, \{f,H_{02}\}_{t,y}. Is face-Y centered.
+    ! One layer of the ghost faces is needed.
     real, optional, intent(in) :: dHamiltonian02_FY(0:nI+1,-1:nJ+1,0:nK+1)
+    ! 3. Increment in the Hamiltonian function for the Poisson bracket
+    ! with respect to time, \{f,H_{03}\}_{t,z}. Is face-Z centered.
+    ! One layer of the ghost faces is needed.
     real, optional, intent(in) :: dHamiltonian03_FZ(0:nI+1,0:nJ+1,-1:nK+1)
+
     ! Total Volume. One layer of face ghost cells is used
     real, intent(in) :: Volume_G(0:nI+1,0:nJ+1,0:nK+1)
-
     ! If non-canonical variables are used with time-dependent Jacobian,
     ! the cell volume changes in time. Need the volume derivative
     real, optional, intent(in) :: DVolumeDt_G(0:nI+1,0:nJ+1,0:nK+1)
@@ -256,13 +269,11 @@ contains
     !    (In other words, Z-aligned-edge-centered)
     real, optional, intent(in) :: Hamiltonian12_N(-1:nI+1,-1:nJ+1,&
          1/nK:nK+1-1/nK,1/nP:nP+1-1/nP)
-
     ! 2. Hamiltonian function for the Poisson bracket \{f,H_{13}}_{x,z}
     !    Node-centered at XZ plane, cell-centered with respect to Y
     !    (In other words, Y-aligned-edge-centered)
     real, optional, intent(in) :: Hamiltonian13_N(-1:nI+1, 0:nJ+1,&
          -1:nK+1,1/nP:nP+1-1/nP)
-
     ! 3. Hamiltonian function for the Poisson bracket \{f,H_{23}}_{y,z}
     !    Node-centered at YZ plane, cell-centered with respect to X
     !    (In other words, X-aligned-edge-centered)
@@ -274,30 +285,40 @@ contains
     !    (In other words, YZ-aligned-edge-centered)
     real, optional, intent(in) :: Hamiltonian14_N(-1:nI+1, 0:nJ+1,&
          0:nK+1,-1:nP+1)
-
     ! 5. Hamiltonian function for the Poisson bracket \{f,H_{24}}_{y,P}
     !    Node-centered at YP plane, cell-centered with respect to XZ
     !    (In other words, XZ-aligned-edge-centered)
     real, optional, intent(in) :: Hamiltonian24_N(0:nI+1,-1:nJ+1,&
          0:nK+1,-1:nP+1)
-
-    ! 6. Hamiltonian function for the Poisson bracket \{f,H_{34}}_{zP}
+    ! 6. Hamiltonian function for the Poisson bracket \{f,H_{34}}_{z,P}
     !    Node-centered at ZP plane, cell-centered with respect to XY
     !    (In other words, XY-aligned-edge-centered)
     real, optional, intent(in) :: Hamiltonian34_N( 0:nI+1, 0:nJ+1,&
          -1:nK+1,-1:nP+1)
 
+    ! 1. Increment in the Hamiltonian function for the Poisson bracket
+    ! with respect to time, \{f,H_{01}\}_{t,x}. Is face-X centered.
+    ! One layer of the ghost faces is needed.
     real, optional, intent(in) :: dHamiltonian01_FX(-1:nI+1,0:nJ+1,&
          1/nK:nK+1-1/nK,1/nP:nP+1-1/nP)
+    ! 2. Increment in the Hamiltonian function for the Poisson bracket
+    ! with respect to time, \{f,H_{02}\}_{t,y}. Is face-Y centered.
+    ! One layer of the ghost faces is needed.
     real, optional, intent(in) :: dHamiltonian02_FY(0:nI+1,-1:nJ+1,&
          1/nK:nK+1-1/nK,1/nP:nP+1-1/nP)
+    ! 3. Increment in the Hamiltonian function for the Poisson bracket
+    ! with respect to time, \{f,H_{03}\}_{t,z}. Is face-Z centered.
+    ! One layer of the ghost faces is needed.
     real, optional, intent(in) :: dHamiltonian03_FZ( 0:nI+1,0:nJ+1,&
          -1:nK+1,1/nP:nP+1-1/nP)
+    ! 4. Increment in the Hamiltonian function for the Poisson bracket
+    ! with respect to time, \{f,H_{04}\}_{t,P}. Is face-P centered.
+    ! One layer of the ghost faces is needed.
     real, optional, intent(in) :: dHamiltonian04_FP( 0:nI+1,0:nJ+1,&
          0:nK+1,-1:nP+1)
+
     ! Total Volume. One layer of face ghost cells is used
     real, intent(in) :: Volume_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK,1/nP:nP+1-1/nP)
-
     ! If non-canonical variables are used with time-dependent Jacobian,
     ! the cell volume changes in time. Need the volume derivative
     real, optional, intent(in) :: DVolumeDt_G(0:nI+1,0:nJ+1,&
@@ -342,14 +363,14 @@ contains
     real :: SumFlux2_G(0:nI+1,0:nJ+1,1/nK:nK+1-1/nK,1/nP:nP+1-1/nP)
     integer, parameter :: DeltaH_ = 1, Flux_ = 2
     integer, parameter :: iShift_DS(4,8) = reshape(&
-                          [-1,  0,  0,  0,&
-                            1,  0,  0,  0,&
-                            0, -1,  0,  0,&
-                            0,  1,  0,  0,&
-                            0,  0, -1,  0,&
-                            0,  0,  1,  0,&
-                            0,  0,  0, -1,&
-                            0,  0,  0,  1], [4,8])
+         [-1,  0,  0,  0,&
+         1,  0,  0,  0,&
+         0, -1,  0,  0,&
+         0,  1,  0,  0,&
+         0,  0, -1,  0,&
+         0,  0,  1,  0,&
+         0,  0,  0, -1,&
+         0,  0,  0,  1], [4,8])
     real    :: Buff_VSG(DeltaH_:Flux_,8)
     integer :: nFlux, iFlux, iSide, iSide_SG(8), iD_D(4), iU_D(4)
     ! Local CFL number:

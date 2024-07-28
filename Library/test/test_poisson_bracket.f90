@@ -1053,10 +1053,7 @@ contains
 
     call read_fieldline             ! Read MhData from saved files
     ! Calculate the Lagrangian particle positions
-    do iQ = 1, nQ
-       HelioDist_I(iQ) = sqrt(RawData1_II(iQ, x_)**2 + &
-            RawData1_II(iQ, y_)**2 + RawData1_II(iQ, z_)**2)*cLightSpeed/rSun
-    end do
+    HelioDist_I = sqrt(sum(RawData1_II(:, x_:z_)**2, DIM=2))*cLightSpeed/rSun
 
     ! Kinetic energy convert to momentum (1 MeV – 1 GeV) => (Pmin, Pmax)
     LnP3min = log(sqrt((EkMin + cRmeProtonGeV)**2 - cRmeProtonGeV**2)**3.0/3)
@@ -1076,8 +1073,7 @@ contains
     ! Calculate \deltaP^3/3 for each grid: Face - Face, like the Volume_P
     DeltaP3_I = MomentumFace_I(1:nR)**3.0/3 - MomentumFace_I(0:nR-1)**3.0/3
     ! Calculate the position for ln(p^3/3) axis, in the unit of KeV now
-    Energy_I = 6.0 + log10(sqrt(Momentum_I**2 + &
-         cRmeProtonGeV**2) - cRmeProtonGeV)
+    Energy_I = 6.0+log10(sqrt(Momentum_I**2+cRmeProtonGeV**2) - cRmeProtonGeV)
     ! Considering the law of relativity, v=1/sqrt(1+m^2*c^2/p^2), v can be
     ! calculated as a function of p. Note that light speed is the unit of
     ! speed here, so we do not need to multiply c^2 in the following steps
