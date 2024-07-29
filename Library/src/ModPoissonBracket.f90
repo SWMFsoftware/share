@@ -582,7 +582,8 @@ contains
        else
           ! Solve time step from equation
           ! CFLIn = \Delta t*(-\sum\delta^-H)/(\Delta t*dV/dt + V)
-          TimeStep_G = CFLIn*Volume_G/(CFLCoef_G - CFLIn*DVolumeDt_G)
+          TimeStep_G = CFLIn*Volume_G/&
+               (CFLCoef_G + max(- CFLIn*DVolumeDt_G, 0.0))
           if(.not.present(IsSteadyState))then
              Dt = minval(TimeStep_G(1:nI,1:nJ,1:nK,1:nP))
              if(present(DtOut))DtOut = Dt
