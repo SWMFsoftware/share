@@ -392,6 +392,7 @@ contains
        if(.not.present(CflIn))call CON_stop(&
             'Either CflIn or DtIn should be provided in '//NameSub)
     end if
+    UseTimeDependentVolume = present(DVolumeDt_G)
     if(present(IsSteadyState))then
        if(.not.IsSteadyState)call CON_stop(&
             'If present IsSteadyState parameter, it must be be .true.')
@@ -399,11 +400,12 @@ contains
             'DtIn and DtOut make no sense in the steady-state mode')
        if(.not.present(CflIn))call CON_stop(&
             'CflIn is required in the steady-state mode')
+       if(UseTimeDependentVolume)call CON_stop(&
+            'Volume cannot be time dependent in the steady-state mode')
     end if
     IsPeriodic_D = .false.
     if(present(IsPeriodicIn_D))&
          IsPeriodic_D = IsPeriodicIn_D(1:4-1/nK-1/nP)
-    UseTimeDependentVolume = present(DVolumeDt_G)
     iKStart  = 1/nK ;  iKLast  = nK + 1 - 1/nK; nDim = 4 - 1/nK - 1/nP
     iPStart  = 1/nP ;  iPLast  = nP + 1 - 1/nP
     vInv_G = 1.0/Volume_G
@@ -594,16 +596,15 @@ contains
           ! Time accurate mode, equal time step everywhere
           TimeStep_G = Dt
        else
-          ! Solve time step from equation
+          ! Solve minimal time step from equation
           ! CFLIn = \Delta t*(-\sum\delta^-H)/(\Delta t*dV/dt + V)
-          TimeStep_G = CFLIn*Volume_G/&
-               (CFLCoef_G + max(- CFLIn*DVolumeDt_G, 0.0))
-          if(.not.present(IsSteadyState))then
-             Dt = minval(TimeStep_G(1:nI,1:nJ,1:nK,1:nP))
-             if(present(DtOut))DtOut = Dt
-             ! Time accurate mode, equal time step everywhere
-             TimeStep_G = Dt
-          end if
+
+          Dt = CFLIn*minval(  Volume_G(1:nI,1:nJ,1:nK,1:nP)/&
+               max( CFLCoef_G(1:nI,1:nJ,1:nK,1:nP) -        &
+               CFLIn*DVolumeDt_G(1:nI,1:nJ,1:nK,1:nP), 1.0D-30) )
+          if(present(DtOut))DtOut = Dt
+          ! Time accurate mode, equal time step everywhere
+          TimeStep_G = Dt
           ! Calculate the volume at upper time level
           ! V(+\Delta t):
           vInv_G = 1.0/(Volume_G + TimeStep_G*DVolumeDt_G)
