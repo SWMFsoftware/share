@@ -419,21 +419,23 @@ contains
             RotAxisTheta*cRadToDeg, RotAxisPhi*cRadToDeg
        write(*,*)'RotAxisGse_D =', RotAxis_D
        write(*,*)'RotAxisGsm_D =', RotAxisGsm_D
-       XyzPlanetHgr_D = matmul(HgrHgi_DD, XyzPlanetHgi_D)
-       write(*,*)'dLongitudeHgr,dLongitudeHgi=',&
-            dLongitudeHgrDeg, dLongitudeHgiDeg
-       write(*,*)'XyzPlanetHgi_D/rSun = ', XyzPlanetHgi_D/rSun
-       write(*,*)'XyzPlanetHgr_D/rSun = ', XyzPlanetHgr_D/rSun
-       write(*,*)'r/AU,HG_lat,HGR_lon,HGI_lon=',&
-            sqrt(sum(XyzPlanetHgi_D**2))/cAU,&
-            asin(XyzPlanetHgi_D(3)/sqrt(sum(XyzPlanetHgi_D**2)))*cRadToDeg, &
-            atan2_check(XyzPlanetHgr_D(2), XyzPlanetHgr_D(1))*cRadToDeg, &
-            atan2_check(XyzPlanetHgi_D(2), XyzPlanetHgi_D(1))*cRadToDeg
-       write(*,*)'vPlanetHgi_D/(km/s) = ', vPlanetHgi_D/1000.0
-       write(*,*)'HgiGse_DD='
-       call show_rot_matrix(HgiGse_DD)
        write(*,*)'GsmGse_DD='
        call show_rot_matrix(GsmGse_DD)
+       if(sum(XyzPlanetHgi_D**2) > 1e-6)then
+          XyzPlanetHgr_D = matmul(HgrHgi_DD, XyzPlanetHgi_D)
+          write(*,*)'dLongitudeHgr,dLongitudeHgi=',&
+               dLongitudeHgrDeg, dLongitudeHgiDeg
+          write(*,*)'XyzPlanetHgi_D/rSun = ', XyzPlanetHgi_D/rSun
+          write(*,*)'XyzPlanetHgr_D/rSun = ', XyzPlanetHgr_D/rSun
+          write(*,*)'r/AU,HG_lat,HGR_lon,HGI_lon=',&
+               sqrt(sum(XyzPlanetHgi_D**2))/cAU,&
+               asin(XyzPlanetHgi_D(3)/sqrt(sum(XyzPlanetHgi_D**2)))*cRadToDeg, &
+               atan2_check(XyzPlanetHgr_D(2), XyzPlanetHgr_D(1))*cRadToDeg, &
+               atan2_check(XyzPlanetHgi_D(2), XyzPlanetHgi_D(1))*cRadToDeg
+          write(*,*)'vPlanetHgi_D/(km/s) = ', vPlanetHgi_D/1000.0
+          write(*,*)'HgiGse_DD='
+          call show_rot_matrix(HgiGse_DD)
+       end if
     end if
 
     DoInitializeAxes=.false.
