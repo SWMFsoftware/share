@@ -348,8 +348,8 @@ contains
     ! Loop variables:
     integer :: i, j, k, iP, iDim, nDim
     ! Variations of VDF (one layer of ghost cell values):
-    real,dimension(0:nI+1, 0:nJ+1, 1/nK:nK+1-1/nK,1/nP:nP+1-1/nP) :: &
-         DeltaMinusF_G, SumDeltaHPlus_G
+    real,dimension(0:nI+1, 0:nJ+1, 1/nK:nK+1-1/nK, 1/nP:nP+1-1/nP) :: &
+         DeltaMinusF_G, DeltaMinusH_G, SumDeltaHPlus_G, SumDeltaHMinus_G
     !
     ! face-centered vriations of Hamiltonian functions.
     ! one layer of ghost faces
@@ -506,49 +506,63 @@ contains
          DeltaH_DG(4, 0:nI+1, 0:nJ+1, 0:nK+1,-1:nP+1)                   + &
          dHamiltonian04_FP
     ! Cleanup
-    where(abs(DeltaH_DG)<=cTol)DeltaH_DG = 0.0
+    where(abs(DeltaH_DG)<=cTol) DeltaH_DG = 0.0
+
     ! Now, for each cell the value of DeltaH for face in positive
     ! directions of i and j may be found in the arrays, for
     ! negative directions the should be taken with opposite sign
-    ! Calculate DeltaMinusF and SumDeltaH
-    do iP=iPStart,iPLast; do k=iKStart,iKLast; do j=0,nJ+1; do i=0,nI+1
-       SumDeltaHMinus = 0.0
-       SumDeltaHPlus_G(i,j,k,iP) = 0.0
-       DeltaMinusF_G(i,j,k,iP) = 0.0
-       VDF = VDF_G(i,j,k,iP)
-       do iDim = 1, nDim
-          ! Caalculate contributions from up faces to
-          ! SumDeltaHPlus and DeltaMinusF
-          iU_D = [i,j,k,iP]; iU_D(iDim) = iU_D(iDim) + 1
-          DeltaMinusH = min(0.0, DeltaH_DG(iDim,i,j,k,iP))
-          SumDeltaHMinus = SumDeltaHMinus + DeltaMinusH
-          DeltaMinusF_G(i,j,k,iP) = DeltaMinusF_G(i,j,k,iP) + &
-               DeltaMinusH*(VDF_G(iU_D(1),iU_D(2),iU_D(3),iU_D(4)) - VDF)
-          SumDeltaHPlus_G(i,j,k,iP) = SumDeltaHPlus_G(i,j,k,iP) + &
-               max(0.0, DeltaH_DG(iDim,i,j,k,iP))
-          iD_D = [i,j,k,iP]; iD_D(iDim) = iD_D(iDim) - 1
-          DeltaMinusH = min(0.0,-DeltaH_DG(iDim,&
-               iD_D(1),iD_D(2),iD_D(3),iD_D(4)))
-          SumDeltaHMinus = SumDeltaHMinus + DeltaMinusH
-          DeltaMinusF_G(i,j,k,iP) = DeltaMinusF_G(i,j,k,iP) + &
-               DeltaMinusH*(VDF_G(iD_D(1),iD_D(2),iD_D(3),iD_D(4)) - VDF)
-          SumDeltaHPlus_G(i,j,k,iP) = SumDeltaHPlus_G(i,j,k,iP) + &
-               max(0.0,-DeltaH_DG(iDim,iD_D(1),iD_D(2),iD_D(3),ID_D(4)))
-       end do
-       if(SumDeltaHMinus==0.0)then
-          DeltaMinusF_G(i,j,k,iP) = 0.0
-          CFLCoef_G(i,j,k,iP)     = 0.0
-       else
-          DeltaMinusF_G(i,j,k,iP) = - DeltaMinusF_G(i,j,k,iP)/SumDeltaHMinus
-          if(UseTimeDependentVolume)then
-             ! Local CFLs are expressed via SumDeltaHMinus
-             CFLCoef_G(i,j,k,iP) = -SumDeltaHMinus
-          else
-             ! Local CFLs are expressed via
-             CFLCoef_G(i,j,k,iP) = -SumDeltaHMinus*vInv_G(i,j,k,iP)
-          end if
-       end if
-    end do; end do; end do; end do
+    ! Nullify arrays:
+    DeltaMinusF_G = 0.0
+    DeltaMinusH_G = 0.0
+    SumDeltaHPlus_G = 0.0
+    SumDeltaHMinus_G = 0.0
+    ! Calculate DeltaMinusF_G and SumDeltaHPlus_G
+    do iDim = 1, nDim
+       ! Calculate contributions from up faces to
+       ! SumDeltaHPlus_G and DeltaMinusF_G
+       ! Upper & lower bounds for +1 (may be with diffent meanings elsewhere)
+       iU_D = [nI+1,nJ+1,iKLast,iPLast]; iU_D(iDim) = iU_D(iDim)+1
+       iD_D = [0,0,iKStart,iPStart]; iD_D(iDim) = iD_D(iDim)+1
+       DeltaMinusH_G = min(0.0, DeltaH_DG(iDim, &
+            0:nI+1, 0:nJ+1, iKStart:iKLast, iPStart:iPLast))
+       SumDeltaHMinus_G = SumDeltaHMinus_G + DeltaMinusH_G
+       DeltaMinusF_G = DeltaMinusF_G + DeltaMinusH_G* &
+            (VDF_G(iD_D(1):iU_D(1), iD_D(2):iU_D(2), &
+            iD_D(3):iU_D(3), iD_D(4):iU_D(4)) - &
+            VDF_G(0:nI+1, 0:nJ+1, iKStart:iKLast, iPStart:iPLast))
+       SumDeltaHPlus_G = SumDeltaHPlus_G + max(0.0, DeltaH_DG(iDim, &
+            0:nI+1, 0:nJ+1, iKStart:iKLast, iPStart:iPLast))
+
+       ! Calculate contributions from down faces to
+       ! SumDeltaHPlus and DeltaMinusF_G
+       ! Upper & lower bounds for -1 (may be with diffent meanings elsewhere)
+       iU_D = [nI+1,nJ+1,iKLast,iPLast]; iU_D(iDim) = iU_D(iDim)-1
+       iD_D = [0,0,iKStart,iPStart]; iD_D(iDim) = iD_D(iDim)-1
+       DeltaMinusH_G = min(0.0, -DeltaH_DG(iDim, &
+            iD_D(1):iU_D(1), iD_D(2):iU_D(2), &
+            iD_D(3):iU_D(3), iD_D(4):iU_D(4)))
+       SumDeltaHMinus_G = SumDeltaHMinus_G + DeltaMinusH_G
+       DeltaMinusF_G = DeltaMinusF_G + DeltaMinusH_G* &
+            (VDF_G(iD_D(1):iU_D(1), iD_D(2):iU_D(2), &
+            iD_D(3):iU_D(3), iD_D(4):iU_D(4)) - &
+            VDF_G(0:nI+1, 0:nJ+1, iKStart:iKLast, iPStart:iPLast))
+       SumDeltaHPlus_G = SumDeltaHPlus_G + max(0.0, &
+            -DeltaH_DG(iDim, iD_D(1):iU_D(1), iD_D(2):iU_D(2), &
+            iD_D(3):iU_D(3), iD_D(4):iU_D(4)))
+    end do
+
+    ! Get local CFLs
+    where(SumDeltaHMinus_G == 0.0)
+       DeltaMinusF_G = 0.0
+       CFLCoef_G = 0.0
+    elsewhere
+       DeltaMinusF_G = -DeltaMinusF_G/SumDeltaHMinus_G
+       ! UseTimeDependentVolume: Local CFLs are expressed via SumDeltaHMinus_G
+       CFLCoef_G = -SumDeltaHMinus_G
+    end where
+    ! Not UseTimeDependentVolume: Local CFLs are expressed via *vInv_G
+    if(.not.UseTimeDependentVolume) CFLCoef_G = CFLCoef_G*vInv_G
+
     ! Set CFL and time step
     if(UseTimeDependentVolume)then
        if(present(DtIn))then
@@ -620,14 +634,15 @@ contains
           CFLCoef_G = TimeStep_G*CFLCoef_G
        end if
     end if
-    if(present(DtOut_C))DtOut_C = TimeStep_G(1:nI,1:nJ,1:nK,1:nP)
+    if(present(DtOut_C)) DtOut_C = TimeStep_G(1:nI,1:nJ,1:nK,1:nP)
+
     ! Calculate source = f(t+Dt) - f(t):
-    ! First order monotone scheme
+    ! First-order monotone scheme
     Source_C = -CFLCoef_G(1:nI,1:nJ,1:nK,1:nP)*&
          DeltaMinusF_G(1:nI,1:nJ,1:nK,1:nP)
-    ! Second order correction
+    ! Second-order correction
     SumFlux2_G = 0.0
-    do iP=1,nP; do k=1,nK; do j=1,nJ; do i =1,nI
+    do iP=1,nP; do k=1,nK; do j=1,nJ; do i=1,nI
        ! Limit and store fuxes across delta plus H faces from the given cell
        if(SumDeltaHPlus_G(i,j,k,iP)==0.0)CYCLE
        nFlux = 0
