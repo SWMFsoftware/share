@@ -350,12 +350,10 @@ contains
     ! Variations of VDF (one layer of ghost cell values):
     real,dimension(0:nI+1, 0:nJ+1, 1/nK:nK+1-1/nK, 1/nP:nP+1-1/nP) :: &
          DeltaMinusF_G, DeltaMinusH_G, SumDeltaHPlus_G, SumDeltaHMinus_G
-    !
-    ! face-centered vriations of Hamiltonian functions.
+    ! Face-centered vriations of Hamiltonian functions, with
     ! one layer of ghost faces
     real :: DeltaH_DG(4,-1:nI+1,-1:nJ+1,-1+2*(1/nK):nK+1-1/nK,&
          -1+2*(1/nP):nP+1-1/nP)
-    real :: SumDeltaHMinus, DeltaMinusH
     ! Fluxes:
     ! Sum of \delta^+H fluxes, to be limited
     real :: SumFluxPlus
