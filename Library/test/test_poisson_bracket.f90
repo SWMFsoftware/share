@@ -1603,7 +1603,7 @@ contains
        Velocity_I, InvB_C, n_I, LambdaMuMu_II, VDF_G)
     ! Calculate scatter: \deltaf/\deltat = (Dmumu*f_mu)_mu
 
-    use ModDiffusion, ONLY: advance_diffusion1, tridiag
+    use ModDiffusion, ONLY: tridiag
     integer, intent(in) :: nQ, nP, nR     ! Number of s_L, mu, ln(p^3/3) grids
     real, intent(in) :: Dt                ! Time step
     real, intent(in) :: DeltaMu           ! Distance of adjacent two mu
@@ -1617,13 +1617,12 @@ contains
     ! Dmumu for each fixed iQ and iR. Dmumu is the coefficient
     ! of diffusion along the pitch angle, \mu
     real :: DMuMu_I(0:nP)
-    ! Factorize DMuMu, each factor being only a
-    ! function of s_L, \mu, ln(p^3/3)
+    ! Factorize DMuMu, each factor being only a function of s_L, \mu, ln(p^3/3)
     real :: FactorMu_F(0:nP)
-    ! Lower, main, upper diagonal, output value of the scatter calculation
+    ! Lower, main, upper diagonal, output values for the scatter calculation
     real :: L_I(nP), M_I(nP), U_I(nP), W_I(nP)
     ! Physical VARs
-    real :: LowerLimitMu         ! Lower limit of Factor_mu
+    real :: LowerLimMu           ! Lower limit of Factor_mu
     real :: DtOverDMu2           ! (\Delta t) / (\Delta \mu^2)
     real :: Mu_I(0:nP)           ! Face centered value of the pitch angle
     real :: AlfvenSpeed_I(nQ)    ! Alfven wave speed
@@ -1634,13 +1633,13 @@ contains
     DtOverDMu2 = Dt/DeltaMu**2   ! (\Delta t) / (\Delta \mu^2)
 
     ! Calculate factorized diffusion coefficient
-    LowerLimitMu = (1.0 - DeltaMu**2)*abs(DeltaMu)**(2.0/3.0)
+    LowerLimMu = (1.0 - DeltaMu**2)*abs(DeltaMu)**(2.0/3.0)
     do iP = 0, nP
        Mu_I(iP) = -1.0 + real(iP)*DeltaMu
        FactorMu_F(iP) = (1.0 - Mu_I(iP)**2)*abs(Mu_I(iP))**(2.0/3.0)
     end do
 
-    ! Get Alfven speed for each s_L
+    ! Get the Alfven wave speed for each s_L
     AlfvenSpeed_I = 0.5/(InvB_C*cLightSpeed*sqrt(n_I*cAtomicMass*cMu))
     ! Calculate the effect of scatter along \mu axis for each fixed iR and iQ
     do iR = 1, nR
@@ -1651,21 +1650,21 @@ contains
           ! For each pitch angle, we will set DMuMu and solve VDF for scatter
           do iP = 0, nP
              ! Control whether we will floor the value of D_\mu\mu or not
-             if (Velocity_I(iR)*abs(Mu_I(iP)) >= 10.0*AlfvenSpeed_I(iQ)) then
-                DMuMu_I(iP) = Velocity_I(iR)/LambdaMuMu_II(iQ, iR)*  &
+             if(Velocity_I(iR)*abs(Mu_I(iP)) >= 10.0*AlfvenSpeed_I(iQ)) then
+                DMuMu_I(iP) = Velocity_I(iR)/LambdaMuMu_II(iQ, iR)* &
                      FactorMu_F(iP)*DtOverDMu2
              else
-                if (switch1==1) Pnumber = iP
+                if(switch1==1) Pnumber = iP
                 switch1 = 0
                 ! Set the lower limit of D_\mu\mu when |\mu| is close to zero
-                DMuMu_I(iP) = Velocity_I(iR)/LambdaMuMu_II(iQ,iR)*   &
-                     max(FactorMu_F(Pnumber), LowerLimitMu)*DtOverDMu2
+                DMuMu_I(iP) = Velocity_I(iR)/LambdaMuMu_II(iQ,iR)* &
+                     max(FactorMu_F(Pnumber), LowerLimMu)*DtOverDMu2
              end if
           end do
 
-          ! Set up coefficients for solving linear equation sets
-          L_I = - DMuMu_I(0:nP-1)
-          U_I = - DMuMu_I(1:nP  )
+          ! Set up coefficients for solving the linear equation set
+          L_I = -DMuMu_I(0:nP-1)
+          U_I = -DMuMu_I(1:nP  )
           M_I = 1.0 - L_I - U_I
           W_I = VDF_G(iQ, 1:nP, iR)
 
