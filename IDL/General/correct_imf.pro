@@ -69,7 +69,7 @@ iux = 10
 TimeDelay = -x/w(*,iux)
 
 ; If decay is set, look for shocks and recalculate it
-if decay gt 0 then begin
+if keyword_set(decay) then begin
    ;; indexes used
    iuy  = iux + 1
    iuz  = iuy + 1
