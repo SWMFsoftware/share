@@ -3,6 +3,8 @@
 ;  For more information, see http://csem.engin.umich.edu/tools/swmf
 pro correct_imf,wIn,xIn,inputfile,outputfile,gsm=gsm,decay=decay
 
+  common log_data, timeunit
+  
 ; wIn contains the upstream data with 15 columns:
 ;    yr mo dy hr mn sc ms bx by bz ux uy uz rho T
 ; xIn should be set to the X position of the satellite 
@@ -40,7 +42,8 @@ endif
 ; Calculate the time in seconds measured from the beginning of the day
 iyr=0 & imo=1 & idy = 2 
 
-Time = log_time(w,['year','mo','dy','hr','mn','sc','msc'],'s')
+timeunit='s'
+Time = log_time(w,['year','mo','dy','hr','mn','sc','msc'])
 
 ; calculate epoch0 from initial year, month, day 
 ; number of msec from 01-Jan-0000 00:00:00.000
