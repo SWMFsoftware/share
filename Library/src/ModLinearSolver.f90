@@ -205,7 +205,7 @@ contains
        !           Krylov_II(1):=A*Sol
        !
        if(IsInit.or.its>0)then
-          !$acc update device(Sol)          
+          !$acc update device(Sol)
           call matvec(Sol,Krylov_II,n)
           !$acc update host(Krylov_II)
           Krylov_II(:,1)=Rhs - Krylov_II(:,1)
