@@ -172,6 +172,7 @@ contains
 
     ! This array used to be automatic (Krylov subspace vectors)
     real, dimension(:,:), allocatable :: Krylov_II
+    !$acc declare create(Krylov_II)
 
     ! These arrays used to be automatic (Hessenberg matrix and some vectors)
     real, dimension(:,:), allocatable :: hh
@@ -204,7 +205,9 @@ contains
        !           Krylov_II(1):=A*Sol
        !
        if(IsInit.or.its>0)then
+          !$acc update device(Sol)          
           call matvec(Sol,Krylov_II,n)
+          !$acc update host(Krylov_II)
           Krylov_II(:,1)=Rhs - Krylov_II(:,1)
        else
           ! Save a matvec when starting from zero initial condition
@@ -256,8 +259,9 @@ contains
           !
           !           Krylov_II(i1):=A*Krylov_II(i)
           !
-
+          !$acc update device(Krylov_II)
           call matvec(Krylov_II(:,i),Krylov_II(:,i1),n)
+          !$acc update host(Krylov_II)
 
           !-----------------------------------------
           !  modified gram - schmidt...
