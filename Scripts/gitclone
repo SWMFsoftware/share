@@ -16,6 +16,7 @@ my %url = (
     "VAC"                => "https://github.com/gtoth-umich",
     "VISANAMATLAB"       => "https://github.com/henry2004y",
     "ESMF"               => "https://github.com/esmf-org",
+    "IPE"                => "git\@github.com:sword-swx-coe"
     );
 
 my @repo = ("SWMF, AMPS, BATSRUS, CIMI, FSAM, FLEKS, GITM2, MGITM, MFLAMPA, PWOM ...", 
