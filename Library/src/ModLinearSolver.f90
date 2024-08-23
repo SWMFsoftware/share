@@ -16,7 +16,7 @@ module ModLinearSolver
   use ModBlasLapack, ONLY: BLAS_gemm, BLAS_copy, BLAS_gemv, &
        LAPACK_getrf, LAPACK_getrs
   use omp_lib
-
+  
   ! BLAS_gemm, level 3 Matrix-Matrix Product.
   !
   ! BLAS_gemv, level 2 Matrix-Vector Product.
@@ -207,14 +207,22 @@ contains
        if(IsInit.or.its>0)then
           !$acc update device(Sol)
           call matvec(Sol,Krylov_II,n)
+#ifdef _OPENACC
+          !$acc parallel loop
+          do i = 1, n
+             Krylov_II(i,1)=Rhs(i) - Krylov_II(i,1)
+          end do
           !$acc update host(Krylov_II)
+#else          
           Krylov_II(:,1)=Rhs - Krylov_II(:,1)
+#endif          
        else
           ! Save a matvec when starting from zero initial condition
           Krylov_II(:,1)=Rhs
        endif
        !-------------------------------------------------------------
-       ro = sqrt( dot_product_mpi(Krylov_II(:,1), Krylov_II(:,1), iComm ))
+       !$acc update device(Krylov_II)
+       ro = sqrt( dot_product_mpi(n, Krylov_II(:,1), Krylov_II(:,1), iComm ))
        if (ro == 0.0) then
           if(its == 0)then
              info=3
@@ -267,11 +275,13 @@ contains
           !  modified gram - schmidt...
           !-----------------------------------------
           do j=1,i
-             t = dot_product_mpi(Krylov_II(:,j), Krylov_II(:,i1), iComm)
+             !$acc update device(Krylov_II)
+             t = dot_product_mpi(n, Krylov_II(:,j), Krylov_II(:,i1), iComm)
              hh(j,i) = t
              Krylov_II(:,i1) = Krylov_II(:,i1) - t*Krylov_II(:,j)
           end do
-          t = sqrt( dot_product_mpi(Krylov_II(:,i1),Krylov_II(:,i1), iComm) )
+          !$acc update device(Krylov_II)
+          t = sqrt( dot_product_mpi(n, Krylov_II(:,i1),Krylov_II(:,i1), iComm) )
 
           hh(i1,i) = t
           if (t /= 0.0)then
@@ -511,7 +521,7 @@ contains
     !     --- Initialize iteration loop
     !
 
-    rnrm0 = sqrt( dot_product_mpi(bicg_r,bicg_r,iComm))
+    rnrm0 = sqrt( dot_product_mpi(n, bicg_r,bicg_r,iComm))
 
     rnrm = rnrm0
     if(DoTest) print *,'initial rnrm:',rnrm
@@ -573,7 +583,7 @@ contains
        !
        rho0 = -omega*rho0
 
-       rho1 = dot_product_mpi(rhs,bicg_r,iComm)
+       rho1 = dot_product_mpi(n, rhs,bicg_r,iComm)
 
        if (abs(rho0)<assumedzero**2) then
           info = 1
@@ -595,7 +605,7 @@ contains
        call matvec(bicg_u,bicg_u1,n)
        nmv = nmv+1
 
-       sigma=dot_product_mpi(rhs,bicg_u1,iComm)
+       sigma=dot_product_mpi(n, rhs,bicg_u1,iComm)
 
        if (abs(sigma)<assumedzero**2) then
           info = 1
@@ -615,7 +625,7 @@ contains
        call matvec(bicg_r,bicg_r1,n)
        nmv = nmv+1
 
-       rnrm = sqrt( dot_product_mpi(bicg_r,bicg_r,iComm) )
+       rnrm = sqrt( dot_product_mpi(n, bicg_r,bicg_r,iComm) )
 
        mxnrmx = max (mxnrmx, rnrm)
        mxnrmr = max (mxnrmr, rnrm)
@@ -632,14 +642,14 @@ contains
        !
        !    --- Z = R'R a 2 by 2 matrix
        ! i=1,j=0
-       rwork(1,1) = dot_product_mpi(bicg_r,bicg_r,iComm)
+       rwork(1,1) = dot_product_mpi(n, bicg_r,bicg_r,iComm)
 
        ! i=1,j=1
-       rwork(2,1) = dot_product_mpi(bicg_r1,bicg_r,iComm)
+       rwork(2,1) = dot_product_mpi(n, bicg_r1,bicg_r,iComm)
        rwork(1,2) = rwork(2,1)
 
        ! i=2,j=1
-       rwork(2,2) = dot_product_mpi(bicg_r1,bicg_r1,iComm)
+       rwork(2,2) = dot_product_mpi(n, bicg_r1,bicg_r1,iComm)
 
        !
        !   --- tilde r0 and tilde rl (small vectors)
@@ -818,12 +828,12 @@ contains
 
     if(present(JacobiPrec_I))then
        PrecRhs_I = JacobiPrec_I*Rhs_I
-       rDotR0 = dot_product_mpi(Rhs_I, PrecRhs_I, iComm)
+       rDotR0 = dot_product_mpi(n, Rhs_I, PrecRhs_I, iComm)
     elseif(present(preconditioner))then
        call preconditioner(Rhs_I, PrecRhs_I, n)
-       rDotR0 = dot_product_mpi(Rhs_I, PrecRhs_I, iComm)
+       rDotR0 = dot_product_mpi(n, Rhs_I, PrecRhs_I, iComm)
     else
-       rDotR0 = dot_product_mpi(Rhs_I, Rhs_I, iComm)
+       rDotR0 = dot_product_mpi(n, Rhs_I, Rhs_I, iComm)
     end if
 
     if(TypeStop=='abs')then
@@ -858,7 +868,7 @@ contains
                iComm, iError)
           UsePDotADotP = .false.
        else
-          pDotADotP = dot_product_mpi(Vec_I, aDotVec_I, iComm)
+          pDotADotP = dot_product_mpi(n, Vec_I, aDotVec_I, iComm)
        end if
        Beta = 1.0/pDotADotP
 
@@ -867,12 +877,12 @@ contains
 
        if(present(JacobiPrec_I))then
           PrecRhs_I = JacobiPrec_I*Rhs_I
-          rDotR = dot_product_mpi(Rhs_I, PrecRhs_I, iComm)
+          rDotR = dot_product_mpi(n, Rhs_I, PrecRhs_I, iComm)
        elseif(present(preconditioner))then
           call preconditioner(Rhs_I, PrecRhs_I, n)
-          rDotR = dot_product_mpi(Rhs_I, PrecRhs_I, iComm)
+          rDotR = dot_product_mpi(n, Rhs_I, PrecRhs_I, iComm)
        else
-          rDotR = dot_product_mpi(Rhs_I, Rhs_I, iComm)
+          rDotR = dot_product_mpi(n, Rhs_I, Rhs_I, iComm)
        end if
        if(DoTest)write(*,*)'CG nIter, rDotR=',nIter, rDotR
 
@@ -977,22 +987,34 @@ contains
   end function accurate_dot_product
   !============================================================================
 
-  real function dot_product_mpi(a_I, b_I, iComm)
-
-    real, intent(in)    :: a_I(:), b_I(:)
+  real function dot_product_mpi(n, a_I, b_I, iComm)
+    integer, intent(in) :: n
+    real, intent(in)    :: a_I(n), b_I(n)
     integer, intent(in) :: iComm
 
+    integer :: i
+    
     real :: DotProduct, DotProductMpi
     integer :: iError
     !--------------------------------------------------------------------------
-
     if(UseAccurateSum)then
        dot_product_mpi = accurate_dot_product(a_I, b_I, iComm=iComm)
        RETURN
     end if
 
+#ifndef _OPENACC
     DotProduct = dot_product(a_I, b_I)
+#else   
 
+    DotProduct = 0.0
+    !$acc parallel present(a_I,b_I)     
+    !$acc loop reduction(+:DotProduct)
+    do i = 1, n
+       DotProduct = DotProduct + a_I(i)*b_I(i)
+    end do
+    !$acc end parallel
+#endif
+   
     if(iComm == MPI_COMM_SELF) then
        dot_product_mpi = DotProduct
        RETURN
