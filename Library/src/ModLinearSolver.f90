@@ -107,6 +107,18 @@ module ModLinearSolver
   integer :: iStep
   real    :: Time
 
+
+  ! Number of unknowns
+  integer:: n0 = 0
+  ! Size of Krylov subspace
+  integer:: nKrylov0 = 0
+  ! Krylov subspace vectors
+  real, dimension(:,:), allocatable :: Krylov_II  
+  !$acc declare create(Krylov_II)
+
+  ! Hessenberg matrix and some vectors
+  real, dimension(:,:), allocatable :: hh
+  real, dimension(:),   allocatable :: c,s,rs  
 contains
   !============================================================================
 
@@ -169,14 +181,6 @@ contains
     integer :: iComm                           ! MPI communicator
     integer :: i,i1,its,j,k,k1
     real :: coeff,Tol1,epsmac,gam,ro,ro0,t,tmp
-
-    ! This array used to be automatic (Krylov subspace vectors)
-    real, dimension(:,:), allocatable :: Krylov_II
-    !$acc declare create(Krylov_II)
-
-    ! These arrays used to be automatic (Hessenberg matrix and some vectors)
-    real, dimension(:,:), allocatable :: hh
-    real, dimension(:),   allocatable :: c,s,rs
     !--------------------------------------------------------------------------
 
     if(DoTest)write(*,*)'GMRES tol,iter:',Tol,Iter
@@ -185,9 +189,16 @@ contains
     iComm = MPI_COMM_SELF
     if(present(iCommIn)) iComm = iCommIn
 
-    ! Allocate arrays that used to be automatic
-    allocate(Krylov_II(n,nKrylov+2), hh(nKrylov+1,nKrylov), &
-         c(nKrylov), s(nKrylov), rs(nKrylov+1))
+    ! If the size of arrays changes, dellocate the arrays
+    if((n /= n0 .or. nKrylov /= nKrylov0) .and. allocated(Krylov_II)) then 
+       deallocate(Krylov_II, hh, c, s, rs)       
+    end if
+    
+    if(.not.allocated(Krylov_II)) then
+       allocate(Krylov_II(n,nKrylov+2))
+       allocate(hh(nKrylov+1,nKrylov))
+       allocate(c(nKrylov), s(nKrylov), rs(nKrylov+1))       
+    end if    
 
     if(range(1.0)>100)then
        epsmac=0.0000000000000001
@@ -231,7 +242,6 @@ contains
           endif
           Tol = ro
           Iter = its
-          deallocate(Krylov_II, hh, c, s, rs)
           RETURN
        end if
 
@@ -246,7 +256,6 @@ contains
                 Tol  = ro
                 Iter = its
                 if(DoTest) print *,'GMRES: nothing to do. info = ',info
-                deallocate(Krylov_II, hh, c, s, rs)
                 RETURN
              end if
           else
@@ -362,9 +371,6 @@ contains
     else
        info = -2
     endif
-
-    ! Deallocate arrays that used to be automatic
-    deallocate(Krylov_II, hh, c, s, rs)
 
     ! call cpu_time(finish)
     ! print '("TimeEnd = ",f6.3," seconds.")',finish-start
