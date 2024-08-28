@@ -24,6 +24,7 @@ help:
 	@echo "   test_lookup_table     - test ModLookupTable"
 	@echo "   test_planet_field     - test CON_planet_field"
 	@echo "   test_plot_file        - test ModPlotFile"
+	@echo "   test_plot_file_simple - test ModPlotFileSimple"
 	@echo "   test_process_var_name - test ModProcessVarName"
 	@echo "   test_poisson_bracket  - test ModPoissonBracket"
 	@echo "   test_random_number    - test ModRandomNumber"
@@ -426,6 +427,21 @@ test_plot_file:
 					>  test_plot_file.diff)
 	@ls -l test_plot_file.diff
 
+#######################################################################
+test_plot_file_simple_exe:
+	@(cd ../src; make PLOTFILELIB)
+	@make test_plot_file_simple.o
+	${LINK.f90} -o test_plot_file_simple.exe test_plot_file_simple.o \
+		-L${LIBDIR} -lPLOTFILE ${Lflag}
+
+test_plot_file_simple:
+	@echo test_plot_file_simple starting >  test_plot_file_simple.diff
+	@make test_plot_file_simple_exe	     >> test_plot_file_simple.diff
+	@echo ./test_plot_file_simple.exe    >> test_plot_file_simple.diff
+	-@(./test_plot_file_simple.exe > test_plot_file_simple.tmp)
+	-@(diff test_plot_file_simple.tmp test_plot_file_simple.log \
+					>  test_plot_file_simple.diff)
+	@ls -l test_plot_file_simple.diff
 #######################################################################
 test_lookup_table_exe:
 	@(cd ../src; make LIB)

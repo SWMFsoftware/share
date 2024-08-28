@@ -74,6 +74,7 @@ DEPEND:
 MY_LIB = ${LIBDIR}/libSHARE.a
 MY_DYN_LIB = ${LIBDIR}/libSHARE.so
 
+
 LIB:	DEPEND
 	${MAKE} ${MY_LIB}
 	@echo
@@ -83,6 +84,18 @@ LIB:	DEPEND
 ${MY_LIB}: ${OBJECTS}
 	rm -f ${MY_LIB}
 	${AR} ${MY_LIB} ${OBJECTS}
+
+PLOTFILE_LIB = ${LIBDIR}/libPLOTFILE.a
+
+PLOTFILELIB:
+	${MAKE} ${PLOTFILE_LIB}
+	@echo
+	@echo ${PLOTFILE_LIB} has been brought up to date.
+	@echo
+
+${PLOTFILE_LIB}: ModPlotFileSimple.o
+	rm -f ${PLOTFILE_LIB}
+	${AR} ${PLOTFILE_LIB} ModPlotFileSimple.o
 
 ${BINDIR}/PostIDL.exe: PostIDL.o ${MY_LIB}
 	${LINK.f90} -o ${BINDIR}/PostIDL.exe PostIDL.o -L${LIBDIR} -lSHARE ${LflagMpi} 
