@@ -49,7 +49,7 @@ module ModPlotFileSimple
 
   ! Unit test
   public:: test_plot_file
-  
+
   ! more contained subroutines that are useful
 
   ! Open and close files with improved default behavior and
@@ -61,7 +61,7 @@ module ModPlotFileSimple
 
   ! Convert to lower or upper case
   public:: lower_case, upper_case
-  
+
   interface split_string
      module procedure split_string, split_string_simple
   end interface
@@ -1394,17 +1394,17 @@ contains
   !============================================================================
   subroutine CON_stop(String)
 
-    !use mpi
+    ! use mpi
 
     character(len=*), intent(in):: String
 
     ! Stop execution after writing out String
 
     integer:: iProc=0
-    !--------------------------------------------------------------------------
     ! call MPI_initialized(IsMpiInitialized, iError)
     ! if(IsMpiInitialized) call MPI_comm_rank(MPI_COMM_WORLD, iProc, iError)
 
+    !--------------------------------------------------------------------------
     write(*,*) 'ERROR: aborting execution on processor', iProc, &
          ' with message:'
     write(*,'(a)') 'ERROR: '//String
