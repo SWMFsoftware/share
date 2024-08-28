@@ -61,6 +61,7 @@ test:
 	-@make test_lookup_table
 	-@make test_planet_field
 	-@make test_plot_file
+	-@make test_plot_file_simple
 	-@make test_poisson_bracket
 	-@make test_random_number
 	-@make test_ray_trace
