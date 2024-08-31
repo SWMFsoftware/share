@@ -1,14 +1,17 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-! ======================================================
+
 module ModProcessVarName
+
+  ! Process variable names and count various things
 
   use ModUtilities, ONLY: CON_stop
 
   implicit none
 
-  private
+  private ! except
+
   public:: process_var_name
   public:: nVarMax
 
@@ -198,27 +201,25 @@ module ModProcessVarName
        'Lperp' ]
 
   ! Array storing standarized variable names for all species / fluids
-  character(len = 20),allocatable :: SubstanceStandardName_II(:,:)
+  character(len=20), allocatable :: SubstanceStandardName_II(:,:)
 
   ! Array storing all possible names
-  character(len = 20),allocatable :: Dictionary_III(:, :, :)
-  ! -------------------------------------------------------------------------
+  character(len=20), allocatable:: Dictionary_III(:,:,:)
+
 contains
   !============================================================================
-
   subroutine process_var_string(NameVar,  &
        nDensity, nSpeed, nP, nPpar, nWave, nMaterial, nChargeStateAll)
 
     use ModUtilities,  ONLY: split_string, join_string
 
-    character(len=*), intent(inout) :: NameVar
-    integer,intent(out)             :: nDensity, nSpeed, nP, nPpar
-    integer,intent(out)             :: nWave, nMaterial, nChargeStateAll
+    character(len=*), intent(inout):: NameVar
+    integer, optional, intent(out):: nDensity, nSpeed, nP, nPpar
+    integer, optional, intent(out):: nWave, nMaterial, nChargeStateAll
 
     integer            :: nVarName
     integer, parameter :: MaxNameVar = 100
     character(len=20)  :: NameVar_V(MaxNameVar)
-
     !--------------------------------------------------------------------------
     call split_string(NameVar, MaxNameVar, NameVar_V, nVarName)
 
@@ -234,12 +235,11 @@ contains
 
     use ModUtilities,  ONLY: lower_case
 
-    integer,intent(in)                :: nVarName
-    character(len=*), intent(inout)   :: NameVar_V(nVarName)
-    integer,intent(out)               :: nDensity, nSpeed, nP, nPpar
-    integer,intent(out)               :: nWave, nMaterial, nChargeStateAll
+    integer,intent(in):: nVarName
+    character(len=*), intent(inout):: NameVar_V(nVarName)
+    integer, optional, intent(out):: nDensity, nSpeed, nP, nPpar
+    integer, optional, intent(out):: nWave, nMaterial, nChargeStateAll
 
-    ! ------------
     ! 1. Creates standard names and a dictionary for each standard name.
     !    The dictionary only contains the basic hydro quantities for
     !    different substances. Other quantities, e.g. magnetic field,
@@ -267,23 +267,21 @@ contains
     ! 3. The number of fluids and species found are returned by
     !    nDensity and nSpeed.
 
-    integer                   :: nDistinctSubstanceVar_I(nVarPerSubstance)
-    character(len=15)                 :: NameVarIn
-    integer                           :: iName, iVar, iSubstanceFound = 0
-    logical                           :: IsFoundVar
+    integer          :: nDistinctSubstanceVar_I(nVarPerSubstance)
+    character(len=15):: NameVarIn
+    integer          :: iName, iVar, iSubstanceFound = 0
+    logical          :: IsFoundVar
 
     ! For charge state loop
-    integer                           :: iElementAll
-    character(len=4)                  :: NameChargeStateFirst, &
-         NameChargeStateLast
+    integer:: iElementAll
+    character(len=4):: NameChargeStateFirst, NameChargeStateLast
 
-    ! ------------------------------------------------------------------------
     character(len=*), parameter:: NameSub = 'process_var_list'
     !--------------------------------------------------------------------------
     nDistinctSubstanceVar_I(:) = 0
-    nWave = 0
-    nMaterial = 0
-    nChargeStateAll = 0
+    if(present(nWave))           nWave = 0
+    if(present(nMaterial))       nMaterial = 0
+    if(present(nChargeStateAll)) nChargeStateAll = 0
 
     ! create standard names and dictionary arrays
     allocate(SubstanceStandardName_II(nSubstance, nVarPerSubstance))
@@ -321,13 +319,13 @@ contains
        ! These names are created  in BATSRUS:MH_set_parameters
        ! and need not be changed
        if (lge(NameVarIn, 'i01') .and. lle(NameVarIn, 'i99')) then
-          nWave = nWave + 1
+          if(present(nWave)) nWave = nWave + 1
           IsFoundVar = .true.
           CYCLE NAMELOOP
        end if
 
        if (lge(NameVarIn, 'm1') .and. lle(NameVarIn, 'm9')) then
-          nMaterial = nMaterial + 1
+          if(present(nMaterial)) nMaterial = nMaterial + 1
           IsFoundVar = .true.
           CYCLE NAMELOOP
        end if
@@ -348,7 +346,7 @@ contains
 
           if (lge(NameVarIn,NameChargeStateFirst) .and. &
                lle(NameVarIn,NameChargeStateLast)) then
-             nChargeStateAll = nChargeStateAll + 1
+             if(present(nChargeStateAll)) nChargeStateAll = nChargeStateAll + 1
              IsFoundVar = .true.
              CYCLE NAMELOOP
           end if
@@ -365,10 +363,10 @@ contains
 
     end do NAMELOOP
 
-    nDensity = nDistinctSubstanceVar_I(Rho_)
-    nSpeed   = nDistinctSubstanceVar_I(RhoUx_)
-    nP       = nDistinctSubstanceVar_I(P_)
-    nPpar    = nDistinctSubstanceVar_I(Ppar_)
+    if(present(nDensity)) nDensity = nDistinctSubstanceVar_I(Rho_)
+    if(present(nSpeed))   nSpeed   = nDistinctSubstanceVar_I(RhoUx_)
+    if(present(nP))       nP       = nDistinctSubstanceVar_I(P_)
+    if(present(nPpar))    nPpar    = nDistinctSubstanceVar_I(Ppar_)
 
     deallocate(Dictionary_III)
     deallocate(SubstanceStandardName_II)
@@ -401,32 +399,25 @@ contains
       end do
     end subroutine find_substance_replace_name
     !==========================================================================
-
   end subroutine process_var_list
   !============================================================================
-  ! =========================================================================
   subroutine create_standard_name
 
     integer   :: iVar, iSubstance
-    ! ---------------------------------------------------------------------
-
     ! loop over all possible species/fluids to fill in Name arrays
     !--------------------------------------------------------------------------
     do iSubstance = 1, nSubstance
        do iVar = 1, nVarPerSubstance
           SubstanceStandardName_II(iSubstance,iVar) = &
                ''//trim(NameSubstance_I(iSubstance))//NameSubstanceVar_I(iVar)
-
        end do
     end do
 
   end subroutine create_standard_name
   !============================================================================
-  ! =========================================================================
   subroutine create_dictionary
 
     integer  :: iSubstance
-    ! --------------------------------------------------------------------
     !--------------------------------------------------------------------------
     Dictionary_III(:,:,:) = ''
 
@@ -592,8 +583,5 @@ contains
 
   end subroutine create_dictionary
   !============================================================================
-
-  ! =========================================================================
-
 end module ModProcessVarName
 !==============================================================================
