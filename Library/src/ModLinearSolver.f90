@@ -181,6 +181,7 @@ contains
     integer :: iComm                           ! MPI communicator
     integer :: i,i1,its,j,k,k1
     real :: coeff,Tol1,epsmac,gam,ro,ro0,t,tmp
+    !$acc declare create(ro, t)
     !--------------------------------------------------------------------------
 
     if(DoTest)write(*,*)'GMRES tol,iter:',Tol,Iter
@@ -238,7 +239,12 @@ contains
 #endif          
        endif
        !-------------------------------------------------------------
+
+       !$acc parallel
        ro = sqrt( dot_product_mpi(n, Krylov_II(:,1), Krylov_II(:,1), iComm ))
+       !$acc end parallel
+       !$acc update host(ro)
+       
        if (ro == 0.0) then
           if(its == 0)then
              info=3
@@ -291,22 +297,33 @@ contains
           !  modified gram - schmidt...
           !-----------------------------------------
           do j=1,i
+
+             !$acc parallel
              t = dot_product_mpi(n, Krylov_II(:,j), Krylov_II(:,i1), iComm)
+             !$acc end parallel
+             !$acc update host(t)
+             
              hh(j,i) = t
 
-             !$acc parallel loop gang vector independent copyin(t)
+
+             !$acc parallel loop gang vector independent
              do k = 1, n
                 Krylov_II(k,i1) = Krylov_II(k,i1) - t*Krylov_II(k,j)
              end do
           end do
+          
 
+          !$acc parallel
           t = sqrt( dot_product_mpi(n, Krylov_II(:,i1),Krylov_II(:,i1), iComm) )
+          !$acc end parallel
+          !$acc update host(t)
 
           hh(i1,i) = t
           if (t /= 0.0)then
              t = 1.0 / t
 
-             !$acc parallel loop gang vector independent copyin(t)
+             !$acc update device(t)
+             !$acc parallel loop gang vector independent
              do k = 1, n
                 Krylov_II(k,i1) = t*Krylov_II(k,i1)
              end do
@@ -1010,6 +1027,7 @@ contains
   !============================================================================
 
   real function dot_product_mpi(n, a_I, b_I, iComm)
+    !$acc routine gang
     integer, intent(in) :: n
     real, intent(in)    :: a_I(n), b_I(n)
     integer, intent(in) :: iComm
@@ -1019,24 +1037,26 @@ contains
     real :: DotProduct, DotProductMpi
     integer :: iError
     !--------------------------------------------------------------------------
+#ifndef _OPENACC
     if(UseAccurateSum)then
        dot_product_mpi = accurate_dot_product(a_I, b_I, iComm=iComm)
        RETURN
     end if
 
-#ifndef _OPENACC
     DotProduct = dot_product(a_I, b_I)
 #else   
-
     DotProduct = 0.0
-    !$acc parallel present(a_I,b_I)     
-    !$acc loop reduction(+:DotProduct)
+    ! It seems the following loop is only parallelized with vector, and
+    ! the performance may be not optimal. It can not parallelized with gang
+    ! becasue it can not compile. To be improved. --Yuxi
+    !$acc loop vector reduction(+:DotProduct)
     do i = 1, n
        DotProduct = DotProduct + a_I(i)*b_I(i)
     end do
-    !$acc end parallel
+    dot_product_mpi = DotProduct
 #endif
-   
+    
+#ifndef _OPENACC        
     if(iComm == MPI_COMM_SELF) then
        dot_product_mpi = DotProduct
        RETURN
@@ -1044,7 +1064,7 @@ contains
     call MPI_allreduce(DotProduct, DotProductMpi, 1, MPI_REAL, MPI_SUM, &
          iComm, iError)
     dot_product_mpi = DotProductMpi
-
+#endif
   end function dot_product_mpi
   !============================================================================
 
