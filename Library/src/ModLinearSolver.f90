@@ -223,16 +223,21 @@ contains
           do i = 1, n
              Krylov_II(i,1)=Rhs(i) - Krylov_II(i,1)
           end do
-          !$acc update host(Krylov_II)
 #else          
           Krylov_II(:,1)=Rhs - Krylov_II(:,1)
 #endif          
        else
+#ifdef _OPENACC
+          !$acc parallel loop
+          do i = 1, n
+             Krylov_II(i,1)=Rhs(i)
+          end do
+#else          
           ! Save a matvec when starting from zero initial condition
           Krylov_II(:,1)=Rhs
+#endif          
        endif
        !-------------------------------------------------------------
-       !$acc update device(Krylov_II)
        ro = sqrt( dot_product_mpi(n, Krylov_II(:,1), Krylov_II(:,1), iComm ))
        if (ro == 0.0) then
           if(its == 0)then
@@ -264,7 +269,11 @@ contains
        end if
 
        coeff = 1.0 / ro
-       Krylov_II(:,1)=coeff*Krylov_II(:,1)
+       
+       !$acc parallel loop copyin(coeff)
+       do i = 1, n
+          Krylov_II(i,1)=coeff*Krylov_II(i,1)
+       end do
 
        ! initialize 1-st term  of rhs of hessenberg system
        rs(1) = ro
@@ -276,26 +285,31 @@ contains
           !
           !           Krylov_II(i1):=A*Krylov_II(i)
           !
-          !$acc update device(Krylov_II)
           call matvec(Krylov_II(:,i),Krylov_II(:,i1),n)
-          !$acc update host(Krylov_II)
 
           !-----------------------------------------
           !  modified gram - schmidt...
           !-----------------------------------------
           do j=1,i
-             !$acc update device(Krylov_II)
              t = dot_product_mpi(n, Krylov_II(:,j), Krylov_II(:,i1), iComm)
              hh(j,i) = t
-             Krylov_II(:,i1) = Krylov_II(:,i1) - t*Krylov_II(:,j)
+
+             !$acc parallel loop gang vector independent copyin(t)
+             do k = 1, n
+                Krylov_II(k,i1) = Krylov_II(k,i1) - t*Krylov_II(k,j)
+             end do
           end do
-          !$acc update device(Krylov_II)
+
           t = sqrt( dot_product_mpi(n, Krylov_II(:,i1),Krylov_II(:,i1), iComm) )
 
           hh(i1,i) = t
           if (t /= 0.0)then
              t = 1.0 / t
-             Krylov_II(:,i1) = t*Krylov_II(:,i1)
+
+             !$acc parallel loop gang vector independent copyin(t)
+             do k = 1, n
+                Krylov_II(k,i1) = t*Krylov_II(k,i1)
+             end do
           endif
           !--------done with modified gram schmidt and arnoldi step
 
@@ -333,6 +347,8 @@ contains
           if (i >= nKrylov .or. (ro <= Tol1)) EXIT KRYLOVLOOP
        enddo KRYLOVLOOP
 
+       !$acc update host(Krylov_II)
+       
        !
        ! now compute solution. first solve upper triangular system.
        !
