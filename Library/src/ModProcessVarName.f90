@@ -29,7 +29,7 @@ module ModProcessVarName
   integer, parameter:: nSynonym = 3
 
   ! State variables not associated with a specific fluid/ specie
-  integer, parameter:: nVarExtra = 17
+  integer, parameter:: nVarExtra = 18
 
    ! Number of elements for charge state calculation
   integer, parameter:: nElementAll = 30
@@ -146,7 +146,8 @@ module ModProcessVarName
        'hype ', &
        'bperu', &
        'wd   ', &
-       'lperp' ]
+       'lperp', &
+       'hplim']
 
   ! Named indices for all elements in charge state calculation
   character(len=2) :: NameElementAll_I(nElementAll) = [&
@@ -198,7 +199,8 @@ module ModProcessVarName
        'HypE ', &
        'BperU', &
        'wD   ', &
-       'Lperp' ]
+       'Lperp', &
+       'HPLim']
 
   ! Array storing standarized variable names for all species / fluids
   character(len=20), allocatable :: SubstanceStandardName_II(:,:)
