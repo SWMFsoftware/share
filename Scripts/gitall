@@ -14,7 +14,7 @@ Usage:
 -v -verbose   provide verbose information for the status command
 -q -quiet     execute the Git command without printing the gitall annotations
 -s -sleep     sleep 5 seconds after each Git command to avoid ssh access issues
--s=N -sleep=N sleep N seconds after each Git push or pull command
+-s=N -sleep=N sleep N seconds after each Git push, pull or fetch command
      	      The default is set by the \$GITHUBSLEEP environment variable.
 -r -reference print Git references 
 -r=c          print Git references as a C header with a print statement
@@ -59,7 +59,7 @@ $Remote = 'git@github.com:SWMFsoftware' if $Remote eq "1";
 my $gitcmd;                # The variable to receive the git command
 
 $gitcmd = join(' ',@ARGV) . ' 2>&1'; # redirect STDERR to STDOUT
-$gitcmd .= "; sleep $Sleep" if $Sleep and $gitcmd =~ /\b(push|pull)\b/;
+$gitcmd .= "; sleep $Sleep" if $Sleep and $gitcmd =~ /\b(push|pull|fetch)\b/;
 
 my @RefList; 
 my $pwd = `pwd`; chop($pwd);
