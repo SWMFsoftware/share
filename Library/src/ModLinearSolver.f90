@@ -16,7 +16,7 @@ module ModLinearSolver
   use ModBlasLapack, ONLY: BLAS_gemm, BLAS_copy, BLAS_gemv, &
        LAPACK_getrf, LAPACK_getrs
   use omp_lib
-  
+
   ! BLAS_gemm, level 3 Matrix-Matrix Product.
   !
   ! BLAS_gemv, level 2 Matrix-Vector Product.
@@ -107,18 +107,19 @@ module ModLinearSolver
   integer :: iStep
   real    :: Time
 
-
   ! Number of unknowns
   integer:: n0 = 0
   ! Size of Krylov subspace
   integer:: nKrylov0 = 0
   ! Krylov subspace vectors
-  real, dimension(:,:), allocatable :: Krylov_II  
+  real, dimension(:,:), allocatable :: Krylov_II
   !$acc declare create(Krylov_II)
 
   ! Hessenberg matrix and some vectors
   real, dimension(:,:), allocatable :: hh
-  real, dimension(:),   allocatable :: c,s,rs  
+  !$acc declare create(hh)
+  real, dimension(:),   allocatable :: c,s,rs
+  !$acc declare create(c, s, rs)
 contains
   !============================================================================
 
@@ -181,7 +182,7 @@ contains
     integer :: iComm                           ! MPI communicator
     integer :: i,i1,its,j,k,k1
     real :: coeff,Tol1,epsmac,gam,ro,ro0,t,tmp
-    !$acc declare create(ro, t)
+    !$acc declare create(coeff, ro, t)
     !--------------------------------------------------------------------------
 
     if(DoTest)write(*,*)'GMRES tol,iter:',Tol,Iter
@@ -191,15 +192,15 @@ contains
     if(present(iCommIn)) iComm = iCommIn
 
     ! If the size of arrays changes, dellocate the arrays
-    if((n /= n0 .or. nKrylov /= nKrylov0) .and. allocated(Krylov_II)) then 
-       deallocate(Krylov_II, hh, c, s, rs)       
+    if((n /= n0 .or. nKrylov /= nKrylov0) .and. allocated(Krylov_II)) then
+       deallocate(Krylov_II, hh, c, s, rs)
     end if
-    
+
     if(.not.allocated(Krylov_II)) then
        allocate(Krylov_II(n,nKrylov+2))
        allocate(hh(nKrylov+1,nKrylov))
-       allocate(c(nKrylov), s(nKrylov), rs(nKrylov+1))       
-    end if    
+       allocate(c(nKrylov), s(nKrylov), rs(nKrylov+1))
+    end if
 
     if(range(1.0)>100)then
        epsmac=0.0000000000000001
@@ -212,31 +213,32 @@ contains
     ! **  outer loop starts here..
     !-------------- compute initial residual vector --------------
 
+    !$acc update device(Sol)
+
     RESTARTLOOP: do
        !
        !           Krylov_II(1):=A*Sol
        !
        if(IsInit.or.its>0)then
-          !$acc update device(Sol)
           call matvec(Sol,Krylov_II,n)
 #ifdef _OPENACC
           !$acc parallel loop
           do i = 1, n
              Krylov_II(i,1)=Rhs(i) - Krylov_II(i,1)
           end do
-#else          
+#else
           Krylov_II(:,1)=Rhs - Krylov_II(:,1)
-#endif          
+#endif
        else
 #ifdef _OPENACC
           !$acc parallel loop
           do i = 1, n
              Krylov_II(i,1)=Rhs(i)
           end do
-#else          
+#else
           ! Save a matvec when starting from zero initial condition
           Krylov_II(:,1)=Rhs
-#endif          
+#endif
        endif
        !-------------------------------------------------------------
 
@@ -244,7 +246,10 @@ contains
        ro = sqrt( dot_product_mpi(n, Krylov_II(:,1), Krylov_II(:,1), iComm ))
        !$acc end parallel
        !$acc update host(ro)
-       
+
+       ! Since 'branching into or out of region is not allowed' by nvfortran,
+       ! the following lines, which contain 'RETURN' can not be inside a
+       ! acc region.
        if (ro == 0.0) then
           if(its == 0)then
              info=3
@@ -274,15 +279,16 @@ contains
           end if
        end if
 
+       !$acc parallel
        coeff = 1.0 / ro
-       
-       !$acc parallel loop copyin(coeff)
+       !$acc loop independent
        do i = 1, n
           Krylov_II(i,1)=coeff*Krylov_II(i,1)
        end do
-
        ! initialize 1-st term  of rhs of hessenberg system
        rs(1) = ro
+       !$acc end parallel
+
        i = 0
        KRYLOVLOOP: do
           i=i+1
@@ -297,48 +303,48 @@ contains
           !  modified gram - schmidt...
           !-----------------------------------------
           do j=1,i
-
              !$acc parallel
              t = dot_product_mpi(n, Krylov_II(:,j), Krylov_II(:,i1), iComm)
-             !$acc end parallel
-             !$acc update host(t)
-             
              hh(j,i) = t
-
+             !$acc end parallel
 
              !$acc parallel loop gang vector independent
              do k = 1, n
                 Krylov_II(k,i1) = Krylov_II(k,i1) - t*Krylov_II(k,j)
              end do
           end do
-          
 
           !$acc parallel
-          t = sqrt( dot_product_mpi(n, Krylov_II(:,i1),Krylov_II(:,i1), iComm) )
+          t = sqrt(dot_product_mpi(n, Krylov_II(:,i1),Krylov_II(:,i1), iComm))
           !$acc end parallel
-          !$acc update host(t)
 
+          ! Merge the acc regions above and below leads to incorrect results.
+          ! Maybe because dot_product_mpi() is only parallelized with vector.
+          ! To be improved. --Yuxi
+
+          !$acc parallel
           hh(i1,i) = t
           if (t /= 0.0)then
              t = 1.0 / t
-
-             !$acc update device(t)
-             !$acc parallel loop gang vector independent
+             !$acc loop gang vector independent
              do k = 1, n
                 Krylov_II(k,i1) = t*Krylov_II(k,i1)
              end do
           endif
+
           !--------done with modified gram schmidt and arnoldi step
 
           !-------- now  update factorization of hh
 
           !-------- perform previous transformations  on i-th column of h
+          !$acc loop seq
           do k=2,i
              k1 = k-1
              t = hh(k1,i)
              hh(k1,i) = c(k1)*t + s(k1)*hh(k,i)
              hh(k,i) = -s(k1)*t + c(k1)*hh(k,i)
           end do
+
           gam = sqrt(hh(i,i)**2 + hh(i1,i)**2)
           if (gam == 0.0) gam = epsmac
           !-----------#  determine next plane rotation  #-------------------
@@ -349,6 +355,9 @@ contains
           !---determine residual norm and test for convergence-
           hh(i,i) = c(i)*hh(i,i) + s(i)*hh(i1,i)
           ro = abs(rs(i1))
+          !$acc end parallel
+
+          !$acc update host(ro)
           if(DoTest)then
              select case(TypeStop)
              case('rel')
@@ -358,19 +367,16 @@ contains
              end select
           end if
 
-!          call cpu_time(finish)
-!          print '("TimeForEachIteration = ",f6.3," seconds.")',finish-funcCall1
-
           if (i >= nKrylov .or. (ro <= Tol1)) EXIT KRYLOVLOOP
        enddo KRYLOVLOOP
 
-       !$acc update host(Krylov_II)
-       
        !
        ! now compute solution. first solve upper triangular system.
        !
        ! rs := hh(1:i,1:i) ^-1 * rs
 
+       !$acc parallel
+       !$acc loop seq
        do j=i,1,-1
           if (rs(j)/=0.0) then
              rs(j)=rs(j)/hh(j,j)
@@ -385,12 +391,18 @@ contains
        ! now form linear combination to get solution
        do j=1, i
           t = rs(j)
-          Sol = Sol + t*Krylov_II(:,j)
+          !$acc loop gang vector independent
+          do k = 1, n
+             Sol(k) = Sol(k) + t*Krylov_II(k,j)
+          end do
        end do
+       !$acc end parallel
 
        ! exit from outer loop if converged or too many iterations
        if (ro <= Tol1 .or. its >= Iter) EXIT RESTARTLOOP
     end do RESTARTLOOP
+
+    !$acc update host(Sol)
 
 !    call cpu_time(finish)
 !    print '("TimeEndMainLoop = ",f6.3," seconds.")',finish-start
@@ -1033,7 +1045,7 @@ contains
     integer, intent(in) :: iComm
 
     integer :: i
-    
+
     real :: DotProduct, DotProductMpi
     integer :: iError
     !--------------------------------------------------------------------------
@@ -1044,7 +1056,7 @@ contains
     end if
 
     DotProduct = dot_product(a_I, b_I)
-#else   
+#else
     DotProduct = 0.0
     ! It seems the following loop is only parallelized with vector, and
     ! the performance may be not optimal. It can not parallelized with gang
@@ -1055,8 +1067,8 @@ contains
     end do
     dot_product_mpi = DotProduct
 #endif
-    
-#ifndef _OPENACC        
+
+#ifndef _OPENACC
     if(iComm == MPI_COMM_SELF) then
        dot_product_mpi = DotProduct
        RETURN
