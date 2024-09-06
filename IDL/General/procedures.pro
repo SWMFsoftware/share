@@ -1901,8 +1901,9 @@ pro get_file_types
   npictinfiles = intarr(nfile)
   for ifile=0, nfile-1 do begin
      l = strlen(filenames(ifile)) - 4
-     if   strpos(filenames(ifile),'.log') eq l $
-        or strpos(filenames(ifile),'.sat') eq l then begin
+     if    strpos(filenames(ifile),'.log') eq l $
+        or strpos(filenames(ifile),'.sat') eq l $
+        or strpos(filenames(ifile),'.txt') eq l then begin
         filetypes(ifile)    = 'log'
         npictinfiles(ifile) = 1000
      endif else begin
