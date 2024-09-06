@@ -242,10 +242,8 @@ contains
        endif
        !-------------------------------------------------------------
 
-       !$acc parallel
        ro = sqrt( dot_product_mpi(n, Krylov_II(:,1), Krylov_II(:,1), iComm ))
-       !$acc end parallel
-       !$acc update host(ro)
+       !$acc update device(ro)
 
        ! Since 'branching into or out of region is not allowed' by nvfortran,
        ! the following lines, which contain 'RETURN' can not be inside a
@@ -303,8 +301,11 @@ contains
           !  modified gram - schmidt...
           !-----------------------------------------
           do j=1,i
-             !$acc parallel
+
              t = dot_product_mpi(n, Krylov_II(:,j), Krylov_II(:,i1), iComm)
+             !$acc update device(t)
+
+             !$acc parallel
              hh(j,i) = t
              !$acc end parallel
 
@@ -314,13 +315,8 @@ contains
              end do
           end do
 
-          !$acc parallel
           t = sqrt(dot_product_mpi(n, Krylov_II(:,i1),Krylov_II(:,i1), iComm))
-          !$acc end parallel
-
-          ! Merge the acc regions above and below leads to incorrect results.
-          ! Maybe because dot_product_mpi() is only parallelized with vector.
-          ! To be improved. --Yuxi
+          !$acc update device(t)
 
           !$acc parallel
           hh(i1,i) = t
@@ -1039,7 +1035,6 @@ contains
   !============================================================================
 
   real function dot_product_mpi(n, a_I, b_I, iComm)
-    !$acc routine gang
     integer, intent(in) :: n
     real, intent(in)    :: a_I(n), b_I(n)
     integer, intent(in) :: iComm
@@ -1058,17 +1053,12 @@ contains
     DotProduct = dot_product(a_I, b_I)
 #else
     DotProduct = 0.0
-    ! It seems the following loop is only parallelized with vector, and
-    ! the performance may be not optimal. It can not parallelized with gang
-    ! becasue it can not compile. To be improved. --Yuxi
-    !$acc loop vector reduction(+:DotProduct)
+    !$acc parallel loop gang vector reduction(+:DotProduct)
     do i = 1, n
        DotProduct = DotProduct + a_I(i)*b_I(i)
     end do
-    dot_product_mpi = DotProduct
 #endif
 
-#ifndef _OPENACC
     if(iComm == MPI_COMM_SELF) then
        dot_product_mpi = DotProduct
        RETURN
@@ -1076,7 +1066,6 @@ contains
     call MPI_allreduce(DotProduct, DotProductMpi, 1, MPI_REAL, MPI_SUM, &
          iComm, iError)
     dot_product_mpi = DotProductMpi
-#endif
   end function dot_product_mpi
   !============================================================================
 
