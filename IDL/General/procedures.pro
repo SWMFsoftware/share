@@ -76,26 +76,30 @@ pro set_default_values
   !x.tickname=strarr(60)
   !y.tickname=strarr(60)
 
+; Format date labels
+  dummy = LABEL_DATE(DATE_FORMAT=['%H:%I!c%M %D %Y'])
+
 ; Confirmation for set parameters
   common ask_param, doask
-  doask=0
+  doask = 0
   
 ; behavior on error: 0: stop in the unit (for debug), 2=return to main
   common debug_param, onerror
-  onerror=2
+  onerror = 2
 
   common fits_param, noresize
   noresize=0                    ; Keep original size of fits image
 
 ; Parameters for read_data
   common getpict_param, $
-     filename, nfile, filenames, filetypes, npictinfiles, npict
+     filename, nfile, filenames, filetypes, npictinfiles, npict, filetype
   filename=''          ; space separated list of filenames. May contain *, []
   nfile=0              ; number of files
   filenames=0          ; array of filenames
-  filetype=''          ; file types (real4, real8, ascii...)
+  filetypes=''         ; file types (real4, real8, ascii, log ...)
   npictinfiles=0       ; number of pictures in each file
   npict=0              ; index of snapshot to be read
+  filetype=''          ; type of current file
 
 ; Parameters for plot_data
   common plotfunc_param, $
@@ -512,7 +516,7 @@ function curve_distance,x1,y1,x2,y2
   return, d
 end
 ;===========================================================================
-function curve_int_distance,x1,y1,x2,y2
+function curve_int_distance, x1, y1, x2, y2
 
 ; Evaluates the distance between two curves (data & model results)
 ; independent of the coordinate system so that errors in x and y
@@ -546,9 +550,9 @@ function curve_int_distance,x1,y1,x2,y2
   d = (d1/len1 + d2/len2)/2
   return, d
 end
-
+;===========================================================================
 pro read_data
-;
+
 ;    Read the npict-th snapshot from an ascii or binary data file into
 ;    the x (coordinates) and w (data) arrays. 
 ;    If dotransfrom='y' the data is transformed according to 
@@ -563,7 +567,7 @@ pro read_data
 ;    read_data will prompt you for "filename(s)" and "npict"
 ;    unless they are already set. Previous settings can be erased by 
 ;
-; set_defaults
+; set_default_values
 ;
 ;    or modified explicitly, e.g.:
 ;
@@ -618,13 +622,13 @@ pro read_data
      retall
   endif
   get_file_types
-  print,'filetype(s)   =','',filetypes
-  print,'npictinfile(s)=',npictinfiles
-  if max(npictinfiles) eq 1 then npict=1
+  print,'filetype(s)   =','', filetypes
+  print,'npictinfile(s)=', npictinfiles
+  if max(npictinfiles) or min(npictinfiles) eq 1000 then npict = 1
   asknum,'npict',npict,doask
   print
 
-  for ifile=0,nfile-1 do begin
+  for ifile = 0, nfile-1 do begin
 
      ;; Read data from file ifile
 
@@ -682,7 +686,7 @@ pro read_data
               x9=x
            end
         endcase
-        print,'Read x',ifile,' and w',ifile,FORMAT='(a,i1,a,i1)'
+        print,'Read x', ifile,' and w', ifile, FORMAT='(a,i1,a,i1)'
      endif else print,'Read x and w'
 
      read_transform_param
@@ -710,8 +714,11 @@ pro read_data
   endfor
   close,10
 
-; Produce a wnames from the last file
+  ;; Produce a wnames from the last file
   wnames=variables(ndim:ndim+nw-1)
+
+  ;; Store type of the last file
+  filetype = filetypes[-1]
 
 end
 ;===========================================================================
@@ -935,9 +942,9 @@ pro animate_data
      open_file, 10, filenames(ifile), filetypes(ifile)
      get_file_head, 10, filenames(ifile), filetypes(ifile)
      anygencoord = anygencoord or gencoord
-     print,         'headline                  =',strtrim(headline,2)
-     print,FORMAT='("variables                 =",100(a," "),$)',variables
-     print,FORMAT='(" (ndim=",i2,", nw=",i2,")")',ndim,nw
+     print,         'headline                  =', strtrim(headline,2)
+     print, FORMAT='("variables                 =",100(a," "),$)', variables
+     print, FORMAT='(" (ndim=",i2,", nw=",i2,")")', ndim, nw
   endfor
 
   print,'======= PLOTTING PARAMETERS ========================='
@@ -980,17 +987,18 @@ pro animate_data
      if npict gt npictmax then npict=npictmax
      if npict lt 0 then npict=0
   endif else begin
-     npict=0
+     npict = 0
      for ifile=0,nfile-1 do $
         open_file, ifile+10, filenames(ifile), filetypes(ifile)
-     error=0
+     error = 0
      while npict lt npictmax and not error do begin
         for ifile = 0, nfile-1 do begin
 
            if npict eq 0 then nextpict=firstpict(ifile) $
            else               nextpict=dpict(ifile)
 
-           get_pict, ifile+10, filenames(ifile), filetypes(ifile), nextpict, err
+           get_pict, ifile+10, filenames(ifile), filetypes(ifile), $
+                     nextpict, err
 
            if keyword_set(wsubtract) then w=w-wsubtract
 
@@ -1112,11 +1120,12 @@ pro animate_data
     xinteranimate,set=[!d.x_size,!d.y_size,(npict-1)/npict1+1]
   endif
 
-  ipict=0
-  ipict1=0
-  iplot=0
-  for ifile=0,nfile-1 do open_file, ifile+10, filenames(ifile), filetypes(ifile)
-  error=0
+  ipict = 0
+  ipict1 = 0
+  iplot = 0
+  for ifile = 0, nfile-1 do $
+     open_file, ifile+10, filenames(ifile), filetypes(ifile)
+  error = 0
   while ipict lt npict and not error do begin
      if ipict1 eq 0 then begin
         if not keyword_set(noerase) then erase
@@ -1126,8 +1135,8 @@ pro animate_data
                   XSIZE=24,YSIZE=18,/LANDSCAPE,/COLOR,BITS=8
      endif
 
-     if ipict eq 0 then print,FORMAT='("ipict:    ",$)'
-     print,FORMAT='(i4,$)',ipict+1
+     if ipict eq 0 then print, FORMAT='("ipict:    ",$)'
+     print, FORMAT='(i4,$)', ipict+1
 
      if n_elements(velpos) gt 1 and velrandom gt 0 then begin
         ;; reset a subset of the vector positions to a random value
@@ -1136,16 +1145,17 @@ pro animate_data
         velpos(ii,1) = randomu(seed,n_elements(ii),/double)*1e6
      endif
 
-     for ifile=0,nfile-1 do begin
+     for ifile = 0, nfile-1 do begin
 
         if npict gt 1 or nfile gt 1 or noautorange then begin
 
            if ipict eq 0 then nextpict=firstpict(ifile) $
            else               nextpict=dpict(ifile)
 
-           get_pict, ifile+10, filenames(ifile), filetypes(ifile), nextpict, err
+           get_pict, ifile+10, filenames(ifile), filetypes(ifile), $
+                     nextpict, err
 
-           error=error or err
+           error = error or err
         endif
 
         if not error then begin
@@ -1178,9 +1188,9 @@ pro animate_data
               endelse
            endif
 
-           wnames=variables(ndim:ndim+nw-1)
+           wnames = variables(ndim:ndim+nw-1)
 
-           do_transform,ifile
+           do_transform, ifile
 
            linestyle=0
            if multix*multiy lt nplot*nfile then $
@@ -1195,7 +1205,7 @@ pro animate_data
 
            if keyword_set(plottitle_file) then begin
               plottitle = plottitle_file(ifile)
-              string_to_array,plottitle,plottitles,nfunc,';'
+              string_to_array, plottitle, plottitles, nfunc, ';'
            end
 
            if keyword_set(func_file) then begin
@@ -1209,14 +1219,15 @@ pro animate_data
 
            if keyword_set(plotmode_file) then begin
               plotmode = plotmode_file(ifile)
-              string_to_array,plotmode,plotmodes,nfunc
+              string_to_array, plotmode, plotmodes, nfunc
            end
 
            if filetypes[ifile] eq 'log' and plotmode eq 'default' then $
-              string_to_array,'plottime', plotmodes,nfunc
+              string_to_array,'plottime', plotmodes, nfunc
            
            nfilestore = nfile
            ifilestore = ifile
+           filetype = filetypes[ifile]
 
            plot_func
 
@@ -3356,7 +3367,7 @@ pro make_unpolar_grid3
 end
 
 ;===========================================================================
-pro getaxes,ndim,x,xx,yy,zz,cut,cut0,rSlice,plotdim,variables
+pro getaxes, ndim, x, xx, yy, zz, cut, cut0, rSlice, plotdim, variables
 ;===========================================================================
   common debug_param & on_error, onerror
 
@@ -3374,12 +3385,12 @@ pro getaxes,ndim,x,xx,yy,zz,cut,cut0,rSlice,plotdim,variables
   endcase
 
   if keyword_set(cut0) then begin
-     xx=xx(cut0)
-     if ndim gt 1 then yy=yy(cut0)
-     if ndim gt 2 then zz=zz(cut0)
+     xx = xx(cut0)
+     if ndim gt 1 then yy = yy(cut0)
+     if ndim gt 2 then zz = zz(cut0)
   endif
 
-  !x.title="!5"+strupcase(variables(0))
+  if variables(0) ne 'date' then !x.title = "!5"+strupcase(variables(0))
   if plotdim gt 1 then !y.title = "!5"+strupcase(variables(1))
   if plotdim gt 2 then !z.title = "!5"+strupcase(variables(2))
 
@@ -3397,32 +3408,31 @@ pro getaxes,ndim,x,xx,yy,zz,cut,cut0,rSlice,plotdim,variables
   siz=size(cut)
 ; in 2D
   if siz(0) eq 2 and siz(1) eq 1 then begin
-     xx=yy
-     !x.title=variables(1)
+     xx = yy
+     !x.title = variables(1)
   endif
 ; in 3D
   if siz(0) eq 3 then begin
      case 1 of
         plotdim eq 1: begin
-           xx=zz
-           !x.title=variables(2)
+           xx = zz
+           !x.title = variables(2)
         end
         siz(1) eq 1: begin
-           xx=yy
-           yy=zz
-           !x.title="!5"+variables(1)
-           !y.title="!5"+variables(2)
+           xx = yy
+           yy = zz
+           !x.title = "!5"+variables(1)
+           !y.title = "!5"+variables(2)
         end
         siz(2) eq 1: begin
-           yy=zz
-           !y.title="!5"+variables(2)
+           yy = zz
+           !y.title = "!5"+variables(2)
         end
         else: print,'internal error in getaxes'
      endcase
   endif
 
 end
-
 ;===========================================================================
 pro set_units, type, distunit=distunit, Mion=Mion, Melectron=Melectron
 
@@ -3693,6 +3703,7 @@ pro plot_func
   common plot_store
   common file_head
   common log_data, timeunit, timeunitsc
+  common getpict_param
   
   ;; Get grid dimensions and set irr=1 
   ;; if it is an irregular grid
@@ -3718,6 +3729,10 @@ pro plot_func
   ;; Save global values that will be overwritten
   xtitleorig = !x.title
   ytitleorig = !y.title
+  xtickformatorig = !x.tickformat
+
+  if filetype eq 'log' and timeunit eq 'date' then $
+     !x.tickformat = ['LABEL_DATE']
 
   uniform = 1
   if axistype eq 'coord' then begin
@@ -3739,8 +3754,8 @@ pro plot_func
      endelse
   endif
 
-  if xtitleorig ne '' then !x.title=xtitleorig
-  if plotdim gt 1 and ytitleorig ne '' then !y.title=ytitleorig
+  if xtitleorig ne '' then !x.title = xtitleorig
+  if plotdim gt 1 and ytitleorig ne '' then !y.title = ytitleorig
 
   if !x.range[0] ne !x.range[1] then xrange=!x.range else $
      if axistype eq 'coord' then xrange=[min(xx),max(xx)] $
@@ -3766,7 +3781,7 @@ pro plot_func
   ytickname  = !y.tickname
   !p.color = 255 - !p.background
 
-  for ifunc=0,nfunc-1 do begin
+  for ifunc = 0, nfunc-1 do begin
 
      plotmod=plotmodes(ifunc)
      funci = funcs(ifunc)
@@ -4060,18 +4075,18 @@ pro plot_func
         if n_elements(timestore) ne nplotstore*nfilestore then $
            timestore = fltarr(nplotstore,nfilestore)
 
-                                ; store plot function (list of points) and simulation time
+        ;; store plot function (list of points) and simulation time
         plotstore(*,iplotstore,ifunc,ifilestore) = f
         timestore(iplotstore,ifilestore) = time
 
-                                ; jump to next storage index (cyclic)
+        ;; jump to next storage index (cyclic)
         if ifunc eq nfunc-1 then iplotstore = (iplotstore + 1) mod nplotstore
 
-                                ; calculate maximum over stored functions
+        ;; calculate maximum over stored functions
         if usemax then $
            for i = 0, nplotstore-1 do f = f > plotstore(*,i,ifunc,ifilestore)
 
-                                ; calculate mean of stored functions
+        ;; calculate mean of stored functions
         if usemean then begin
            f = 0*f
            for i = 0, nplotstore-1 do f = f + plotstore(*,i,ifunc,ifilestore)
@@ -4355,12 +4370,13 @@ pro plot_func
   endfor
 
   !p.position = 0
-  !x.title    = xtitleorig
-  !y.title    = ytitleorig
+  !x.title      = xtitleorig
+  !y.title      = ytitleorig
+  !x.tickformat = xtickformatorig
 
 end
 ;===========================================================================
-pro putbottom,multix,multiy,ix,iy,info,nx,it,time,ipict
+pro putbottom, multix, multiy, ix, iy, info, nx, it, time, ipict
 
   common log_data, timeunit
   common debug_param & on_error, onerror
@@ -6202,10 +6218,7 @@ pro plot_log
   spacey = log_spacey*float(!d.y_ch_size)/float(!d.y_size)
   set_space, nlogfunc, spacex, spacey, sizes, ny = nlogfunc
 
-  if timeunit eq 'date' then begin
-     dummy = LABEL_DATE(DATE_FORMAT=['%H:%I!c%M %D %Y'])
-     xtitle0 = " "
-  endif
+  if timeunit eq 'date' then xtitle0 = " "
 
   if not keyword_set(noerase) then erase
 
@@ -6296,7 +6309,8 @@ pro plot_log
               endif else begin
                  set_position, sizes, 0, ifunc, posm, /rect
                  posm(0) = posm(0) + 0.05
-                 if timeunit eq 'date' and !x.ticks gt 0 then posm(2) = posm(2) - 0.05
+                 if timeunit eq 'date' and !x.ticks gt 0 then $
+                    posm(2) = posm(2) - 0.05
                  if nlogfunc lt 3 then posm(1) = posm(1) + 0.05/nlogfunc
                  title1  = ''
                  xtitle1 = ''
@@ -6409,8 +6423,8 @@ pro interpol_logfiles,logfilename,var0,var1,varname,time,tmin=tmin,tmax=tmax,$
 
 end
 ;============================================================================
-pro interpol_log,wlog0,wlog1,var0,var1,varname,varnames0,varnames1,time,$
-                 tmin=tmin,tmax=tmax,timeunit=timeunit
+pro interpol_log, wlog0, wlog1, var0, var1, varname, varnames0, varnames1, $
+                  time, tmin=tmin, tmax=tmax, timeunit=timeunit
 
 ; Interpolate the variables listed in varname to the time of wlog0
 ; between tmin and tmax. 
