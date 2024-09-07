@@ -893,29 +893,29 @@ pro animate_data
   videosave = savemovie eq 'mp4' or savemovie eq 'avi' or savemovie eq 'mov'
 
   print,'======= CURRENT ANIMATION PARAMETERS ================'
-  print,'firstpict=',firstpict,', dpict=',dpict,', npictmax=',npictmax, $
+  print,'firstpict=', firstpict,', dpict=', dpict,', npictmax=', npictmax, $
         FORMAT='(a,'+string(n_elements(firstpict))+'i4,a,' $
         +string(n_elements(dpict))+'i4,a,i4)'
   print,'savemovie (n/avi/mp4/mov/ps/png/tiff/bmp/jpeg)=',savemovie
-  if videosave then print,'videofile=',videofile,'(.',savemovie,')',$
-                          ', videorate=',videorate
-  print,'colorlevel=',colorlevel,', contourlevel=',contourlevel,$
-        ', velvector=',velvector,', velspeed (0..5)=',velspeed,$
+  if videosave then print,'videofile=', videofile,'(.', savemovie, ')', $
+                          ', videorate=', videorate
+  print, 'colorlevel=', colorlevel,', contourlevel=', contourlevel, $
+         ', velvector=', velvector,', velspeed (0..5)=', velspeed, $
         FORMAT='(a,i3,a,i3,a,i4,a,i2)'
   if keyword_set(multiplot) then begin
-     print,'multiplot= ',multiplot,', axistype (coord/cells)=',axistype,$
-           ', fixaspect= ',fixaspect,$
+     print,'multiplot= ', multiplot,', axistype (coord/cells)=', axistype, $
+           ', fixaspect= ', fixaspect, $
            FORMAT='(a,"[",i2,",",i2,",",i2,"]",a,a,a,i1)'
   endif else $
-     print,'multiplot= 0 (default), axistype (coord/cells)=',axistype,$
-           ', fixaspect= ',fixaspect,$
+     print,'multiplot= 0 (default), axistype (coord/cells)=', axistype, $
+           ', fixaspect= ', fixaspect, $
            FORMAT='(a,a,a,i1)'
-  print,'bottomline=',bottomline,', headerline=',headerline,$
+  print,'bottomline=', bottomline,', headerline=', headerline, $
         FORMAT='(a,i1,a,i1)'
 
-  if keyword_set(cut) then help,cut
-  if keyword_set(wsubtract) then help,wsubtract
-  if keyword_set(velpos) then help,velpos
+  if keyword_set(cut) then help, cut
+  if keyword_set(wsubtract) then help, wsubtract
+  if keyword_set(velpos) then help, velpos
   velpos0 = velpos
 
   print,'======= FILE DESCRIPTION ============================'
@@ -982,16 +982,18 @@ pro animate_data
 
   read_limits
 
+  ;; if all files are log files then there is no animation
+  if min(filetypes eq 'log') then maxpict = 1 else maxpict = 0
   if noautorange then begin
-     npict = min( (npictinfiles-firstpict)/dpict + 1 )
-     if npict gt npictmax then npict=npictmax
-     if npict lt 0 then npict=0
+     npict = min( (npictinfiles - firstpict)/dpict + 1 )
+     if npict gt maxpict then npict = maxpict
+     if npict lt 0 then npict = 0
   endif else begin
      npict = 0
      for ifile=0,nfile-1 do $
         open_file, ifile+10, filenames(ifile), filetypes(ifile)
      error = 0
-     while npict lt npictmax and not error do begin
+     while npict lt maxpict and not error do begin
         for ifile = 0, nfile-1 do begin
 
            if npict eq 0 then nextpict=firstpict(ifile) $
@@ -1062,13 +1064,13 @@ pro animate_data
         print,'Min and max value for ',funcs(ifunc),':',fmin(ifunc),fmax(ifunc)
 
   endelse
-  print,'npict=',npict
+  print, 'npict=', npict
   if npict eq 0 then begin
      print,'There are no frames to animate! Check the following settings:'
-     print,'   npictinfiles=',npictinfiles
-     print,'   firstpict   =',firstpict
-     print,'   dpict       =',dpict
-     print,'   npictmax    =',npictmax
+     print,'   npictinfiles=', npictinfiles
+     print,'   firstpict   =', firstpict
+     print,'   dpict       =', dpict
+     print,'   npictmax    =', npictmax
      if min(npictinfiles - firstpict) lt 0 then $
         print,'   firstpict is larger than npictinfiles for some files!' 
      retall
