@@ -2506,7 +2506,7 @@ pro read_plot_param, quiet=quiet
      if plotdim eq 1 then begin
         if strmid(plotmode,0,4) ne 'plot' then plotmode='default'
         print,'1D plotmode: plot/plot_io/plot_oi/plot_oo'
-        print,'1D +options: max,mean,log,noaxis,over,dot,dash,time,#c999,#ct999'
+        print,'1D +options: max,mean,log,noaxis,over,dot,dash,time,zero,#c999,#ct999'
         askstr,'plotmode(s)                ',plotmode,doask
      endif else begin
         if strmid(plotmode,0,4) eq 'plot' then plotmode='default'
@@ -3886,6 +3886,12 @@ pro plot_func
         plotmod = strmid(plotmod,0,i) + strmid(plotmod,i+4)
         showtime = 1
      endif else showtime = 0
+
+     i = strpos(plotmod,'zero')
+     if i ge 0 then begin
+        plotmod = strmid(plotmod,0,i) + strmid(plotmod,i+4)
+        showzero = 1
+     endif else showzero = 0
      
      i=strpos(plotmod,'max')
      if i ge 0 then begin
@@ -4320,6 +4326,8 @@ pro plot_func
      if showtime then oplot, [time*timeunitsc,time*timeunitsc], $
                              [f_min,f_max], linestyle=2
 
+     if showzero then oplot, xrange, [0,0], linestyle=2
+     
      if showbody and axistype eq 'coord' then $
         if rBody gt abs(rSlice) then begin
         rBody = float(rBody)    ; make sure it's not an integer
