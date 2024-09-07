@@ -70,27 +70,28 @@
 ;===========================================================================
 pro set_default_values
 
-; Definitions and default values for variables in common blocks
+  ;; Definitions and default values for variables in common blocks
 
-; System variables that can get corrupted if an animation is interrupted
-  !x.tickname=strarr(60)
-  !y.tickname=strarr(60)
+  ;; System variables that can get corrupted if an animation is interrupted
+  !x.tickname   = strarr(60)
+  !y.tickname   = strarr(60)
+  !x.tickformat = strarr(10)
 
-; Format date labels
+  ;; Format date labels
   dummy = LABEL_DATE(DATE_FORMAT=['%H:%I!c%M %D %Y'])
 
-; Confirmation for set parameters
+  ;; Confirmation for set parameters
   common ask_param, doask
   doask = 0
   
-; behavior on error: 0: stop in the unit (for debug), 2=return to main
+  ;; behavior on error: 0: stop in the unit (for debug), 2=return to main
   common debug_param, onerror
   onerror = 2
 
   common fits_param, noresize
   noresize=0                    ; Keep original size of fits image
 
-; Parameters for read_data
+  ;; Parameters for read_data
   common getpict_param, $
      filename, nfile, filenames, filetypes, npictinfiles, npict, filetype
   filename=''          ; space separated list of filenames. May contain *, []
@@ -101,7 +102,7 @@ pro set_default_values
   npict=0              ; index of snapshot to be read
   filetype=''          ; type of current file
 
-; Parameters for plot_data
+  ;; Parameters for plot_data
   common plotfunc_param, $
      func, func_file, nfunc, nfuncall, funcs, funcs1, funcs2, $
      plotmode, plotmode_file, plotmodes, nplot, $
@@ -134,9 +135,10 @@ pro set_default_values
   headerline=0         ; Number of items to show at the top
   bottomline=3         ; Number of items or a string to show at the bottom
 
-; Animation parameters for the movie
+  ;; Animation parameters for the movie
   common animate_param, $
-     firstpict, dpict, npictmax, savemovie, showmovie, wsubtract, timediff, pictdiff, $
+     firstpict, dpict, npictmax, savemovie, showmovie, $
+     wsubtract, timediff, pictdiff, $
      videosave, videofile, videorate, videoobject, videostream, videotime
   firstpict=1        ; a scalar or array (per file) of the index of first frame
   dpict=1            ; a scalar or array (per file) of distance between frames
@@ -155,7 +157,7 @@ pro set_default_values
   videostream=0      ; video stream object
   videotime=0        ; length of video
 
-; Parameters for .r slice
+  ;; Parameters for slice_data
   common slice_param, $
      firstslice, dslice, nslicemax, slicedir, dyslicelabel, $
      x3d, w3d, var3d, rbody3d, grid2d
@@ -170,7 +172,7 @@ pro set_default_values
   rbody3d=0.0                   ; 3D rBody value saved
   grid2d=0                      ; grid indexes for the slice
 
-; Transformation parameters for irregular grids 
+  ;; Transformation parameters for irregular grids 
   common transform_param, $
      usereg, dotransform, transform, nxreg, xreglimits, wregpad, $
      nxreg_old, xreglimits_old, triangles, $
@@ -191,7 +193,7 @@ pro set_default_values
   nvector=0                     ; number of vector variables
   vectors=0                     ; index of first components of vector variables
 
-; Parameters for read_log_data
+  ;; Parameters for read_log_data
   common getlog_param, $
      logfilename, logfilenames
   logfilename=''       ; space separated string of filenames. May contain *, []
@@ -218,42 +220,42 @@ pro set_default_values
   timeunit='h' ; set to '1' (unitless), 's' (second), 'm' (minute), 'h' (hour) 
                                 ;        'millisec', 'microsec', 'ns' (nanosec)
 
-; Parameters for plot_log_data
+  ;; Parameters for plot_log_data
   common plotlog_param, $
      log_spacex,log_spacey, logfunc, title, xtitle, ytitles, $
      xrange, yranges, timeshifts, $
      colors, linestyles, symbols, smooths, dofft, legends, legendpos
 
-  log_spacex=5 ; horizontal distance around log plots (in character size)
-  log_spacey=5 ; vertical distance between log plots (in character size)
-  logfunc=''   ; space separated list of log variables in wlogname(s)
-  title=''     ; set to a string with the title
-  xtitle=0     ; set to a string with the time title
-  ytitles=0    ; set to a string array with the function names
-  xrange=0     ; set to a [min,max] array for the time range
-  yranges=0    ; set to a [[min1,max1], [min2,max2] ...] for function ranges
-  timeshifts=0 ; set to array of time shifts per logfile
-  colors=255   ; set to an array with colors for each function
-  linestyles=0 ; set to an array with line styles for each function
-  symbols=0    ; set to an array with symbols for each function
-  smooths=0    ; set to an array with smoothing width for each logfile
-  dofft=0      ; set to 1 to do an FFT transform on the functions
-  legends=''   ; legends for the lines, defaults are logfilenames
-  legendpos=0  ; position for the legends: [xmin, xmax, ymin, ymax]
+  log_spacex = 5 ; horizontal distance around log plots (in character size)
+  log_spacey = 5 ; vertical distance between log plots (in character size)
+  logfunc = ''   ; space separated list of log variables in wlogname(s)
+  title = ''     ; set to a string with the title
+  xtitle = 0     ; set to a string with the time title
+  ytitles = 0    ; set to a string array with the function names
+  xrange = 0     ; set to a [min,max] array for the time range
+  yranges = 0    ; set to a [[min1,max1], [min2,max2] ...] for function ranges
+  timeshifts = 0 ; set to array of time shifts per logfile
+  colors = 255   ; set to an array with colors for each function
+  linestyles = 0 ; set to an array with line styles for each function
+  symbols = 0    ; set to an array with symbols for each function
+  smooths = 0    ; set to an array with smoothing width for each logfile
+  dofft = 0      ; set to 1 to do an FFT transform on the functions
+  legends = ''   ; legends for the lines, defaults are logfilenames
+  legendpos = 0  ; position for the legends: [xmin, xmax, ymin, ymax]
 
-; arrays containing plot data
+  ;; arrays containing plot data
   common plot_data, $
      grid, $
      x, w, xreg, wreg, $
      x0,w0, x1,w1, x2,w2, x3,w3, x4,w4, x5,w5, x6,w6, x7,w7, x8,w8, x9,w9, $
      wreg0, wreg1, wreg2, wreg3, wreg4, wreg5, wreg6, wreg7, wreg8, wreg9
-  grid=0                        ; index array to be used for cuts
-  x=0                           ; coordinate array of the last read snapshot
-  w=0                           ; data array of the last read snapshot
-  xreg=0                        ; regular grid coordinates
-  wreg=0                        ; regular grid data
+  grid = 0          ; index array to be used for cuts
+  x = 0             ; coordinate array of the last read snapshot
+  w = 0             ; data array of the last read snapshot
+  xreg = 0          ; regular grid coordinates
+  wreg = 0          ; regular grid data
 
-; parameters passed to plot_func through common blocks
+  ;; parameters passed to plot_func through common blocks
   common plot_param, $
      multiplot, multix, multiy, multidir, plotix, plotiy, $
      plot_spacex, plot_spacey, showxaxis, showyaxis, showxtitle, showytitle, $
@@ -262,63 +264,61 @@ pro set_default_values
      velvector, velpos, velpos0, velrandom, velspeed, velx, vely, veltri, $
      viewanglex, viewanglez, colorlevel, contourlevel, linestyle, colorbarsize
 
-; multiplot=0         - default subplot arrangement based on nfile,nfunc
-; multiplot=-1        - arrange subplots vertically
-; multiplot=3         - 3 subplots horizontally
-; multiplot=[3,2,1]   - 3x2 subplots filled up in vertical order
-; multiplot=[2,4,0]   - 2x4 subplots filled up in horizontal order
-; multiplot=[2,4,0,4] - start with subplot 4 (3rd row left)
+  multiplot = 0     ;  default subplot arrangement based on nfile,nfunc
+  ;; multiplot=-1        - arrange subplots vertically
+  ;; multiplot=3         - 3 subplots horizontally
+  ;; multiplot=[3,2,1]   - 3x2 subplots filled up in vertical order
+  ;; multiplot=[2,4,0]   - 2x4 subplots filled up in horizontal order
+  ;; multiplot=[2,4,0,4] - start with subplot 4 (3rd row left)
+  multix = 0          ; number of subplots horizontally
+  multiy = 0          ; number of subplots vertically
+  multidir = 0        ; subplot order: horizontal (0) or vertical (1)
+  plotix = 0          ; horizontal index of subplot
+  plotiy = 0          ; vertical index of subplot
+  plot_spacex = 3     ; horizontal subplot distance (character size)
+  plot_spacey = 3     ; vertical subplot distance (character size)
+  showxtitle = 0      ; show x title and axis in all subplots
+  showytitle = 0      ; show y title and axis in all subplots
+  showxaxis = 0       ; show x axis in all subplots
+  showyaxis = 0       ; show y axis in all subplots
+  fixaspect = 1       ; fix aspect ratio according to coordinates
+  noerase = 0         ; Do not erase before new plot
+  cut = 0             ; index array for the cut
+  cut0 = 0            ; cut array without degenerate indices
+  plotdim = 2         ; plot dimensionality after cut is applied
+  rcut = -1.0         ; radius of cutting out inner part
+  rbody = -1.         ; radius of inner body shown as a black circle
+  velvector = 200     ; number of vectors/stream lines per plot
+  velpos   = 0        ; 2 x velvector array with start positions 
+  velpos0  = 0        ; previous velpos
+  velrandom = 0       ; use new random start positions in animation
+  velspeed = 5        ; speed of moving vectors during animation
+  velx = 0            ; storage for x coordinate of vector positions
+  vely = 0            ; storage for y coordinate of vector positions
+  veltri = 0          ; storage for triangulation
+  viewanglex = 30     ; view angle relative to x axis for surface/shade_surf
+  viewanglez = 30     ; view angle relative to z axis for surface/shade_surf
+  colorlevel = 30     ; Number of color levels for contfill/contbar
+  contourlevel = 30   ; Number of contour levels for contour
+  linestyle = 0       ; line style for plot
+  colorbarsize = 0.04 ; size of the color bar
 
-  multiplot=0                   ;
-  multix=0                      ; number of subplots horizontally
-  multiy=0                      ; number of subplots vertically
-  multidir=0                    ; subplot order: horizontal (0) or vertical (1)
-  plotix=0                      ; horizontal index of subplot
-  plotiy=0                      ; vertical index of subplot
-  plot_spacex=3                 ; horizontal subplot distance (character size)
-  plot_spacey=3                 ; vertical subplot distance (character size)
-  showxtitle=0                  ; show x title and axis in all subplots
-  showytitle=0                  ; show y title and axis in all subplots
-  showxaxis=0                   ; show x axis in all subplots
-  showyaxis=0                   ; show y axis in all subplots
-  fixaspect=1                   ; fix aspect ratio according to coordinates
-  noerase=0                     ; Do not erase before new plot
-  cut=0                         ; index array for the cut
-  cut0=0                        ; cut array without degenerate indices
-  plotdim=2                     ; plot dimensionality after cut is applied
-  rcut=-1.0                     ; radius of cutting out inner part
-  rbody= -1.                    ; radius of inner body shown as a black circle
-  velvector=200                 ; number of vectors/stream lines per plot
-  velpos   =0                   ; 2 x velvector array with start positions 
-  velpos0  =0                   ; previous velpos
-  velrandom=0                   ; use new random start positions in animation
-  velspeed =5                   ; speed of moving vectors during animation
-  velx=0                        ; storage for x coordinate of vector positions
-  vely=0                        ; storage for y coordinate of vector positions
-  veltri=0                      ; storage for triangulation
-  viewanglex=30                 ; view angle relative to x axis for surface/shade_surf
-  viewanglez=30                 ; view angle relative to z axis for surface/shade_surf
-  colorlevel=30                 ; Number of color levels for contfill/contbar
-  contourlevel=30               ; Number of contour levels for contour
-  linestyle=0                   ; line style for plot
-  colorbarsize=0.04             ; size of the color bar
-
-; store plot function values from plotting and animations
-; calculate running max or mean of functions during animation
+  ;; store plot function values from plotting and animations
+  ;; calculate running max or mean of functions during animation
   common plot_store, $
      f, f1, f2, $
      nplotstore, iplotstore, nfilestore, ifilestore, plotstore, timestore
-  f=0                           ; last plot function magnitude
-  f1=0                          ; first  component of last vector plot function
-  f2=0                          ; second component of last vector plot function
-  nplotstore = 0                ; number of plots stored
-  iplotstore = 0                ; current plot index
-  nfilestore = 1                ; number of files stored
-  ifilestore = 0                ; current file index
-  plotstore  = 0                ; array of stored data
-  timestore  = 0                ; array of stored times
+  f = 0                ; last plot function magnitude
+  f1 = 0               ; first  component of last vector plot function
+  f2 = 0               ; second component of last vector plot function
+  nplotstore = 0       ; number of plots stored
+  iplotstore = 0       ; current plot index
+  nfilestore = 1       ; number of files stored
+  ifilestore = 0       ; current file index
+  plotstore  = 0       ; array of stored data
+  timestore  = 0       ; array of stored times
 
-; Some useful constants in SI units
+  ;; Some useful constants in SI units
   common phys_const, kbSI, mpSI, mu0SI, eSI, ReSI, RsSI, AuSI, cSI, e0SI
 
   kbSI   = 1.3807d-23           ; Boltzmann constant
@@ -331,7 +331,7 @@ pro set_default_values
   cSI    = 2.9979d8             ; speed of light
   e0SI   = 1/(mu0SI*cSI^2)      ; vacuum permettivity 
 
-; Physical unit names and values in SI units
+  ;; Physical unit names and values in SI units
   common phys_units, $
      fixunits, typeunit, xSI, tSI, rhoSI, uSI, pSI, bSI, jSI, Mi, Me, $
      Qi, Qe, mS0, mS1, qS0, qS1, gamma, gammae, clight
@@ -357,7 +357,7 @@ pro set_default_values
   qS0        = -1
   qS1        = 1
 
-; conversion factors that are useful to calculate various derived quantities
+  ;; conversion factors that are useful to calculate various derived quantities
   common phys_convert, $
      ti0, cs0, mu0A, mu0, c0, uH0, op0, oc0, rg0, di0, ld0, vec0
 
@@ -374,7 +374,7 @@ pro set_default_values
   ld0  = 1.0                    ; Debye length    = ld0*sqrt(p)/rho*Mi
   vec0 = [0.0, 0.0, 1.0]        ; vector to define field aligned coordinates
 
-; information obtained from the last file header
+  ;; information obtained from the last file header
   common file_head, $
      ndim, headline, it, time, gencoord, neqpar, nw, nx, eqpar, $
      variables, wnames
@@ -3704,7 +3704,8 @@ pro plot_func
   common file_head
   common log_data, timeunit, timeunitsc
   common getpict_param
-  
+  common start_date
+
   ;; Get grid dimensions and set irr=1 
   ;; if it is an irregular grid
 
@@ -3730,9 +3731,6 @@ pro plot_func
   xtitleorig = !x.title
   ytitleorig = !y.title
   xtickformatorig = !x.tickformat
-
-  if filetype eq 'log' and timeunit eq 'date' then $
-     !x.tickformat = ['LABEL_DATE']
 
   uniform = 1
   if axistype eq 'coord' then begin
@@ -3774,7 +3772,6 @@ pro plot_func
   set_space, ppp, spacex, spacey, sizes, nx = multix, ny = multiy
 
   ;; Store x and y titles and tick names
-  newytitle  = 0 ;;; ytitleorig ne !y.title
   xtitle     = !x.title
   ytitle     = !y.title
   xtickname  = !x.tickname
@@ -3925,9 +3922,11 @@ pro plot_func
         !p.color = color
      endif
 
-     !p.title=plottitles(ifunc)
-     if !p.title eq 'default' then !p.title=funcs(ifunc)
-     !p.title="!5"+!p.title
+     title = plottitles(ifunc)
+     if title eq 'default' then title = funcs(ifunc)
+     title = "!5"+title
+     if plot_spacey ge 3 or plotdim gt 1 then !p.title = title $
+     else !y.title = title
 
      if ifunc lt nfunc-1 then begin
         if strpos(plotmodes(ifunc+1),'over') gt 0 $
@@ -3991,8 +3990,6 @@ pro plot_func
         plotiy=multi0/multix
      endelse
 
-     if plotix eq 0 then newytitle = 0
-
      if plotmod ne 'shade' and plotmod ne 'surface' then begin
 
         ;; obtain position for flat plotmodes
@@ -4052,15 +4049,20 @@ pro plot_func
         endif
 
         ;; Omit X axis if unneeded
+        if filetype eq 'log' and timeunit eq 'date' then $
+           !x.tickformat = ['LABEL_DATE']
         if plotiy gt (multiy - nplot) > 0 and not showxtitle then begin
-           if not showxaxis then !x.tickname = strarr(60)+' '
+           if not showxaxis then begin
+              !x.tickname = strarr(60) + ' '
+              !x.tickformat = strarr(10)
+           endif
            !x.title = ' '
         endif
 
         ;; Omit Y axis if unneeded
         if plotix gt 0 and not showytitle $
            and strmid(plotmod,0,4) ne 'plot' then begin
-           if not showyaxis then !y.tickname = strarr(60)+' '
+           if not showyaxis then !y.tickname = strarr(60) + ' '
            !y.title = ' '
         endif
 
@@ -4323,8 +4325,13 @@ pro plot_func
         else:print,'Unknown axistype:',axistype
      endcase
 
-     if showtime then oplot, [time*timeunitsc,time*timeunitsc], $
-                             [f_min,f_max], linestyle=2
+     if showtime then begin
+        if filetype eq 'log' and timeunit eq 'date' $
+        then t=julday(start_month, start_day, start_year, $
+                    start_hour, start_minute, start_second + time) $
+        else t=time*timeunitsc
+        oplot, [t,t], [f_min,f_max], linestyle=2
+     endif
 
      if showzero then oplot, xrange, [0,0], linestyle=2
      
@@ -4377,7 +4384,7 @@ pro plot_func
      !p.color    = 255 - !p.background
   endfor
 
-  !p.position = 0
+  !p.position   = 0
   !x.title      = xtitleorig
   !y.title      = ytitleorig
   !x.tickformat = xtickformatorig
@@ -6322,7 +6329,7 @@ pro plot_log
                  if nlogfunc lt 3 then posm(1) = posm(1) + 0.05/nlogfunc
                  title1  = ''
                  xtitle1 = ''
-                 xtickname1 = strarr(60)+' '
+                 xtickname1 = strarr(60) + ' '
                  xtickformat1 = strarr(10)
                  xstyle=5
                  ystyle=5
