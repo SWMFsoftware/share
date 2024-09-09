@@ -385,9 +385,10 @@ contains
        !$acc end serial
 
        ! done with back substitution..
-       ! now form linear combination to get solution
-       !$acc parallel loop gang vector collapse(2) independent
+       ! now form linear combination to get solution       
+       !$acc parallel
        do j=1, i
+         !$acc loop gang vector independent
           do k = 1, n
              Sol(k) = Sol(k) + rs(j)*Krylov_II(k,j)
           end do
