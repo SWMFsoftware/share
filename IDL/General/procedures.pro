@@ -983,7 +983,7 @@ pro animate_data
   read_limits
 
   ;; if all files are log files then there is no animation
-  if min(filetypes eq 'log') then maxpict = 1 else maxpict = 0
+  if min(filetypes eq 'log') then maxpict = 1 else maxpict = npictmax
   if noautorange then begin
      npict = min( (npictinfiles - firstpict)/dpict + 1 )
      if npict gt maxpict then npict = maxpict
@@ -1226,7 +1226,7 @@ pro animate_data
 
            if filetypes[ifile] eq 'log' and plotmode eq 'default' then $
               string_to_array,'plottime', plotmodes, nfunc
-           
+
            nfilestore = nfile
            ifilestore = ifile
            filetype = filetypes[ifile]
@@ -2531,7 +2531,7 @@ pro read_plot_param, quiet=quiet
   nplot = nfunc
   funcs1=strarr(nfunc)
   funcs2=strarr(nfunc)
-  for ifunc=0,nfunc-1 do begin
+  for ifunc = 0, nfunc-1 do begin
      func12 = strsplit(funcs(ifunc),';',/extract)
      funcs1(ifunc) = func12(0)
      if n_elements(func12) eq 2 then funcs2(ifunc)=func12(1)
@@ -3782,7 +3782,7 @@ pro plot_func
 
   for ifunc = 0, nfunc-1 do begin
 
-     plotmod=plotmodes(ifunc)
+     plotmod = plotmodes(ifunc)
      funci = funcs(ifunc)
 
      ;; stream2 --> stream
@@ -3998,8 +3998,8 @@ pro plot_func
         set_position, sizes, plotix, multiy-1-plotiy, pos, /rect
 
         ;; shrink in X direction if there is a colorbar among the plotmodes
-        if strpos(plotmode,'bar') ge 0 or strpos(plotmode,'default') ge 0 then $
-           pos(2) = pos(2) - (pos(2) - pos(0))*0.15
+        if strpos(plotmode,'bar') ge 0 or strpos(plotmode,'default') ge 0 $
+        then pos(2) = pos(2) - (pos(2) - pos(0))*0.15
 
         ;; shrink in X direction for the Y axis of plot
         if strmid(plotmod,0,4) eq 'plot' and multix gt 1 then $
