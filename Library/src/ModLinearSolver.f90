@@ -182,7 +182,7 @@ contains
     integer :: iComm                           ! MPI communicator
     integer :: i,i1,its,j,k,k1
     real :: coeff,Tol1,epsmac,gam,ro,ro0,t,tmp
-    !$acc declare create(coeff, ro, t)
+    !$acc declare create(coeff, ro, t, tmp)
     !--------------------------------------------------------------------------
 
     if(DoTest)write(*,*)'GMRES tol,iter:',Tol,Iter
@@ -321,19 +321,20 @@ contains
           !$acc parallel
           hh(i1,i) = t
           if (t /= 0.0)then
-             t = 1.0 / t
+             tmp = 1.0 / t
              !$acc loop gang vector independent
              do k = 1, n
-                Krylov_II(k,i1) = t*Krylov_II(k,i1)
+                Krylov_II(k,i1) = tmp*Krylov_II(k,i1)
              end do
           endif
+          !$acc end parallel
 
           !--------done with modified gram schmidt and arnoldi step
 
           !-------- now  update factorization of hh
 
           !-------- perform previous transformations  on i-th column of h
-          !$acc loop seq
+          !$acc serial
           do k=2,i
              k1 = k-1
              t = hh(k1,i)
@@ -351,7 +352,7 @@ contains
           !---determine residual norm and test for convergence-
           hh(i,i) = c(i)*hh(i,i) + s(i)*hh(i1,i)
           ro = abs(rs(i1))
-          !$acc end parallel
+          !$acc end serial
 
           !$acc update host(ro)
           if(DoTest)then
@@ -371,8 +372,7 @@ contains
        !
        ! rs := hh(1:i,1:i) ^-1 * rs
 
-       !$acc parallel
-       !$acc loop seq
+       !$acc serial
        do j=i,1,-1
           if (rs(j)/=0.0) then
              rs(j)=rs(j)/hh(j,j)
@@ -382,14 +382,15 @@ contains
              enddo
           endif
        enddo
+       !$acc end serial
 
        ! done with back substitution..
-       ! now form linear combination to get solution
+       ! now form linear combination to get solution       
+       !$acc parallel
        do j=1, i
-          t = rs(j)
-          !$acc loop gang vector independent
+         !$acc loop gang vector independent
           do k = 1, n
-             Sol(k) = Sol(k) + t*Krylov_II(k,j)
+             Sol(k) = Sol(k) + rs(j)*Krylov_II(k,j)
           end do
        end do
        !$acc end parallel
