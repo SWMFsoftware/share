@@ -114,7 +114,8 @@ open STDOUT, ">$watch" or die "Could not open $watch\n";
 open STDERR, ">&STDOUT";
 
 my $pattern = $name;
-my $qstat   = '/PBS/bin/qstat -u $USER';
+# Format qstat output to be simple (no Qs status, for example)
+my $qstat   = '/PBS/bin/qstat -u $USER -W o=SeqNo,Jobname,s,Elapwallt';
 my $qdel    = '/PBS/bin/qdel';
 
 my @results;
@@ -124,6 +125,8 @@ LOOP:{
     @results = `$qstat | grep $pattern`;
     my $ids;
     foreach (@results){
+	# Match qstat output like this:
+	# 20570004 Event20Sky_ele R 00:12
 	/^(\d+).*([A-Z]\s+\S+)/;
 	my $id = $1;
 	my $status = $2;
@@ -144,7 +147,7 @@ LOOP:{
 	  @results = `$qstat | grep $pattern`;
 	  $ids = "";
 	  foreach (@results){
-	      /^(\d+).*([A-Z]) +(\S+)/;
+	      /^(\d+).*[A-Z] +\S+/;
 	      print "id=$1: $_";
 	      $ids .= " $1" unless $1 eq $running;
 	  }
