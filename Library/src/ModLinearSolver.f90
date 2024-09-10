@@ -385,7 +385,7 @@ contains
        !$acc end serial
 
        ! done with back substitution..
-       ! now form linear combination to get solution       
+       ! now form linear combination to get solution
        !$acc parallel
        do j=1, i
          !$acc loop gang vector independent
