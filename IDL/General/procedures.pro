@@ -1879,7 +1879,7 @@ pro white_background
 
 end
 ;=============================================================================
-pro open_file,unit,filename,filetype
+pro open_file, unit, filename, filetype
 
    common debug_param & on_error, onerror
 
@@ -2237,7 +2237,7 @@ pro get_pict_asc, unit, npict
 end
 
 ;=============================================================================
-pro get_pict_bin,unit,npict
+pro get_pict_bin, unit, npict
 
   common debug_param & on_error, onerror
 
@@ -2251,47 +2251,47 @@ pro get_pict_bin,unit,npict
   ;-------------- 1D ----------------------
   1: begin
     n1=nx(0)
-    x=dblarr(n1,ndim)
-    w=dblarr(n1,nw)
-    wi=dblarr(n1)
-    readu,unit,x
-    for iw=0,nw-1 do begin
-      readu,unit,wi
-      w(*,iw)=wi
+    x = dblarr(n1,ndim)
+    w = dblarr(n1,nw)
+    wi = dblarr(n1)
+    readu, unit, x
+    for iw = 0, nw-1 do begin
+      readu, unit, wi
+      w(*,iw) = wi
     endfor
   end
   ;-------------- 2D ----------------------
   2: begin
-    n1=nx(0)
-    n2=nx(1)
-    x=dblarr(n1,n2,ndim)
-    w=dblarr(n1,n2,nw)
-    wi=dblarr(n1,n2)
-    readu,unit,x
-    for iw=0,nw-1 do begin
-      readu,unit,wi
-      w(*,*,iw)=wi
+    n1 = nx(0)
+    n2 = nx(1)
+    x = dblarr(n1,n2,ndim)
+    w = dblarr(n1,n2,nw)
+    wi = dblarr(n1,n2)
+    readu, unit, x
+    for iw = 0, nw-1 do begin
+      readu, unit, wi
+      w(*,*,iw) = wi
     endfor
   end
   ;-------------- 3D ----------------------
   3: begin
-    n1=nx(0)
-    n2=nx(1)
-    n3=nx(2)
-    x=dblarr(n1,n2,n3,ndim)
-    w=dblarr(n1,n2,n3,nw)
-    wi=dblarr(n1,n2,n3)
-    readu,unit,x
-    for iw=0,nw-1 do begin
-      readu,unit,wi
-      w(*,*,*,iw)=wi
+    n1 = nx(0)
+    n2 = nx(1)
+    n3 = nx(2)
+    x = dblarr(n1,n2,n3,ndim)
+    w = dblarr(n1,n2,n3,nw)
+    wi = dblarr(n1,n2,n3)
+    readu, unit, x
+    for iw = 0, nw-1 do begin
+      readu, unit, wi
+      w(*,*,*,iw) = wi
     endfor
   end
   endcase
 end
 
 ;=============================================================================
-pro get_pict_real,unit,npict
+pro get_pict_real, unit, npict
 
   common debug_param & on_error, onerror
 
@@ -2304,63 +2304,63 @@ pro get_pict_real,unit,npict
   case ndim of
   ;-------------- 1D ----------------------
   1: begin
-    n1=nx(0)
-    x=fltarr(n1,ndim)
-    w=fltarr(n1,nw)
-    wi=fltarr(n1)
-    readu,unit,x
-    for iw=0,nw-1 do begin
-      readu,unit,wi
-      w(*,iw)=wi
+    n1 = nx(0)
+    x = fltarr(n1,ndim)
+    w = fltarr(n1,nw)
+    wi = fltarr(n1)
+    readu, unit, x
+    for iw = 0, nw-1 do begin
+      readu, unit, wi
+      w(*,iw) = wi
     endfor
   end
   ;-------------- 2D ----------------------
   2: begin
-    n1=nx(0)
-    n2=nx(1)
-    x=fltarr(n1,n2,ndim)
-    w=fltarr(n1,n2,nw)
-    readu,unit,x
-    wi=fltarr(n1,n2)
+    n1 = nx(0)
+    n2 = nx(1)
+    x = fltarr(n1,n2,ndim)
+    w = fltarr(n1,n2,nw)
+    wi = fltarr(n1,n2)
+    readu, unit, x
     for iw=0,nw-1 do begin
-      readu,unit,wi
-      w(*,*,iw)=wi
+      readu, unit, wi
+      w(*,*,iw) = wi
     endfor
   end
   ;-------------- 3D ----------------------
   3: begin
-    n1=nx(0)
-    n2=nx(1)
-    n3=nx(2)
-    x=fltarr(n1,n2,n3,ndim)
-    w=fltarr(n1,n2,n3,nw)
-    wi=fltarr(n1,n2,n3)
-    readu,unit,x
-    for iw=0,nw-1 do begin
-      readu,unit,wi
-      w(*,*,*,iw)=wi
+    n1 = nx(0)
+    n2 = nx(1)
+    n3 = nx(2)
+    x = fltarr(n1,n2,n3,ndim)
+    w = fltarr(n1,n2,n3,nw)
+    wi = fltarr(n1,n2,n3)
+    readu, unit, x
+    for iw = 0, nw-1 do begin
+      readu, unit, wi
+      w(*,*,*,iw) = wi
     endfor
   end
   endcase
 end
 
 ;=============================================================================
-pro asknum,prompt,var,doask
+pro asknum, prompt, var, doask
 
    common debug_param & on_error, onerror
 
    if var eq 0 then read,PROMPT=prompt+'? ',var $
    else begin
       if doask then begin
-         tmp=''
-         read,PROMPT=prompt+'='+strtrim(string(var),2)+' ? ',tmp
-         if tmp ne '' then reads,tmp,var
-      endif else print,prompt,'=',var
+         tmp = ''
+         read, PROMPT=prompt+'='+strtrim(string(var),2)+' ? ', tmp
+         if tmp ne '' then reads, tmp, var
+      endif else print, prompt, '=', var
    endelse
 end
 
 ;=============================================================================
-pro askstr,prompt,var,doask
+pro askstr, prompt, var, doask
 
    common debug_param & on_error, onerror
 
@@ -2368,14 +2368,14 @@ pro askstr,prompt,var,doask
    else begin
       if doask then begin
          tmp=''
-         read,PROMPT=prompt+'='+var+' ? ',tmp
-         if tmp ne '' then var=tmp
-      endif else print,prompt,'=',var
+         read, PROMPT=prompt+'='+var+' ? ', tmp
+         if tmp ne '' then var = tmp
+      endif else print, prompt, '=', var
    endelse
 end
 
 ;=============================================================================
-pro string_to_array,s,a,n,sep,arraysyntax=arraysyntax, wildcard=wildcard
+pro string_to_array, s, a, n, sep, arraysyntax=arraysyntax, wildcard=wildcard
 
 ; If s is an array copy it to a.
 ; If s is a string then split string s at the sep characters 
@@ -2454,22 +2454,22 @@ if keyword_set(arraysyntax) then begin
 endif
 
 if not keyword_set(n) then begin
-   a=a0
-   n=n0
+   a = a0
+   n = n0
 endif else if n ge n0 then begin
-   a=strarr(n)
-   a(0:n0-1)=a0
-   if n0 lt n then a(n0:n-1)=a0(n0-1)
+   a = strarr(n)
+   a(0:n0-1) = a0
+   if n0 lt n then a(n0:n-1) = a0(n0-1)
 endif else begin
-   a=strarr(n)
-   a=a0(0:n-1)
-   print,'Warning: more than',n,' values defined by string: ',s,$
+   a = strarr(n)
+   a = a0(0:n-1)
+   print, 'Warning: more than', n,' values defined by string: ', s, $
        FORMAT='(a,i3,a,a)'
 endelse
 
 end
 ;=============================================================================
-pro arr2arr,a,n
+pro arr2arr, a, n
 
 ; If a is a scalar or has fewer elements than n then 
 ; extend it to an array of n elements.
@@ -2587,97 +2587,95 @@ pro read_transform_param
       ; Get transformation parameters and calculate grid
       case 1 of
         transform eq 'regular':begin
-           print,'Generalized coordinates, dimensions for regular grid'
-           if n_elements(nxreg) ne 2 then nxreg=[0,0]
-           if n_elements(xreglimits) ne 4 then xreglimits=dblarr(4) $
-           else xreglimits=double(xreglimits)
-           nxreg0=nxreg(0)
-           nxreg1=nxreg(1)
-           asknum,'nxreg(0) (use negative sign to limit x)',nxreg0,doask
+           print, 'Generalized coordinates, dimensions for regular grid'
+           if n_elements(nxreg) ne 2 then nxreg = [0,0]
+           if n_elements(xreglimits) ne 4 then xreglimits = dblarr(4) $
+           else xreglimits = double(xreglimits)
+           nxreg0 = nxreg(0)
+           nxreg1 = nxreg(1)
+           asknum, 'nxreg(0) (use negative sign to limit x)', nxreg0, doask
            if nxreg0 lt 0 then begin
                nxreg0=abs(nxreg0)
                xmin=0 & xmax=0
-               asknum,'xreglimits(0) (xmin)',xmin,doask
-               asknum,'xreglimits(2) (xmax)',xmax,doask
-               xreglimits(0)=xmin
-               xreglimits(2)=xmax
+               asknum,'xreglimits(0) (xmin)', xmin, doask
+               asknum,'xreglimits(2) (xmax)', xmax, doask
+               xreglimits(0) = xmin
+               xreglimits(2) = xmax
            endif
-           asknum,'nxreg(1) (use negative sign to limit y)',nxreg1,doask
+           asknum, 'nxreg(1) (use negative sign to limit y)', nxreg1, doask
            if nxreg1 lt 0 then begin
                nxreg1=abs(nxreg1)
                ymin=0 & ymax=0
-               asknum,'xreglimits(1) (ymin)',ymin,doask
-               asknum,'xreglimits(3) (ymax)',ymax,doask
-               xreglimits(1)=ymin
-               xreglimits(3)=ymax
+               asknum,'xreglimits(1) (ymin)', ymin, doask
+               asknum,'xreglimits(3) (ymax)', ymax, doask
+               xreglimits(1) = ymin
+               xreglimits(3) = ymax
            endif
-           grid=lindgen(nxreg0,nxreg1)
-           nxreg=[nxreg0,nxreg1]
+           grid = lindgen(nxreg0,nxreg1)
+           nxreg = [nxreg0,nxreg1]
            wregpad=0
         end
         transform eq 'polar' or transform eq 'unpolar':begin
-            asknum,'Number of vector variables',nvector,doask
-            getvectors,nvector,vectors
-            grid=lindgen(nx(0),nx(1))
+            asknum, 'Number of vector variables', nvector, doask
+            getvectors, nvector, vectors
+            grid = lindgen(nx(0),nx(1))
         end
         transform eq 'none':grid=lindgen(nx(0),nx(1))
-        else: print,'Unknown value for transform:',transform
+        else: print, 'Unknown value for transform:', transform
       endcase
    endif else if (gencoord or transform eq 'unpolar') and ndim eq 3 then begin
        if transform eq '' then begin
            transform="none"
-           askstr,"transform (p=polar/s=sphere/u=unpolar/m=my/n=none)",$
-             transform,1
+           askstr, "transform (p=polar/s=sphere/u=unpolar/m=my/n=none)", $
+             transform, 1
        endif else $
-         askstr,"transform (p=polar/s=sphere/u=unpolar/m=my/n=none)",$
-         transform,doask
+         askstr,"transform (p=polar/s=sphere/u=unpolar/m=my/n=none)", $
+         transform, doask
        case transform of
-           'p': transform='polar'
-           's': transform='sphere'
-           'u': transform='unpolar'
-           'm': transform='my'
-           'n': transform='none'
+           'p': transform = 'polar'
+           's': transform = 'sphere'
+           'u': transform = 'unpolar'
+           'm': transform = 'my'
+           'n': transform = 'none'
            else:
        endcase
        case 1 of
            transform eq 'polar' or transform eq 'unpolar' or $
              transform eq 'sphere' :begin
-               getvectors,nvector,vectors
-               grid=lindgen(nx(0),nx(1),nx(2))
+               getvectors, nvector, vectors
+               grid = lindgen(nx(0),nx(1),nx(2))
            end
-           transform eq 'none': grid=lindgen(nx(0),nx(1),nx(2))
-           else: print,'Unknown value for transform:',transform
+           transform eq 'none': grid = lindgen(nx(0),nx(1),nx(2))
+           else: print,'Unknown value for transform:', transform
        endcase
    endif else case ndim of
-       1: grid=lindgen(nx(0))
-       2: grid=lindgen(nx(0),nx(1))
-       3: grid=lindgen(nx(0),nx(1),nx(2))
+       1: grid = lindgen(nx(0))
+       2: grid = lindgen(nx(0),nx(1))
+       3: grid = lindgen(nx(0),nx(1),nx(2))
    endcase
 
    ;===== GRID HELPS TO CREATE A CUT, E.G.: cut=grid(*,4)
 
-   help,grid
+   help, grid
 end
 
 ;===========================================================================
-pro getvectors,nvector,vectors
+pro getvectors, nvector, vectors
 
   common debug_param & on_error, onerror
-
 
   if nvector eq 0 then begin
      print,'Vector variables to transform for WREG'
      asknum,'nvector',nvector,doask
      if nvector gt 0 then begin
-        vectors=intarr(nvector)
-        read,PROMPT='Indices of first components in w? ',vectors
+        vectors = intarr(nvector)
+        read, PROMPT='Indices of first components in w? ', vectors
      endif
   endif
 
 end
-
 ;===========================================================================
-pro do_my_transform,ifile,variables,x,w,xreg,wreg,usereg
+pro do_my_transform, ifile, variables, x, w, xreg, wreg, usereg
 
   ;; this transformation is useful for plotting RCM files in the
   ;; equatorial plane
@@ -2701,7 +2699,7 @@ pro do_my_transform,ifile,variables,x,w,xreg,wreg,usereg
 end
 
 ;===========================================================================
-pro do_transform,ifile
+pro do_transform, ifile
 
   ;; transfrom x, w eithr in-place or to xreg, wreg
 
@@ -2724,17 +2722,16 @@ pro do_transform,ifile
   then return
 
   if transform eq 'my' or transform eq 'm' then $
-     do_my_transform,ifile,variables,x,w,xreg,wreg,usereg $
+     do_my_transform, ifile, variables, x, w, xreg, wreg, usereg $
   else if usereg then case transform of
      'regular': make_regular_grid
      'polar'  : make_polar_grid
      'sphere' : make_sphere_grid
      'unpolar': make_unpolar_grid
-     else     :print,'Unknown value for transform:',transform
+     else     :print,'Unknown value for transform:', transform
   endcase
 
 end
-
 ;===========================================================================
 pro read_limits
 
@@ -2743,21 +2740,24 @@ pro read_limits
    common ask_param, doask
    common plotfunc_param
 
-   if n_elements(fmax) ne nfunc then fmax=dblarr(nfunc) else fmax=double(fmax)
-   if n_elements(fmin) ne nfunc then fmin=dblarr(nfunc) else fmin=double(fmin)
+   if n_elements(fmax) ne nfunc then fmax = dblarr(nfunc) $
+   else fmax = double(fmax)
+   if n_elements(fmin) ne nfunc then fmin = dblarr(nfunc) $
+   else fmin = double(fmin)
 
    ; check if there is any function for which autorange is 'y'
-   noautorange=1
-   for ifunc=0,nfunc-1 do noautorange=noautorange and autoranges(ifunc) eq 'n'
+   noautorange = 1
+   for ifunc = 0, nfunc-1 do $
+      noautorange = noautorange and autoranges(ifunc) eq 'n'
 
    if(noautorange)then begin
-      for ifunc=0,nfunc-1 do begin
-         f_min=fmin(ifunc)
-         f_max=fmax(ifunc)
-         asknum,'Min value for '+funcs(ifunc),f_min,doask
-         asknum,'Max value for '+funcs(ifunc),f_max,doask
-         fmin(ifunc)=f_min
-         fmax(ifunc)=f_max
+      for ifunc = 0, nfunc-1 do begin
+         f_min = fmin(ifunc)
+         f_max = fmax(ifunc)
+         asknum, 'Min value for '+funcs(ifunc), f_min, doask
+         asknum, 'Max value for '+funcs(ifunc), f_max, doask
+         fmin(ifunc) = f_min
+         fmax(ifunc) = f_max
       endfor
    endif
 
@@ -2774,7 +2774,7 @@ pro get_limits, first
   common transform_param
   common plot_store, f, f1, f2
 
-  for ifunc=0,nfunc-1 do begin
+  for ifunc = 0, nfunc-1 do begin
      if autoranges(ifunc) eq 'n' then begin
         if first then begin
            f_min = fmin(ifunc)
@@ -2786,12 +2786,12 @@ pro get_limits, first
         endif
      endif else begin
         if usereg then $
-           get_func,ifunc,xreg,wreg $
+           get_func, ifunc, xreg, wreg $
         else $
-           get_func,ifunc,x,w
+           get_func, ifunc, x, w
         
-        f_max=max(f)
-        f_min=min(f)
+        f_max = max(f)
+        f_min = min(f)
         if first then begin
            fmin(ifunc) = f_min
            fmax(ifunc) = f_max
@@ -2803,27 +2803,25 @@ pro get_limits, first
   endfor
 
 end
-
 ;==============================================================================
-function get_grid_data,x,y,data,nxreg,xreglimits,triangles,wregpad
+function get_grid_data, x, y, data, nxreg, xreglimits, triangles, wregpad
 
   common debug_param & on_error, onerror
 
-  return, griddata(x,y,data,$
-                   dimension=nxreg,$
-                   start=xreglimits(0:1),$
-                   delta=[(xreglimits(2)-xreglimits(0))/(nxreg(0)-1),  $
-                          (xreglimits(3)-xreglimits(1))/(nxreg(1)-1)] ,$
+  return, griddata(x, y, data, $
+                   dimension=nxreg, $
+                   start=xreglimits(0:1), $
+                   delta=[(xreglimits(2)-xreglimits(0))/(nxreg(0)-1), $
+                          (xreglimits(3)-xreglimits(1))/(nxreg(1)-1)] , $
                    triangles=triangles,$
 ;        method='NearestNeighbor',$
 ;        method='Linear',$
-                   method='InverseDistance',$
-                   smoothing=0.5,$
-                   max_per_sector=4, $
-                   missing=wregpad $
+                   method='InverseDistance', $
+                   smoothing = 0.5,$
+                   max_per_sector = 4, $
+                   missing = wregpad $
                   )
 end
-
 ;===========================================================================
 pro make_regular_grid
 
@@ -2848,10 +2846,10 @@ pro make_regular_grid
   common file_head              ;  nw
 
   ;; Floating underflow is not a real error, the message is suppressed
-  err=check_math(1,1)
+  err = check_math(1,1)
 
-  xx=x(*,*,0)
-  yy=x(*,*,1)
+  xx = x(*,*,0)
+  yy = x(*,*,1)
 
   ;; Test distribution. If you uncomment the next lines you can
   ;; take a look at the different "shock wave" representation
@@ -2861,8 +2859,8 @@ pro make_regular_grid
   ;;       w(i,*,0)=2. else w(i,*,0)=1.
 
   ;; Check if nxreg==nxreg_old and xreglimits==xreglimits_old and x==x_old
-  newx=1
-  nrectan=0
+  newx = 1
+  nrectan = 0
   if symmtri ne 1 and symmtri ne 2 then $
      if n_elements(nxreg_old) eq n_elements(nxreg) then $
         if max(abs(nxreg_old-nxreg)) eq 0 then $
@@ -2872,93 +2870,93 @@ pro make_regular_grid
                     if max(abs(x_old-x)) eq 0 then newx=0
 
   if xreglimits(0) eq xreglimits(2) then begin
-     xreglimits(0)=min(xx) & xreglimits(2)=max(xx)
+     xreglimits(0) = min(xx) & xreglimits(2) = max(xx)
   endif
   if xreglimits(1) eq xreglimits(3) then begin
-     xreglimits(1)=min(yy) & xreglimits(3)=max(yy)
+     xreglimits(1) = min(yy) & xreglimits(3) = max(yy)
   endif
 
   if newx then begin
      print,'Triangulating...'
-     x_old=x
-     nxreg_old=nxreg
-     xreglimits_old=xreglimits
+     x_old = x
+     nxreg_old = nxreg
+     xreglimits_old = xreglimits
 
-     triangulate,float(xx),float(yy),triangles
+     triangulate, float(xx), float(yy), triangles
 
                                 ; calculate conjugate triangulation and rectangles if required
      if symmtri eq 1 or symmtri eq 2 then $
-        symm_triangles,xx,yy,triangles,$
-                       triangconj,ntriangles,rectangles,nrectan
+        symm_triangles, xx, yy, triangles, $
+                       triangconj, ntriangles, rectangles, nrectan
 
-     xreg=dblarr(nxreg(0),nxreg(1),2)
-     dx=(xreglimits(2)-xreglimits(0))/(nxreg(0)-1)
-     dy=(xreglimits(3)-xreglimits(1))/(nxreg(1)-1)
-     for i=0,nxreg(1)-1 do xreg(*,i,0)=dx*indgen(nxreg(0))+xreglimits(0)
-     for i=0,nxreg(0)-1 do xreg(i,*,1)=dy*indgen(nxreg(1))+xreglimits(1)
+     xreg = dblarr(nxreg(0),nxreg(1),2)
+     dx = (xreglimits(2)-xreglimits(0))/(nxreg(0)-1)
+     dy = (xreglimits(3)-xreglimits(1))/(nxreg(1)-1)
+     for i = 0, nxreg(1)-1 do xreg(*,i,0) = dx*indgen(nxreg(0)) + xreglimits(0)
+     for i = 0, nxreg(0)-1 do xreg(i,*,1) = dy*indgen(nxreg(1)) + xreglimits(1)
 
   endif
   if n_elements(wregpad) ne nw then begin
-     wregpad=dblarr(nw)
-     for iw=0,nw-1 do begin
-        wmax=max(w(*,*,iw))
-        wmin=min(w(*,*,iw))
-        if wmax*wmin lt 0 then wregpad(iw)=0 $
-        else                   wregpad(iw)=wmin-0.1*(wmax-wmin)
+     wregpad = dblarr(nw)
+     for iw = 0, nw-1 do begin
+        wmax = max(w(*,*,iw))
+        wmin = min(w(*,*,iw))
+        if wmax*wmin lt 0 then wregpad(iw) = 0 $
+        else                   wregpad(iw) = wmin - 0.1*(wmax - wmin)
      endfor
   endif
 
-  wreg=dblarr(nxreg(0),nxreg(1),nw)
+  wreg = dblarr(nxreg(0),nxreg(1),nw)
 
   case 1 of
 
-     symmtri eq 3: for iw=0,nw-1 do $
-        wreg(*,*,iw)=get_grid_data(xx, yy, reform(w(*,*,iw)), nxreg,xreglimits,$
-                                   triangles, wregpad(iw))
+     symmtri eq 3: for iw = 0,nw-1 do $
+        wreg(*,*,iw) = get_grid_data(xx, yy, reform(w(*,*,iw)), nxreg, $
+                                     xreglimits, triangles, wregpad(iw))
 
-     symmtri eq 0 or (symmtri lt 3 and nrectan eq 0): for iw=0,nw-1 do $
-        wreg(*,*,iw)=trigrid(xx,yy,w(*,*,iw),triangles, $
-                             [0.,0.],xreglimits,nx=nxreg(0),ny=nxreg(1),missing=wregpad(iw))
+     symmtri eq 0 or (symmtri lt 3 and nrectan eq 0): for iw = 0, nw-1 do $
+        wreg(*,*,iw) = trigrid(xx, yy, w(*,*,iw), triangles, [0.,0.], $
+                               xreglimits, nx=nxreg(0), ny=nxreg(1), $
+                               missing=wregpad(iw))
 
      symmtri eq 1 and nrectan gt 0: $
-        fit_triangles,w,wreg,wregpad,nw,xx,yy,nxreg,xreglimits,$
-                      triangles,ntriangles,rectangles
+        fit_triangles, w, wreg, wregpad, nw, xx, yy, nxreg, xreglimits, $
+                      triangles, ntriangles, rectangles
 
      symmtri eq 2 and nrectan gt 0: $
-        average_triangles,w,wreg,wregpad,nw,xx,yy,nxreg,xreglimits,$
-                          triangles,triangconj
+        average_triangles, w, wreg, wregpad, nw, xx, yy, nxreg, xreglimits, $
+                          triangles, triangconj
 
   endcase
 
   err=check_math(0,0)
-                                ;Floating underflow is not a real error, the message is suppressed
-  if err ne 32 and err ne 0 then print,'Math error in regulargrid:',err
+  ;;Floating underflow is not a real error, the message is suppressed
+  if err ne 32 and err ne 0 then print,'Math error in regulargrid:', err
 
 end
 
 ;==============================================================================
-pro symm_triangles,xx,yy,triangles,$
-                   triangconj,ntriangles,rectangles,nrectan
+pro symm_triangles, xx, yy, triangles, $
+                   triangconj, ntriangles, rectangles, nrectan
 
   common debug_param & on_error, onerror
 
-
-  ntriangles=n_elements(triangles(0,*))
+  ntriangles = n_elements(triangles(0,*))
   print,'Triangulation includes ',ntriangles, '  triangles'
   print,'Checking triangulation ...'
 
   npoints=n_elements(xx)
 
-  dist=dblarr(npoints-1)
-  for i=0L,npoints-2 do $
-     dist(i)=(xx(i+1)-xx(i))^2+(yy(i+1)-yy(i))^2
-  dist2=min(dist)
-  rectangles=lonarr(3,ntriangles)
+  dist = dblarr(npoints-1)
+  for i = 0L, npoints-2 do $
+     dist(i) = (xx(i+1) - xx(i))^2 + (yy(i+1) - yy(i))^2
+  dist2 = min(dist)
+  rectangles = lonarr(3,ntriangles)
   ;; Structure of the rectangles array:
   ;; If(rectangles(0,i)=1 then the Ith triangle from the triangles array
   ;; is rectangular one
-  tmp1=lonarr(3) & nrec_tri=0
-  for i=0L,ntriangles-1 do begin
+  tmp1 = lonarr(3) & nrec_tri=0
+  for i = 0L, ntriangles-1 do begin
      if abs((xx(triangles(0,i))-xx(triangles(1,i)))*$
             (xx(triangles(1,i))-xx(triangles(2,i)))+$
             (yy(triangles(0,i))-yy(triangles(1,i)))*$
@@ -6398,7 +6396,7 @@ pro plot_log
 
 end
 ;=============================================================================
-pro rms_logfiles,logfilename,varname,tmin=tmin,tmax=tmax,verbose=verbose
+pro rms_logfiles, logfilename, varname, tmin=tmin, tmax=tmax, verbose=verbose
 
 ; Print the rms deviation between two logfiles for variables in varname.
 ; If varname is not present, show rms for all variables.
