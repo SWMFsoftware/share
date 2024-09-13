@@ -594,8 +594,6 @@ pro read_data
 ;    or use the procedure
 ;
 ; plot_data
-;
-;===========================================================================
 
   common debug_param & on_error, onerror
 
@@ -606,12 +604,12 @@ pro read_data
   common file_head
   common transform_param
 
-  nfile=0
-  askstr,'filename(s)   ',filename, doask
+  nfile = 0
+  askstr, 'filename(s)   ', filename, doask
   string_to_array, filename, filenames, nfile, /wildcard
 
   if not keyword_set(filenames) then begin
-     print,'Error in read_data: no matching filename was found.'
+     print, 'Error in read_data: no matching filename was found.'
      retall
   endif
 
@@ -622,13 +620,14 @@ pro read_data
      retall
   endif
   get_file_types
-  print,'filetype(s)   =','', filetypes
-  print,'npictinfile(s)=', npictinfiles
-  if max(npictinfiles) or min(npictinfiles) eq 1000 then npict = 1
-  asknum,'npict',npict,doask
+  print, 'filetype(s)   =', filetypes
+  print, 'npictinfile(s)=', npictinfiles
+  ;; If all files have a single snapshot or all files are log files
+  if max(npictinfiles) eq 1 or min(filetypes eq 'log') eq 1 then npict = 1
+  asknum, 'npict', npict, doask
   print
 
-  for ifile = 0, nfile-1 do begin
+  for ifile = 0, nfile - 1 do begin
 
      ;; Read data from file ifile
 
@@ -645,45 +644,45 @@ pro read_data
      if nfile gt 1 then begin
         case ifile of
            0: begin
-              w0=w
-              x0=x
-              help,x0,w0
+              w0 = w
+              x0 = x
+              help, x0, w0
            end
            1: begin
-              w1=w
-              x1=x
+              w1 = w
+              x1 = x
            end
            2: begin
-              w2=w
-              x2=x
+              w2 = w
+              x2 = x
            end
            3: begin
-              w3=w
-              x3=x
+              w3 = w
+              x3 = x
            end
            4: begin
-              w4=w
-              x4=x
+              w4 = w
+              x4 = x
            end
            5: begin
-              w5=w
-              x5=x
+              w5 = w
+              x5 = x
            end
            6: begin
-              w6=w
-              x6=x
+              w6 = w
+              x6 = x
            end
            7: begin
-              w7=w
-              x7=x
+              w7 = w
+              x7 = x
            end
            8: begin
-              w8=w
-              x8=x
+              w8 = w
+              x8 = x
            end
            9: begin
-              w9=w
-              x9=x
+              w9 = w
+              x9 = x
            end
         endcase
         print,'Read x', ifile,' and w', ifile, FORMAT='(a,i1,a,i1)'
@@ -715,7 +714,7 @@ pro read_data
   close,10
 
   ;; Produce a wnames from the last file
-  wnames=variables(ndim:ndim+nw-1)
+  wnames = variables(ndim:ndim+nw-1)
 
   ;; Store type of the last file
   filetype = filetypes[-1]
