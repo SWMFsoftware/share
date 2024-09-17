@@ -922,7 +922,7 @@ pro animate_data
   if filename eq '' or doask then $
      askstr,'filename(s)   ',filename,doask
 
-  string_to_array,filename,filenames,nfile,/wildcard
+  string_to_array, filename, filenames, nfile, /wildcard
 
   get_file_types
 
@@ -1035,7 +1035,11 @@ pro animate_data
            if not error then begin
               do_transform,ifile
               if keyword_set(func_file) then begin
-                 func = func_file(ifile)
+                 func = func_file[ifile]
+                 if keyword_set(plotmode_file) then $
+                    plotmode = plotmode_file[ifile]
+                 if keyword_set(plottitle_file) then $
+                    plottitle = plottitle_file[ifile]
                  read_plot_param, /quiet
                  first = npict eq 0
                  if ifile eq 0 then ifunc = 0 $
@@ -1204,13 +1208,12 @@ pro animate_data
               plottitles(*) = string(format=timetitle,t)
            endif
 
-           if keyword_set(plottitle_file) then begin
-              plottitle = plottitle_file(ifile)
-              string_to_array, plottitle, plottitles, nfunc, ';'
-           end
-
            if keyword_set(func_file) then begin
               func = func_file[ifile]
+              if keyword_set(plotmode_file) then $
+                 plotmode = plotmode_file[ifile]
+              if keyword_set(plottitle_file) then $
+                 plottitle = plottitle_file[ifile]
               read_plot_param, /quiet
               if ifile eq 0 then ifunc = 0 $
               else ifunc = total(nfunc_file[0:ifile-1],/int)
@@ -1223,8 +1226,13 @@ pro animate_data
               string_to_array, plotmode, plotmodes, nfunc
            end
 
+           if keyword_set(plottitle_file) then begin
+              plottitle = plottitle_file(ifile)
+              string_to_array, plottitle, plottitles, nfunc, ';'
+           end
+
            if filetypes[ifile] eq 'log' and plotmode eq 'default' then $
-              string_to_array,'plottime', plotmodes, nfunc
+              string_to_array, 'plottime', plotmodes, nfunc
 
            nfilestore = nfile
            ifilestore = ifile
@@ -2101,7 +2109,7 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
   endif
 
   ;; Set variables array
-  string_to_array,varname,variables,nvar,/arraysyntax
+  string_to_array, varname, variables, nvar, /arraysyntax
 end
 
 ;=============================================================================
@@ -2392,14 +2400,14 @@ if keyword_set(wildcard) and stregex(s, '[?*[]', /boolean) then begin
    return
 endif
 
-if n_elements(s) gt 1 then     $
-    a0 = s                     $
-else if keyword_set(sep) then  $
-   a0=strsplit(s,sep,/extract) $
-else                           $
-   a0=strsplit(s,/extract)
+if n_elements(s) gt 1 then         $
+   a0 = s                          $
+else if keyword_set(sep) then      $
+   a0 = strsplit(s, sep, /extract) $
+else                               $
+   a0 = strsplit(s, /extract)
 
-n0=n_elements(a0)
+n0 = n_elements(a0)
 
 if keyword_set(arraysyntax) then begin
     a1 = strarr(300)
@@ -2521,15 +2529,16 @@ pro read_plot_param, quiet=quiet
      askstr,'autorange(s) (y/n)         ',autorange,doask
   endif
      
-  nfunc=0
+  nfunc = 0
+
   string_to_array, func, funcs, nfunc
   string_to_array, plotmode, plotmodes, nfunc
   string_to_array, plottitle, plottitles, nfunc, ';'
   string_to_array, autorange, autoranges, nfunc
 
   nplot = nfunc
-  funcs1=strarr(nfunc)
-  funcs2=strarr(nfunc)
+  funcs1 = strarr(nfunc)
+  funcs2 = strarr(nfunc)
   for ifunc = 0, nfunc-1 do begin
      func12 = strsplit(funcs(ifunc),';',/extract)
      funcs1(ifunc) = func12(0)
@@ -5967,7 +5976,7 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
 
   if not keyword_set(verbose) then verbose = 0
   ;; If verbose is a string set the index string to it
-  if size(verbose,/type) eq 7 then index=verbose else index=''
+  if size(verbose,/type) eq 7 then index = verbose else index = ''
 
   if not keyword_set(scalar) then scalar = 0
   
