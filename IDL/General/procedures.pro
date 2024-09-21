@@ -1,5 +1,5 @@
 ;  Copyright (C) 2002 Regents of the University of Michigan, 
-;  portions used with permission 
+
 ;  For more information, see http://csem.engin.umich.edu/tools/swmf
 ;
 ; Written by G. Toth for the Versatile Advection Code and BATSRUS/SWMF
@@ -108,32 +108,35 @@ pro set_default_values
      plotmode, plotmode_file, plotmodes, nplot, $
      plottitle, plottitle_file, plottitles, $
      timetitle, timetitleunit, timetitlestart, $
+     xrange_file, yrange_file, $
      autorange, autoranges, noautorange, fmin, fmax, fmin_file, fmax_file, $
      axistype, bottomline, headerline
-  func=''              ; space separated list of functions to be plotted
-  nfunc=0              ; number of functions to be plotted
-  funcs=''             ; array of function names
-  funcs1=''            ; array of first  components of vectors functions
-  funcs2=''            ; array of second components of vectors functions
-  plotmode='default'   ; space separated list of plot modes
-  plotmodes=''         ; array of plot modes
-  nplot=0              ; number of subplots (overplot functions count as 1)
-  plottitle='default'  ; semicolon separated list of titles
-  plottitles=''        ; array of plot titles
-  plottitles_file=''   ; array of plottitle strings per file
-  timetitle=''     ; set to format string to plot time as title for time series
-  timetitleunit=0      ; set to number of seconds in time unit
-  timetitlestart=0     ; set to initial time to be subtracted (in above units)
-  autorange='y'        ; function ranges set automatically or by fmin/fmax
-  autoranges=''        ; array of autorange values
-  noautorange=0        ; true if all autoranges are 'n'
-  fmin=0               ; array of minimum values for each function
-  fmax=0               ; array of maximum values for each function
-  fmin_file=0          ; array of minimum values for each function and file
-  fmax_file=0          ; array of maximum values for each function and file
-  axistype='coord'     ; 'cells' or 'coord'
-  headerline=0         ; Number of items to show at the top
-  bottomline=3         ; Number of items or a string to show at the bottom
+  func = ''            ; space separated list of functions to be plotted
+  nfunc = 0            ; number of functions to be plotted
+  funcs = ''           ; array of function names
+  funcs1 = ''          ; array of first  components of vectors functions
+  funcs2 = ''          ; array of second components of vectors functions
+  plotmode = 'default' ; space separated list of plot modes
+  plotmodes = ''       ; array of plot modes
+  nplot = 0            ; number of subplots (overplot functions count as 1)
+  plottitle = 'default'; semicolon separated list of titles
+  plottitles = ''      ; array of plot titles
+  plottitles_file = '' ; array of plottitle strings per file
+  timetitle = ''       ; format string to plot time as title for time series
+  timetitleunit  = 0   ; number of seconds in time unit
+  timetitlestart = 0   ; initial time to be subtracted (in above units)
+  xrange_file = 0      ; different xrange for different files
+  yrange_file = 0      ; different yrange for different files
+  autorange = 'y'      ; function ranges set automatically or by fmin/fmax
+  autoranges = ''      ; array of autorange values
+  noautorange = 0      ; true if all autoranges are 'n'
+  fmin = 0             ; array of minimum values for each function
+  fmax = 0             ; array of maximum values for each function
+  fmin_file = 0        ; array of minimum values for each function and file
+  fmax_file = 0        ; array of maximum values for each function and file
+  axistype = 'coord'   ; 'cells' or 'coord'
+  headerline = 0       ; Number of items to show at the top
+  bottomline = 3       ; Number of items or a string to show at the bottom
 
   ;; Animation parameters for the movie
   common animate_param, $
@@ -395,16 +398,17 @@ pro set_default_values
   common colors, r_orig, g_orig, b_orig, r_curr, g_curr, b_curr
 
   ;; Start day for the time axis of plot_log_data
+  ;; start_time is the simulation time during the day
   common start_date, start_year, start_month, start_day, $
-     start_hour, start_minute, start_second
-  
+     start_hour, start_minute, start_second, start_time
+
   start_year   = -1
   start_month  = -1
   start_day    = -1
   start_hour   = 0
   start_minute = 0
   start_second = 0
-
+  start_time   = 0.0
 end
 ;===========================================================================
 function limit_change, a, change, a2, change2
@@ -1230,10 +1234,13 @@ pro animate_data
               plottitle = plottitle_file(ifile)
               string_to_array, plottitle, plottitles, nfunc, ';'
            end
-
+           
            if filetypes[ifile] eq 'log' and plotmode eq 'default' then $
               string_to_array, 'plottime', plotmodes, nfunc
 
+           if keyword_set(xrange_file) then !x.range = xrange_file(*,ifile)
+           if keyword_set(yrange_file) then !y.range = yrange_file(*,ifile)
+           
            nfilestore = nfile
            ifilestore = ifile
            filetype = filetypes[ifile]
@@ -1741,9 +1748,12 @@ function log_time, wlog, wlognames
      endcase
   endfor
 
-  if iyear gt -1 then start_year  = wlog(0,iyear)
-  if imon  gt -1 then start_month = wlog(0,imon)
-  if iday  gt -1 then start_day   = wlog(0,iday)
+  if iyear gt -1 then start_year   = wlog(0,iyear)
+  if imon  gt -1 then start_month  = wlog(0,imon)
+  if iday  gt -1 then start_day    = wlog(0,iday)
+  ;if ihour gt -1 then start_hour   = wlog(0,ihour)
+  ;if imin  gt -1 then start_minute = wlog(0,imin)
+  ;if isec  gt -1 then start_second = wlog(0,isec)
   if idoy  gt -1 then begin
      start_month = 1
      start_day   = wlog(0,idoy)
@@ -1923,7 +1933,8 @@ pro get_file_types
      l = strlen(filenames(ifile)) - 4
      if    strpos(filenames(ifile),'.log') eq l $
         or strpos(filenames(ifile),'.sat') eq l $
-        or strpos(filenames(ifile),'.txt') eq l then begin
+        or strpos(filenames(ifile),'.txt') eq l $
+        or strpos(filenames(ifile),'.csv') eq l then begin
         filetypes(ifile)    = 'log'
         npictinfiles(ifile) = 1000
      endif else begin
@@ -2030,10 +2041,19 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
   ;; Read header
   case ftype of
      'log': begin
-        readf,unit,headline
-        readf,unit,varname
-        nw=n_elements(strsplit(varname))-2
-        varname = timeunit+' '+varname
+        if strpos(filename,'.csv') gt 0 then begin
+           headline = 'CSV file'
+           readf,unit,varname
+           variables = strsplit(varname,',',/extract)
+           if strlowcase(strmid(variables[0],0,4)) eq 'date' then $
+              variables[0] = 'year mo dy hr mn sc'
+           varname = strjoin(strsplit(varname,',',/extract),' ')
+        endif else begin
+           readf,unit,headline
+           readf,unit,varname
+        endelse
+        nw = n_elements(strsplit(varname))-2
+        varname = timeunit + ' ' + varname
         ;; reset pointer
         point_lun, unit, pointer0
         it=0
@@ -2130,34 +2150,34 @@ pro get_pict, unit, filename, filetype, npict, error
         return
      endif
 
-                                ; Get current pointer position
+     ;; Get current pointer position
      point_lun,-unit,pointer
 
                                 ; Skip npict-1 snapshots
      ipict=0
      pictsize=1
      while ipict lt npict-1 and not eof(unit) do begin
-        ipict=ipict+1
-        get_file_head,unit,filename,filetype,pictsize=pictsize
-        pointer=long64(pointer) + pictsize
-        point_lun,unit,pointer
+        ipict = ipict + 1
+        get_file_head, unit, filename, filetype, pictsize=pictsize
+        pointer = long64(pointer) + pictsize
+        point_lun, unit, pointer
      endwhile
 
-                                ; Backup 1 snapshot if end of file
+     ;; Backup 1 snapshot if end of file
      if eof(unit) then begin
         error=1
         point_lun,unit,pointer-pictsize
      endif
 
-                                ; Read header information
+     ;; Read header information
      get_file_head, unit, filename, filetype
 
-                                ; Read data
+     ;; Read data
      case strlowcase(filetype) of
-        'log':   get_pict_log ,unit
-        'ascii': get_pict_asc ,unit, npict
-        'real8': get_pict_bin ,unit, npict
-        'real4': get_pict_real,unit, npict
+        'log':   get_pict_log, filename
+        'ascii': get_pict_asc, unit, npict
+        'real8': get_pict_bin, unit, npict
+        'real4': get_pict_real, unit, npict
         else:    begin
            print,'get_pict: unknown filetype:',filetype
            error=1
@@ -2172,7 +2192,7 @@ pro get_pict, unit, filename, filetype, npict, error
 end
 
 ;=============================================================================
-pro get_pict_log, unit
+pro get_pict_log, source
 
   common debug_param & on_error, onerror
 
@@ -2180,16 +2200,14 @@ pro get_pict_log, unit
   common file_head
   common log_data, timeunit
 
-  get_log, unit, w, wlognames, x, timeunit
+  get_log, source, w, wlognames, x, timeunit
 
   ndim = 1
   nx(0)= n_elements(x)
   nw   = n_elements(wlognames)
+  variables = [timeunit, wlognames]
 
-  ;; rewind to beginning of file (for animation)
-  point_lun, unit, 0
 end
-
 ;=============================================================================
 pro get_pict_asc, unit, npict
 
@@ -3856,11 +3874,11 @@ pro plot_func
 
      i=strpos(plotmod,'bar')
      if i ge 0 then begin
-        plotmod=strmid(plotmod,0,i)+strmid(plotmod,i+3)
-        showbar=1
-        if strpos(plotmod,'stream') ge 0 then showbar=0
-        fill=1
-     endif else showbar=0
+        plotmod = strmid(plotmod,0,i) + strmid(plotmod,i+3)
+        showbar = 1
+        if strpos(plotmod,'stream') ge 0 then showbar = 0
+        fill = 1
+     endif else showbar = 0
 
      i=strpos(plotmod,'label')
      if i ge 0 then begin
@@ -4190,7 +4208,7 @@ pro plot_func
         tvf=bytscl(tvf,MIN=f_min,MAX=f_max,TOP=!D.TABLE_SIZE-3)+1
      endif
 
-     if showbar then plot_color_bar, $
+     if showbar and plotdim  gt 1 then plot_color_bar, $
         [pos(2)+(pos(2)-pos(0))*0.025,                pos(1),                 $
          pos(2)+(pos(2)-pos(0))*(0.025+colorbarsize), pos(3)], [f_min,f_max]
 
@@ -4335,9 +4353,10 @@ pro plot_func
 
      if showtime then begin
         if filetype eq 'log' and timeunit eq 'date' $
-        then t=julday(start_month, start_day, start_year, $
-                    start_hour, start_minute, start_second + time) $
-        else t=time*timeunitsc
+        then t = julday(start_month, start_day, start_year, $
+                        start_hour, start_minute, $
+                        start_second + start_time + time) $
+        else t = (start_time + time)*timeunitsc
         oplot, [t,t], [f_min,f_max], linestyle=2
      endif
 
@@ -5886,9 +5905,9 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
 
   itype = size(source,/type)
   if itype eq 2 or itype eq 3 then begin
-     filesource=0
+     filesource = 0
      unit = source
-     file = 'unit '+strtrim(string(unit),2)
+     file = 'unit ' + strtrim(string(unit),2)
      stat = fstat(unit)
      if not stat.open then begin
         print,'get_log error: unit is not open'
