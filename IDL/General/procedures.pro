@@ -1585,8 +1585,8 @@ pro read_log_data, scalar=scalar
   common ask_param
   common start_date
   
-  nlogfile=0
-  askstr,'logfilename(s) ',logfilename,doask
+  nlogfile = 0
+  askstr, 'logfilename(s) ', logfilename, doask
   string_to_array, logfilename, logfilenames, nlogfile, /wildcard
 
   if not keyword_set(logfilenames) then begin
@@ -2041,72 +2041,62 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
   ;; Read header
   case ftype of
      'log': begin
-        if strpos(filename,'.csv') gt 0 then begin
-           headline = 'CSV file'
-           readf,unit,varname
-           variables = strsplit(varname,',',/extract)
-           if strlowcase(strmid(variables[0],0,4)) eq 'date' then $
-              variables[0] = 'year mo dy hr mn sc'
-           varname = strjoin(strsplit(varname,',',/extract),' ')
-        endif else begin
-           readf,unit,headline
-           readf,unit,varname
-        endelse
-        nw = n_elements(strsplit(varname))-2
-        varname = timeunit + ' ' + varname
-        ;; reset pointer
-        point_lun, unit, pointer0
-        it=0
-        ;; time=0.0
-        gencoord=0
-        ndim=1
-        nx=lonarr(1)
-        nx(0)=1
+        get_log, filename, w, variables, headlines=headlines, /headeronly
+        if n_elements(headlines) gt 0 $
+        then headline = strjoin(headlines,';') $
+        else headline = 'No header'
+        nw = n_elements(variables)
+        varname = timeunit + ' ' + strjoin(variables, ' ')
+        it = 0
+        gencoord = 0
+        ndim = 1
+        nx = lonarr(1)
+        nx[0] = 1
      end
      'ascii': begin
         time=double(1)
-        readf,unit,headline
-        readf,unit,it,time,ndim,neqpar,nw
-        gencoord=(ndim lt 0)
-        ndim=abs(ndim)
-        nx=lonarr(ndim)
-        readf,unit,nx
+        readf, unit, headline
+        readf, unit, it, time, ndim, neqpar, nw
+        gencoord = (ndim lt 0)
+        ndim = abs(ndim)
+        nx = lonarr(ndim)
+        readf, unit, nx
         if neqpar gt 0 then begin
-           eqpar=dblarr(neqpar)
-           readf,unit,eqpar
+           eqpar = dblarr(neqpar)
+           readf, unit, eqpar
         endif
-        readf,unit,varname
+        readf, unit, varname
      end
      'real8':begin
-        time=double(1)
-        readu,unit,headline
-        readu,unit,it,time,ndim,neqpar,nw
-        gencoord=(ndim lt 0)
-        ndim=abs(ndim)
-        nx=lonarr(ndim)
-        readu,unit,nx
+        time = double(1)
+        readu, unit, headline
+        readu, unit, it, time, ndim, neqpar, nw
+        gencoord = (ndim lt 0)
+        ndim = abs(ndim)
+        nx = lonarr(ndim)
+        readu, unit, nx
         if neqpar gt 0 then begin
-           eqpar=dblarr(neqpar)
-           readu,unit,eqpar
+           eqpar = dblarr(neqpar)
+           readu, unit, eqpar
         endif
-        readu,unit,varname
+        readu, unit, varname
      end
      'real4': begin
-        time=float(1)
-        readu,unit,headline
-        readu,unit,it,time,ndim,neqpar,nw
+        time = float(1)
+        readu, unit, headline
+        readu, unit, it, time, ndim, neqpar, nw
         gencoord=(ndim lt 0)
-        ndim=abs(ndim)
-        nx=lonarr(ndim)
-        readu,unit,nx
+        ndim = abs(ndim)
+        nx = lonarr(ndim)
+        readu, unit, nx
         if neqpar gt 0 then begin
-           eqpar=fltarr(neqpar)
-           readu,unit,eqpar
+           eqpar = fltarr(neqpar)
+           readu, unit, eqpar
         endif
-        readu,unit,varname
+        readu, unit, varname
      end
      else: begin
-        print,'get_file_head: unknown filetype',filetype
+        print, 'get_file_head: unknown filetype', filetype
         retall
      end
   endcase
@@ -2131,31 +2121,30 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
   ;; Set variables array
   string_to_array, varname, variables, nvar, /arraysyntax
 end
-
 ;=============================================================================
 pro get_pict, unit, filename, filetype, npict, error
 
   common debug_param & on_error, onerror
 
   if filetype eq 'IPIC3D' then begin 
-     error=0
+     error = 0
      get_pict_hdf, filename, npict, error, 1
 
   endif else begin
 
-     error=0
+     error = 0
 
-     if(eof(unit))then begin
-        error=1
+     if eof(unit) then begin
+        error = 1
         return
      endif
 
      ;; Get current pointer position
-     point_lun,-unit,pointer
+     point_lun, -unit, pointer
 
-                                ; Skip npict-1 snapshots
-     ipict=0
-     pictsize=1
+     ;; Skip npict-1 snapshots
+     ipict = 0
+     pictsize = 1
      while ipict lt npict-1 and not eof(unit) do begin
         ipict = ipict + 1
         get_file_head, unit, filename, filetype, pictsize=pictsize
@@ -2165,8 +2154,8 @@ pro get_pict, unit, filename, filetype, npict, error
 
      ;; Backup 1 snapshot if end of file
      if eof(unit) then begin
-        error=1
-        point_lun,unit,pointer-pictsize
+        error = 1
+        point_lun, unit, pointer-pictsize
      endif
 
      ;; Read header information
@@ -2180,8 +2169,8 @@ pro get_pict, unit, filename, filetype, npict, error
         'real4': get_pict_real, unit, npict
         else:    begin
            print,'get_pict: unknown filetype:',filetype
-           error=1
-           close,unit
+           error = 1
+           close, unit
         end
      endcase
 
@@ -2190,9 +2179,8 @@ pro get_pict, unit, filename, filetype, npict, error
   set_units
 
 end
-
 ;=============================================================================
-pro get_pict_log, source
+pro get_pict_log, file
 
   common debug_param & on_error, onerror
 
@@ -2200,11 +2188,11 @@ pro get_pict_log, source
   common file_head
   common log_data, timeunit
 
-  get_log, source, w, wlognames, x, timeunit
+  get_log, file, w, wlognames, x, timeunit
 
-  ndim = 1
-  nx(0)= n_elements(x)
-  nw   = n_elements(wlognames)
+  ndim  = 1
+  nx(0) = n_elements(x)
+  nw    = n_elements(wlognames)
   variables = [timeunit, wlognames]
 
 end
@@ -5882,123 +5870,104 @@ pro read_log_line, line, array, firstcolumn, rowname
 end
      
 ;=============================================================================
-pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
-             rownames, verbose=verbose, scalar=scalar
+pro get_log, file, wlog, wlognames, logtime, timeunit, rownames, $
+             headlines=headlines, verbose=verbose, scalar=scalar, $
+             headeronly=headeronly
 
-; Read the log data from source. If source is an integer, it is 
-; interpreted as a unit number. If it is a string, it is taken as the
-; filename. Read the content of the file into wlog and the variable 
-; names into wlognames. 
+; Read the log data from file.
+; Read the content of the file into wlog (unless headeronly is set)
+; and the variable names into wlognames.
 ; The optional logtime argument is set to the time in hours.
 ; The optional rownames argument is set to string array from the first column.
-; If verbose is present set show verbose information.
-; If versbose is a string, attach it to 'wlog' in the verbose info.
-
+; If headlines is present, return the array of header lines.
+; If verbose is set, show verbose information.
+; If verbose is a string, attach it to 'wlog' in the verbose info.
+; If headeronly is set, only the header is read.
+  
   common debug_param & on_error, onerror
 
-  if not keyword_set(source) then begin
-     print, $
-        'Usage: get_log, source, wlog, wlognames [,logtime, timeunit] [,verbose=verbose]'
-     help, source, wlog, wlognames
+  if not keyword_set(file) then begin
+     print, 'Usage: get_log, file, wlog, [wlognames ...]'
+     help, file, wlog, wlognames
      retall
   endif
-
-  itype = size(source,/type)
-  if itype eq 2 or itype eq 3 then begin
-     filesource = 0
-     unit = source
-     file = 'unit ' + strtrim(string(unit),2)
-     stat = fstat(unit)
-     if not stat.open then begin
-        print,'get_log error: unit is not open'
-        retall
-     endif
-  endif else if itype eq 7 then begin
-     file = source
-     l = strlen(file)
-     if strmid(file, l-3) eq '.gz' then begin
-        ;; gunzip the file
-        filenew = strmid(file,0,l-3)
-        print,'gunzip -c '+file+' > '+filenew
-        spawn,'gunzip -c '+file+' > '+filenew
-        file = filenew
-     endif
-     l = strlen(file)
-     if strmid(file,l-4) eq '.csv' then begin
-        ;; read csv file
-        if not query_csv(file, info) then begin
-           print,'could not read CSV file '+file
-           retall
-        endif
-        nwlog = info.nfields
-        nt    = info.lines - 1 ; ignore the first line
-        ;; print,'CSV file: nwlog=', nwlog,', nt=', nt, format='(a,i4,a,i8)'
-        value = read_csv(file, header=wlognamesRead)
-        ;; print,'CSV fields:  wlognamesRead=', wlognamesRead
-        
-        if strlowcase(strmid(wlognamesRead[0],0,4)) eq 'date' then begin
-
-           ;; help,nwlog
-           wlog = dblarr(nt, nwlog+5)
-           wlognames = strarr(nwlog+5)
-           wlognames = ['year', 'mo', 'dy', 'hr', 'mn', 'sc', $
-                        wlognamesRead(1:*)]
-
-           ;; standardize the variable names
-           if wlognamesRead(1) eq 'dbn_nez' then wlognames(6)='B_NorthGeomag'
-           if wlognamesRead(2) eq 'dbe_nez' then wlognames(7)='B_EastGeomag'
-           if wlognamesRead(3) eq 'dbz_nez' then wlognames(8)='B_DownGeomag'
-           for i = 0, nt-1 do begin
-              ;; calculate the Julian day
-              ;; wlog(i,0) = date_to_julday(value.(0)[i])
-              wlog(i,0) = fix(strmid(value.(0)[i],0, 4))
-              wlog(i,1) = fix(strmid(value.(0)[i],5, 2))
-              wlog(i,2) = fix(strmid(value.(0)[i],8, 2))
-              wlog(i,3) = fix(strmid(value.(0)[i],11,2))
-              wlog(i,4) = fix(strmid(value.(0)[i],14,2))
-              wlog(i,5) = fix(strmid(value.(0)[i],17,2))
-           endfor
-           for i = 1, nwlog-1 do wlog(*,i+5) = value.(i)
-           ;; print,'Standardized wlognames=', wlognames
-        endif else begin
-           wlognames = wlognamesRead
-           wlog = dblarr(nt, nwlog)
-           for i = 0, nwlog-1 do wlog(*,i) = value.(i)
-        endelse
-
-        ;; exclude lines with any non-finite values
-        ii = where(total(~finite(wlog), 2) eq 0.0)
-	if n_elements(ii) ne nt then begin
-           wlog = wlog(ii,*)
-           print,'!!! CSV file contains NaNs! Reduced nt=',n_elements(ii), $
-                 format='(a,i8)'
-	endif
-        
-        logtime = log_time(wlog, wlognames)
-        return
-     endif
-     filesource=1
-     file = source
-     unit = 0
-     found = 0
-     while not found do begin
-        unit = unit + 1
-        stat = fstat(unit)
-        if not stat.open then found = 1
-     endwhile
-     openr,unit,file
-  endif else begin
-     print,'get_log error: source =',source,$
-           ' should be a unit number or a filename.'
-     retall
-  end
 
   if not keyword_set(verbose) then verbose = 0
   ;; If verbose is a string set the index string to it
   if size(verbose,/type) eq 7 then index = verbose else index = ''
 
+  ;; is there only one variable in the log file?
   if not keyword_set(scalar) then scalar = 0
-  
+
+  ;; read the header only
+  if not keyword_set(headeronly) then headeronly = 0
+
+  l = strlen(file)
+  if strmid(file, l-3) eq '.gz' then begin
+     ;; gunzip the file
+     filenew = strmid(file,0,l-3)
+     print,'gunzip -c '+file+' > '+filenew
+     spawn,'gunzip -c '+file+' > '+filenew
+     file = filenew
+  endif
+  l = strlen(file)
+  if strmid(file,l-4) eq '.csv' then begin
+     ;; read csv file
+     if not query_csv(file, info) then begin
+        print,'could not read CSV file '+file
+        retall
+     endif
+     nwlog = info.nfields
+     nt    = info.lines - 1     ; ignore the first line
+     if verbose then $
+        print,'CSV file: nwlog=', nwlog,', nt=', nt, format='(a,i4,a,i8)'
+     value = read_csv(file, header=wlognamesRead)
+
+     if strlowcase(strmid(wlognamesRead[0],0,4)) eq 'date' then begin
+        ;; Convert date string to columns
+        wlog = dblarr(nt, nwlog+5)
+        wlognames = strarr(nwlog+5)
+        wlognames = ['year', 'mo', 'dy', 'hr', 'mn', 'sc', wlognamesRead(1:*)]
+
+        ;; standardize the variable names
+        if wlognamesRead(1) eq 'dbn_nez' then wlognames(6)='B_NorthGeomag'
+        if wlognamesRead(2) eq 'dbe_nez' then wlognames(7)='B_EastGeomag'
+        if wlognamesRead(3) eq 'dbz_nez' then wlognames(8)='B_DownGeomag'
+        for i = 0, nt-1 do begin
+           wlog(i,0) = fix(strmid(value.(0)[i],0, 4))
+           wlog(i,1) = fix(strmid(value.(0)[i],5, 2))
+           wlog(i,2) = fix(strmid(value.(0)[i],8, 2))
+           wlog(i,3) = fix(strmid(value.(0)[i],11,2))
+           wlog(i,4) = fix(strmid(value.(0)[i],14,2))
+           wlog(i,5) = fix(strmid(value.(0)[i],17,2))
+        endfor
+        for i = 1, nwlog-1 do wlog(*,i+5) = value.(i)
+     endif else begin
+        wlognames = wlognamesRead
+        wlog = dblarr(nt, nwlog)
+        for i = 0, nwlog-1 do wlog(*,i) = value.(i)
+     endelse
+     if verbose then print,'wlognames=', wlognames
+
+     ;; exclude lines with any non-finite values
+     ii = where(total(~finite(wlog), 2) eq 0.0)
+     if n_elements(ii) ne nt then begin
+        wlog = wlog(ii,*)
+        print,'!!! CSV file contains NaNs! Reduced nt=',n_elements(ii), $
+              format='(a,i8)'
+     endif
+     logtime = log_time(wlog, wlognames)
+     return
+  endif
+  unit = 0
+  found = 0
+  while not found do begin
+     unit = unit + 1
+     stat = fstat(unit)
+     if not stat.open then found = 1
+  endwhile
+  openr, unit, file
+
   ;; Use buffers for efficient reading
   line  = ''
   firstcolumn = 0 ; first column with numbers
@@ -6009,19 +5978,18 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
   dbuf  = 10000L
   nt    = 0L
   while not eof(unit) do begin
-     on_ioerror,close_file
+     on_ioerror, close_file
 
      if isheader then begin
         readf, unit, line
 
         isheader = 0
-        if strmid(line,strlen(line)-6,6) eq "#START" then $
+        if strmid(line, strlen(line)-6, 6) eq "#START" then $
            readf, unit, line $
         else begin
            ;; check if the line contains any character that is not a
            ;; number or a separator of a date
-        
-           for i = 0, strlen(line)-1 do begin
+           for i = 0, strlen(line) - 1 do begin
               if strmatch(strmid(line,i,1), '[!	0123456789dDeET \.\+\-\:]') $
               then begin
                  isheader = 1
@@ -6077,52 +6045,56 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
               nwlog -= 1
            end
 
-           ;; create arrays to read data into
-           wlog_ = dblarr(nwlog)
-           wlog  = dblarr(nwlog,buf)
-           rownames = strarr(buf)
+           if not headeronly then begin
+              ;; create arrays to read data into
+              wlog_ = dblarr(nwlog)
+              wlog  = dblarr(nwlog, buf)
+              rownames = strarr(buf)
            
-           ;; read line into rowname, numbers, convert date to julday
-           read_log_line, line, wlog_, firstcolumn, rowname
+              ;; read line into rowname, numbers, convert date to julday
+              read_log_line, line, wlog_, firstcolumn, rowname
 
-           ;; store first line if it is fine
-           if total(finite(wlog_)) eq nwlog then begin
-              wlog(*,0) = wlog_
-              if firstcolumn then rownames(0) = rowname
-              nt = 1L
+              ;; store first line if it is fine
+              if total(finite(wlog_)) eq nwlog then begin
+                 wlog(*,0) = wlog_
+                 if firstcolumn then rownames(0) = rowname
+                 nt = 1L
+              endif
            endif
-           
            if verbose then begin
-              if filesource then print,'logfile',index,'  =',file
+              print,'logfile',index,'  =',file
               print,'headlines',index,':'
               print, format='(a)', strtrim(headlines,2)
 
               if firstcolumn then $
                  print,'  wlogrownames(0)= ', rownames[0]
 
-              for i=0, nwlog-1 do $
+              for i = 0, nwlog-1 do $
                  print, format='("  wlog",A,"(*,",I2,")= ",A)', $
                        index, i, wlognames(i)
            endif
-
         endelse
      endif else begin
+        ;; Stop reading the log file if headeronly is set
+        if keyword_set(headeronly) then goto, close_file
+        ;; read next line
         readf, unit, line
         read_log_line, line, wlog_, firstcolumn, rowname
         if total(finite(wlog_)) eq nwlog then begin
            wlog(*,nt) = wlog_
            if firstcolumn then rownames(nt) = rowname
-           nt=nt+1
+           nt = nt + 1
         endif
         if nt ge buf then begin
-           buf=buf+dbuf
-           wlog=[[wlog],[dblarr(nwlog,buf)]]
-           if firstcolumn then rownames = [[rownames],[strarr(buf)]]
+           buf = buf + dbuf
+           wlog=[[wlog], [dblarr(nwlog,buf)]]
+           if firstcolumn then rownames = [[rownames], [strarr(buf)]]
         endif
      endelse
 
   endwhile
-  close_file: if filesource then close,unit
+  close_file: close, unit
+  if headeronly then return
 
   if verbose then print,'Number of recorded timesteps: nt=',nt
 
