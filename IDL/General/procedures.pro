@@ -67,7 +67,7 @@
 ; limiting changes in a time series
 ;    limit_change, limit_growth
 
-;===========================================================================
+;==============================================================================
 pro set_default_values
 
   ;; Definitions and default values for variables in common blocks
@@ -410,7 +410,7 @@ pro set_default_values
   start_second = 0
   start_time   = 0.0
 end
-;===========================================================================
+;==============================================================================
 function limit_change, a, change, a2, change2
 
   ;; "a" must be a 1 dimensional array of a time series.
@@ -474,7 +474,7 @@ function limit_change, a, change, a2, change2
 
   return, b
 end
-;===========================================================================
+;==============================================================================
 function limit_growth, a, factor
 
   ;; "a" must be a 1 dimensional array of a time series
@@ -504,7 +504,7 @@ function limit_growth, a, factor
 
   return, b
 end
-;===========================================================================
+;==============================================================================
 function curve_distance,x1,y1,x2,y2
 
 ; measure of the minimum distance between two curves measured as
@@ -519,7 +519,7 @@ function curve_distance,x1,y1,x2,y2
   d = (d1/n1 + d2/n2)/2
   return, d
 end
-;===========================================================================
+;==============================================================================
 function curve_int_distance, x1, y1, x2, y2
 
 ; Evaluates the distance between two curves (data & model results)
@@ -554,7 +554,7 @@ function curve_int_distance, x1, y1, x2, y2
   d = (d1/len1 + d2/len2)/2
   return, d
 end
-;===========================================================================
+;==============================================================================
 pro read_data
 
 ;    Read the npict-th snapshot from an ascii or binary data file into
@@ -724,7 +724,7 @@ pro read_data
   filetype = filetypes[-1]
 
 end
-;===========================================================================
+;==============================================================================
 pro plot_data
 
 ;    Use the x and w arrays (usually read by read_data or animate_data) and
@@ -751,7 +751,7 @@ pro plot_data
 ; plot_data
 ; close_device,/pdf
 ;
-;===========================================================================
+;==============================================================================
 
   common debug_param & on_error, onerror
 
@@ -807,7 +807,7 @@ pro plot_data
         print,'Min and max value for ',funcs(ifunc),':',fmin(ifunc),fmax(ifunc)
   endif
 
-  ;;===== DO PLOTTING IN MULTIX * MULTIY MULTIPLE WINDOWS
+  ;; do plotting in multixl*multiy subplots
 
   if keyword_set(multiplot) then begin
      if n_elements(multiplot) eq 1 then begin
@@ -846,14 +846,14 @@ pro plot_data
   velpos=velpos0 & velpos0=0
 
 end
-;===========================================================================
+;==============================================================================
 pro show_data
   common debug_param & on_error, onerror
   ;; read data and plot it
   read_data
   plot_data
 end
-;===========================================================================
+;==============================================================================
 pro animate_data
 
 ;    Written by G. Toth for the Versatile Advection Code.
@@ -875,7 +875,7 @@ pro animate_data
 ; func='...     ; functions to plot (optional)
 ; animate_data
 ;
-;===========================================================================
+;==============================================================================
 
   common debug_param & on_error, onerror
 
@@ -938,8 +938,7 @@ pro animate_data
   arr2arr, firstpict, nfile
   arr2arr, dpict, nfile
 
-  ;;====== OPEN FILE(S) AND READ AND PRINT HEADER(S)
-
+  ;; open file(s) and read and print header(s)
   anygencoord=0
   for ifile = 0, nfile-1 do begin
      open_file, 10, filenames(ifile), filetypes(ifile)
@@ -947,7 +946,7 @@ pro animate_data
      anygencoord = anygencoord or gencoord
      print,         'headline                  =', strtrim(headline,2)
      print, FORMAT='("variables                 =",100(a," "),$)', variables
-     print, FORMAT='(" (ndim=",i2,", nw=",i2,")")', ndim, nw
+     print, FORMAT='(" (ndim=",i1,", nw=",i2,")")', ndim, nw
   endfor
 
   print,'======= PLOTTING PARAMETERS ========================='
@@ -1083,8 +1082,7 @@ pro animate_data
      retall
   endif
 
-  ;;===== DO ANIMATION IN MULTIX * MULTIY MULTIPLE WINDOWS
-
+  ;; do animation in multix * multiy subplots
   if keyword_set(multiplot) then begin
      ;; scalar multiplot value is converted to a row (+) or a column (-)
      if size(multiplot,/n_dim) eq 0 then begin
@@ -1301,8 +1299,7 @@ pro animate_data
   velpos=velpos0 & velpos0=0
   if doanimate then xinteranimate,5,/keep_pixmaps
 end
-
-;===========================================================================
+;==============================================================================
 pro slice_data
 
 ;    Animate slices of 3D data in the w array (usually read by 
@@ -1469,7 +1466,7 @@ pro slice_data
      print,'Min and max value for ',funcs(ifunc),':',fmin(ifunc),fmax(ifunc)
 
 
-                                ;==== ANIMATE THE SLICES
+  ;; animate the slices
   doanimate= nslice gt nslice1 and !d.name eq 'X'
   if !d.name eq 'X' then begin
      if !d.window lt 0 then window
@@ -1550,8 +1547,7 @@ pro slice_data
 
   if doanimate then xinteranimate,5,/keep_pixmaps
 end
-
-;=============================================================================
+;==============================================================================
 pro slice_data_restore
 
   ; restore the 3D state after slice_data
@@ -1569,8 +1565,7 @@ pro slice_data_restore
   variables = var3d
   rBody     = rBody3d
 end
-
-;=============================================================================
+;==============================================================================
 pro read_log_data, scalar=scalar
 
 ; Read the log data from 1, 2, or 3 files into the wlog, wlog1, wlog2 arrays
@@ -1585,8 +1580,8 @@ pro read_log_data, scalar=scalar
   common ask_param
   common start_date
   
-  nlogfile=0
-  askstr,'logfilename(s) ',logfilename,doask
+  nlogfile = 0
+  askstr, 'logfilename(s) ', logfilename, doask
   string_to_array, logfilename, logfilenames, nlogfile, /wildcard
 
   if not keyword_set(logfilenames) then begin
@@ -1628,8 +1623,7 @@ pro read_log_data, scalar=scalar
      logfilenames(9), wlog9, wlognames9, logtime9, timeunit, verbose='9'
 
 end
-
-;=============================================================================
+;==============================================================================
 pro plot_log_data
 
   common debug_param & on_error, onerror
@@ -1650,14 +1644,12 @@ pro plot_log_data
   plot_log
 
 end
-
-;=============================================================================
+;==============================================================================
 pro show_log_data
   read_log_data
   plot_log_data
 end
-
-;=============================================================================
+;==============================================================================
 function reform2,x
 
   common debug_param & on_error, onerror
@@ -1670,8 +1662,7 @@ function reform2,x
   return, reform(x, siz(where(siz gt 1)))
 
 end
-
-;=============================================================================
+;==============================================================================
 function date_to_julday, date
 ; Convert date in ISO format into the Julian day:
 ; the number of days since Jan 1 4713 BC
@@ -1682,7 +1673,7 @@ function date_to_julday, date
   return, julday(month, day, year, hour, minute, second)
 
 end
-;=============================================================================
+;==============================================================================
 function log_time, wlog, wlognames
 
 ; Obtain time in hours from wlog and wlognames
@@ -1836,8 +1827,7 @@ function log_time, wlog, wlognames
   
   return, logtime
 end
-
-;=============================================================================
+;==============================================================================
 function log_func, wlog, varnames, varname, error
 
   common debug_param & on_error, onerror
@@ -1875,8 +1865,7 @@ function log_func, wlog, varnames, varname, error
   return,0*wlog(*,0)
   
 end
-
-;=============================================================================
+;==============================================================================
 pro black_background
 
   common debug_param & on_error, onerror
@@ -1886,7 +1875,7 @@ pro black_background
   POLYFILL, [1,1,0,0,1], [1,0,0,1,1], /NORMAL, COLOR=0 ; draw black box
 
 end
-;=============================================================================
+;==============================================================================
 pro white_background
 
   common debug_param & on_error, onerror
@@ -1895,7 +1884,7 @@ pro white_background
   !p.color      =   0
 
 end
-;=============================================================================
+;==============================================================================
 pro open_file, unit, filename, filetype
 
    common debug_param & on_error, onerror
@@ -1919,8 +1908,7 @@ pro open_file, unit, filename, filetype
        else    :print,'open_file: unknown filetype:',filetype
    endcase
 end
-
-;=============================================================================
+;==============================================================================
 pro get_file_types
 
   common debug_param & on_error, onerror
@@ -1984,8 +1972,7 @@ pro get_file_types
      endelse
   endfor
 end
-
-;=============================================================================
+;==============================================================================
 pro show_head, ifile
 
   common debug_param & on_error, onerror
@@ -2012,7 +1999,7 @@ pro show_head, ifile
      print,'param names=',variables(ndim+nw:*)
 
 end
-;=============================================================================
+;==============================================================================
 pro get_file_head, unit, filename, filetype, pictsize=pictsize
 
   common debug_param & on_error, onerror
@@ -2041,72 +2028,62 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
   ;; Read header
   case ftype of
      'log': begin
-        if strpos(filename,'.csv') gt 0 then begin
-           headline = 'CSV file'
-           readf,unit,varname
-           variables = strsplit(varname,',',/extract)
-           if strlowcase(strmid(variables[0],0,4)) eq 'date' then $
-              variables[0] = 'year mo dy hr mn sc'
-           varname = strjoin(strsplit(varname,',',/extract),' ')
-        endif else begin
-           readf,unit,headline
-           readf,unit,varname
-        endelse
-        nw = n_elements(strsplit(varname))-2
-        varname = timeunit + ' ' + varname
-        ;; reset pointer
-        point_lun, unit, pointer0
-        it=0
-        ;; time=0.0
-        gencoord=0
-        ndim=1
-        nx=lonarr(1)
-        nx(0)=1
+        get_log, filename, w, variables, headlines=headlines, /headeronly
+        if n_elements(headlines) gt 0 $
+        then headline = strjoin(headlines,';') $
+        else headline = 'No header'
+        nw = n_elements(variables)
+        varname = timeunit + ' ' + strjoin(variables, ' ')
+        it = 0
+        gencoord = 0
+        ndim = 1
+        nx = lonarr(1)
+        nx[0] = 1
      end
      'ascii': begin
         time=double(1)
-        readf,unit,headline
-        readf,unit,it,time,ndim,neqpar,nw
-        gencoord=(ndim lt 0)
-        ndim=abs(ndim)
-        nx=lonarr(ndim)
-        readf,unit,nx
+        readf, unit, headline
+        readf, unit, it, time, ndim, neqpar, nw
+        gencoord = (ndim lt 0)
+        ndim = abs(ndim)
+        nx = lonarr(ndim)
+        readf, unit, nx
         if neqpar gt 0 then begin
-           eqpar=dblarr(neqpar)
-           readf,unit,eqpar
+           eqpar = dblarr(neqpar)
+           readf, unit, eqpar
         endif
-        readf,unit,varname
+        readf, unit, varname
      end
      'real8':begin
-        time=double(1)
-        readu,unit,headline
-        readu,unit,it,time,ndim,neqpar,nw
-        gencoord=(ndim lt 0)
-        ndim=abs(ndim)
-        nx=lonarr(ndim)
-        readu,unit,nx
+        time = double(1)
+        readu, unit, headline
+        readu, unit, it, time, ndim, neqpar, nw
+        gencoord = (ndim lt 0)
+        ndim = abs(ndim)
+        nx = lonarr(ndim)
+        readu, unit, nx
         if neqpar gt 0 then begin
-           eqpar=dblarr(neqpar)
-           readu,unit,eqpar
+           eqpar = dblarr(neqpar)
+           readu, unit, eqpar
         endif
-        readu,unit,varname
+        readu, unit, varname
      end
      'real4': begin
-        time=float(1)
-        readu,unit,headline
-        readu,unit,it,time,ndim,neqpar,nw
+        time = float(1)
+        readu, unit, headline
+        readu, unit, it, time, ndim, neqpar, nw
         gencoord=(ndim lt 0)
-        ndim=abs(ndim)
-        nx=lonarr(ndim)
-        readu,unit,nx
+        ndim = abs(ndim)
+        nx = lonarr(ndim)
+        readu, unit, nx
         if neqpar gt 0 then begin
-           eqpar=fltarr(neqpar)
-           readu,unit,eqpar
+           eqpar = fltarr(neqpar)
+           readu, unit, eqpar
         endif
-        readu,unit,varname
+        readu, unit, varname
      end
      else: begin
-        print,'get_file_head: unknown filetype',filetype
+        print, 'get_file_head: unknown filetype', filetype
         retall
      end
   endcase
@@ -2131,31 +2108,30 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
   ;; Set variables array
   string_to_array, varname, variables, nvar, /arraysyntax
 end
-
-;=============================================================================
+;==============================================================================
 pro get_pict, unit, filename, filetype, npict, error
 
   common debug_param & on_error, onerror
 
   if filetype eq 'IPIC3D' then begin 
-     error=0
+     error = 0
      get_pict_hdf, filename, npict, error, 1
 
   endif else begin
 
-     error=0
+     error = 0
 
-     if(eof(unit))then begin
-        error=1
+     if eof(unit) then begin
+        error = 1
         return
      endif
 
      ;; Get current pointer position
-     point_lun,-unit,pointer
+     point_lun, -unit, pointer
 
-                                ; Skip npict-1 snapshots
-     ipict=0
-     pictsize=1
+     ;; Skip npict-1 snapshots
+     ipict = 0
+     pictsize = 1
      while ipict lt npict-1 and not eof(unit) do begin
         ipict = ipict + 1
         get_file_head, unit, filename, filetype, pictsize=pictsize
@@ -2165,8 +2141,8 @@ pro get_pict, unit, filename, filetype, npict, error
 
      ;; Backup 1 snapshot if end of file
      if eof(unit) then begin
-        error=1
-        point_lun,unit,pointer-pictsize
+        error = 1
+        point_lun, unit, pointer-pictsize
      endif
 
      ;; Read header information
@@ -2180,8 +2156,8 @@ pro get_pict, unit, filename, filetype, npict, error
         'real4': get_pict_real, unit, npict
         else:    begin
            print,'get_pict: unknown filetype:',filetype
-           error=1
-           close,unit
+           error = 1
+           close, unit
         end
      endcase
 
@@ -2190,9 +2166,8 @@ pro get_pict, unit, filename, filetype, npict, error
   set_units
 
 end
-
-;=============================================================================
-pro get_pict_log, source
+;==============================================================================
+pro get_pict_log, file
 
   common debug_param & on_error, onerror
 
@@ -2200,15 +2175,15 @@ pro get_pict_log, source
   common file_head
   common log_data, timeunit
 
-  get_log, source, w, wlognames, x, timeunit
+  get_log, file, w, wlognames, x, timeunit
 
-  ndim = 1
-  nx(0)= n_elements(x)
-  nw   = n_elements(wlognames)
+  ndim  = 1
+  nx(0) = n_elements(x)
+  nw    = n_elements(wlognames)
   variables = [timeunit, wlognames]
 
 end
-;=============================================================================
+;==============================================================================
 pro get_pict_asc, unit, npict
 
   common debug_param & on_error, onerror
@@ -2260,8 +2235,7 @@ pro get_pict_asc, unit, npict
   end
   endcase
 end
-
-;=============================================================================
+;==============================================================================
 pro get_pict_bin, unit, npict
 
   common debug_param & on_error, onerror
@@ -2314,8 +2288,7 @@ pro get_pict_bin, unit, npict
   end
   endcase
 end
-
-;=============================================================================
+;==============================================================================
 pro get_pict_real, unit, npict
 
   common debug_param & on_error, onerror
@@ -2368,8 +2341,7 @@ pro get_pict_real, unit, npict
   end
   endcase
 end
-
-;=============================================================================
+;==============================================================================
 pro asknum, prompt, var, doask
 
    common debug_param & on_error, onerror
@@ -2383,8 +2355,7 @@ pro asknum, prompt, var, doask
       endif else print, prompt, '=', var
    endelse
 end
-
-;=============================================================================
+;==============================================================================
 pro askstr, prompt, var, doask
 
    common debug_param & on_error, onerror
@@ -2398,8 +2369,7 @@ pro askstr, prompt, var, doask
       endif else print, prompt, '=', var
    endelse
 end
-
-;=============================================================================
+;==============================================================================
 pro string_to_array, s, a, n, sep, arraysyntax=arraysyntax, wildcard=wildcard
 
 ; If s is an array copy it to a.
@@ -2493,7 +2463,7 @@ endif else begin
 endelse
 
 end
-;=============================================================================
+;==============================================================================
 pro arr2arr, a, n
 
 ; If a is a scalar or has fewer elements than n then 
@@ -2507,7 +2477,7 @@ if      k gt n then a = a(0:n-1) $                    ; truncate array
 else if k lt n then for i = k, n-1 do a = [a, a(k-1)] ; extend array
 
 end
-;===========================================================================
+;==============================================================================
 pro read_plot_param, quiet=quiet
 
   common ask_param, doask
@@ -2579,7 +2549,7 @@ pro read_plot_param, quiet=quiet
   endfor
 
 end
-;===========================================================================
+;==============================================================================
 pro read_transform_param
 
   common debug_param & on_error, onerror
@@ -2680,12 +2650,10 @@ pro read_transform_param
        3: grid = lindgen(nx(0),nx(1),nx(2))
    endcase
 
-   ;===== GRID HELPS TO CREATE A CUT, E.G.: cut=grid(*,4)
-
+   ;; grid helps to create a cut, e.g.: cut=grid(*,4)
    help, grid
 end
-
-;===========================================================================
+;==============================================================================
 pro getvectors, nvector, vectors
 
   common debug_param & on_error, onerror
@@ -2700,7 +2668,7 @@ pro getvectors, nvector, vectors
   endif
 
 end
-;===========================================================================
+;==============================================================================
 pro do_my_transform, ifile, variables, x, w, xreg, wreg, usereg
 
   ;; this transformation is useful for plotting RCM files in the
@@ -2723,8 +2691,7 @@ pro do_my_transform, ifile, variables, x, w, xreg, wreg, usereg
   ;  x(*,*,*,1:2) = x(*,*,*,1:2)*180/!pi
 
 end
-
-;===========================================================================
+;==============================================================================
 pro do_transform, ifile
 
   ;; transfrom x, w eithr in-place or to xreg, wreg
@@ -2758,7 +2725,7 @@ pro do_transform, ifile
   endcase
 
 end
-;===========================================================================
+;==============================================================================
 pro read_limits
 
    common debug_param & on_error, onerror
@@ -2788,7 +2755,7 @@ pro read_limits
    endif
 
 end
-;===========================================================================
+;==============================================================================
 pro get_limits, first
 
   common debug_param & on_error, onerror
@@ -2848,7 +2815,7 @@ function get_grid_data, x, y, data, nxreg, xreglimits, triangles, wregpad
                    missing = wregpad $
                   )
 end
-;===========================================================================
+;==============================================================================
 pro make_regular_grid
 
 ;
@@ -2960,7 +2927,6 @@ pro make_regular_grid
   if err ne 32 and err ne 0 then print,'Math error in regulargrid:', err
 
 end
-
 ;==============================================================================
 pro symm_triangles, xx, yy, triangles, $
                    triangconj, ntriangles, rectangles, nrectan
@@ -3090,7 +3056,6 @@ pro symm_triangles, xx, yy, triangles, $
   endif
 
 end
-
 ;==============================================================================
 pro fit_triangles,w,wreg,wregpad,nw,xx,yy,nxreg,xreglimits,$
                   triangles,ntriangles,rectangles
@@ -3124,7 +3089,6 @@ pro fit_triangles,w,wreg,wregpad,nw,xx,yy,nxreg,xreglimits,$
   endfor
   print,'Using fitted triangulation'
 end
-
 ;==============================================================================
 pro average_triangles,w,wreg,wregpad,nw,xx,yy,nxreg,xreglimits,$
                       triangles,triangconj
@@ -3150,7 +3114,7 @@ pro average_triangles,w,wreg,wregpad,nw,xx,yy,nxreg,xreglimits,$
   print,'Using averaged conjugated triangulation'
 
 end
-;===========================================================================
+;==============================================================================
 pro make_polar_grid
 ;
 ;  Transform 2D or 3D grid and vector variables 
@@ -3170,7 +3134,7 @@ pro make_polar_grid
   endcase
 
 end
-;===========================================================================
+;==============================================================================
 pro make_polar_grid2
 ;
 ;  Transform 2D grid and vector variables 
@@ -3205,8 +3169,7 @@ pro make_polar_grid2
   xreg(*,*,1) = phi
 
 end
-
-;===========================================================================
+;==============================================================================
 pro make_polar_grid3
 ;
 ;    Transform 3D vector variables from x,y,z to radial,phi,z components
@@ -3255,11 +3218,10 @@ pro make_polar_grid3
   endfor
 
 end
-
-;===========================================================================
+;==============================================================================
 pro make_sphere_grid
-;
-;    Transform vector variables from x,y,z to r,theta,phi components
+
+; Transform vector variables from x,y,z to r,theta,phi components
 
   common debug_param & on_error, onerror
 
@@ -3309,9 +3271,9 @@ pro make_sphere_grid
 
 end
   
-;===========================================================================
+;==============================================================================
 pro make_unpolar_grid
-;
+
 ; Transform 2D and 3D vector variables cylindrical to Cartesian components
 
   common debug_param & on_error, onerror
@@ -3330,9 +3292,9 @@ pro make_unpolar_grid
   variables(0:1)=['x','y']
 
 end
-;===========================================================================
+;==============================================================================
 pro make_unpolar_grid2
-;
+
 ;    Transform 2D grid (and vector variables)
 ;    from radial and phi to x and y components
 
@@ -3362,10 +3324,9 @@ pro make_unpolar_grid2
   endfor
 
 end
-
-;===========================================================================
+;==============================================================================
 pro make_unpolar_grid3
-;
+
 ;  Transform 3D grid (and vector variables)
 ;  from radial, phi,z to x, y, z components
 
@@ -3392,9 +3353,9 @@ pro make_unpolar_grid3
   endfor
 end
 
-;===========================================================================
+;==============================================================================
 pro getaxes, ndim, x, xx, yy, zz, cut, cut0, rSlice, plotdim, variables
-;===========================================================================
+
   common debug_param & on_error, onerror
 
   case ndim of
@@ -3459,7 +3420,7 @@ pro getaxes, ndim, x, xx, yy, zz, cut, cut0, rSlice, plotdim, variables
   endif
 
 end
-;===========================================================================
+;==============================================================================
 pro set_units, type, distunit=distunit, Mion=Mion, Melectron=Melectron
 
   ;; If type is given as 
@@ -3648,9 +3609,8 @@ pro set_units, type, distunit=distunit, Mion=Mion, Melectron=Melectron
 
 end
 
-;===========================================================================
+;==============================================================================
 pro show_units
-;===========================================================================
 
   common debug_param & on_error, onerror
 
@@ -3688,9 +3648,9 @@ pro show_units
   print,'ld0     =', ld0
 
 end
-;===========================================================================
+;==============================================================================
 pro get_func,ifunc,x,w
-;===========================================================================
+
   common debug_param & on_error, onerror
 
   common plotfunc_param
@@ -3716,10 +3676,9 @@ pro get_func,ifunc,x,w
   endelse
 
 end
-
-;===========================================================================
+;==============================================================================
 pro plot_func
-;===========================================================================
+
   common debug_param & on_error, onerror
 
   common transform_param, usereg
@@ -4417,8 +4376,10 @@ pro plot_func
   !x.tickformat = xtickformatorig
 
 end
-;===========================================================================
+;==============================================================================
 pro putbottom, multix, multiy, ix, iy, info, nx, it, time, ipict
+
+  ;; show information at the bottom of the plot window
 
   common log_data, timeunit
   common debug_param & on_error, onerror
@@ -4502,9 +4463,11 @@ pro putbottom, multix, multiy, ix, iy, info, nx, it, time, ipict
 ;       info,/NORM,charsize=0.8
 
 end
-;===========================================================================
-pro putheader,multix,multiy,ix,iy,ninfo,headline,nx
+;==============================================================================
+pro putheader, multix, multiy, ix, iy, ninfo, headline, nx
 
+  ;; show information above the subplot
+  
   common debug_param & on_error, onerror
 
   if ninfo lt 1 then return
@@ -4513,8 +4476,10 @@ pro putheader,multix,multiy,ix,iy,ninfo,headline,nx
   xyouts,5+(ix*!d.x_size)/multix,-12+((iy+1)*!d.y_size)/multiy,/DEV,info
 
 end
-;===========================================================================
-function pvalue,a,b
+;==============================================================================
+function pvalue, a, b
+  ;; calculate the pvalue of a and b vectors being correlated accidentally
+  
   df = n_elements(a) - 1 ; degrees of freedom
   anorm = a - mean(a) & anorm /= stdev(anorm)  ; Gaussian (0,1)
   bnorm = b - mean(b) & bnorm /= stdev(bnorm)  ; Gaussian (0,1)
@@ -4522,8 +4487,9 @@ function pvalue,a,b
   chi = df*variance(cnorm)/2.0                 ; X value
   return, chisqr_pdf(chi, df)
 end
-;===========================================================================
-function corr2,a,b,ncorr
+;==============================================================================
+function corr2, a, b, ncorr
+  ;; calculate correlation between a and b with a correlation window ncorr
   n = n_elements(a)
   m = ncorr/2
   corr = fltarr(n)
@@ -4532,13 +4498,12 @@ function corr2,a,b,ncorr
   for i=m, n-m-1 do corr(i) = correlate(a(i-m+1:i+m),b(i-m+1:i+m))
   return,corr
 end
-;===========================================================================
-function diff1,a,x
-;
+;==============================================================================
+function diff1, a, x
+
 ; Take derivative of "a" with respect to "x" (if present)
 ; using 2nd order centered differencing
-;
-;===========================================================================
+
   common debug_param & on_error, onerror
 
   ndim=size(a,/n_dim)
@@ -4566,19 +4531,18 @@ function diff1,a,x
 
   return,dadx
 end
-;===========================================================================
-function laplace,a,x,y,z
-;
+;==============================================================================
+function laplace, a, x, y, z
+
 ; Take Laplace of "a" in 1 or 2D with respect to "x" (and "y") if present.
-;
-;===========================================================================
+
   common debug_param & on_error, onerror
 
   ndim=size(a,/n_dim)
-  if ndim eq 3 then return,laplace3(a,x,y,z)
-  if ndim eq 2 then return,laplace2(a,x,y)
+  if ndim eq 3 then return, laplace3(a,x,y,z)
+  if ndim eq 2 then return, laplace2(a,x,y)
   if ndim ne 1 then begin
-     print,'Function laplace is intended for 1, 2 and 3D arrays only'
+     print, 'Function laplace is intended for 1, 2 and 3D arrays only'
      retall
   endif
 
@@ -4586,7 +4550,7 @@ function laplace,a,x,y,z
   nx = n_elements(x)
 
   if nx ne 0 and nx ne n then begin
-     print,'Error in laplace, array sizes differ: nx, n=', nx, n
+     print, 'Error in laplace, array sizes differ: nx, n=', nx, n
      retall
   endif
 
@@ -4604,16 +4568,15 @@ function laplace,a,x,y,z
 
   return,d2adx2
 end
-;===========================================================================
-function laplace2,a,x,y
-;
+;==============================================================================
+function laplace2, a, x, y
+
 ; Take Laplace of "a" in 2D with respect to "x" and "y" (if present).
-;
-;===========================================================================
+
   common debug_param & on_error, onerror
 
-  siz=size(a)
-  ndim=siz(0)
+  siz = size(a)
+  ndim = siz(0)
 
   n1 = siz(1)
   n2 = siz(2)
@@ -4643,7 +4606,7 @@ function laplace2,a,x,y
        (y(1:n1-2,1:n2-2) - y(1:n1-2,0:n2-3)) $
      ) / (0.5*(y(1:n1-2,2:n2-1) - y(1:n1-2,0:n2-3)))
 
-; fill in boundaries
+  ;; fill in boundaries
   d2adx2(0   ,1:n2-1) = d2adx2(1   ,1:n2-1)
   d2adx2(n1-1,1:n2-1) = d2adx2(n1-2,1:n2-1)
   d2adx2(*,0)         = d2adx2(*,1)
@@ -4651,16 +4614,15 @@ function laplace2,a,x,y
 
   return,d2adx2
 end
-;===========================================================================
-function laplace3,a,x,y,z
-;
+;==============================================================================
+function laplace3, a, x, y, z
+
 ; Take Laplace of "a" in 2D with respect to "x", "y" and "z" (if present).
-;
-;===========================================================================
+
   common debug_param & on_error, onerror
 
-  siz=size(a)
-  ndim=siz(0)
+  siz = size(a)
+  ndim = siz(0)
 
   n1 = siz(1)
   n2 = siz(2)
@@ -4710,104 +4672,101 @@ function laplace3,a,x,y,z
 
   return,d2adx2
 end
-;===========================================================================
-function diff2,direction,a,x
-;
+;==============================================================================
+function diff2, direction, a, x
+
 ; Take derivative of "a" with respect to "x" in the direction "direction"
 ; using 2nd order centered differencing
-;
-;===========================================================================
+
   common debug_param & on_error, onerror
 
-  siz=size(a)
-  ndim=siz(0)
+  siz = size(a)
+  ndim = siz(0)
   if ndim ne 2 and ndim ne 3 then begin
-     print,'Function diff2 is intended for 2D and 3D arrays only'
+     print, 'Function diff2 is intended for 2D and 3D arrays only'
      retall
   endif
 
   if direction lt 1 or direction gt ndim then begin
-     print,'Direction=',direction,' should be between 1 and ndim=',ndim,'!'
+     print, 'Direction=',direction,' should be between 1 and ndim=',ndim,'!'
      retall
   endif
 
-  n1=siz(1)
-  n2=siz(2)
+  n1 = siz(1)
+  n2 = siz(2)
   if ndim eq 3 then n3=siz(3)
 
   if direction eq 1 then begin
-     ind1=indgen(n1)
-     jnd1=ind1+1
-     jnd1(n1-1)=n1
-     hnd1=ind1-1
-     hnd1(0)=0
+     ind1 = indgen(n1)
+     jnd1 = ind1+1
+     jnd1(n1-1) = n1
+     hnd1 = ind1 - 1
+     hnd1(0) = 0
      if ndim eq 2 then $
-        dadx=(a(jnd1,*)-a(hnd1,*))/(x(jnd1,*)-x(hnd1,*)) $
+        dadx = (a(jnd1,*) - a(hnd1,*))/(x(jnd1,*) - x(hnd1,*)) $
      else $
-        dadx=(a(jnd1,*,*)-a(hnd1,*,*))/(x(jnd1,*,*)-x(hnd1,*,*))
+        dadx = (a(jnd1,*,*) - a(hnd1,*,*))/(x(jnd1,*,*) - x(hnd1,*,*))
   endif
   if direction eq 2 then begin
-     ind2=indgen(n2)
-     jnd2=ind2+1
-     jnd2(n2-1)=n2
-     hnd2=ind2-1
-     hnd2(0)=0
+     ind2 = indgen(n2)
+     jnd2 = ind2+1
+     jnd2(n2-1) = n2
+     hnd2 = ind2 - 1
+     hnd2(0) = 0
      if ndim eq 2 then $
-        dadx=(a(*,jnd2)-a(*,hnd2))/(x(*,jnd2)-x(*,hnd2)) $
+        dadx = (a(*,jnd2) - a(*,hnd2))/(x(*,jnd2) - x(*,hnd2)) $
      else $
-        dadx=(a(*,jnd2,*)-a(*,hnd2,*))/(x(*,jnd2,*)-x(*,hnd2,*))
+        dadx = (a(*,jnd2,*) - a(*,hnd2,*))/(x(*,jnd2,*) - x(*,hnd2,*))
   endif
   if direction eq 3 then begin
-     ind3=indgen(n3)
-     jnd3=ind3+1
-     jnd3(n3-1)=n3
-     hnd3=ind3-1
-     hnd3(0)=0
-     dadx=(a(*,*,jnd3)-a(*,*,hnd3))/(x(*,*,jnd3)-x(*,*,hnd3))
+     ind3 = indgen(n3)
+     jnd3 = ind3 + 1
+     jnd3(n3-1) = n3
+     hnd3 = ind3 - 1
+     hnd3(0) = 0
+     dadx = (a(*,*,jnd3) - a(*,*,hnd3))/(x(*,*,jnd3) - x(*,*,hnd3))
   endif
 
   return,dadx
 
 end
+;==============================================================================
+function diff2avg, direction, a, x
 
-;===========================================================================
-
-function diff2avg,direction,a,x
-;
 ; Take derivative of "a" with respect to "x" in the direction "direction"
-; using 2nd order centered differencing and average in the orthogonal direction.
-;
-;===========================================================================
+; using 2nd order centered differencing and average in the orthogonal
+; direction.
+
   common debug_param & on_error, onerror
 
-  siz=size(a)
-  ndim=siz(0)
+  siz = size(a)
+  ndim = siz(0)
   if ndim ne 2 then begin
-     print,'Function diff2avg is intended for 2D arrays only'
+     print, 'Function diff2avg is intended for 2D arrays only'
      retall
   endif
 
   if direction lt 1 or direction gt ndim then begin
-     print,'Direction=',direction,' should be between 1 and ndim=',ndim,'!'
+     print, 'Direction=',direction,' should be between 1 and ndim=',ndim,'!'
      retall
   endif
 
-  n1=siz(1)
-  n2=siz(2)
+  n1 = siz(1)
+  n2 = siz(2)
 
   avg = a
   
-  ind1=indgen(n1)
-  jnd1=ind1+1
-  jnd1(n1-1)=n1-1
-  hnd1=ind1-1
-  hnd1(0)=0
+  ind1 = indgen(n1)
+  jnd1 = ind1 + 1
+  jnd1(n1-1) = n1 - 1
+  hnd1 = ind1 - 1
+  hnd1(0) = 0
 
-  ind2=indgen(n2)
-  jnd2=ind2+1
-  jnd2(n2-1)=n2-1
-  hnd2=ind2-1
-  hnd2(0)=0
+  ind2 = indgen(n2)
+  jnd2 = ind2+1
+  jnd2(n2-1) = n2-1
+  hnd2 = ind2-1
+  hnd2(0) = 0
 
   if direction eq 1 then begin    
      avg = 0.25*a(*,hnd2) + 0.5*a + 0.25*a(*,jnd2)
@@ -4819,67 +4778,65 @@ function diff2avg,direction,a,x
      dadx = (avg[*,jnd2] - avg[*,hnd2])/(x[*,jnd2] - x[*,hnd2]) 
   endif
   
-  return,dadx
+  return, dadx
 
 end
+;==============================================================================
+function diff4, direction, a, x
 
-;===========================================================================
-
-function diff4,direction,a,x
-;
 ; Take derivative of "a" with respect to "x" in the direction "direction"
 ; using 4th order centered differencing
-;
-;===========================================================================
+
   common debug_param & on_error, onerror
 
-  siz=size(a)
+  siz = size(a)
   if siz(0) ne 2 then begin
      print,'Function diff4 is intended for 2D arrays only'
      retall
   endif
 
-  n1=siz(1)
-  n2=siz(2)
+  n1 = siz(1)
+  n2 = siz(2)
 
-  dadx=a
+  dadx = a
 
   if direction eq 1 then begin
      if n1 lt 5 then begin
-        print,'Cannot take 4th order X gradient of grid with less than 5 columns'
+        print, $
+           'Cannot take 4th order X gradient of grid with less than 5 columns'
         retall
      endif
-     dadx(2:n1-3,*)=(a(4:n1-1,*)-8*a(3:n1-2,*)+8*a(1:n1-4,*)-a(0:n1-5,*)) $
-                    /(x(3:n1-2,*)-x(1:n1-4,*))/6 ;
-     dadx(0,*)   =dadx(2,*)
-     dadx(1,*)   =dadx(2,*)
-     dadx(n1-2,*)=dadx(n1-3,*)
-     dadx(n1-1,*)=dadx(n1-3,*)
+     dadx(2:n1-3,*) = $
+        (a(4:n1-1,*) - 8*a(3:n1-2,*) + 8*a(1:n1-4,*) - a(0:n1-5,*)) $
+        /(x(3:n1-2,*) - x(1:n1-4,*))/6 ;
+     dadx(0,*)    = dadx(2,*)
+     dadx(1,*)    = dadx(2,*)
+     dadx(n1-2,*) = dadx(n1-3,*)
+     dadx(n1-1,*) = dadx(n1-3,*)
   endif
   if direction eq 2 then begin
      if n2 lt 5 then begin
         print,'Cannot take 4th order Y gradient of grid with less than 5 rows'
         retall
      endif
-     dadx(*,2:n2-3)=(a(*,4:n2-1)-8*a(*,3:n2-2)+8*a(*,1:n2-4)-a(*,0:n2-5)) $
-                    /(x(*,3:n2-2)-x(*,1:n2-4))/6 ;
-     dadx(*,0)   =dadx(*,2)
-     dadx(*,1)   =dadx(*,2)
-     dadx(*,n2-2)=dadx(*,n2-3)
-     dadx(*,n2-1)=dadx(*,n2-3)
+     dadx(*,2:n2-3) = $
+        (a(*,4:n2-1) - 8*a(*,3:n2-2) + 8*a(*,1:n2-4) - a(*,0:n2-5)) $
+        /(x(*,3:n2-2) - x(*,1:n2-4))/6 ;
+     dadx(*,0)    = dadx(*,2)
+     dadx(*,1)    = dadx(*,2)
+     dadx(*,n2-2) = dadx(*,n2-3)
+     dadx(*,n2-1) = dadx(*,n2-3)
   endif
 
-  return,dadx
+  return, dadx
 
 end
+;==============================================================================
+function diff3, direction, a, x
 
-;===========================================================================
-function diff3,direction,a,x
-;
 ; Take derivative of "a" with respect to "x" in the direction "direction"
 ; using IDL's 1D deriv() function
-;
-;===========================================================================
+
   common debug_param & on_error, onerror
 
   siz=size(a)
@@ -4890,16 +4847,17 @@ function diff3,direction,a,x
 
   dadx=a
 
-  if direction eq 1 then for i2=0,siz(2)-1 do dadx(*,i2)=deriv(x(*,i2),a(*,i2))
-  if direction eq 2 then for i1=0,siz(1)-1 do dadx(i1,*)=deriv(x(i1,*),a(i1,*))
+  if direction eq 1 then $
+     for i2 = 0, siz(2) - 1 do dadx(*,i2) = deriv(x(*,i2), a(*,i2))
+  if direction eq 2 then $
+     for i1 = 0, siz(1) - 1 do dadx(i1,*) = deriv(x(i1,*), a(i1,*))
 
   return,dadx
 
 end
+;==============================================================================
+function minmod, a, b
 
-;===========================================================================
-function minmod,a,b
-;
 ; Calculate minmod limited slope of a and b slopes
 
   common debug_param & on_error, onerror
@@ -4910,24 +4868,23 @@ function minmod,a,b
   ;; calculate limited slope
   c = s*max([0,min([abs(a),s*b])])
 
-  return,c
+  return, c
 end
-;===========================================================================
-function symmdiffreg,direction,a,anti=anti
-;
+;==============================================================================
+function symmdiffreg, direction, a, anti=anti
+
 ; Take symmetric difference of "a" with respect to a mirror plane in direction
 ; "direction"
-;
-;===========================================================================
+
   common debug_param & on_error, onerror
 
   if not keyword_set(report) then report = 0
 
-  siz=size(a)
-  dim=siz(0)
-  nx=siz(1)
+  siz = size(a)
+  dim = siz(0)
+  nx = siz(1)
 
-  diff=a
+  diff = a
 
   coef = 1.0
   if keyword_set(anti) then coef = -1.0
@@ -4937,13 +4894,13 @@ function symmdiffreg,direction,a,anti=anti
      2: begin
         ny=siz(2)
         case direction of
-           1: for i=0,nx-1 do diff(i,*) = a(i,*)-coef*a(nx-1-i,*)
-           2: for i=0,ny-1 do diff(*,i) = a(*,i)-coef*a(*,ny-1-i)
+           1: for i=0,nx-1 do diff(i,*) = a(i,*) - coef*a(nx-1-i,*)
+           2: for i=0,ny-1 do diff(*,i) = a(*,i) - coef*a(*,ny-1-i)
         endcase
      end
      3: begin
-        ny=siz(2)
-        nz=siz(3)
+        ny = siz(2)
+        nz = siz(3)
         case direction of
            1: for i=0,nx-1 do diff(i,*,*) = a(i,*,*) - coef*a(nx-1-i,*,*)
            2: for i=0,ny-1 do diff(*,i,*) = a(*,i,*) - coef*a(*,ny-1-i,*)
@@ -4951,24 +4908,22 @@ function symmdiffreg,direction,a,anti=anti
         endcase
      end
      4: begin
-        ny=siz(2)
-        nz=siz(3)
+        ny = siz(2)
+        nz = siz(3)
         case direction of
-           1: for i=0,nx-1 do diff(i,*,*,*)=a(i,*,*,*)-coef*a(nx-1-i,*,*,*)
-           2: for i=0,ny-1 do diff(*,i,*,*)=a(*,i,*,*)-coef*a(*,ny-1-i,*,*)
-           3: for i=0,nz-1 do diff(*,*,i,*)=a(*,*,i,*)-coef*a(*,*,nz-1-i,*)
+           1: for i=0,nx-1 do diff(i,*,*,*)=a(i,*,*,*) - coef*a(nx-1-i,*,*,*)
+           2: for i=0,ny-1 do diff(*,i,*,*)=a(*,i,*,*) - coef*a(*,ny-1-i,*,*)
+           3: for i=0,nz-1 do diff(*,*,i,*)=a(*,*,i,*) - coef*a(*,*,nz-1-i,*)
         endcase
      end
   endcase
 
   return,diff
 end
-;==========================================================================
+;==============================================================================
 function symmdiff,direction,a,x,y,report=report,anti=anti
-;
-;find the symmetric for irregular grid
-;
-;=========================================================================
+
+; find the symmetric for irregular grid
   
   common debug_param & on_error, onerror
 
@@ -4977,7 +4932,7 @@ function symmdiff,direction,a,x,y,report=report,anti=anti
 
   if not keyword_set(report) then report = 0
 
-  diff=a*0
+  diff = a*0
 
   e = exp(1.0d0)
   sorting = x + e*y
@@ -4990,15 +4945,13 @@ function symmdiff,direction,a,x,y,report=report,anti=anti
      signx = +1.0 & signy = -1.0
   endelse
 
-  for i=0,n-1 do begin
+  for i = 0, n-1 do begin
      if diff(i) eq 0 then begin
         xi = x(i)
         yi = y(i)   
         sortsymi = sortsym(i)
         j  = n/2
         dj = j
-                                ;print,'i,x,y,sortsymi=',i,xi,yi,sortsymi
-                                ;print,'n,j,dj=',n,j,dj
         last = 0
         fail = 0
         while abs(x(j)-signx*xi) gt 1e-6 or abs(y(j)-signy*yi) gt 1e-6 do begin
@@ -5007,8 +4960,6 @@ function symmdiff,direction,a,x,y,report=report,anti=anti
               break
            endif
            
-                                ;print,'j,dj,sorting=',j,dj,sorting(j)
-
            if dj eq 1 then last = 1 else dj = (dj+1)/2
 
            if sortsymi le sorting(j) then j = j - dj else j = j + dj
@@ -5018,8 +4969,6 @@ function symmdiff,direction,a,x,y,report=report,anti=anti
 
         endwhile 
 
-                                ;print,'solution j,x,y,sort=',j,x(j),y(j),sorting(j)
-
         if fail then begin
            print,'error in symdiff: incorrect number of mirror points'
            print,'i,j,dj,last=',i,j,dj,last
@@ -5028,62 +4977,63 @@ function symmdiff,direction,a,x,y,report=report,anti=anti
            diff(i)=1e30
            retall
         endif else begin
-           if keyword_set(anti) then diff(i)= a(i)+a(j) else diff(i)= a(i)-a(j)
-           diff(j)=-diff(i)
-           if report and abs(diff(i)) gt report then print,"i,x,y,diff=",i,xi,yi,diff(i)
+           if keyword_set(anti) then diff(i) = a(i) + a(j) $
+           else diff(i) = a(i) - a(j)
+           diff(j) = -diff(i)
+           if report and abs(diff(i)) gt report then $
+              print,"i,x,y,diff=", i, xi, yi, diff(i)
         endelse
      endif
   endfor
-  return,diff
+  return, diff
 
 end
-;===========================================================================
-function filledge,a
+;==============================================================================
+function filledge, a
 
 ; On the edges use copy of closest cells
 
   common debug_param & on_error, onerror
 
-  siz=size(a)
-  n1=siz(1)
-  n2=siz(2)
+  siz = size(a)
+  n1 = siz(1)
+  n2 = siz(2)
 
-  result=a
-  result(0,*)   =result(1,*)
-  result(*,0)   =result(*,1)
-  result(n1-1,*)=result(n1-2,*)
-  result(*,n2-1)=result(*,n2-2)
+  result = a
+  result(0,*)    = result(1,*)
+  result(*,0)    = result(*,1)
+  result(n1-1,*) = result(n1-2,*)
+  result(*,n2-1) = result(*,n2-2)
 
-  return,result
+  return, result
 end
+;==============================================================================
+pro gengrid, name, x, y, xc, yc, vol2, u, v
 
-;===========================================================================
-pro gengrid,name,x,y,xc,yc,vol2,u,v
-;
 ; From cell center coordinates x,y calculate cell corner coordinates xc,yc,
 ; cell volumes. Check for array sizes of the optional u,v arguments.
 ; The name of the calling function is shown for error messages.
-;===========================================================================
+
   common debug_param & on_error, onerror
 
-  siz=size(x)
+  siz = size(x)
   if siz(0) ne 2 then begin
-     print,'Function ',name,' is for 2D arrays only'
+     print, 'Function ', name, ' is for 2D arrays only'
      retall
   endif
 
-  n1=siz(1)
-  n2=siz(2)
+  n1 = siz(1)
+  n2 = siz(2)
 
-  error=''
-  siz=size(y)
+  error = ''
+  siz = size(y)
   if siz(0) ne 2 or siz(1) ne n1 or siz(2) ne n2 then error='2nd coord'
   if keyword_set(u) then begin
-     siz=size(u)
+     siz = size(u)
      if siz(0) ne 2 or siz(1) ne n1 or siz(2) ne n2 then error='1st func'
   endif
   if keyword_set(v) then begin
-     siz=size(v)
+     siz = size(v)
      if siz(0) ne 2 or siz(1) ne n1 or siz(2) ne n2 then error='2nd func'
   endif
   if error ne '' then begin
@@ -5091,76 +5041,75 @@ pro gengrid,name,x,y,xc,yc,vol2,u,v
      retall
   endif
 
-; Coordinates for cell corners
-  xc=(x(0:n1-2,0:n2-2)+x(0:n1-2,1:n2-1)+x(1:n1-1,0:n2-2)+x(1:n1-1,1:n2-1))/4
-  yc=(y(0:n1-2,0:n2-2)+y(0:n1-2,1:n2-1)+y(1:n1-1,0:n2-2)+y(1:n1-1,1:n2-1))/4
+  ;; Coordinates for cell corners
+  xc = (x(0:n1-2,0:n2-2) + x(0:n1-2,1:n2-1) + $
+        x(1:n1-1,0:n2-2) + x(1:n1-1,1:n2-1))/4
+  yc = (y(0:n1-2,0:n2-2) + y(0:n1-2,1:n2-1) + $
+        y(1:n1-1,0:n2-2) + y(1:n1-1,1:n2-1))/4
 
 ; Calculate 2*volume=(diagonal_1 X diagonal_2)
-  vol2=dblarr(n1,n2)+1
+  vol2 = dblarr(n1,n2) + 1
   vol2(1:n1-2,1:n2-2)= $
-     ((xc(1:n1-2,1:n2-2)-xc(0:n1-3,0:n2-3))*(yc(0:n1-3,1:n2-2)-yc(1:n1-2,0:n2-3)) $
-      -(yc(1:n1-2,1:n2-2)-yc(0:n1-3,0:n2-3))*(xc(0:n1-3,1:n2-2)-xc(1:n1-2,0:n2-3)))
+     ((xc(1:n1-2,1:n2-2) - xc(0:n1-3,0:n2-3)) * $
+      (yc(0:n1-3,1:n2-2) - yc(1:n1-2,0:n2-3)) - $
+      (yc(1:n1-2,1:n2-2) - yc(0:n1-3,0:n2-3)) * $
+      (xc(0:n1-3,1:n2-2) - xc(1:n1-2,0:n2-3)))
 
 end
+;==============================================================================
+function intedge, f, xc
 
-;===========================================================================
-function intedge,f,xc
-;
 ; Integrate the neighbouring values of "f" for the four edges described by "xc"
 ; The size of "f", "xc", and the result are n1*n2, (n1-1)*(n2-1), and n1*n2
 ; respectively, but only the inner (n1-2)*(n2-2) points are calculated, the
 ; edge values are 0-s.
-;===========================================================================
 
   common debug_param & on_error, onerror
 
-  siz=size(f)
-  n1=siz(1)
-  n2=siz(2)
+  siz = size(f)
+  n1 = siz(1)
+  n2 = siz(2)
 
-  intf=dblarr(n1,n2)
-  intf(1:n1-2,1:n2-2)=-(xc(1:n1-2,1:n2-2)-xc(0:n1-3,1:n2-2))*f(1:n1-2,2:n2-1) $
-                      -(xc(1:n1-2,0:n2-3)-xc(1:n1-2,1:n2-2))*f(2:n1-1,1:n2-2) $
-                      -(xc(0:n1-3,0:n2-3)-xc(1:n1-2,0:n2-3))*f(1:n1-2,0:n2-3) $
-                      -(xc(0:n1-3,1:n2-2)-xc(0:n1-3,0:n2-3))*f(0:n1-3,1:n2-2)
+  intf = dblarr(n1,n2)
+  intf(1:n1-2,1:n2-2) = $
+     -(xc(1:n1-2,1:n2-2) - xc(0:n1-3,1:n2-2))*f(1:n1-2,2:n2-1) $
+     -(xc(1:n1-2,0:n2-3) - xc(1:n1-2,1:n2-2))*f(2:n1-1,1:n2-2) $
+     -(xc(0:n1-3,0:n2-3) - xc(1:n1-2,0:n2-3))*f(1:n1-2,0:n2-3) $
+     -(xc(0:n1-3,1:n2-2) - xc(0:n1-3,0:n2-3))*f(0:n1-3,1:n2-2)
 
-  return,intf
+  return, intf
 
 end
+;==============================================================================
+function intedge_rz, f, rc, zc
 
-;===========================================================================
-function intedge_rz,f,rc,zc
-;
 ; Integrate r_edge*f_neighbour*dz for the four cell edges.
 ; assuming axial symmetry in the ignored direction.
 ; Only the inner (n1-2)*(n2-2) points are calculated, the edge values are 0-s.
-;
-;===========================================================================
 
   common debug_param & on_error, onerror
 
-  siz=size(f)
-  n1=siz(1)
-  n2=siz(2)
+  siz = size(f)
+  n1 = siz(1)
+  n2 = siz(2)
 
-  intf=dblarr(n1,n2)
+  intf = dblarr(n1,n2)
   intf(1:n1-2,1:n2-2)= $
-     -f(1:n1-2,2:n2-1)*(rc(1:n1-2,1:n2-2)+rc(0:n1-3,1:n2-2)) $
-     *(zc(1:n1-2,1:n2-2)-zc(0:n1-3,1:n2-2)) $
-     -f(2:n1-1,1:n2-2)*(rc(1:n1-2,0:n2-3)+rc(1:n1-2,1:n2-2)) $
-     *(zc(1:n1-2,0:n2-3)-zc(1:n1-2,1:n2-2)) $
-     -f(1:n1-2,0:n2-3)*(rc(0:n1-3,0:n2-3)+rc(1:n1-2,0:n2-3)) $
-     *(zc(0:n1-3,0:n2-3)-zc(1:n1-2,0:n2-3)) $
-     -f(0:n1-3,1:n2-2)*(rc(0:n1-3,1:n2-2)+rc(0:n1-3,0:n2-3)) $
-     *(zc(0:n1-3,1:n2-2)-zc(0:n1-3,0:n2-3))
+     -f(1:n1-2,2:n2-1)*(rc(1:n1-2,1:n2-2) + rc(0:n1-3,1:n2-2)) $
+     *(zc(1:n1-2,1:n2-2) - zc(0:n1-3,1:n2-2)) $
+     -f(2:n1-1,1:n2-2)*(rc(1:n1-2,0:n2-3) + rc(1:n1-2,1:n2-2)) $
+     *(zc(1:n1-2,0:n2-3) - zc(1:n1-2,1:n2-2)) $
+     -f(1:n1-2,0:n2-3)*(rc(0:n1-3,0:n2-3) + rc(1:n1-2,0:n2-3)) $
+     *(zc(0:n1-3,0:n2-3) - zc(1:n1-2,0:n2-3)) $
+     -f(0:n1-3,1:n2-2)*(rc(0:n1-3,1:n2-2) + rc(0:n1-3,0:n2-3)) $
+     *(zc(0:n1-3,1:n2-2) - zc(0:n1-3,0:n2-3))
 
-  return,intf
+  return, intf
 
 end
+;==============================================================================
+function grad_2d, idir, f, x, y
 
-;===========================================================================
-function grad_2d,idir,f,x,y
-;
 ; Take gradient of "f" in direction "idir" on the "x,y" structured 2D grid.
 ; Gradient is the contour integral of edge_normal_idir*f_edge_averaged
 ; divided by cell_volume for each cells. The cell corners are at the
@@ -5169,7 +5118,6 @@ function grad_2d,idir,f,x,y
 ; the value in the cell center cancels.
 ; Gradient can be calculated for inner points only, edge values are
 ; copies of inner neighbors.
-;===========================================================================
 
   common debug_param & on_error, onerror
 
@@ -5179,16 +5127,15 @@ function grad_2d,idir,f,x,y
      retall
   endif
 
-  gengrid,'grad',x,y,xc,yc,vol2,f
+  gengrid,'grad', x, y, xc, yc, vol2, f
 
-  if idir eq 1 then return,filledge( intedge(f,yc)/vol2) $
-  else              return,filledge(-intedge(f,xc)/vol2)
+  if idir eq 1 then return, filledge( intedge(f,yc)/vol2) $
+  else              return, filledge(-intedge(f,xc)/vol2)
 
 end
+;==============================================================================
+function grad_rz, idir, f, r, z
 
-;===========================================================================
-function grad_rz,idir,f,r,z
-;
 ; Take gradient of "f" in direction "idir" on the "r,z" structured 2D grid
 ; assuming axial symmetry in the ignored direction.
 ; Gradient is the contour integral of edge_normal_idir*f*R_edge_averaged
@@ -5198,7 +5145,7 @@ function grad_rz,idir,f,r,z
 ; the value in the cell center cancels for idir=2, or equals +f/2R for idir=1.
 ; Gradient can be calculated for inner points only, edge values are
 ; copies of inner neighbors.
-;===========================================================================
+;==============================================================================
 
   common debug_param & on_error, onerror
 
@@ -5208,21 +5155,21 @@ function grad_rz,idir,f,r,z
      retall
   endif
 
-  gengrid,'grad_rz',r,z,rc,zc,vol2,f
+  gengrid, 'grad_rz', r, z, rc, zc, vol2, f
 
-  if idir eq 1 then return,filledge( (intedge_rz(f,rc,zc)/vol2 - f)/2/r ) $
-  else              return,filledge( -intedge(f,rc^2)/vol2/2/r)
+  if idir eq 1 then return, filledge( (intedge_rz(f,rc,zc)/vol2 - f)/2/r ) $
+  else              return, filledge( -intedge(f,rc^2)/vol2/2/r)
 
 end
-;===========================================================================
-function div3,u,v,w,x,y,z
+;==============================================================================
+function div3, u, v, w, x, y, z
 
   return, diff2(1,u,x) + diff2(2,v,y) + diff2(3,w,z)
 
 end
-;===========================================================================
-function div,u,v,x,y
-;
+;==============================================================================
+function div, u, v, x, y
+
 ; Take divergence of "u,v" vector with respect to "x,y" on a structured 2D grid
 ; Divergence is the contour integral of edge_normal.(u,v)_edge_averaged
 ; divided by cell_volume for each cells. The cell corners are at the
@@ -5231,7 +5178,6 @@ function div,u,v,x,y
 ; the value in the cell center cancels.
 ; Divergence can be calculated for inner points only, edge values are
 ; copies of inner neighbors.
-;===========================================================================
 
   common debug_param & on_error, onerror
 
@@ -5241,15 +5187,14 @@ function div,u,v,x,y
      retall
   endif
 
-  gengrid,'div',x,y,xc,yc,vol2,u,v
+  gengrid, 'div', x, y, xc, yc, vol2, u, v
 
-  return,filledge((intedge(u,yc)-intedge(v,xc))/vol2)
+  return, filledge((intedge(u,yc) - intedge(v,xc))/vol2)
 
 end
+;==============================================================================
+function div_rz, u, v, r, z
 
-;===========================================================================
-function div_rz,u,v,r,z
-;
 ; Take divergence of "u,v" vector with respect to "r,z" on a structured 2D grid
 ; assuming axial symmetry in the ignored direction.
 ; Divergence is the contour integral of edge_normal.(u,v)*R_edge_averaged
@@ -5259,7 +5204,7 @@ function div_rz,u,v,r,z
 ; the value in the cell center is simply u/(2R).
 ; Divergence can be calculated for inner points only, edge values are
 ; copies of inner neighbors.
-;===========================================================================
+;==============================================================================
 
   common debug_param & on_error, onerror
 
@@ -5269,20 +5214,17 @@ function div_rz,u,v,r,z
      retall
   endif
 
-  gengrid,'div_rz',r,z,rc,zc,vol2,u,v
+  gengrid,'div_rz', r, z, rc, zc, vol2, u, v
 
-  return,filledge(((intedge_rz(u,rc,zc)-intedge(v,rc^2))/vol2 + u)/2/r)
+  return, filledge(((intedge_rz(u,rc,zc) - intedge(v,rc^2))/vol2 + u)/2/r)
 
 end
+;==============================================================================
+function curl, u, v, x, y
 
-;===========================================================================
-function curl,u,v,x,y
-;
 ; Take curl of "u,v" vector with respect to "x,y" on a structured 2D grid.
 ; Curl is the contour integral of edge_vector.(u,v)_edge_averaged
 ; divided by cell_volume for each cells. See also comments for div function.
-;
-;===========================================================================
 
   common debug_param & on_error, onerror
 
@@ -5292,22 +5234,20 @@ function curl,u,v,x,y
      retall
   endif
 
-  gengrid,'curl',x,y,xc,yc,vol2,u,v
+  gengrid,'curl', x, y, xc, yc, vol2, u, v
 
-  return,filledge((intedge(u,xc)+intedge(v,yc))/vol2)
+  return, filledge((intedge(u,xc) + intedge(v,yc))/vol2)
 
 end
+;==============================================================================
+function curl_rz, u, v, r, z
 
-;===========================================================================
-function curl_rz,u,v,r,z
-;
 ; Take curl of "u,v" vector with respect to "r,z" on a structured 2D grid
 ; with axial symmetry in the ignored direction.
 ; Curl is the contour integral of edge_vector.(u,v)*R_edge_averaged
 ; divided by R*cell_volume for each cells - v/R.
 ; See also comments for the div_rz function on edge average and edge cells.
-;
-;===========================================================================
+
   common debug_param & on_error, onerror
 
   if n_elements(u) eq 0 or n_elements(v) eq 0 $
@@ -5316,66 +5256,65 @@ function curl_rz,u,v,r,z
      retall
   endif
 
-  gengrid,'curl',r,z,rc,zc,vol2,u,v
+  gengrid, 'curl', r, z, rc, zc, vol2, u, v
 
-  return,filledge(-((intedge_rz(v,rc,zc)+intedge(u,rc^2))/vol2 - v)/2/r)
+  return, filledge(-((intedge_rz(v,rc,zc) + intedge(u,rc^2))/vol2 - v)/2/r)
 
 end
+;==============================================================================
+function quadruplet, $
+   nx, x0, x1, dx, ny, y0, y1, dy, nz, z0, z1, dz, nw, w0, w1,dw
 
-;===========================================================================
-function quadruplet,nx,x0,x1,dx,ny,y0,y1,dy,nz,z0,z1,dz,nw,w0,w1,dw
-;
 ; Produce an index array corresponding to the Fortran 90 triplet notation
 ;
 ; Usage: cut=quadruplet(100,0,30,2,100,30,40,1)
 ;
 ;        velvector=25*25  &  velpos=dblarr(velvector,2)
 ;        velpos(*,*)=x(quadruplet(100,0,99,4,100,30,69,2,2,0,1,1))
-;===========================================================================
 
   common debug_param & on_error, onerror
 
   if keyword_set(dx) then begin
-     checkdim,1,nx,x0,x1,dx
-     all=lindgen(x1+1)
-     sub=all(x0:x1)
-     ind=sub(where(sub mod dx eq x0 mod dx))
+     checkdim, 1, nx, x0, x1, dx
+     all = lindgen(x1+1)
+     sub = all(x0:x1)
+     ind = sub(where(sub mod dx eq x0 mod dx))
   end
   if keyword_set(dy) then begin
-     checkdim,2,ny,y0,y1,dy
-     ixs=ind
-     all=lindgen(y1+1)
-     sub=all(y0:y1)
-     iys=sub(where(sub mod dy eq y0 mod dy))
-     ind=(ixs # (0*iys+1)) + ((0*ixs+nx) # iys)
+     checkdim, 2, ny, y0, y1, dy
+     ixs = ind
+     all = lindgen(y1+1)
+     sub = all(y0:y1)
+     iys = sub(where(sub mod dy eq y0 mod dy))
+     ind = (ixs # (0*iys+1)) + ((0*ixs+nx) # iys)
   end
   if keyword_set(dz) then begin
-     checkdim,3,nz,z0,z1,dz
-     ixys=ind
-     nxy=long(nx)*long(ny)
-     all=lindgen(z1+1)
-     sub=all(z0:z1)
-     izs=sub(where(sub mod dz eq z0 mod dz))
-     ind=lonarr(n_elements(ixs),n_elements(iys),n_elements(izs))
-     for iz=0,n_elements(izs)-1 do ind(*,*,iz)=ixys + izs(iz)*nxy
+     checkdim, 3, nz, z0, z1, dz
+     ixys = ind
+     nxy = long(nx)*long(ny)
+     all = lindgen(z1+1)
+     sub = all(z0:z1)
+     izs = sub(where(sub mod dz eq z0 mod dz))
+     ind = lonarr(n_elements(ixs),n_elements(iys),n_elements(izs))
+     for iz = 0,n_elements(izs)-1 do ind(*,*,iz) = ixys + izs(iz)*nxy
   end
   if keyword_set(dw) then begin
-     checkdim,4,nw,w0,w1,dw
+     checkdim, 4, nw, w0, w1, dw
      ixyzs=ind
-     nxyz=long(nx)*long(ny)*long(nz)
-     all=lindgen(w1+1)
-     sub=all(w0:w1)
-     iws=sub(where(sub mod dw eq w0 mod dw))
-     ind=lonarr(n_elements(ixs),n_elements(iys),n_elements(izs),n_elements(iws))
-     for iw=0,n_elements(iws)-1 do ind(*,*,*,iw)=ixyzs + iws(iw)*nxyz
+     nxyz = long(nx)*long(ny)*long(nz)
+     all = lindgen(w1+1)
+     sub = all(w0:w1)
+     iws = sub(where(sub mod dw eq w0 mod dw))
+     ind = $
+        lonarr(n_elements(ixs),n_elements(iys),n_elements(izs),n_elements(iws))
+     for iw = 0, n_elements(iws)-1 do ind(*,*,*,iw) = ixyzs + iws(iw)*nxyz
   end
 
-  return,ind
+  return, ind
 end
+;==============================================================================
+function triplet, x0, x1, dx, y0, y1, dy, z0, z1, dz, w0, w1, dw
 
-;===========================================================================
-function triplet,x0,x1,dx,y0,y1,dy,z0,z1,dz,w0,w1,dw
-;
 ; Produce an index array corresponding to the Fortran 90 triplet notation
 ;
 ; Usage: cut=triplet(0,99,2,0,99,2)
@@ -5386,31 +5325,29 @@ function triplet,x0,x1,dx,y0,y1,dy,z0,z1,dz,w0,w1,dw
 ; Note: the resulting indices are valid for an array of size
 ;
 ;      (x1+1)*(y1+1)*(z1+1)*(w1+1)
-;
-;===========================================================================
 
   common debug_param & on_error, onerror
 
   if keyword_set(dw) then $
-     return,quadruplet(x1+1,x0,x1,dx,y1+1,y0,y1,dy,z1+1,z0,z1,dz,w1+1,w0,w1,dw)
+     return, quadruplet(x1+1, x0, x1, dx, y1+1, y0, y1, dy, z1+1, z0, z1, dz, $
+                        w1+1, w0, w1, dw)
 
   if keyword_set(dz) then $
-     return,quadruplet(x1+1,x0,x1,dx,y1+1,y0,y1,dy,z1+1,z0,z1,dz)
+     return, quadruplet(x1+1, x0, x1, dx, y1+1, y0, y1, dy, z1+1, z0, z1, dz)
 
   if keyword_set(dy) then $
-     return,quadruplet(x1+1,x0,x1,dx,y1+1,y0,y1,dy)
+     return, quadruplet(x1+1, x0, x1, dx, y1+1, y0, y1, dy)
 
   if keyword_set(dx) then $
-     return,quadruplet(x1+1,x0,x1,dx)
+     return, quadruplet(x1+1, x0, x1, dx)
 
   print,'Error in TRIPLET: All strides are 0!'
   retall
 
 end
+;==============================================================================
+function coarsen, a, boxsize, fd=fd
 
-;==========================================
-function coarsen,a,boxsize,fd=fd
-;
 ; Produce a coarser array from "a" by averaging out cells in a box.
 ; The box size can be defined by a scalar (n long interval, n*n square,
 ; or n*n*n cube or n*n*n*n hyper cube) or as an
@@ -5427,15 +5364,15 @@ function coarsen,a,boxsize,fd=fd
      retall
   endif
 
-  ndim=size(a,/n_dim)
+  ndim = size(a, /n_dim)
 
   if(ndim eq 0 or ndim gt 4)then begin
      print,'coarse requires a 1, 2, 3 or 4D array for the 1st argument'
      retall
   endif
-  nx=size(a,/dim)
+  nx = size(a, /dim)
 
-  ndim_box=size(box,/n_dim)
+  ndim_box = size(box,/n_dim)
   if ndim_box eq 0 then begin
      n = intarr(ndim) + boxsize
   endif else if ndim_box eq ndim then begin
@@ -5455,56 +5392,55 @@ function coarsen,a,boxsize,fd=fd
   endcase else case ndim of
      1: begin
         result = dblarr(nx(0)/n(0))
-        for ix=0L,nx(0)/n(0)-1 do $
-           for i=0L,n(0)-1 do $
-              result(ix)=result(ix) + a(ix*n(0)+i)
+        for ix = 0L, nx(0)/n(0)-1 do $
+           for i = 0L, n(0)-1 do $
+              result(ix) = result(ix) + a(ix*n(0)+i)
         result=result/n(0)
      end
      2: begin
         result = dblarr(nx(0)/n(0),nx(1)/n(1))
-        for ix=0L,nx(0)/n(0)-1 do $
-           for iy=0L,nx(1)/n(1)-1 do $
-              for i=0L,n(0)-1 do $
-                 for j=0L,n(1)-1 do $
+        for ix = 0L, nx(0)/n(0)-1 do $
+           for iy = 0L, nx(1)/n(1)-1 do $
+              for i = 0L,n(0)-1 do $
+                 for j = 0L,n(1)-1 do $
                     result(ix,iy) = result(ix,iy) + a(ix*n(0)+i,iy*n(1)+j)
         result=result/n(0)/n(1)
      end
      3: begin
-        result=dblarr(nx(0)/n(0),nx(1)/n(1),nx(2)/n(2))
-        for ix=0L,nx(0)/n(0)-1 do $
-           for iy=0L,nx(1)/n(1)-1 do $
-              for iz=0L,nx(2)/n(2)-1 do $
-                 for i=0L,n(0)-1 do $
-                    for j=0L,n(1)-1 do $
-                       for k=0L,n(2)-1 do $
+        result = dblarr(nx(0)/n(0),nx(1)/n(1),nx(2)/n(2))
+        for ix = 0L, nx(0)/n(0)-1 do $
+           for iy = 0L, nx(1)/n(1)-1 do $
+              for iz = 0L, nx(2)/n(2)-1 do $
+                 for i = 0L, n(0)-1 do $
+                    for j = 0L, n(1)-1 do $
+                       for k = 0L, n(2)-1 do $
                           result(ix,iy,iz) = result(ix,iy,iz) $
            + a(ix*n(0)+i,iy*n(1)+j,iz*n(2)+k)
         result = result/n(0)/n(1)/n(2)
      end
      4: begin
         result = dblarr(nx(0)/n(0),nx(1)/n(1),nx(2)/n(2),nx(3)/n(3))
-        for ix=0L,nx(0)/n(0)-1 do $
-           for iy=0L,nx(1)/n(1)-1 do $
-              for iz=0L,nx(2)/n(2)-1 do $
-                 for iw=0L,nx(3)/n(3)-1 do $
-                    for i=0L,n(0)-1 do $
-                       for j=0L,n(1)-1 do $
-                          for k=0L,n(2)-1 do $
-                             for l=0L,n(3)-1 do $
+        for ix = 0L, nx(0)/n(0)-1 do $
+           for iy = 0L, nx(1)/n(1)-1 do $
+              for iz = 0L, nx(2)/n(2)-1 do $
+                 for iw = 0L, nx(3)/n(3)-1 do $
+                    for i = 0L, n(0)-1 do $
+                       for j = 0L, n(1)-1 do $
+                          for k = 0L, n(2)-1 do $
+                             for l = 0L, n(3)-1 do $
                                 result(ix,iy,iz,iw) = result(ix,iy,iz,iw) $
            + a(ix*n(0)+i,iy*n(1)+j,iz*n(2)+k,iw*n(3)+l)
         result = result/n(0)/n(1)/n(2)/n(3)
      end
   endcase
 
-  return,result
+  return, result
 end
-
-;===========================================================================
-pro checkdim,idim,nx,x0,x1,dx
+;==============================================================================
+pro checkdim, idim, nx, x0, x1, dx
 
 ; Check quadruplet for conditions nx>x1>=x0>=0 and dx>0
-;===========================================================================
+
   common debug_param & on_error, onerror
 
   if nx le 0 then begin
@@ -5530,11 +5466,9 @@ pro checkdim,idim,nx,x0,x1,dx
 
   return
 end
-
-;===================================================================
-pro plot_grid,x,y,lines=lines,xstyle=xstyle,ystyle=ystyle,polar=polar,$
-              xrange=xrange,yrange=yrange,noorigin=noorigin
-;===================================================================
+;==============================================================================
+pro plot_grid, x, y, lines=lines, xstyle=xstyle, ystyle=ystyle, $
+               polar=polar, xrange=xrange, yrange=yrange, noorigin=noorigin
 
   common debug_param & on_error, onerror
 
@@ -5545,8 +5479,8 @@ pro plot_grid,x,y,lines=lines,xstyle=xstyle,ystyle=ystyle,polar=polar,$
      retall
   endif
 
-  xx=reform2(x)
-  sizx=size(xx)
+  xx = reform2(x)
+  sizx = size(xx)
 
   if (n_elements(polar) eq 0) then polar = 0
 
@@ -5554,20 +5488,20 @@ pro plot_grid,x,y,lines=lines,xstyle=xstyle,ystyle=ystyle,polar=polar,$
      case sizx(0) of
         3:begin
            if sizx(3) ne 2 then goto, ERROR1
-           yy=xx(*,*,1)
-           xx=xx(*,*,0)
+           yy = xx(*,*,1)
+           xx = xx(*,*,0)
         end
         2:begin
            if sizx(2) ne 2 then goto, ERROR1
-           yy=xx(*,1)
-           xx=xx(*,0)
-           lines=0
+           yy = xx(*,1)
+           xx = xx(*,0)
+           lines = 0
         end
         else: goto, ERROR1
      endcase
   endif else begin
-     yy=reform2(y)
-     sizy=size(yy)
+     yy = reform2(y)
+     sizy = size(yy)
      if sizx(0) ne sizy(0)            then goto, ERROR2
      if max(abs(sizx-sizy)) ne 0      then goto, ERROR2
      if sizx(0) ne 2 and sizx(0) ne 1 then goto, ERROR2
@@ -5587,22 +5521,22 @@ pro plot_grid,x,y,lines=lines,xstyle=xstyle,ystyle=ystyle,polar=polar,$
            for iy=0,sizx(2)-2 do $
               if((xx(ix,iy)   ne 0 or yy(ix,iy)   ne 0) and $
                  (xx(ix,iy+1) ne 0 or yy(ix,iy+1) ne 0)) then $
-                    oplot,[xx(ix,iy),xx(ix,iy+1)],[yy(ix,iy),yy(ix,iy+1)],POLAR=polar,$
-                          psym=0
+                    oplot,[xx(ix,iy), xx(ix,iy+1)],[yy(ix,iy), yy(ix,iy+1)],$
+                          POLAR=polar, psym=0
 
         for iy=0,sizx(2)-1 do $
            for ix=0,sizx(1)-2 do $
               if((xx(ix,iy)   ne 0 or yy(ix,iy)   ne 0) and $
                  (xx(ix+1,iy) ne 0 or yy(ix+1,iy) ne 0)) then $
-                    oplot,[xx(ix,iy),xx(ix+1,iy)],[yy(ix,iy),yy(ix+1,iy)],POLAR=polar,$
-                          psym=0
+                    oplot,[xx(ix,iy), xx(ix+1,iy)], [yy(ix,iy), yy(ix+1,iy)], $
+                          POLAR=polar, psym=0
 
      endif else begin
 
         for ix=0,sizx(1)-1 do $
-           oplot,xx(ix,*),yy(ix,*),POLAR=polar,psym=0
+           oplot, xx(ix,*), yy(ix,*), POLAR=polar, psym=0
         for iy=0,sizx(2)-1 do $
-           oplot,xx(*,iy),yy(*,iy),POLAR=polar,psym=0
+           oplot, xx(*,iy),yy(*,iy), POLAR=polar, psym=0
 
      endelse
 
@@ -5610,11 +5544,12 @@ pro plot_grid,x,y,lines=lines,xstyle=xstyle,ystyle=ystyle,polar=polar,$
 
      if polar then $
         plot, xx, yy, PSYM=3, SYMSIZE=!p.symsize, $
-              XRANGE=xrange, YRANGE=yrange, XSTYLE=xstyle, YSTYLE=ystyle, /NOERASE,$
-              /POLAR $
+              XRANGE=xrange, YRANGE=yrange, XSTYLE=xstyle, YSTYLE=ystyle, $
+              /NOERASE, /POLAR $
      else $
         plot, xx, yy, PSYM=1, SYMSIZE=!p.symsize, $
-              XRANGE=xrange, YRANGE=yrange, XSTYLE=xstyle, YSTYLE=ystyle, /NOERASE
+              XRANGE=xrange, YRANGE=yrange, XSTYLE=xstyle, YSTYLE=ystyle, $
+              /NOERASE
   endelse
 
   return
@@ -5629,20 +5564,17 @@ ERROR2:
   print,'Error: plot_grid,x,y requires x(nx,ny) y(nx,ny) arrays'
   retall
 
-
 end
-
-;==========================================
-pro compare,w0,w1,wnames,scalar=scalar
+;==============================================================================
+pro compare, w0, w1, wnames, scalar=scalar
 
 ; Compare all variables in w0 and w1 by calculating
 ; relative difference in the 1st norm.
-;==========================================
 
   common debug_param & on_error, onerror
 
-  sizew0=size(w0)
-  sizew1=size(w1)
+  sizew0 = size(w0)
+  sizew1 = size(w1)
 
   if sizew0(0) ne sizew1(0) then begin
      print,'w0 and w1 have different dimensions:',sizew0(0),' and ',sizew1(0)
@@ -5662,7 +5594,8 @@ pro compare,w0,w1,wnames,scalar=scalar
   endelse
 
   if max(abs(sizew0(1:ndim)-sizew1(1:ndim))) gt 0 then begin
-     print,'w0 and w1 have different sizes:',sizew0(1:ndim),' /= ',sizew1(1:ndim)
+     print,'w0 and w1 have different sizes:', $
+           sizew0(1:ndim), ' /= ', sizew1(1:ndim)
      retall
   endif
 
@@ -5673,13 +5606,13 @@ pro compare,w0,w1,wnames,scalar=scalar
      print, $
      'ind 2*max(|A-B|)/max(|A|+|B|) 2*sum(|A-B|)/sum(|A|+|B|) max(|A|+|B|)/2'
 
-  for iw=0,nw-1 do begin
+  for iw = 0, nw-1 do begin
      case ndim of
         1: begin
-           wsum=max(abs(w0(*,iw))+abs(w1(*,iw)))/2
-           wdif=max(abs(w0(*,iw)-w1(*,iw)))
-           wsum1=total(abs(w0(*,iw))+abs(w1(*,iw)))/2
-           wdif1=total(abs(w0(*,iw)-w1(*,iw)))
+           wsum = max(abs(w0(*,iw)) + abs(w1(*,iw)))/2
+           wdif = max(abs(w0(*,iw) - w1(*,iw)))
+           wsum1 = total(abs(w0(*,iw)) + abs(w1(*,iw)))/2
+           wdif1 = total(abs(w0(*,iw) - w1(*,iw)))
         end
         2: begin
            wsum = max(abs(w0(*,*,iw)) + abs(w1(*,*,iw)))/2
@@ -5696,17 +5629,16 @@ pro compare,w0,w1,wnames,scalar=scalar
      endcase
 
      if keyword_set(wnames) then begin
-        if wsum eq 0. then print,wnames(iw),' wsum=0' $
-        else               print,wnames(iw),wdif/wsum,wdif1/wsum1,wsum
+        if wsum eq 0. then print,wnames(iw), ' wsum=0' $
+        else               print,wnames(iw), wdif/wsum, wdif1/wsum1, wsum
      endif else begin
-        if wsum eq 0. then print,iw,' wsum=0' $
-        else               print,iw,wdif/wsum,wdif1/wsum1,wsum
+        if wsum eq 0. then print, iw,' wsum=0' $
+        else               print, iw, wdif/wsum, wdif1/wsum1, wsum
      endelse
 
   endfor
 end
-
-;=============================================================================
+;==============================================================================
 function rel_error, w1, w2, iws, fd=fd, scalar=scalar
 
 ; Calculate relative errors of w1 with respect to w2.
@@ -5789,8 +5721,7 @@ function rel_error, w1, w2, iws, fd=fd, scalar=scalar
   return, error/nw
 
 end
-
-;=============================================================================
+;==============================================================================
 function rel_errors, w0, w1, w2, w3, w4, w5, $
                      ivar=ivar, scalar=scalar, ratio=ratio, fd=fd
 
@@ -5850,8 +5781,9 @@ function rel_errors, w0, w1, w2, w3, w4, w5, $
 
   return,errors
 end
-;=============================================================================
+;==============================================================================
 pro read_log_line, line, array, firstcolumn, rowname
+
 ; read the numbers from a line into a double array starting from firstcolumn.
 ; Convert date-time string in ISO format into Julian day.
 ; If firstcolumn is not 0, set the rowname string from the actual 1st column
@@ -5880,125 +5812,105 @@ pro read_log_line, line, array, firstcolumn, rowname
   endif else $
      reads, line, array
 end
-     
-;=============================================================================
-pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
-             rownames, verbose=verbose, scalar=scalar
+;==============================================================================
+pro get_log, file, wlog, wlognames, logtime, timeunit, rownames, $
+             headlines=headlines, verbose=verbose, scalar=scalar, $
+             headeronly=headeronly
 
-; Read the log data from source. If source is an integer, it is 
-; interpreted as a unit number. If it is a string, it is taken as the
-; filename. Read the content of the file into wlog and the variable 
-; names into wlognames. 
+; Read the log data from file.
+; Read the content of the file into wlog (unless headeronly is set)
+; and the variable names into wlognames.
 ; The optional logtime argument is set to the time in hours.
 ; The optional rownames argument is set to string array from the first column.
-; If verbose is present set show verbose information.
-; If versbose is a string, attach it to 'wlog' in the verbose info.
-
+; If headlines is present, return the array of header lines.
+; If verbose is set, show verbose information.
+; If verbose is a string, attach it to 'wlog' in the verbose info.
+; If headeronly is set, only the header is read.
+  
   common debug_param & on_error, onerror
 
-  if not keyword_set(source) then begin
-     print, $
-        'Usage: get_log, source, wlog, wlognames [,logtime, timeunit] [,verbose=verbose]'
-     help, source, wlog, wlognames
+  if not keyword_set(file) then begin
+     print, 'Usage: get_log, file, wlog, [wlognames ...]'
+     help, file, wlog, wlognames
      retall
   endif
-
-  itype = size(source,/type)
-  if itype eq 2 or itype eq 3 then begin
-     filesource = 0
-     unit = source
-     file = 'unit ' + strtrim(string(unit),2)
-     stat = fstat(unit)
-     if not stat.open then begin
-        print,'get_log error: unit is not open'
-        retall
-     endif
-  endif else if itype eq 7 then begin
-     file = source
-     l = strlen(file)
-     if strmid(file, l-3) eq '.gz' then begin
-        ;; gunzip the file
-        filenew = strmid(file,0,l-3)
-        print,'gunzip -c '+file+' > '+filenew
-        spawn,'gunzip -c '+file+' > '+filenew
-        file = filenew
-     endif
-     l = strlen(file)
-     if strmid(file,l-4) eq '.csv' then begin
-        ;; read csv file
-        if not query_csv(file, info) then begin
-           print,'could not read CSV file '+file
-           retall
-        endif
-        nwlog = info.nfields
-        nt    = info.lines - 1 ; ignore the first line
-        ;; print,'CSV file: nwlog=', nwlog,', nt=', nt, format='(a,i4,a,i8)'
-        value = read_csv(file, header=wlognamesRead)
-        ;; print,'CSV fields:  wlognamesRead=', wlognamesRead
-        
-        if strlowcase(strmid(wlognamesRead[0],0,4)) eq 'date' then begin
-
-           ;; help,nwlog
-           wlog = dblarr(nt, nwlog+5)
-           wlognames = strarr(nwlog+5)
-           wlognames = ['year', 'mo', 'dy', 'hr', 'mn', 'sc', $
-                        wlognamesRead(1:*)]
-
-           ;; standardize the variable names
-           if wlognamesRead(1) eq 'dbn_nez' then wlognames(6)='B_NorthGeomag'
-           if wlognamesRead(2) eq 'dbe_nez' then wlognames(7)='B_EastGeomag'
-           if wlognamesRead(3) eq 'dbz_nez' then wlognames(8)='B_DownGeomag'
-           for i = 0, nt-1 do begin
-              ;; calculate the Julian day
-              ;; wlog(i,0) = date_to_julday(value.(0)[i])
-              wlog(i,0) = fix(strmid(value.(0)[i],0, 4))
-              wlog(i,1) = fix(strmid(value.(0)[i],5, 2))
-              wlog(i,2) = fix(strmid(value.(0)[i],8, 2))
-              wlog(i,3) = fix(strmid(value.(0)[i],11,2))
-              wlog(i,4) = fix(strmid(value.(0)[i],14,2))
-              wlog(i,5) = fix(strmid(value.(0)[i],17,2))
-           endfor
-           for i = 1, nwlog-1 do wlog(*,i+5) = value.(i)
-           ;; print,'Standardized wlognames=', wlognames
-        endif else begin
-           wlognames = wlognamesRead
-           wlog = dblarr(nt, nwlog)
-           for i = 0, nwlog-1 do wlog(*,i) = value.(i)
-        endelse
-
-        ;; exclude lines with any non-finite values
-        ii = where(total(~finite(wlog), 2) eq 0.0)
-	if n_elements(ii) ne nt then begin
-           wlog = wlog(ii,*)
-           print,'!!! CSV file contains NaNs! Reduced nt=',n_elements(ii), $
-                 format='(a,i8)'
-	endif
-        
-        logtime = log_time(wlog, wlognames)
-        return
-     endif
-     filesource=1
-     file = source
-     unit = 0
-     found = 0
-     while not found do begin
-        unit = unit + 1
-        stat = fstat(unit)
-        if not stat.open then found = 1
-     endwhile
-     openr,unit,file
-  endif else begin
-     print,'get_log error: source =',source,$
-           ' should be a unit number or a filename.'
-     retall
-  end
 
   if not keyword_set(verbose) then verbose = 0
   ;; If verbose is a string set the index string to it
   if size(verbose,/type) eq 7 then index = verbose else index = ''
 
+  ;; is there only one variable in the log file?
   if not keyword_set(scalar) then scalar = 0
-  
+
+  ;; read the header only
+  if not keyword_set(headeronly) then headeronly = 0
+
+  l = strlen(file)
+  if strmid(file, l-3) eq '.gz' then begin
+     ;; gunzip the file
+     filenew = strmid(file,0,l-3)
+     print,'gunzip -c '+file+' > '+filenew
+     spawn,'gunzip -c '+file+' > '+filenew
+     file = filenew
+  endif
+  l = strlen(file)
+  if strmid(file,l-4) eq '.csv' then begin
+     ;; read csv file
+     if not query_csv(file, info) then begin
+        print,'could not read CSV file '+file
+        retall
+     endif
+     nwlog = info.nfields
+     nt    = info.lines - 1     ; ignore the first line
+     if verbose then $
+        print,'CSV file: nwlog=', nwlog,', nt=', nt, format='(a,i4,a,i8)'
+     value = read_csv(file, header=wlognamesRead)
+
+     if strlowcase(strmid(wlognamesRead[0],0,4)) eq 'date' then begin
+        ;; Convert date string to columns
+        wlog = dblarr(nt, nwlog+5)
+        wlognames = strarr(nwlog+5)
+        wlognames = ['year', 'mo', 'dy', 'hr', 'mn', 'sc', wlognamesRead(1:*)]
+
+        ;; standardize the variable names
+        if wlognamesRead(1) eq 'dbn_nez' then wlognames(6)='B_NorthGeomag'
+        if wlognamesRead(2) eq 'dbe_nez' then wlognames(7)='B_EastGeomag'
+        if wlognamesRead(3) eq 'dbz_nez' then wlognames(8)='B_DownGeomag'
+        for i = 0, nt-1 do begin
+           wlog(i,0) = fix(strmid(value.(0)[i],0, 4))
+           wlog(i,1) = fix(strmid(value.(0)[i],5, 2))
+           wlog(i,2) = fix(strmid(value.(0)[i],8, 2))
+           wlog(i,3) = fix(strmid(value.(0)[i],11,2))
+           wlog(i,4) = fix(strmid(value.(0)[i],14,2))
+           wlog(i,5) = fix(strmid(value.(0)[i],17,2))
+        endfor
+        for i = 1, nwlog-1 do wlog(*,i+5) = value.(i)
+     endif else begin
+        wlognames = wlognamesRead
+        wlog = dblarr(nt, nwlog)
+        for i = 0, nwlog-1 do wlog(*,i) = value.(i)
+     endelse
+     if verbose then print,'wlognames=', wlognames
+
+     ;; exclude lines with any non-finite values
+     ii = where(total(~finite(wlog), 2) eq 0.0)
+     if n_elements(ii) ne nt then begin
+        wlog = wlog(ii,*)
+        print,'!!! CSV file contains NaNs! Reduced nt=',n_elements(ii), $
+              format='(a,i8)'
+     endif
+     logtime = log_time(wlog, wlognames)
+     return
+  endif
+  unit = 0
+  found = 0
+  while not found do begin
+     unit = unit + 1
+     stat = fstat(unit)
+     if not stat.open then found = 1
+  endwhile
+  openr, unit, file
+
   ;; Use buffers for efficient reading
   line  = ''
   firstcolumn = 0 ; first column with numbers
@@ -6009,19 +5921,18 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
   dbuf  = 10000L
   nt    = 0L
   while not eof(unit) do begin
-     on_ioerror,close_file
+     on_ioerror, close_file
 
      if isheader then begin
         readf, unit, line
 
         isheader = 0
-        if strmid(line,strlen(line)-6,6) eq "#START" then $
+        if strmid(line, strlen(line)-6, 6) eq "#START" then $
            readf, unit, line $
         else begin
            ;; check if the line contains any character that is not a
            ;; number or a separator of a date
-        
-           for i = 0, strlen(line)-1 do begin
+           for i = 0, strlen(line) - 1 do begin
               if strmatch(strmid(line,i,1), '[!	0123456789dDeET \.\+\-\:]') $
               then begin
                  isheader = 1
@@ -6077,52 +5988,56 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
               nwlog -= 1
            end
 
-           ;; create arrays to read data into
-           wlog_ = dblarr(nwlog)
-           wlog  = dblarr(nwlog,buf)
-           rownames = strarr(buf)
+           if not headeronly then begin
+              ;; create arrays to read data into
+              wlog_ = dblarr(nwlog)
+              wlog  = dblarr(nwlog, buf)
+              rownames = strarr(buf)
            
-           ;; read line into rowname, numbers, convert date to julday
-           read_log_line, line, wlog_, firstcolumn, rowname
+              ;; read line into rowname, numbers, convert date to julday
+              read_log_line, line, wlog_, firstcolumn, rowname
 
-           ;; store first line if it is fine
-           if total(finite(wlog_)) eq nwlog then begin
-              wlog(*,0) = wlog_
-              if firstcolumn then rownames(0) = rowname
-              nt = 1L
+              ;; store first line if it is fine
+              if total(finite(wlog_)) eq nwlog then begin
+                 wlog(*,0) = wlog_
+                 if firstcolumn then rownames(0) = rowname
+                 nt = 1L
+              endif
            endif
-           
            if verbose then begin
-              if filesource then print,'logfile',index,'  =',file
+              print,'logfile',index,'  =',file
               print,'headlines',index,':'
               print, format='(a)', strtrim(headlines,2)
 
               if firstcolumn then $
                  print,'  wlogrownames(0)= ', rownames[0]
 
-              for i=0, nwlog-1 do $
+              for i = 0, nwlog-1 do $
                  print, format='("  wlog",A,"(*,",I2,")= ",A)', $
                        index, i, wlognames(i)
            endif
-
         endelse
      endif else begin
+        ;; Stop reading the log file if headeronly is set
+        if keyword_set(headeronly) then goto, close_file
+        ;; read next line
         readf, unit, line
         read_log_line, line, wlog_, firstcolumn, rowname
         if total(finite(wlog_)) eq nwlog then begin
            wlog(*,nt) = wlog_
            if firstcolumn then rownames(nt) = rowname
-           nt=nt+1
+           nt = nt + 1
         endif
         if nt ge buf then begin
-           buf=buf+dbuf
-           wlog=[[wlog],[dblarr(nwlog,buf)]]
-           if firstcolumn then rownames = [[rownames],[strarr(buf)]]
+           buf = buf + dbuf
+           wlog=[[wlog], [dblarr(nwlog,buf)]]
+           if firstcolumn then rownames = [[rownames], [strarr(buf)]]
         endif
      endelse
 
   endwhile
-  close_file: if filesource then close,unit
+  close_file: close, unit
+  if headeronly then return
 
   if verbose then print,'Number of recorded timesteps: nt=',nt
 
@@ -6137,9 +6052,7 @@ pro get_log, source, wlog, wlognames, logtime, timeunit, headlines=headlines,$
   if verbose then print,'Setting logtime',index
 
 end
-
-;=============================================================================
-
+;==============================================================================
 pro plot_log
 
 ; Plot variables listed in the space separated func string from the
@@ -6407,10 +6320,11 @@ pro plot_log
                 /noerase, xstyle=-1, ystyle=-1
            
                                 ; print out legend or logfile name
-           if n_elements(legends) eq nlog and total(strlen(legends),/int) gt 0 $
+           if n_elements(legends) eq nlog and $
+              total(strlen(legends),/int) gt 0 $
            then legend=legends(ilog) $
            else legend=logfilenames(ilog)
-           xyouts,legendpos(1), $
+           xyouts, legendpos(1), $
                   ypos - float(!d.y_ch_size)/float(!d.y_size)*!p.charsize/2, $
                   '  '+legend
         endif
@@ -6422,7 +6336,7 @@ pro plot_log
   if strpos(!d.name,'X') lt 0 then loadct,39
 
 end
-;=============================================================================
+;==============================================================================
 pro rms_logfiles, logfilename, varname, tmin=tmin, tmax=tmax, verbose=verbose
 
 ; Print the rms deviation between two logfiles for variables in varname.
@@ -6430,15 +6344,17 @@ pro rms_logfiles, logfilename, varname, tmin=tmin, tmax=tmax, verbose=verbose
 
   common debug_param & on_error, onerror
 
-  interpol_logfiles,logfilename,var0,var1,varname,time,tmin=tmin,tmax=tmax,$
-                    verbose=verbose
-  string_to_array,varname,varnames,nvar
+  interpol_logfiles, logfilename, var0, var1, varname, time, $
+                     tmin=tmin, tmax=tmax, verbose=verbose
+  string_to_array, varname, varnames, nvar
   ntime = n_elements(time)
 
   print,'var rms(A-B) rsm(A) rms(B)'
   for ivar=0,nvar-1 do $
-     print, varnames(ivar), sqrt(total((var0(*,ivar) - var1(*,ivar))^2)/ntime), $
-           sqrt(total(var0(*,ivar)^2)/ntime), sqrt(total(var1(*,ivar)^2)/ntime)
+     print, varnames(ivar), $
+            sqrt(total((var0(*,ivar) - var1(*,ivar))^2)/ntime), $
+            sqrt(total(var0(*,ivar)^2)/ntime), $
+            sqrt(total(var1(*,ivar)^2)/ntime)
 
   print,'var |A-B| |A| |B|'
   for ivar=0,nvar-1 do $
@@ -6446,9 +6362,9 @@ pro rms_logfiles, logfilename, varname, tmin=tmin, tmax=tmax, verbose=verbose
            total(abs(var0(*,ivar)))/ntime, total(abs(var1(*,ivar)))/ntime
 
 end
-;============================================================================
-pro interpol_logfiles,logfilename,var0,var1,varname,time,tmin=tmin,tmax=tmax,$
-                      verbose=verbose
+;==============================================================================
+pro interpol_logfiles, logfilename, var0, var1, varname, time, $
+                       tmin=tmin, tmax=tmax, verbose=verbose
 
 ; Interpolate variables between two logfiles for variables in varname.
 ; If varname is not present, interpolate all variables.
@@ -6460,11 +6376,11 @@ pro interpol_logfiles,logfilename,var0,var1,varname,time,tmin=tmin,tmax=tmax,$
   get_log, logfilenames(0), wlog0, varnames0, verbose=verbose
   get_log, logfilenames(1), wlog1, varnames1, verbose=verbose
   if not keyword_set(varname) then varname = varnames0
-  interpol_log,wlog0,wlog1,var0,var1,varname,varnames0,varnames1,$
-               time,tmin=tmin,tmax=tmax
+  interpol_log, wlog0, wlog1, var0, var1, varname, varnames0, varnames1,$
+               time, tmin=tmin, tmax=tmax
 
 end
-;============================================================================
+;==============================================================================
 pro interpol_log, wlog0, wlog1, var0, var1, varname, varnames0, varnames1, $
                   time, tmin=tmin, tmax=tmax, timeunit=timeunit
 
@@ -6487,8 +6403,8 @@ pro interpol_log, wlog0, wlog1, var0, var1, varname, varnames0, varnames1, $
   nvar0 = n_elements(varnames0)
   nvar1 = n_elements(varnames1)
 
-  sizewlog0=size(wlog0)
-  sizewlog1=size(wlog1)
+  sizewlog0 = size(wlog0)
+  sizewlog1 = size(wlog1)
 
   if sizewlog0(0) ne 2 or sizewlog1(0) ne 2 then begin
      print,'wlog0 and wlog1 must be 2D arrays'
@@ -6537,13 +6453,11 @@ pro interpol_log, wlog0, wlog1, var0, var1, varname, varnames0, varnames1, $
   endfor
 
 end
-
-;==========================================
+;==============================================================================
 pro quit
    exit
 end
-;==========================================
-
+;==============================================================================
 pro set_space, nb, spacex, spacey, sizes, nx = nx, ny = ny
 
 ; Determines the size and multiplication factors for plotting perfect circles
@@ -6619,12 +6533,12 @@ pro set_space, nb, spacex, spacey, sizes, nx = nx, ny = ny
 
      if xs gt ys then begin
 
-        if (sizes.nbx*sizes.nby lt nb) then                               $
-           if (sizes.nbx le sizes.nby) then sizes.nbx = sizes.nbx + 1      $
-           else sizes.nby = sizes.nby + 1                                  $
-           else                                                        	$
-              if (sizes.nbx lt sizes.nby) and			$
-           (n_elements(nx) eq 0) and					$
+        if (sizes.nbx*sizes.nby lt nb) then                            $
+           if (sizes.nbx le sizes.nby) then sizes.nbx = sizes.nbx + 1  $
+           else sizes.nby = sizes.nby + 1                              $
+           else                                               	       $
+              if (sizes.nbx lt sizes.nby) and			       $
+           (n_elements(nx) eq 0) and				       $
            (n_elements(ny) eq 0) then begin
            temp = sizes.nby
            sizes.nby = sizes.nbx
@@ -6669,9 +6583,7 @@ pro set_space, nb, spacex, spacey, sizes, nx = nx, ny = ny
   sizes.yoff = (1.0 - sizes.yf*(sizes.bs*sizes.nby + spacey*(sizes.nby-1)))/2.0
 
 end
-
-;============================================================================
-
+;==============================================================================
 pro set_position, sizes, xipos, yipos, pos, rect = rect, $
                   xmargin = xmargin, ymargin = ymargin
 
@@ -6701,20 +6613,20 @@ pro set_position, sizes, xipos, yipos, pos, rect = rect, $
 
   if keyword_set(rect) then begin
 
-    if keyword_set(xmargin) then xmar = xmargin(0) 			$
+    if keyword_set(xmargin) then xmar = xmargin(0) $
     else xmar = spacex/2.0
 
-    if keyword_set(ymargin) then ymar = ymargin(0) 			$
+    if keyword_set(ymargin) then ymar = ymargin(0) $
     else ymar = spacey/2.0
 
-    xbuffer = 3.0*float(!d.x_ch_size)/float(!d.x_size) * !p.charsize +spacex/4.0
-    xtotal = 1.0 - (spacex*float(sizes.nbx-1) + xmar + xf2*spacex/2.0) - xbuffer
+    xbuffer = 3*float(!d.x_ch_size)/float(!d.x_size)*!p.charsize + spacex/4.0
+    xtotal = 1 - (spacex*float(sizes.nbx-1) + xmar + xf2*spacex/2.0) - xbuffer
     xbs = xtotal/(float(sizes.nbx)*xf)
 
     xoff = xmar - xf2*spacex/2.0 + xbuffer - spacex/4.0
 
-    ybuffer = 3.0*float(!d.y_ch_size)/float(!d.y_size) * !p.charsize
-    ytotal = 1.0 - (spacey*float(sizes.nby-1) + ymar + yf2*spacey/2.0) - ybuffer
+    ybuffer = 3*float(!d.y_ch_size)/float(!d.y_size) * !p.charsize
+    ytotal = 1 - (spacey*float(sizes.nby-1) + ymar + yf2*spacey/2.0) - ybuffer
     ybs = ytotal/(float(sizes.nby)*yf)
 
     yoff = spacey/4.0
@@ -6740,8 +6652,7 @@ pro set_position, sizes, xipos, yipos, pos, rect = rect, $
   pos= [xpos0,ypos0,xpos1,ypos1]
 
 end
-
-;============================================================================
+;==============================================================================
 pro plot_color_bar, pos, maxmin
 
 ; plot color bar based on the current color table
@@ -6774,31 +6685,38 @@ pro plot_color_bar, pos, maxmin
   !x.range=xrange & !y.range=yrange
 
 end
-
-;============================================================================
+;==============================================================================
 pro loadct_bw, color, reverse=reverse
+
+  ;; load color table and set the first and last elements to black-and-white
+  ;; reverse the order if reverse is set
+
   common colors
 
   if not keyword_set(reverse) then reverse=0
-  loadct,color
+  loadct, color
   if reverse then begin
-     r_orig=reverse(r_orig)
-     g_orig=reverse(g_orig)
-     b_orig=reverse(b_orig)
+     r_orig = reverse(r_orig)
+     g_orig = reverse(g_orig)
+     b_orig = reverse(b_orig)
   endif
-  r_orig(0)=0 & g_orig(0)=0 & b_orig(0)=0
-  r_orig(255)=255 & g_orig(255)=255 & b_orig(255)=255
-  r_curr=r_orig & g_curr=g_orig & b_curr=b_orig
-  tvlct,r_orig,g_orig,b_orig
+  r_orig(0) = 0
+  g_orig(0) = 0
+  b_orig(0) = 0
+  r_orig(255) = 255
+  g_orig(255) = 255
+  b_orig(255) = 255
+  r_curr = r_orig
+  g_curr = g_orig
+  b_curr = b_orig
+  tvlct, r_orig, g_orig, b_orig
 end
-;============================================================================
+;==============================================================================
 pro makect, color
 
   ;; Create color table corresponding to color='mid','blue','red','rwb','bwr'
 
   common debug_param & on_error, onerror
-
-
   common colors
 
   ;; Get number of colors
@@ -6906,12 +6824,13 @@ pro makect, color
   tvlct,r,g,b
 
 end
-
-;=============================================================================
+;==============================================================================
 pro save_pict, filename, headline, varname, w, x, $
                it, time, eqpar, ndim=ndim, gencoord=gencoord, $
                filetype=filetype, append=append
 
+  ;; Save data in the "IDL" format.
+  
   common debug_param & on_error, onerror
  
   if n_elements(filename) eq 0 or n_elements(headline) eq 0 or $
@@ -7008,16 +6927,17 @@ pro save_pict, filename, headline, varname, w, x, $
   close,unit
 
 end
-
-;=============================================================================
+;==============================================================================
 pro save_log, filename, headline, varname, array, badvalue=badvalue, $
               format=format
 
+  ;; save data in "log file" format: header, varnames, columns
+  
   common debug_param & on_error, onerror
 
   if not keyword_set(badvalue) then badvalue = 0
   
-  unit=1
+  unit = 1
   close, unit
 
   s = size(array)
@@ -7048,16 +6968,21 @@ end
 ;==============================================================================
 pro reset_axis
 
+  ;; reset various variables related to the axis/axes
+  ;; Useful if the code stopped in the middle of plotting
+  
   common debug_param & on_error, onerror
 
   !x.tickname = strarr(60)
   !y.tickname = strarr(60)
   if !x.title eq ' ' then !x.title = ''
   if !y.title eq ' ' then !y.title = ''
+  !x.range = 0
+  !y.range = 0
 
 end
 ;==============================================================================
-pro scatter_plot, xx, yy, f, f_min=f_min, f_max=f_max,            $
+pro scatter_plot, xx, yy, f, f_min=f_min, f_max=f_max, $
                   shape=shape, size=size, xrange=xrange, yrange=yrange
 
   if n_elements(xx) ne n_elements(yy) or              $
@@ -7084,19 +7009,19 @@ pro scatter_plot, xx, yy, f, f_min=f_min, f_max=f_max,            $
 
   nCount = n_elements(xx_local)
 
-  for i=0,nCount-1 do begin
+  for i = 0, nCount-1 do begin
      x_tmp = xx_local(i)
      y_tmp = yy_local(i)
      f_tmp = f_local(i)
 
      if shape eq 'square' then begin
-        polyfill,[x_tmp-size,x_tmp-size,x_tmp+size,x_tmp+size],         $
-                 [y_tmp-size,y_tmp+size,y_tmp+size,y_tmp-size],         $
-                 color=(f_tmp-f_min)/(f_max-f_min)*255, noclip=0
+        polyfill, [x_tmp-size,x_tmp-size,x_tmp+size,x_tmp+size], $
+                  [y_tmp-size,y_tmp+size,y_tmp+size,y_tmp-size], $
+                 color=(f_tmp - f_min)/(f_max - f_min)*255, noclip=0
      endif else if shape eq 'circle' then begin
         rCircle = float(size)
         theta = findgen(361)*!pi*2.0/360.0
-        polyfill, x_tmp+rCircle*cos(theta), y_tmp+rCircle*sin(theta),   $
+        polyfill, x_tmp+rCircle*cos(theta), y_tmp+rCircle*sin(theta), $
                   color = (f_tmp-f_min)/(f_max-f_min)*255, noclip=0
      endif else begin
         print, 'scatter_plot: shape must be square or circle!!!'
@@ -7104,6 +7029,7 @@ pro scatter_plot, xx, yy, f, f_min=f_min, f_max=f_max,            $
      endelse
   end
 
-  plot,xx_local,yy_local, psym=1, linestyle=6, XSTYLE=1,YSTYLE=1, $
-       xrange=xrange,yrange=yrange,/noerase
+  plot, xx_local, yy_local, psym=1, linestyle=6, XSTYLE=1, YSTYLE=1, $
+       xrange=xrange, yrange=yrange, /noerase
 end
+;==============================================================================
