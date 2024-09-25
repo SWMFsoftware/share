@@ -39,7 +39,7 @@ module ModBlasLapack
   end interface
 
   interface lapack_getrs
-     module procedure dgetrs, sgetrs     
+     module procedure dgetrs, sgetrs
   end interface lapack_getrs
 
 contains
@@ -54,7 +54,6 @@ contains
     !     February 29, 1992
     !
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     character(len=6) ::        SRNAME
     integer ::            INFO
     !     ..
@@ -81,6 +80,7 @@ contains
     !
     !     .. Executable Statements ..
     !
+    !--------------------------------------------------------------------------
     WRITE( *, FMT = 9999 )SRNAME, INFO
     !
     call CON_STOP_EXT('LAPACK::xerbla')
@@ -91,7 +91,7 @@ contains
     !     End of xerbla
     !
   end subroutine xerbla
-  !==============================================================================
+  !============================================================================
   logical          function LSAME( CA, CB )
     !
     !  -- LAPACK auxiliary routine (version 1.1) --
@@ -100,7 +100,6 @@ contains
     !     February 29, 1992
     !
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     character ::          CA, CB
     !     ..
     !
@@ -125,6 +124,7 @@ contains
     !
     !     Test if the characters are equal
     !
+    !--------------------------------------------------------------------------
     LSAME = CA == CB
     if( LSAME ) &
          RETURN
@@ -176,7 +176,7 @@ contains
     !     End of LSAME
     !
   end function LSAME
-  !==============================================================================
+  !============================================================================
   integer function ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
     !
     !  -- LAPACK auxiliary routine (version 2.0) --
@@ -185,7 +185,6 @@ contains
     !     September 30, 1994
     !
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     character*( * ) ::   NAME, OPTS
     integer ::            ISPEC, N1, N2, N3, N4
     !     ..
@@ -276,6 +275,7 @@ contains
     !  =====================================================================
     !
     !     .. Local Scalars ..
+    !--------------------------------------------------------------------------
     logical            CNAME, SNAME
     character ::        C1
     character(len=2) ::        C2, C4
@@ -361,11 +361,11 @@ contains
        if(ISPEC == 1) then
           !
           !
-          !     ISPEC = 1:  block size
+          ! ISPEC = 1:  block size
           !
-          !     In these examples, separate code is provided for setting NB for
-          !     real and complex.  We assume that NB will take the same value in
-          !     single or double precision.
+          ! In these examples, separate code is provided for setting NB for
+          ! real and complex.  We assume that NB will take the same value in
+          ! single or double precision.
           !
           NB = 1
           !
@@ -695,7 +695,7 @@ contains
     !     End of ILAENV
     !
   end function ILAENV
-  !==============================================================================
+  !============================================================================
   ! This is a collection of single precision LAPACK routines that BATSRUS uses.
   ! You are encouraged to use the local LAPACK library if available.
   !
@@ -709,7 +709,6 @@ contains
     !     March 31, 1993
     !
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     integer ::            INFO, LDA, M, N
     !     ..
     !     .. Array Arguments ..
@@ -764,12 +763,13 @@ contains
     !
     !     .. parameters ..
     real*4 ::             ONE
+    !--------------------------------------------------------------------------
     parameter          ( ONE = 1.0E+0 )
     !     ..
     !     .. Local Scalars ..
     integer ::            I, IINFO, J, JB, NB
     !     ..
-    
+
     !
     !     Test the input parameters.
     !
@@ -852,7 +852,7 @@ contains
     !     End of SGETRF
     !
   end subroutine SGETRF
-  !==============================================================================
+  !============================================================================
   subroutine SGETRS( TRANS, N, NRHS, A, LDA, IPIV, B, LDB, INFO )
     !
     !  -- LAPACK routine (version 3.0) --
@@ -861,7 +861,6 @@ contains
     !     March 31, 1993
     !
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     character ::          TRANS
     integer ::            INFO, LDA, LDB, N, NRHS
     !     ..
@@ -920,6 +919,7 @@ contains
     !
     !     .. parameters ..
     real*4 ::             ONE
+    !--------------------------------------------------------------------------
     parameter          ( ONE = 1.0E+0 )
     !     ..
     !     .. Local Scalars ..
@@ -993,7 +993,7 @@ contains
     !     End of SGETRS
     !
   end subroutine SGETRS
-  !==============================================================================
+  !============================================================================
   subroutine SGETF2( M, N, A, LDA, IPIV, INFO )
     !
     !  -- LAPACK routine (version 3.0) --
@@ -1002,7 +1002,6 @@ contains
     !     June 30, 1992
     !
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     integer ::            INFO, LDA, M, N
     !     ..
     !     .. Array Arguments ..
@@ -1057,6 +1056,7 @@ contains
     !
     !     .. parameters ..
     real*4 ::             ONE, ZERO
+    !--------------------------------------------------------------------------
     parameter          ( ONE = 1.0E+0, ZERO = 0.0E+0 )
     !     ..
     !     .. Local Scalars ..
@@ -1119,7 +1119,7 @@ contains
     !     End of SGETF2
     !
   end subroutine SGETF2
-  !==============================================================================
+  !============================================================================
 
   subroutine SLASWP( N, A, LDA, K1, K2, IPIV, INCX )
     !
@@ -1129,7 +1129,6 @@ contains
     !     June 30, 1999
     !
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     integer ::            INCX, K1, K2, LDA, N
     !     ..
     !     .. Array Arguments ..
@@ -1190,6 +1189,7 @@ contains
     !
     !     Interchange row I with row IPIV(I) for each of rows K1 through K2.
     !
+    !--------------------------------------------------------------------------
     if( INCX > 0 ) then
        IX0 = K1
        I1 = K1
@@ -1242,7 +1242,7 @@ contains
     !     End of SLASWP
     !
   end subroutine SLASWP
-  !==============================================================================
+  !============================================================================
   ! This is a collection of real*8 LAPACK routines that BATSRUS uses.
   ! You are encouraged to use the local LAPACK library if available.
   !
@@ -1257,7 +1257,6 @@ contains
     !     September 30, 1994
     !
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     integer ::            INFO, LDA, M, N
     !     ..
     !     .. Array Arguments ..
@@ -1312,6 +1311,7 @@ contains
     !
     !     .. parameters ..
     real*8 ::         ONE
+    !--------------------------------------------------------------------------
     parameter          ( ONE = 1 )
     !     ..
     !     .. Local Scalars ..
@@ -1405,7 +1405,7 @@ contains
     !     End of DGETRF
     !
   end subroutine DGETRF
-  !==============================================================================
+  !============================================================================
   subroutine DGETRS( TRANS, N, NRHS, A, LDA, IPIV, B, LDB, INFO )
     !
     !  -- LAPACK routine (version 2.0) --
@@ -1414,7 +1414,6 @@ contains
     !     September 30, 1994
     !
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     character ::          TRANS
     integer ::            INFO, LDA, LDB, N, NRHS
     !     ..
@@ -1473,6 +1472,7 @@ contains
     !
     !     .. parameters ..
     real*8 ::         ONE
+    !--------------------------------------------------------------------------
     parameter          ( ONE = 1 )
     !     ..
     !     .. Local Scalars ..
@@ -1547,7 +1547,7 @@ contains
     !     End of DGETRS
     !
   end subroutine DGETRS
-  !==============================================================================
+  !============================================================================
   subroutine DGETF2( M, N, A, LDA, IPIV, INFO )
     !
     !  -- LAPACK routine (version 2.0) --
@@ -1556,7 +1556,6 @@ contains
     !     September 30, 1994
     !
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     integer ::            INFO, LDA, M, N
     !     ..
     !     .. Array Arguments ..
@@ -1611,6 +1610,7 @@ contains
     !
     !     .. parameters ..
     real*8 ::         ONE, ZERO
+    !--------------------------------------------------------------------------
     parameter          ( ONE = 1, ZERO = 0 )
     !     ..
     !     .. Local Scalars ..
@@ -1675,7 +1675,7 @@ contains
     !     End of DGETF2
     !
   end subroutine DGETF2
-  !==============================================================================
+  !============================================================================
   subroutine DLASWP( N, A, LDA, K1, K2, IPIV, INCX )
     !
     !  -- LAPACK auxiliary routine (version 2.0) --
@@ -1684,7 +1684,6 @@ contains
     !     October 31, 1992
     !
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     integer ::            INCX, K1, K2, LDA, N
     !     ..
     !     .. Array Arguments ..
@@ -1737,6 +1736,7 @@ contains
 
     !     Interchange row I with row IPIV(I) for each of rows K1 through K2.
     !
+    !--------------------------------------------------------------------------
     if( INCX == 0 ) &
          RETURN
     if( INCX > 0 ) then
@@ -1771,7 +1771,7 @@ contains
     !     End of DLASWP
     !
   end subroutine DLASWP
-  !==============================================================================
+  !============================================================================
 
   subroutine scopy(n,sx,incx,sy,incy)
     !
@@ -1780,10 +1780,10 @@ contains
     !     jack dongarra, linpack, 3/11/78.
     !     modified 12/3/93, array(1) declarations changed to array(*)
     !
-    !----------------------------------------------------------------------------
     real*4 :: sx(*),sy(*)
     integer :: i,incx,incy,ix,iy,m,mp1,n
     !
+    !--------------------------------------------------------------------------
     if(n <= 0)RETURN
 
     ix = 1
@@ -1797,11 +1797,10 @@ contains
     end do
     RETURN
   end subroutine scopy
-  !==============================================================================
+  !============================================================================
   subroutine SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
        BETA, C, LDC )
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     character ::        TRANSA, TRANSB
     integer ::            M, N, K, LDA, LDB, LDC
     real*4 ::             ALPHA, BETA
@@ -1931,6 +1930,7 @@ contains
     !
 
     !     .. Local Scalars ..
+    !--------------------------------------------------------------------------
     logical            NOTA, NOTB
     integer ::            I, INFO, J, L, NCOLA, NROWA, NROWB
     real*4 ::             TEMP
@@ -2106,11 +2106,10 @@ contains
     !     End of SGEMM .
     !
   end subroutine SGEMM
-  !==============================================================================
+  !============================================================================
   subroutine SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
        BETA, Y, INCY )
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     real*4 ::             ALPHA, BETA
     integer ::            INCX, INCY, LDA, M, N
     character ::        TRANS
@@ -2211,6 +2210,7 @@ contains
     !
     !     .. parameters ..
     real*4 ::             ONE         , ZERO
+    !--------------------------------------------------------------------------
     parameter        ( ONE = 1.0E+0, ZERO = 0.0E+0 )
     !     .. Local Scalars ..
     real*4 ::             TEMP
@@ -2358,10 +2358,9 @@ contains
     !     End of SGEMV .
     !
   end subroutine SGEMV
-  !==============================================================================
+  !============================================================================
   subroutine SGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     real*4 ::             ALPHA
     integer ::            INCX, INCY, LDA, M, N
     !     .. Array Arguments ..
@@ -2440,6 +2439,7 @@ contains
     !
     !     .. parameters ..
     real*4 ::             ZERO
+    !--------------------------------------------------------------------------
     parameter        ( ZERO = 0.0E+0 )
     !     .. Local Scalars ..
     real*4 ::             TEMP
@@ -2509,7 +2509,7 @@ contains
     !     End of SGER  .
     !
   end subroutine SGER
-  !==============================================================================
+  !============================================================================
   subroutine sscal(n,sa,sx,incx)
     !
     !     scales a vector by a constant.
@@ -2518,10 +2518,10 @@ contains
     !     modified 3/93 to return if incx .le. 0.
     !     modified 12/3/93, array(1) declarations changed to array(*)
     !
-    !----------------------------------------------------------------------------
     real*4 ::  sa,sx(*)
     integer :: i,incx,m,mp1,n,nincx
     !
+    !--------------------------------------------------------------------------
     if( n <= 0 .or. incx <= 0 )RETURN
 
     nincx = n*incx
@@ -2529,7 +2529,7 @@ contains
        sx(i) = sa*sx(i)
     end do
   end subroutine sscal
-  !==============================================================================
+  !============================================================================
   subroutine sswap (n,sx,incx,sy,incy)
     !
     !     interchanges two vectors.
@@ -2537,10 +2537,10 @@ contains
     !     jack dongarra, linpack, 3/11/78.
     !     modified 12/3/93, array(1) declarations changed to array(*)
     !
-    !----------------------------------------------------------------------------
     real*4 ::  sx(*),sy(*),stemp
     integer :: i,incx,incy,ix,iy,m,mp1,n
     !
+    !--------------------------------------------------------------------------
     if(n <= 0)RETURN
 
     ix = 1
@@ -2555,11 +2555,10 @@ contains
        iy = iy + incy
     end do
   end subroutine sswap
-  !==============================================================================
+  !============================================================================
   subroutine STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
        B, LDB )
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     character ::        SIDE, UPLO, TRANSA, DIAG
     integer ::            M, N, LDA, LDB
     real*4 ::             ALPHA
@@ -2687,6 +2686,7 @@ contains
     !
     !
 
+    !--------------------------------------------------------------------------
     logical            LSIDE, NOUNIT, UPPER
     integer ::            I, INFO, J, K, NROWA
     real*4 ::             TEMP
@@ -2928,7 +2928,7 @@ contains
     !     End of STRSM .
     !
   end subroutine STRSM
-  !==============================================================================
+  !============================================================================
   integer function isamax(n,sx,incx)
     !
     !     finds the index of element having max. absolute value.
@@ -2936,10 +2936,10 @@ contains
     !     modified 3/93 to return if incx .le. 0.
     !     modified 12/3/93, array(1) declarations changed to array(*)
     !
-    !----------------------------------------------------------------------------
     real*4 ::  sx(*),smax
     integer :: i,incx,ix,n
     !
+    !--------------------------------------------------------------------------
     isamax = 0
     if( n < 1 .or. incx <= 0 ) RETURN
     isamax = 1
@@ -2957,7 +2957,7 @@ contains
     end do
     RETURN
   end function isamax
-  !==============================================================================
+  !============================================================================
   ! This is a collection of real*8 BLAS routines that BATSRUS uses.
   ! You are encouraged to use the local BLAS library if available.
   !
@@ -2969,10 +2969,10 @@ contains
     !     uses unrolled loops for increments equal to one.
     !     jack dongarra, linpack, 3/11/78.
     !
-    !----------------------------------------------------------------------------
     real*8 :: dx(*),dy(*)
     integer :: i,incx,incy,ix,iy,m,mp1,n
     !
+    !--------------------------------------------------------------------------
     if(n <= 0)RETURN
 
     ix = 1
@@ -2986,11 +2986,10 @@ contains
     end do
     RETURN
   end subroutine dcopy
-  !==============================================================================
+  !============================================================================
   subroutine DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
        BETA, C, LDC )
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     character ::        TRANSA, TRANSB
     integer ::            M, N, K, LDA, LDB, LDC
     real*8 ::   ALPHA, BETA
@@ -3119,6 +3118,7 @@ contains
     !
     !
 
+    !--------------------------------------------------------------------------
     logical            NOTA, NOTB
     integer ::            I, INFO, J, L, NCOLA, NROWA, NROWB
     real*8 ::   TEMP
@@ -3294,11 +3294,10 @@ contains
     !     End of DGEMM .
     !
   end subroutine DGEMM
-  !==============================================================================
+  !============================================================================
   subroutine DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
        BETA, Y, INCY )
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     real*8 ::   ALPHA, BETA
     integer ::            INCX, INCY, LDA, M, N
     character ::        TRANS
@@ -3399,6 +3398,7 @@ contains
     !
     !     .. parameters ..
     real*8 ::   ONE         , ZERO
+    !--------------------------------------------------------------------------
     parameter        ( ONE = 1, ZERO = 0 )
     !     .. Local Scalars ..
     real*8 ::   TEMP
@@ -3546,10 +3546,9 @@ contains
     !     End of DGEMV .
     !
   end subroutine DGEMV
-  !==============================================================================
+  !============================================================================
   subroutine DGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     real*8 ::   ALPHA
     integer ::            INCX, INCY, LDA, M, N
     !     .. Array Arguments ..
@@ -3628,6 +3627,7 @@ contains
     !
     !     .. parameters ..
     real*8 ::   ZERO
+    !--------------------------------------------------------------------------
     parameter        ( ZERO = 0.0D+0 )
     !     .. Local Scalars ..
     real*8 ::   TEMP
@@ -3697,7 +3697,7 @@ contains
     !     End of DGER  .
     !
   end subroutine DGER
-  !==============================================================================
+  !============================================================================
   subroutine  dscal(n,da,dx,incx)
     !
     !     scales a vector by a constant.
@@ -3705,10 +3705,10 @@ contains
     !     jack dongarra, linpack, 3/11/78.
     !     modified 3/93 to return if incx .le. 0.
     !
-    !----------------------------------------------------------------------------
     real*8 :: da,dx(*)
     integer :: i,incx,m,mp1,n,nincx
     !
+    !--------------------------------------------------------------------------
     if( n <= 0 .or. incx <= 0 )RETURN
     nincx = n*incx
     do i =  1,nincx,incx
@@ -3716,17 +3716,17 @@ contains
     end do
     RETURN
   end subroutine dscal
-  !==============================================================================
+  !============================================================================
   subroutine  dswap (n,dx,incx,dy,incy)
     !
     !     interchanges two vectors.
     !     uses unrolled loops for increments equal one.
     !     jack dongarra, linpack, 3/11/78.
     !
-    !----------------------------------------------------------------------------
     real*8 :: dx(*),dy(*),dtemp
     integer :: i,incx,incy,ix,iy,m,mp1,n
     !
+    !--------------------------------------------------------------------------
     if(n <= 0)RETURN
 
     ix = 1
@@ -3742,11 +3742,10 @@ contains
     end do
     RETURN
   end subroutine dswap
-  !==============================================================================
+  !============================================================================
   subroutine DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
        B, LDB )
     !     .. Scalar Arguments ..
-    !----------------------------------------------------------------------------
     character ::        SIDE, UPLO, TRANSA, DIAG
     integer ::            M, N, LDA, LDB
     real*8 ::   ALPHA
@@ -3874,6 +3873,7 @@ contains
     !
     !
     !     .. Local Scalars ..
+    !--------------------------------------------------------------------------
     logical            LSIDE, NOUNIT, UPPER
     integer ::            I, INFO, J, K, NROWA
     real*8 ::             TEMP
@@ -4115,17 +4115,17 @@ contains
     !     End of DTRSM .
     !
   end subroutine DTRSM
-  !==============================================================================
+  !============================================================================
   integer function idamax(n,dx,incx)
     !
     !     finds the index of element having max. absolute value.
     !     jack dongarra, linpack, 3/11/78.
     !     modified 3/93 to return if incx .le. 0.
     !
-    !----------------------------------------------------------------------------
     real*8 ::  dx(*),dmax
     integer :: i,incx,ix,n
     !
+    !--------------------------------------------------------------------------
     idamax = 0
     if( n < 1 .or. incx <= 0 ) RETURN
     idamax = 1
@@ -4143,7 +4143,7 @@ contains
     end do
     RETURN
   end function idamax
-  !==============================================================================  
+  !============================================================================
 
 end module ModBlasLapack
 !==============================================================================
