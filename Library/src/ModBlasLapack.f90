@@ -45,7 +45,7 @@ module ModBlasLapack
 contains
   !============================================================================
 
-  subroutine XERBLA( SRNAME, INFO )
+  subroutine xerbla( SRNAME, INFO )
 
     !
     !  -- LAPACK auxiliary routine (version 1.1) --
@@ -55,14 +55,14 @@ contains
     !
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    character*6        SRNAME
-    integer            INFO
+    character(len=6) ::        SRNAME
+    integer ::            INFO
     !     ..
     !
     !  Purpose
     !  =======
     !
-    !  XERBLA  is an error handler for the LAPACK routines.
+    !  xerbla  is an error handler for the LAPACK routines.
     !  It is called by an LAPACK routine if an input parameter has an
     !  invalid value.  A message is printed and execution stops.
     !
@@ -72,8 +72,8 @@ contains
     !  Arguments
     !  =========
     !
-    !  SRNAME  (input) character*6
-    !          The name of the routine which called XERBLA.
+    !  SRNAME  (input) character(len=6)
+    !          The name of the routine which called xerbla.
     !
     !  INFO    (input) integer
     !          The position of the invalid parameter in the parameter list
@@ -83,16 +83,16 @@ contains
     !
     WRITE( *, FMT = 9999 )SRNAME, INFO
     !
-    call CON_STOP_EXT('LAPACK::XERBLA')
+    call CON_STOP_EXT('LAPACK::xerbla')
     !
 9999 FORMAT( ' ** On entry to ', A6, ' parameter number ', I2, ' had ', &
          'an illegal value' )
     !
-    !     End of XERBLA
+    !     End of xerbla
     !
-  end subroutine XERBLA
+  end subroutine xerbla
   !==============================================================================
-  logical          FUNCTION LSAME( CA, CB )
+  logical          function LSAME( CA, CB )
     !
     !  -- LAPACK auxiliary routine (version 1.1) --
     !     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -101,7 +101,7 @@ contains
     !
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    character          CA, CB
+    character ::          CA, CB
     !     ..
     !
     !  Purpose
@@ -113,13 +113,13 @@ contains
     !  Arguments
     !  =========
     !
-    !  CA      (input) character*1
-    !  CB      (input) character*1
+    !  CA      (input) character
+    !  CB      (input) character
     !          CA and CB specify the single characters to be compared.
     !
     !     ..
     !     .. Local Scalars ..
-    integer            INTA, INTB, ZCODE
+    integer ::            INTA, INTB, ZCODE
     !     ..
     !     .. Executable Statements ..
     !
@@ -175,9 +175,9 @@ contains
     !
     !     End of LSAME
     !
-  end FUNCTION LSAME
+  end function LSAME
   !==============================================================================
-  integer FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
+  integer function ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
     !
     !  -- LAPACK auxiliary routine (version 2.0) --
     !     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -186,8 +186,8 @@ contains
     !
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    character*( * )    NAME, OPTS
-    integer            ISPEC, N1, N2, N3, N4
+    character*( * ) ::   NAME, OPTS
+    integer ::            ISPEC, N1, N2, N3, N4
     !     ..
     !
     !  Purpose
@@ -277,11 +277,11 @@ contains
     !
     !     .. Local Scalars ..
     logical            CNAME, SNAME
-    character*1        C1
-    character*2        C2, C4
-    character*3        C3
-    character*6        SUBNAM
-    integer            I, IC, IZ, NB, NBMIN, NX
+    character ::        C1
+    character(len=2) ::        C2, C4
+    character(len=3) ::        C3
+    character(len=6) ::        SUBNAM
+    integer ::            I, IC, IZ, NB, NBMIN, NX
     !     ..
 
     !     .. Executable Statements ..
@@ -694,7 +694,7 @@ contains
     !
     !     End of ILAENV
     !
-  end FUNCTION ILAENV
+  end function ILAENV
   !==============================================================================
   ! This is a collection of single precision LAPACK routines that BATSRUS uses.
   ! You are encouraged to use the local LAPACK library if available.
@@ -710,11 +710,11 @@ contains
     !
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    integer            INFO, LDA, M, N
+    integer ::            INFO, LDA, M, N
     !     ..
     !     .. Array Arguments ..
-    integer            IPIV( * )
-    real*4             A( LDA, * )
+    integer ::            IPIV( * )
+    real*4 ::             A( LDA, * )
     !     ..
     !
     !  Purpose
@@ -763,11 +763,11 @@ contains
     !  =====================================================================
     !
     !     .. parameters ..
-    real*4             ONE
+    real*4 ::             ONE
     parameter          ( ONE = 1.0E+0 )
     !     ..
     !     .. Local Scalars ..
-    integer            I, IINFO, J, JB, NB
+    integer ::            I, IINFO, J, JB, NB
     !     ..
     
     !
@@ -782,7 +782,7 @@ contains
        INFO = -4
     end if
     if( INFO /= 0 ) then
-       CALL XERBLA( 'SGETRF', -INFO )
+       CALL xerbla( 'SGETRF', -INFO )
        RETURN
     end if
     !
@@ -862,12 +862,12 @@ contains
     !
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    character          TRANS
-    integer            INFO, LDA, LDB, N, NRHS
+    character ::          TRANS
+    integer ::            INFO, LDA, LDB, N, NRHS
     !     ..
     !     .. Array Arguments ..
-    integer            IPIV( * )
-    real*4             A( LDA, * ), B( LDB, * )
+    integer ::            IPIV( * )
+    real*4 ::             A( LDA, * ), B( LDB, * )
     !     ..
     !
     !  Purpose
@@ -881,7 +881,7 @@ contains
     !  Arguments
     !  =========
     !
-    !  TRANS   (input) character*1
+    !  TRANS   (input) character
     !          Specifies the form of the system of equations:
     !          = 'N':  A * X = B  (No transpose)
     !          = 'T':  A'* X = B  (Transpose)
@@ -919,7 +919,7 @@ contains
     !  =====================================================================
     !
     !     .. parameters ..
-    real*4             ONE
+    real*4 ::             ONE
     parameter          ( ONE = 1.0E+0 )
     !     ..
     !     .. Local Scalars ..
@@ -943,7 +943,7 @@ contains
        INFO = -8
     end if
     if( INFO /= 0 ) then
-       CALL XERBLA( 'SGETRS', -INFO )
+       CALL xerbla( 'SGETRS', -INFO )
        RETURN
     end if
     !
@@ -1003,11 +1003,11 @@ contains
     !
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    integer            INFO, LDA, M, N
+    integer ::            INFO, LDA, M, N
     !     ..
     !     .. Array Arguments ..
-    integer            IPIV( * )
-    real*4             A( LDA, * )
+    integer ::            IPIV( * )
+    real*4 ::             A( LDA, * )
     !     ..
     !
     !  Purpose
@@ -1056,11 +1056,11 @@ contains
     !  =====================================================================
     !
     !     .. parameters ..
-    real*4             ONE, ZERO
+    real*4 ::             ONE, ZERO
     parameter          ( ONE = 1.0E+0, ZERO = 0.0E+0 )
     !     ..
     !     .. Local Scalars ..
-    integer            J, JP
+    integer ::            J, JP
     !     ..
 
     !     Test the input parameters.
@@ -1074,7 +1074,7 @@ contains
        INFO = -4
     end if
     if( INFO /= 0 ) then
-       CALL XERBLA( 'SGETF2', -INFO )
+       CALL xerbla( 'SGETF2', -INFO )
        RETURN
     end if
     !
@@ -1130,11 +1130,11 @@ contains
     !
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    integer            INCX, K1, K2, LDA, N
+    integer ::            INCX, K1, K2, LDA, N
     !     ..
     !     .. Array Arguments ..
-    integer            IPIV( * )
-    real*4             A( LDA, * )
+    integer ::            IPIV( * )
+    real*4 ::             A( LDA, * )
     !     ..
     !
     !  Purpose
@@ -1183,8 +1183,8 @@ contains
     ! =====================================================================
     !
     !     .. Local Scalars ..
-    integer            I, I1, I2, INC, IP, IX, IX0, J, K, N32
-    real*4             TEMP
+    integer ::            I, I1, I2, INC, IP, IX, IX0, J, K, N32
+    real*4 ::             TEMP
     !     ..
     !     .. Executable Statements ..
     !
@@ -1258,11 +1258,11 @@ contains
     !
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    integer            INFO, LDA, M, N
+    integer ::            INFO, LDA, M, N
     !     ..
     !     .. Array Arguments ..
-    integer            IPIV( * )
-    real*8         A( LDA, * )
+    integer ::            IPIV( * )
+    real*8 ::         A( LDA, * )
     !     ..
     !
     !  Purpose
@@ -1311,11 +1311,11 @@ contains
     !  =====================================================================
     !
     !     .. parameters ..
-    real*8         ONE
+    real*8 ::         ONE
     parameter          ( ONE = 1 )
     !     ..
     !     .. Local Scalars ..
-    integer            I, IINFO, J, JB, NB
+    integer ::            I, IINFO, J, JB, NB
     !     ..
 
     !     Test the input parameters.
@@ -1329,7 +1329,7 @@ contains
        INFO = -4
     end if
     if( INFO /= 0 ) then
-       CALL XERBLA( 'DGETRF', -INFO )
+       CALL xerbla( 'DGETRF', -INFO )
        RETURN
     end if
     !
@@ -1415,12 +1415,12 @@ contains
     !
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    character          TRANS
-    integer            INFO, LDA, LDB, N, NRHS
+    character ::          TRANS
+    integer ::            INFO, LDA, LDB, N, NRHS
     !     ..
     !     .. Array Arguments ..
-    integer            IPIV( * )
-    real*8         A( LDA, * ), B( LDB, * )
+    integer ::            IPIV( * )
+    real*8 ::         A( LDA, * ), B( LDB, * )
     !     ..
     !
     !  Purpose
@@ -1434,7 +1434,7 @@ contains
     !  Arguments
     !  =========
     !
-    !  TRANS   (input) character*1
+    !  TRANS   (input) character
     !          Specifies the form of the system of equations:
     !          = 'N':  A * X = B     (No transpose)
     !          = 'T':  A**T * X = B  (Transpose)
@@ -1472,7 +1472,7 @@ contains
     !  =====================================================================
     !
     !     .. parameters ..
-    real*8         ONE
+    real*8 ::         ONE
     parameter          ( ONE = 1 )
     !     ..
     !     .. Local Scalars ..
@@ -1497,7 +1497,7 @@ contains
        INFO = -8
     end if
     if( INFO /= 0 ) then
-       CALL XERBLA( 'DGETRS', -INFO )
+       CALL xerbla( 'DGETRS', -INFO )
        RETURN
     end if
     !
@@ -1557,11 +1557,11 @@ contains
     !
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    integer            INFO, LDA, M, N
+    integer ::            INFO, LDA, M, N
     !     ..
     !     .. Array Arguments ..
-    integer            IPIV( * )
-    real*8         A( LDA, * )
+    integer ::            IPIV( * )
+    real*8 ::         A( LDA, * )
     !     ..
     !
     !  Purpose
@@ -1610,11 +1610,11 @@ contains
     !  =====================================================================
     !
     !     .. parameters ..
-    real*8         ONE, ZERO
+    real*8 ::         ONE, ZERO
     parameter          ( ONE = 1, ZERO = 0 )
     !     ..
     !     .. Local Scalars ..
-    integer            J, JP
+    integer ::            J, JP
     !     ..
 
     !     .. Executable Statements ..
@@ -1630,7 +1630,7 @@ contains
        INFO = -4
     end if
     if( INFO /= 0 ) then
-       CALL XERBLA( 'DGETF2', -INFO )
+       CALL xerbla( 'DGETF2', -INFO )
        RETURN
     end if
     !
@@ -1685,11 +1685,11 @@ contains
     !
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    integer            INCX, K1, K2, LDA, N
+    integer ::            INCX, K1, K2, LDA, N
     !     ..
     !     .. Array Arguments ..
-    integer            IPIV( * )
-    real*8         A( LDA, * )
+    integer ::            IPIV( * )
+    real*8 ::         A( LDA, * )
     !     ..
     !
     !  Purpose
@@ -1732,7 +1732,7 @@ contains
     ! =====================================================================
     !
     !     .. Local Scalars ..
-    integer            I, IP, IX
+    integer ::            I, IP, IX
     !     ..
 
     !     Interchange row I with row IPIV(I) for each of rows K1 through K2.
@@ -1781,8 +1781,8 @@ contains
     !     modified 12/3/93, array(1) declarations changed to array(*)
     !
     !----------------------------------------------------------------------------
-    real*4 sx(*),sy(*)
-    integer i,incx,incy,ix,iy,m,mp1,n
+    real*4 :: sx(*),sy(*)
+    integer :: i,incx,incy,ix,iy,m,mp1,n
     !
     if(n <= 0)RETURN
 
@@ -1802,11 +1802,11 @@ contains
        BETA, C, LDC )
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    character*1        TRANSA, TRANSB
-    integer            M, N, K, LDA, LDB, LDC
-    real*4             ALPHA, BETA
+    character ::        TRANSA, TRANSB
+    integer ::            M, N, K, LDA, LDB, LDC
+    real*4 ::             ALPHA, BETA
     !     .. Array Arguments ..
-    real*4             A( LDA, * ), B( LDB, * ), C( LDC, * )
+    real*4 ::             A( LDA, * ), B( LDB, * ), C( LDC, * )
     !     ..
     !
     !  Purpose
@@ -1826,7 +1826,7 @@ contains
     !  parameters
     !  ==========
     !
-    !  TRANSA - character*1.
+    !  TRANSA - character.
     !           On entry, TRANSA specifies the form of op( A ) to be used in
     !           the matrix multiplication as follows:
     !
@@ -1838,7 +1838,7 @@ contains
     !
     !           Unchanged on exit.
     !
-    !  TRANSB - character*1.
+    !  TRANSB - character.
     !           On entry, TRANSB specifies the form of op( B ) to be used in
     !           the matrix multiplication as follows:
     !
@@ -1932,10 +1932,10 @@ contains
 
     !     .. Local Scalars ..
     logical            NOTA, NOTB
-    integer            I, INFO, J, L, NCOLA, NROWA, NROWB
-    real*4             TEMP
+    integer ::            I, INFO, J, L, NCOLA, NROWA, NROWB
+    real*4 ::             TEMP
     !     .. parameters ..
-    real*4             ONE         , ZERO
+    real*4 ::             ONE         , ZERO
     parameter        ( ONE = 1.0E+0, ZERO = 0.0E+0 )
     !     ..
     !     .. Executable Statements ..
@@ -1984,7 +1984,7 @@ contains
        INFO = 13
     end if
     if( INFO /= 0 )then
-       CALL XERBLA( 'SGEMM ', INFO )
+       CALL xerbla( 'SGEMM ', INFO )
        RETURN
     end if
     !
@@ -2111,11 +2111,11 @@ contains
        BETA, Y, INCY )
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    real*4             ALPHA, BETA
-    integer            INCX, INCY, LDA, M, N
-    character*1        TRANS
+    real*4 ::             ALPHA, BETA
+    integer ::            INCX, INCY, LDA, M, N
+    character ::        TRANS
     !     .. Array Arguments ..
-    real*4             A( LDA, * ), X( * ), Y( * )
+    real*4 ::             A( LDA, * ), X( * ), Y( * )
     !     ..
     !
     !  Purpose
@@ -2131,7 +2131,7 @@ contains
     !  parameters
     !  ==========
     !
-    !  TRANS  - character*1.
+    !  TRANS  - character.
     !           On entry, TRANS specifies the operation to be performed as
     !           follows:
     !
@@ -2210,11 +2210,11 @@ contains
     !
     !
     !     .. parameters ..
-    real*4             ONE         , ZERO
+    real*4 ::             ONE         , ZERO
     parameter        ( ONE = 1.0E+0, ZERO = 0.0E+0 )
     !     .. Local Scalars ..
-    real*4             TEMP
-    integer            I, INFO, IX, IY, J, JX, JY, KX, KY, LENX, LENY
+    real*4 ::             TEMP
+    integer ::            I, INFO, IX, IY, J, JX, JY, KX, KY, LENX, LENY
 
     INFO = 0
     if     ( .not.LSAME( TRANS, 'N' ).and. &
@@ -2233,7 +2233,7 @@ contains
        INFO = 11
     end if
     if( INFO /= 0 )then
-       CALL XERBLA( 'SGEMV ', INFO )
+       CALL xerbla( 'SGEMV ', INFO )
        RETURN
     end if
     !
@@ -2362,10 +2362,10 @@ contains
   subroutine SGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    real*4             ALPHA
-    integer            INCX, INCY, LDA, M, N
+    real*4 ::             ALPHA
+    integer ::            INCX, INCY, LDA, M, N
     !     .. Array Arguments ..
-    real*4             A( LDA, * ), X( * ), Y( * )
+    real*4 ::             A( LDA, * ), X( * ), Y( * )
     !     ..
     !
     !  Purpose
@@ -2439,11 +2439,11 @@ contains
     !
     !
     !     .. parameters ..
-    real*4             ZERO
+    real*4 ::             ZERO
     parameter        ( ZERO = 0.0E+0 )
     !     .. Local Scalars ..
-    real*4             TEMP
-    integer            I, INFO, IX, J, JY, KX
+    real*4 ::             TEMP
+    integer ::            I, INFO, IX, J, JY, KX
 
     INFO = 0
     if     ( M < 0 )then
@@ -2458,7 +2458,7 @@ contains
        INFO = 9
     end if
     if( INFO /= 0 )then
-       CALL XERBLA( 'SGER  ', INFO )
+       CALL xerbla( 'SGER  ', INFO )
        RETURN
     end if
     !
@@ -2519,8 +2519,8 @@ contains
     !     modified 12/3/93, array(1) declarations changed to array(*)
     !
     !----------------------------------------------------------------------------
-    real*4  sa,sx(*)
-    integer i,incx,m,mp1,n,nincx
+    real*4 ::  sa,sx(*)
+    integer :: i,incx,m,mp1,n,nincx
     !
     if( n <= 0 .or. incx <= 0 )RETURN
 
@@ -2538,8 +2538,8 @@ contains
     !     modified 12/3/93, array(1) declarations changed to array(*)
     !
     !----------------------------------------------------------------------------
-    real*4  sx(*),sy(*),stemp
-    integer i,incx,incy,ix,iy,m,mp1,n
+    real*4 ::  sx(*),sy(*),stemp
+    integer :: i,incx,incy,ix,iy,m,mp1,n
     !
     if(n <= 0)RETURN
 
@@ -2560,11 +2560,11 @@ contains
        B, LDB )
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    character*1        SIDE, UPLO, TRANSA, DIAG
-    integer            M, N, LDA, LDB
-    real*4             ALPHA
+    character ::        SIDE, UPLO, TRANSA, DIAG
+    integer ::            M, N, LDA, LDB
+    real*4 ::             ALPHA
     !     .. Array Arguments ..
-    real*4             A( LDA, * ), B( LDB, * )
+    real*4 ::             A( LDA, * ), B( LDB, * )
     !     ..
     !
     !  Purpose
@@ -2584,7 +2584,7 @@ contains
     !  parameters
     !  ==========
     !
-    !  SIDE   - character*1.
+    !  SIDE   - character.
     !           On entry, SIDE specifies whether op( A ) appears on the left
     !           or right of X as follows:
     !
@@ -2594,7 +2594,7 @@ contains
     !
     !           Unchanged on exit.
     !
-    !  UPLO   - character*1.
+    !  UPLO   - character.
     !           On entry, UPLO specifies whether the matrix A is an upper or
     !           lower triangular matrix as follows:
     !
@@ -2604,7 +2604,7 @@ contains
     !
     !           Unchanged on exit.
     !
-    !  TRANSA - character*1.
+    !  TRANSA - character.
     !           On entry, TRANSA specifies the form of op( A ) to be used in
     !           the matrix multiplication as follows:
     !
@@ -2616,7 +2616,7 @@ contains
     !
     !           Unchanged on exit.
     !
-    !  DIAG   - character*1.
+    !  DIAG   - character.
     !           On entry, DIAG specifies whether or not A is unit triangular
     !           as follows:
     !
@@ -2688,10 +2688,10 @@ contains
     !
 
     logical            LSIDE, NOUNIT, UPPER
-    integer            I, INFO, J, K, NROWA
-    real*4             TEMP
+    integer ::            I, INFO, J, K, NROWA
+    real*4 ::             TEMP
     !     .. parameters ..
-    real*4             ONE         , ZERO
+    real*4 ::             ONE         , ZERO
     parameter        ( ONE = 1.0E+0, ZERO = 0.0E+0 )
     !     ..
     !     .. Executable Statements ..
@@ -2731,7 +2731,7 @@ contains
        INFO = 11
     end if
     if( INFO /= 0 )then
-       CALL XERBLA( 'STRSM ', INFO )
+       CALL xerbla( 'STRSM ', INFO )
        RETURN
     end if
     !
@@ -2937,8 +2937,8 @@ contains
     !     modified 12/3/93, array(1) declarations changed to array(*)
     !
     !----------------------------------------------------------------------------
-    real*4  sx(*),smax
-    integer i,incx,ix,n
+    real*4 ::  sx(*),smax
+    integer :: i,incx,ix,n
     !
     isamax = 0
     if( n < 1 .or. incx <= 0 ) RETURN
@@ -2970,8 +2970,8 @@ contains
     !     jack dongarra, linpack, 3/11/78.
     !
     !----------------------------------------------------------------------------
-    real*8 dx(*),dy(*)
-    integer i,incx,incy,ix,iy,m,mp1,n
+    real*8 :: dx(*),dy(*)
+    integer :: i,incx,incy,ix,iy,m,mp1,n
     !
     if(n <= 0)RETURN
 
@@ -2991,11 +2991,11 @@ contains
        BETA, C, LDC )
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    character*1        TRANSA, TRANSB
-    integer            M, N, K, LDA, LDB, LDC
-    real*8   ALPHA, BETA
+    character ::        TRANSA, TRANSB
+    integer ::            M, N, K, LDA, LDB, LDC
+    real*8 ::   ALPHA, BETA
     !     .. Array Arguments ..
-    real*8   A( LDA, * ), B( LDB, * ), C( LDC, * )
+    real*8 ::   A( LDA, * ), B( LDB, * ), C( LDC, * )
     !     ..
     !
     !  Purpose
@@ -3015,7 +3015,7 @@ contains
     !  parameters
     !  ==========
     !
-    !  TRANSA - character*1.
+    !  TRANSA - character.
     !           On entry, TRANSA specifies the form of op( A ) to be used in
     !           the matrix multiplication as follows:
     !
@@ -3027,7 +3027,7 @@ contains
     !
     !           Unchanged on exit.
     !
-    !  TRANSB - character*1.
+    !  TRANSB - character.
     !           On entry, TRANSB specifies the form of op( B ) to be used in
     !           the matrix multiplication as follows:
     !
@@ -3120,10 +3120,10 @@ contains
     !
 
     logical            NOTA, NOTB
-    integer            I, INFO, J, L, NCOLA, NROWA, NROWB
-    real*8   TEMP
+    integer ::            I, INFO, J, L, NCOLA, NROWA, NROWB
+    real*8 ::   TEMP
     !     .. parameters ..
-    real*8   ONE    , ZERO
+    real*8 ::   ONE    , ZERO
     parameter        ( ONE = 1, ZERO = 0 )
     !     ..
     !     .. Executable Statements ..
@@ -3172,7 +3172,7 @@ contains
        INFO = 13
     end if
     if( INFO /= 0 )then
-       CALL XERBLA( 'DGEMM ', INFO )
+       CALL xerbla( 'DGEMM ', INFO )
        RETURN
     end if
     !
@@ -3299,11 +3299,11 @@ contains
        BETA, Y, INCY )
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    real*8   ALPHA, BETA
-    integer            INCX, INCY, LDA, M, N
-    character*1        TRANS
+    real*8 ::   ALPHA, BETA
+    integer ::            INCX, INCY, LDA, M, N
+    character ::        TRANS
     !     .. Array Arguments ..
-    real*8   A( LDA, * ), X( * ), Y( * )
+    real*8 ::   A( LDA, * ), X( * ), Y( * )
     !     ..
     !
     !  Purpose
@@ -3319,7 +3319,7 @@ contains
     !  parameters
     !  ==========
     !
-    !  TRANS  - character*1.
+    !  TRANS  - character.
     !           On entry, TRANS specifies the operation to be performed as
     !           follows:
     !
@@ -3398,11 +3398,11 @@ contains
     !
     !
     !     .. parameters ..
-    real*8   ONE         , ZERO
+    real*8 ::   ONE         , ZERO
     parameter        ( ONE = 1, ZERO = 0 )
     !     .. Local Scalars ..
-    real*8   TEMP
-    integer            I, INFO, IX, IY, J, JX, JY, KX, KY, LENX, LENY
+    real*8 ::   TEMP
+    integer ::            I, INFO, IX, IY, J, JX, JY, KX, KY, LENX, LENY
 
     INFO = 0
     if     ( .not.LSAME( TRANS, 'N' ).and. &
@@ -3421,7 +3421,7 @@ contains
        INFO = 11
     end if
     if( INFO /= 0 )then
-       CALL XERBLA( 'DGEMV ', INFO )
+       CALL xerbla( 'DGEMV ', INFO )
        RETURN
     end if
     !
@@ -3550,10 +3550,10 @@ contains
   subroutine DGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    real*8   ALPHA
-    integer            INCX, INCY, LDA, M, N
+    real*8 ::   ALPHA
+    integer ::            INCX, INCY, LDA, M, N
     !     .. Array Arguments ..
-    real*8   A( LDA, * ), X( * ), Y( * )
+    real*8 ::   A( LDA, * ), X( * ), Y( * )
     !     ..
     !
     !  Purpose
@@ -3627,11 +3627,11 @@ contains
     !
     !
     !     .. parameters ..
-    real*8   ZERO
+    real*8 ::   ZERO
     parameter        ( ZERO = 0.0D+0 )
     !     .. Local Scalars ..
-    real*8   TEMP
-    integer            I, INFO, IX, J, JY, KX
+    real*8 ::   TEMP
+    integer ::            I, INFO, IX, J, JY, KX
 
     INFO = 0
     if     ( M < 0 )then
@@ -3646,7 +3646,7 @@ contains
        INFO = 9
     end if
     if( INFO /= 0 )then
-       CALL XERBLA( 'DGER  ', INFO )
+       CALL xerbla( 'DGER  ', INFO )
        RETURN
     end if
     !
@@ -3706,8 +3706,8 @@ contains
     !     modified 3/93 to return if incx .le. 0.
     !
     !----------------------------------------------------------------------------
-    real*8 da,dx(*)
-    integer i,incx,m,mp1,n,nincx
+    real*8 :: da,dx(*)
+    integer :: i,incx,m,mp1,n,nincx
     !
     if( n <= 0 .or. incx <= 0 )RETURN
     nincx = n*incx
@@ -3724,8 +3724,8 @@ contains
     !     jack dongarra, linpack, 3/11/78.
     !
     !----------------------------------------------------------------------------
-    real*8 dx(*),dy(*),dtemp
-    integer i,incx,incy,ix,iy,m,mp1,n
+    real*8 :: dx(*),dy(*),dtemp
+    integer :: i,incx,incy,ix,iy,m,mp1,n
     !
     if(n <= 0)RETURN
 
@@ -3747,11 +3747,11 @@ contains
        B, LDB )
     !     .. Scalar Arguments ..
     !----------------------------------------------------------------------------
-    character*1        SIDE, UPLO, TRANSA, DIAG
-    integer            M, N, LDA, LDB
-    real*8   ALPHA
+    character ::        SIDE, UPLO, TRANSA, DIAG
+    integer ::            M, N, LDA, LDB
+    real*8 ::   ALPHA
     !     .. Array Arguments ..
-    real*8   A( LDA, * ), B( LDB, * )
+    real*8 ::   A( LDA, * ), B( LDB, * )
     !     ..
     !
     !  Purpose
@@ -3771,7 +3771,7 @@ contains
     !  parameters
     !  ==========
     !
-    !  SIDE   - character*1.
+    !  SIDE   - character.
     !           On entry, SIDE specifies whether op( A ) appears on the left
     !           or right of X as follows:
     !
@@ -3781,7 +3781,7 @@ contains
     !
     !           Unchanged on exit.
     !
-    !  UPLO   - character*1.
+    !  UPLO   - character.
     !           On entry, UPLO specifies whether the matrix A is an upper or
     !           lower triangular matrix as follows:
     !
@@ -3791,7 +3791,7 @@ contains
     !
     !           Unchanged on exit.
     !
-    !  TRANSA - character*1.
+    !  TRANSA - character.
     !           On entry, TRANSA specifies the form of op( A ) to be used in
     !           the matrix multiplication as follows:
     !
@@ -3803,7 +3803,7 @@ contains
     !
     !           Unchanged on exit.
     !
-    !  DIAG   - character*1.
+    !  DIAG   - character.
     !           On entry, DIAG specifies whether or not A is unit triangular
     !           as follows:
     !
@@ -3875,10 +3875,10 @@ contains
     !
     !     .. Local Scalars ..
     logical            LSIDE, NOUNIT, UPPER
-    integer            I, INFO, J, K, NROWA
-    real*8             TEMP
+    integer ::            I, INFO, J, K, NROWA
+    real*8 ::             TEMP
     !     .. parameters ..
-    real*8             ONE    , ZERO
+    real*8 ::             ONE    , ZERO
     parameter        ( ONE = 1, ZERO = 0 )
     !     ..
     !     .. Executable Statements ..
@@ -3918,7 +3918,7 @@ contains
        INFO = 11
     end if
     if( INFO /= 0 )then
-       CALL XERBLA( 'DTRSM ', INFO )
+       CALL xerbla( 'DTRSM ', INFO )
        RETURN
     end if
     !
@@ -4123,8 +4123,8 @@ contains
     !     modified 3/93 to return if incx .le. 0.
     !
     !----------------------------------------------------------------------------
-    real*8  dx(*),dmax
-    integer i,incx,ix,n
+    real*8 ::  dx(*),dmax
+    integer :: i,incx,ix,n
     !
     idamax = 0
     if( n < 1 .or. incx <= 0 ) RETURN

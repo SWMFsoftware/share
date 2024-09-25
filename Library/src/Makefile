@@ -19,7 +19,6 @@ ModMpiInterfaces.f90: MpiTemplate.f90 SWMF_MPI_routines.dat
 	${SCRIPTDIR}/CreateModMpi.pl
 
 OBJECTS = \
-	${BLAS}\
 	ModBlasLapack.o\
 	ModConst.o\
 	ModCoordTransform.o\
