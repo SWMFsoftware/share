@@ -1,11 +1,9 @@
-!============================================================================
-! This is a collection of single precision BLAS routines that BATSRUS uses. 
+! This is a collection of single precision BLAS routines that BATSRUS uses.
 ! You are encouraged to use the local BLAS library if available.
 !
 ! subroutines: scopy, sgemm, sgemv, sger,  sscal, sswap, strsm
 !
 ! Functions:   isamax
-!=============================================================================
 subroutine scopy(n,sx,incx,sy,incy)
   !
   !     copies a vector, x, to a vector, y.
@@ -13,26 +11,28 @@ subroutine scopy(n,sx,incx,sy,incy)
   !     jack dongarra, linpack, 3/11/78.
   !     modified 12/3/93, array(1) declarations changed to array(*)
   !
+  !----------------------------------------------------------------------------
   real*4 sx(*),sy(*)
   integer i,incx,incy,ix,iy,m,mp1,n
   !
-  if(n.le.0)return
+  if(n <= 0)RETURN
 
   ix = 1
   iy = 1
-  if(incx.lt.0)ix = (-n+1)*incx + 1
-  if(incy.lt.0)iy = (-n+1)*incy + 1
+  if(incx < 0)ix = (-n+1)*incx + 1
+  if(incy < 0)iy = (-n+1)*incy + 1
   do i =  1,n
      sy(iy) = sx(ix)
      ix = ix + incx
      iy = iy + incy
   end do
-  return
+  RETURN
 end subroutine scopy
-!=============================================================================
+!==============================================================================
 subroutine SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
      BETA, C, LDC )
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   character*1        TRANSA, TRANSB
   integer            M, N, K, LDA, LDB, LDC
   real*4             ALPHA, BETA
@@ -205,34 +205,34 @@ subroutine SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
        ( .not.LSAME( TRANSB, 'C' ) ).and. &
        ( .not.LSAME( TRANSB, 'T' ) )      )then
      INFO = 2
-  else if( M  .lt.0               )then
+  else if( M < 0               )then
      INFO = 3
-  else if( N  .lt.0               )then
+  else if( N < 0               )then
      INFO = 4
-  else if( K  .lt.0               )then
+  else if( K < 0               )then
      INFO = 5
-  else if( LDA.lt.MAX( 1, NROWA ) )then
+  else if( LDA < MAX( 1, NROWA ) )then
      INFO = 8
-  else if( LDB.lt.MAX( 1, NROWB ) )then
+  else if( LDB < MAX( 1, NROWB ) )then
      INFO = 10
-  else if( LDC.lt.MAX( 1, M     ) )then
+  else if( LDC < MAX( 1, M     ) )then
      INFO = 13
   end if
-  if( INFO.ne.0 )then
+  if( INFO /= 0 )then
      CALL XERBLA( 'SGEMM ', INFO )
      RETURN
   end if
   !
   !     Quick return if possible.
   !
-  if( ( M.eq.0 ).OR.( N.eq.0 ).OR. &
-       ( ( ( ALPHA.eq.ZERO ).OR.( K.eq.0 ) ).and.( BETA.eq.ONE ) ) ) &
+  if( ( M == 0 ).OR.( N == 0 ).OR. &
+       ( ( ( ALPHA == ZERO ).OR.( K == 0 ) ).and.( BETA == ONE ) ) ) &
        RETURN
   !
-  !     And if  alpha.eq.zero.
+  !     And if  alpha == zero.
   !
-  if( ALPHA.eq.ZERO )then
-     if( BETA.eq.ZERO )then
+  if( ALPHA == ZERO )then
+     if( BETA == ZERO )then
         do J =  1, N
            do I =  1, M
               C( I, J ) = ZERO
@@ -256,17 +256,17 @@ subroutine SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
         !           Form  C := alpha*A*B + beta*C.
         !
         do J =  1, N
-           if( BETA.eq.ZERO )then
+           if( BETA == ZERO )then
               do I =  1, M
                  C( I, J ) = ZERO
               end do
-           else if( BETA.ne.ONE )then
+           else if( BETA /= ONE )then
               do I =  1, M
                  C( I, J ) = BETA*C( I, J )
               end do
            end if
            do L = 1, K
-              if( B( L, J ).ne.ZERO )then
+              if( B( L, J ) /= ZERO )then
                  TEMP = ALPHA*B( L, J )
                  do I =  1, M
                     C( I, J ) = C( I, J ) + TEMP*A( I, L )
@@ -284,7 +284,7 @@ subroutine SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
               do L = 1, K
                  TEMP = TEMP + A( L, I )*B( L, J )
               end do
-              if( BETA.eq.ZERO )then
+              if( BETA == ZERO )then
                  C( I, J ) = ALPHA*TEMP
               else
                  C( I, J ) = ALPHA*TEMP + BETA*C( I, J )
@@ -298,17 +298,17 @@ subroutine SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
         !           Form  C := alpha*A*B' + beta*C
         !
         do J =  1, N
-           if( BETA.eq.ZERO )then
+           if( BETA == ZERO )then
               do I =  1, M
                  C( I, J ) = ZERO
               end do
-           else if( BETA.ne.ONE )then
+           else if( BETA /= ONE )then
               do I =  1, M
                  C( I, J ) = BETA*C( I, J )
               end do
            end if
            do L = 1, K
-              if( B( J, L ).ne.ZERO )then
+              if( B( J, L ) /= ZERO )then
                  TEMP = ALPHA*B( J, L )
                  do I =  1, M
                     C( I, J ) = C( I, J ) + TEMP*A( I, L )
@@ -326,7 +326,7 @@ subroutine SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
               do L = 1, K
                  TEMP = TEMP + A( L, I )*B( J, L )
               end do
-              if( BETA.eq.ZERO )then
+              if( BETA == ZERO )then
                  C( I, J ) = ALPHA*TEMP
               else
                  C( I, J ) = ALPHA*TEMP + BETA*C( I, J )
@@ -341,10 +341,11 @@ subroutine SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
   !     End of SGEMM .
   !
 end subroutine SGEMM
-!=============================================================================
+!==============================================================================
 subroutine SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
      BETA, Y, INCY )
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   real*4             ALPHA, BETA
   integer            INCX, INCY, LDA, M, N
   character*1        TRANS
@@ -460,26 +461,26 @@ subroutine SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
        .not.LSAME( TRANS, 'T' ).and. &
        .not.LSAME( TRANS, 'C' )      )then
      INFO = 1
-  else if( M.lt.0 )then
+  else if( M < 0 )then
      INFO = 2
-  else if( N.lt.0 )then
+  else if( N < 0 )then
      INFO = 3
-  else if( LDA.lt.MAX( 1, M ) )then
+  else if( LDA < MAX( 1, M ) )then
      INFO = 6
-  else if( INCX.eq.0 )then
+  else if( INCX == 0 )then
      INFO = 8
-  else if( INCY.eq.0 )then
+  else if( INCY == 0 )then
      INFO = 11
   end if
-  if( INFO.ne.0 )then
+  if( INFO /= 0 )then
      CALL XERBLA( 'SGEMV ', INFO )
      RETURN
   end if
   !
   !     Quick return if possible.
   !
-  if( ( M.eq.0 ).OR.( N.eq.0 ).OR. &
-       ( ( ALPHA.eq.ZERO ).and.( BETA.eq.ONE ) ) ) &
+  if( ( M == 0 ).OR.( N == 0 ).OR. &
+       ( ( ALPHA == ZERO ).and.( BETA == ONE ) ) ) &
        RETURN
   !
   !     Set  LENX  and  LENY, the lengths of the vectors x and y, and set
@@ -492,12 +493,12 @@ subroutine SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
      LENX = M
      LENY = N
   end if
-  if( INCX.GT.0 )then
+  if( INCX > 0 )then
      KX = 1
   else
      KX = 1 - ( LENX - 1 )*INCX
   end if
-  if( INCY.GT.0 )then
+  if( INCY > 0 )then
      KY = 1
   else
      KY = 1 - ( LENY - 1 )*INCY
@@ -508,9 +509,9 @@ subroutine SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
   !
   !     First form  y := beta*y.
   !
-  if( BETA.ne.ONE )then
-     if( INCY.eq.1 )then
-        if( BETA.eq.ZERO )then
+  if( BETA /= ONE )then
+     if( INCY == 1 )then
+        if( BETA == ZERO )then
            do I =  1, LENY
               Y( I ) = ZERO
            end do
@@ -521,7 +522,7 @@ subroutine SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
         end if
      else
         IY = KY
-        if( BETA.eq.ZERO )then
+        if( BETA == ZERO )then
            do I =  1, LENY
               Y( IY ) = ZERO
               IY      = IY   + INCY
@@ -534,16 +535,16 @@ subroutine SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
         end if
      end if
   end if
-  if( ALPHA.eq.ZERO ) &
+  if( ALPHA == ZERO ) &
        RETURN
   if( LSAME( TRANS, 'N' ) )then
      !
      !        Form  y := alpha*A*x + y.
      !
      JX = KX
-     if( INCY.eq.1 )then
+     if( INCY == 1 )then
         do J =  1, N
-           if( X( JX ).ne.ZERO )then
+           if( X( JX ) /= ZERO )then
               TEMP = ALPHA*X( JX )
               do I =  1, M
                  Y( I ) = Y( I ) + TEMP*A( I, J )
@@ -553,7 +554,7 @@ subroutine SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
         end do
      else
         do J =  1, N
-           if( X( JX ).ne.ZERO )then
+           if( X( JX ) /= ZERO )then
               TEMP = ALPHA*X( JX )
               IY   = KY
               do I =  1, M
@@ -569,7 +570,7 @@ subroutine SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
      !        Form  y := alpha*A'*x + y.
      !
      JY = KY
-     if( INCX.eq.1 )then
+     if( INCX == 1 )then
         do J =  1, N
            TEMP = ZERO
            do I =  1, M
@@ -597,9 +598,10 @@ subroutine SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
   !     End of SGEMV .
   !
 end subroutine SGEMV
-!=============================================================================
+!==============================================================================
 subroutine SGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   real*4             ALPHA
   integer            INCX, INCY, LDA, M, N
   !     .. Array Arguments ..
@@ -686,38 +688,38 @@ subroutine SGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
   external           XERBLA
 
   INFO = 0
-  if     ( M.lt.0 )then
+  if     ( M < 0 )then
      INFO = 1
-  else if( N.lt.0 )then
+  else if( N < 0 )then
      INFO = 2
-  else if( INCX.eq.0 )then
+  else if( INCX == 0 )then
      INFO = 5
-  else if( INCY.eq.0 )then
+  else if( INCY == 0 )then
      INFO = 7
-  else if( LDA.lt.MAX( 1, M ) )then
+  else if( LDA < MAX( 1, M ) )then
      INFO = 9
   end if
-  if( INFO.ne.0 )then
+  if( INFO /= 0 )then
      CALL XERBLA( 'SGER  ', INFO )
      RETURN
   end if
   !
   !     Quick return if possible.
   !
-  if( ( M.eq.0 ).OR.( N.eq.0 ).OR.( ALPHA.eq.ZERO ) ) &
+  if( ( M == 0 ).OR.( N == 0 ).OR.( ALPHA == ZERO ) ) &
        RETURN
   !
   !     Start the operations. In this version the elements of A are
   !     accessed sequentially with one pass through A.
   !
-  if( INCY.GT.0 )then
+  if( INCY > 0 )then
      JY = 1
   else
      JY = 1 - ( N - 1 )*INCY
   end if
-  if( INCX.eq.1 )then
+  if( INCX == 1 )then
      do J =  1, N
-        if( Y( JY ).ne.ZERO )then
+        if( Y( JY ) /= ZERO )then
            TEMP = ALPHA*Y( JY )
            do I =  1, M
               A( I, J ) = A( I, J ) + X( I )*TEMP
@@ -726,13 +728,13 @@ subroutine SGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
         JY = JY + INCY
      end do
   else
-     if( INCX.GT.0 )then
+     if( INCX > 0 )then
         KX = 1
      else
         KX = 1 - ( M - 1 )*INCX
      end if
      do J =  1, N
-        if( Y( JY ).ne.ZERO )then
+        if( Y( JY ) /= ZERO )then
            TEMP = ALPHA*Y( JY )
            IX   = KX
            do I =  1, M
@@ -749,7 +751,7 @@ subroutine SGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
   !     End of SGER  .
   !
 end subroutine SGER
-!=============================================================================
+!==============================================================================
 subroutine sscal(n,sa,sx,incx)
   !
   !     scales a vector by a constant.
@@ -758,17 +760,18 @@ subroutine sscal(n,sa,sx,incx)
   !     modified 3/93 to return if incx .le. 0.
   !     modified 12/3/93, array(1) declarations changed to array(*)
   !
+  !----------------------------------------------------------------------------
   real*4  sa,sx(*)
   integer i,incx,m,mp1,n,nincx
   !
-  if( n.le.0 .or. incx.le.0 )return
+  if( n <= 0 .or. incx <= 0 )RETURN
 
   nincx = n*incx
   do i =  1,nincx,incx
      sx(i) = sa*sx(i)
   end do
 end subroutine sscal
-!=============================================================================
+!==============================================================================
 subroutine sswap (n,sx,incx,sy,incy)
   !
   !     interchanges two vectors.
@@ -776,15 +779,16 @@ subroutine sswap (n,sx,incx,sy,incy)
   !     jack dongarra, linpack, 3/11/78.
   !     modified 12/3/93, array(1) declarations changed to array(*)
   !
+  !----------------------------------------------------------------------------
   real*4  sx(*),sy(*),stemp
   integer i,incx,incy,ix,iy,m,mp1,n
   !
-  if(n.le.0)return
+  if(n <= 0)RETURN
 
   ix = 1
   iy = 1
-  if(incx.lt.0)ix = (-n+1)*incx + 1
-  if(incy.lt.0)iy = (-n+1)*incy + 1
+  if(incx < 0)ix = (-n+1)*incx + 1
+  if(incy < 0)iy = (-n+1)*incy + 1
   do i =  1,n
      stemp = sx(ix)
      sx(ix) = sy(iy)
@@ -793,10 +797,11 @@ subroutine sswap (n,sx,incx,sy,incy)
      iy = iy + incy
   end do
 end subroutine sswap
-!=============================================================================
+!==============================================================================
 subroutine STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
      B, LDB )
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   character*1        SIDE, UPLO, TRANSA, DIAG
   integer            M, N, LDA, LDB
   real*4             ALPHA
@@ -963,28 +968,28 @@ subroutine STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   else if( ( .not.LSAME( DIAG  , 'U' ) ).and. &
        ( .not.LSAME( DIAG  , 'N' ) )      )then
      INFO = 4
-  else if( M  .lt.0               )then
+  else if( M < 0               )then
      INFO = 5
-  else if( N  .lt.0               )then
+  else if( N < 0               )then
      INFO = 6
-  else if( LDA.lt.MAX( 1, NROWA ) )then
+  else if( LDA < MAX( 1, NROWA ) )then
      INFO = 9
-  else if( LDB.lt.MAX( 1, M     ) )then
+  else if( LDB < MAX( 1, M     ) )then
      INFO = 11
   end if
-  if( INFO.ne.0 )then
+  if( INFO /= 0 )then
      CALL XERBLA( 'STRSM ', INFO )
      RETURN
   end if
   !
   !     Quick return if possible.
   !
-  if( N.eq.0 ) &
+  if( N == 0 ) &
        RETURN
   !
-  !     And when  alpha.eq.zero.
+  !     And when  alpha == zero.
   !
-  if( ALPHA.eq.ZERO )then
+  if( ALPHA == ZERO )then
      do J =  1, N
         do I =  1, M
            B( I, J ) = ZERO
@@ -1002,13 +1007,13 @@ subroutine STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
         !
         if( UPPER )then
            do J =  1, N
-              if( ALPHA.ne.ONE )then
+              if( ALPHA /= ONE )then
                  do I =  1, M
                     B( I, J ) = ALPHA*B( I, J )
                  end do
               end if
               do K =  M, 1, -1
-                 if( B( K, J ).ne.ZERO )then
+                 if( B( K, J ) /= ZERO )then
                     if( NOUNIT ) &
                          B( K, J ) = B( K, J )/A( K, K )
                     do I =  1, K - 1
@@ -1019,13 +1024,13 @@ subroutine STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
            end do
         else
            do J =  1, N
-              if( ALPHA.ne.ONE )then
+              if( ALPHA /= ONE )then
                  do I =  1, M
                     B( I, J ) = ALPHA*B( I, J )
                  end do
               end if
               do K =  1, M
-                 if( B( K, J ).ne.ZERO )then
+                 if( B( K, J ) /= ZERO )then
                     if( NOUNIT ) &
                          B( K, J ) = B( K, J )/A( K, K )
                     do I =  K + 1, M
@@ -1072,13 +1077,13 @@ subroutine STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
         !
         if( UPPER )then
            do J =  1, N
-              if( ALPHA.ne.ONE )then
+              if( ALPHA /= ONE )then
                  do I =  1, M
                     B( I, J ) = ALPHA*B( I, J )
                  end do
               end if
               do K =  1, J - 1
-                 if( A( K, J ).ne.ZERO )then
+                 if( A( K, J ) /= ZERO )then
                     do I =  1, M
                        B( I, J ) = B( I, J ) - A( K, J )*B( I, K )
                     end do
@@ -1093,13 +1098,13 @@ subroutine STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
            end do
         else
            do J =  N, 1, -1
-              if( ALPHA.ne.ONE )then
+              if( ALPHA /= ONE )then
                  do I =  1, M
                     B( I, J ) = ALPHA*B( I, J )
                  end do
               end if
               do K =  J + 1, N
-                 if( A( K, J ).ne.ZERO )then
+                 if( A( K, J ) /= ZERO )then
                     do I =  1, M
                        B( I, J ) = B( I, J ) - A( K, J )*B( I, K )
                     end do
@@ -1126,14 +1131,14 @@ subroutine STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
                  end do
               end if
               do J =  1, K - 1
-                 if( A( J, K ).ne.ZERO )then
+                 if( A( J, K ) /= ZERO )then
                     TEMP = A( J, K )
                     do I =  1, M
                        B( I, J ) = B( I, J ) - TEMP*B( I, K )
                     end do
                  end if
               end do
-              if( ALPHA.ne.ONE )then
+              if( ALPHA /= ONE )then
                  do I =  1, M
                     B( I, K ) = ALPHA*B( I, K )
                  end do
@@ -1148,14 +1153,14 @@ subroutine STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
                  end do
               end if
               do J =  K + 1, N
-                 if( A( J, K ).ne.ZERO )then
+                 if( A( J, K ) /= ZERO )then
                     TEMP = A( J, K )
                     do I =  1, M
                        B( I, J ) = B( I, J ) - TEMP*B( I, K )
                     end do
                  end if
               end do
-              if( ALPHA.ne.ONE )then
+              if( ALPHA /= ONE )then
                  do I =  1, M
                     B( I, K ) = ALPHA*B( I, K )
                  end do
@@ -1170,7 +1175,7 @@ subroutine STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   !     End of STRSM .
   !
 end subroutine STRSM
-!=============================================================================
+!==============================================================================
 integer function isamax(n,sx,incx)
   !
   !     finds the index of element having max. absolute value.
@@ -1178,60 +1183,61 @@ integer function isamax(n,sx,incx)
   !     modified 3/93 to return if incx .le. 0.
   !     modified 12/3/93, array(1) declarations changed to array(*)
   !
+  !----------------------------------------------------------------------------
   real*4  sx(*),smax
   integer i,incx,ix,n
   !
   isamax = 0
-  if( n.lt.1 .or. incx.le.0 ) return
+  if( n < 1 .or. incx <= 0 ) RETURN
   isamax = 1
-  if(n.eq.1)return
+  if(n == 1)RETURN
 
   ix = 1
   smax = abs(sx(1))
   ix = ix + incx
   do i =  2,n
-     if(.not. (abs(sx(ix)).le.smax)) then
+     if(.not. (abs(sx(ix)) <= smax)) then
         isamax = i
         smax = abs(sx(ix))
      end if
      ix = ix + incx
   end do
-  return
+  RETURN
 end function isamax
-!=============================================================================
-!============================================================================
-! This is a collection of real*8 BLAS routines that BATSRUS uses. 
+!==============================================================================
+! This is a collection of real*8 BLAS routines that BATSRUS uses.
 ! You are encouraged to use the local BLAS library if available.
 !
 ! subroutines: dcopy, dgemm, dgemv, dger,  dscal, dswap, dtrsm
 !
-!=============================================================================
 subroutine  dcopy(n,dx,incx,dy,incy)
   !
   !     copies a vector, x, to a vector, y.
   !     uses unrolled loops for increments equal to one.
   !     jack dongarra, linpack, 3/11/78.
   !
+  !----------------------------------------------------------------------------
   real*8 dx(*),dy(*)
   integer i,incx,incy,ix,iy,m,mp1,n
   !
-  if(n.le.0)return
+  if(n <= 0)RETURN
 
   ix = 1
   iy = 1
-  if(incx.lt.0)ix = (-n+1)*incx + 1
-  if(incy.lt.0)iy = (-n+1)*incy + 1
+  if(incx < 0)ix = (-n+1)*incx + 1
+  if(incy < 0)iy = (-n+1)*incy + 1
   do i =  1,n
      dy(iy) = dx(ix)
      ix = ix + incx
      iy = iy + incy
   end do
-  return
+  RETURN
 end subroutine dcopy
-!=============================================================================
+!==============================================================================
 subroutine DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
      BETA, C, LDC )
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   character*1        TRANSA, TRANSB
   integer            M, N, K, LDA, LDB, LDC
   real*8   ALPHA, BETA
@@ -1404,34 +1410,34 @@ subroutine DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
        ( .not.LSAME( TRANSB, 'C' ) ).and. &
        ( .not.LSAME( TRANSB, 'T' ) )      )then
      INFO = 2
-  else if( M  .lt.0               )then
+  else if( M < 0               )then
      INFO = 3
-  else if( N  .lt.0               )then
+  else if( N < 0               )then
      INFO = 4
-  else if( K  .lt.0               )then
+  else if( K < 0               )then
      INFO = 5
-  else if( LDA.lt.MAX( 1, NROWA ) )then
+  else if( LDA < MAX( 1, NROWA ) )then
      INFO = 8
-  else if( LDB.lt.MAX( 1, NROWB ) )then
+  else if( LDB < MAX( 1, NROWB ) )then
      INFO = 10
-  else if( LDC.lt.MAX( 1, M     ) )then
+  else if( LDC < MAX( 1, M     ) )then
      INFO = 13
   end if
-  if( INFO.ne.0 )then
+  if( INFO /= 0 )then
      CALL XERBLA( 'DGEMM ', INFO )
      RETURN
   end if
   !
   !     Quick return if possible.
   !
-  if( ( M.eq.0 ).OR.( N.eq.0 ).OR. &
-       ( ( ( ALPHA.eq.ZERO ).OR.( K.eq.0 ) ).and.( BETA.eq.ONE ) ) ) &
+  if( ( M == 0 ).OR.( N == 0 ).OR. &
+       ( ( ( ALPHA == ZERO ).OR.( K == 0 ) ).and.( BETA == ONE ) ) ) &
        RETURN
   !
-  !     And if  alpha.eq.zero.
+  !     And if  alpha == zero.
   !
-  if( ALPHA.eq.ZERO )then
-     if( BETA.eq.ZERO )then
+  if( ALPHA == ZERO )then
+     if( BETA == ZERO )then
         do J =  1, N
            do I =  1, M
               C( I, J ) = ZERO
@@ -1455,17 +1461,17 @@ subroutine DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
         !           Form  C := alpha*A*B + beta*C.
         !
         do J =  1, N
-           if( BETA.eq.ZERO )then
+           if( BETA == ZERO )then
               do I =  1, M
                  C( I, J ) = ZERO
               end do
-           else if( BETA.ne.ONE )then
+           else if( BETA /= ONE )then
               do I =  1, M
                  C( I, J ) = BETA*C( I, J )
               end do
            end if
            do  L = 1, K
-              if( B( L, J ).ne.ZERO )then
+              if( B( L, J ) /= ZERO )then
                  TEMP = ALPHA*B( L, J )
                  do I =  1, M
                     C( I, J ) = C( I, J ) + TEMP*A( I, L )
@@ -1483,7 +1489,7 @@ subroutine DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
               do L = 1, K
                  TEMP = TEMP + A( L, I )*B( L, J )
               end do
-              if( BETA.eq.ZERO )then
+              if( BETA == ZERO )then
                  C( I, J ) = ALPHA*TEMP
               else
                  C( I, J ) = ALPHA*TEMP + BETA*C( I, J )
@@ -1497,17 +1503,17 @@ subroutine DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
         !           Form  C := alpha*A*B' + beta*C
         !
         do J =  1, N
-           if( BETA.eq.ZERO )then
+           if( BETA == ZERO )then
               do I =  1, M
                  C( I, J ) = ZERO
               end do
-           else if( BETA.ne.ONE )then
+           else if( BETA /= ONE )then
               do I =  1, M
                  C( I, J ) = BETA*C( I, J )
               end do
            end if
            do L = 1, K
-              if( B( J, L ).ne.ZERO )then
+              if( B( J, L ) /= ZERO )then
                  TEMP = ALPHA*B( J, L )
                  do I =  1, M
                     C( I, J ) = C( I, J ) + TEMP*A( I, L )
@@ -1525,7 +1531,7 @@ subroutine DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
               do L = 1, K
                  TEMP = TEMP + A( L, I )*B( J, L )
               end do
-              if( BETA.eq.ZERO )then
+              if( BETA == ZERO )then
                  C( I, J ) = ALPHA*TEMP
               else
                  C( I, J ) = ALPHA*TEMP + BETA*C( I, J )
@@ -1540,10 +1546,11 @@ subroutine DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
   !     End of DGEMM .
   !
 end subroutine DGEMM
-!============================================================================
+!==============================================================================
 subroutine DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
      BETA, Y, INCY )
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   real*8   ALPHA, BETA
   integer            INCX, INCY, LDA, M, N
   character*1        TRANS
@@ -1659,26 +1666,26 @@ subroutine DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
        .not.LSAME( TRANS, 'T' ).and. &
        .not.LSAME( TRANS, 'C' )      )then
      INFO = 1
-  else if( M.lt.0 )then
+  else if( M < 0 )then
      INFO = 2
-  else if( N.lt.0 )then
+  else if( N < 0 )then
      INFO = 3
-  else if( LDA.lt.MAX( 1, M ) )then
+  else if( LDA < MAX( 1, M ) )then
      INFO = 6
-  else if( INCX.eq.0 )then
+  else if( INCX == 0 )then
      INFO = 8
-  else if( INCY.eq.0 )then
+  else if( INCY == 0 )then
      INFO = 11
   end if
-  if( INFO.ne.0 )then
+  if( INFO /= 0 )then
      CALL XERBLA( 'DGEMV ', INFO )
      RETURN
   end if
   !
   !     Quick return if possible.
   !
-  if( ( M.eq.0 ).OR.( N.eq.0 ).OR. &
-       ( ( ALPHA.eq.ZERO ).and.( BETA.eq.ONE ) ) ) &
+  if( ( M == 0 ).OR.( N == 0 ).OR. &
+       ( ( ALPHA == ZERO ).and.( BETA == ONE ) ) ) &
        RETURN
   !
   !     Set  LENX  and  LENY, the lengths of the vectors x and y, and set
@@ -1691,12 +1698,12 @@ subroutine DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
      LENX = M
      LENY = N
   end if
-  if( INCX.GT.0 )then
+  if( INCX > 0 )then
      KX = 1
   else
      KX = 1 - ( LENX - 1 )*INCX
   end if
-  if( INCY.GT.0 )then
+  if( INCY > 0 )then
      KY = 1
   else
      KY = 1 - ( LENY - 1 )*INCY
@@ -1707,9 +1714,9 @@ subroutine DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
   !
   !     First form  y := beta*y.
   !
-  if( BETA.ne.ONE )then
-     if( INCY.eq.1 )then
-        if( BETA.eq.ZERO )then
+  if( BETA /= ONE )then
+     if( INCY == 1 )then
+        if( BETA == ZERO )then
            do I =  1, LENY
               Y( I ) = ZERO
            end do
@@ -1720,7 +1727,7 @@ subroutine DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
         end if
      else
         IY = KY
-        if( BETA.eq.ZERO )then
+        if( BETA == ZERO )then
            do I =  1, LENY
               Y( IY ) = ZERO
               IY      = IY   + INCY
@@ -1733,16 +1740,16 @@ subroutine DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
         end if
      end if
   end if
-  if( ALPHA.eq.ZERO ) &
+  if( ALPHA == ZERO ) &
        RETURN
   if( LSAME( TRANS, 'N' ) )then
      !
      !        Form  y := alpha*A*x + y.
      !
      JX = KX
-     if( INCY.eq.1 )then
+     if( INCY == 1 )then
         do J =  1, N
-           if( X( JX ).ne.ZERO )then
+           if( X( JX ) /= ZERO )then
               TEMP = ALPHA*X( JX )
               do I =  1, M
                  Y( I ) = Y( I ) + TEMP*A( I, J )
@@ -1752,7 +1759,7 @@ subroutine DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
         end do
      else
         do J =  1, N
-           if( X( JX ).ne.ZERO )then
+           if( X( JX ) /= ZERO )then
               TEMP = ALPHA*X( JX )
               IY   = KY
               do I =  1, M
@@ -1768,7 +1775,7 @@ subroutine DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
      !        Form  y := alpha*A'*x + y.
      !
      JY = KY
-     if( INCX.eq.1 )then
+     if( INCX == 1 )then
         do J =  1, N
            TEMP = ZERO
            do I =  1, M
@@ -1796,9 +1803,10 @@ subroutine DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
   !     End of DGEMV .
   !
 end subroutine DGEMV
-!============================================================================
+!==============================================================================
 subroutine DGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   real*8   ALPHA
   integer            INCX, INCY, LDA, M, N
   !     .. Array Arguments ..
@@ -1885,38 +1893,38 @@ subroutine DGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
   external           XERBLA
 
   INFO = 0
-  if     ( M.lt.0 )then
+  if     ( M < 0 )then
      INFO = 1
-  else if( N.lt.0 )then
+  else if( N < 0 )then
      INFO = 2
-  else if( INCX.eq.0 )then
+  else if( INCX == 0 )then
      INFO = 5
-  else if( INCY.eq.0 )then
+  else if( INCY == 0 )then
      INFO = 7
-  else if( LDA.lt.MAX( 1, M ) )then
+  else if( LDA < MAX( 1, M ) )then
      INFO = 9
   end if
-  if( INFO.ne.0 )then
+  if( INFO /= 0 )then
      CALL XERBLA( 'DGER  ', INFO )
      RETURN
   end if
   !
   !     Quick return if possible.
   !
-  if( ( M.eq.0 ).OR.( N.eq.0 ).OR.( ALPHA.eq.ZERO ) ) &
+  if( ( M == 0 ).OR.( N == 0 ).OR.( ALPHA == ZERO ) ) &
        RETURN
   !
   !     Start the operations. In this version the elements of A are
   !     accessed sequentially with one pass through A.
   !
-  if( INCY.GT.0 )then
+  if( INCY > 0 )then
      JY = 1
   else
      JY = 1 - ( N - 1 )*INCY
   end if
-  if( INCX.eq.1 )then
+  if( INCX == 1 )then
      do J =  1, N
-        if( Y( JY ).ne.ZERO )then
+        if( Y( JY ) /= ZERO )then
            TEMP = ALPHA*Y( JY )
            do I =  1, M
               A( I, J ) = A( I, J ) + X( I )*TEMP
@@ -1925,13 +1933,13 @@ subroutine DGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
         JY = JY + INCY
      end do
   else
-     if( INCX.GT.0 )then
+     if( INCX > 0 )then
         KX = 1
      else
         KX = 1 - ( M - 1 )*INCX
      end if
      do J =  1, N
-        if( Y( JY ).ne.ZERO )then
+        if( Y( JY ) /= ZERO )then
            TEMP = ALPHA*Y( JY )
            IX   = KX
            do I =  1, M
@@ -1948,7 +1956,7 @@ subroutine DGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
   !     End of DGER  .
   !
 end subroutine DGER
-!============================================================================
+!==============================================================================
 subroutine  dscal(n,da,dx,incx)
   !
   !     scales a vector by a constant.
@@ -1956,32 +1964,34 @@ subroutine  dscal(n,da,dx,incx)
   !     jack dongarra, linpack, 3/11/78.
   !     modified 3/93 to return if incx .le. 0.
   !
+  !----------------------------------------------------------------------------
   real*8 da,dx(*)
   integer i,incx,m,mp1,n,nincx
   !
-  if( n.le.0 .or. incx.le.0 )return
+  if( n <= 0 .or. incx <= 0 )RETURN
   nincx = n*incx
   do i =  1,nincx,incx
      dx(i) = da*dx(i)
   end do
-  return
+  RETURN
 end subroutine dscal
-!=============================================================================
+!==============================================================================
 subroutine  dswap (n,dx,incx,dy,incy)
   !
   !     interchanges two vectors.
   !     uses unrolled loops for increments equal one.
   !     jack dongarra, linpack, 3/11/78.
   !
+  !----------------------------------------------------------------------------
   real*8 dx(*),dy(*),dtemp
   integer i,incx,incy,ix,iy,m,mp1,n
   !
-  if(n.le.0)return
+  if(n <= 0)RETURN
 
   ix = 1
   iy = 1
-  if(incx.lt.0)ix = (-n+1)*incx + 1
-  if(incy.lt.0)iy = (-n+1)*incy + 1
+  if(incx < 0)ix = (-n+1)*incx + 1
+  if(incy < 0)iy = (-n+1)*incy + 1
   do i =  1,n
      dtemp = dx(ix)
      dx(ix) = dy(iy)
@@ -1989,12 +1999,13 @@ subroutine  dswap (n,dx,incx,dy,incy)
      ix = ix + incx
      iy = iy + incy
   end do
-  return
+  RETURN
 end subroutine dswap
-!============================================================================
+!==============================================================================
 subroutine DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
      B, LDB )
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   character*1        SIDE, UPLO, TRANSA, DIAG
   integer            M, N, LDA, LDB
   real*8   ALPHA
@@ -2161,28 +2172,28 @@ subroutine DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   else if( ( .not.LSAME( DIAG  , 'U' ) ).and. &
        ( .not.LSAME( DIAG  , 'N' ) )      )then
      INFO = 4
-  else if( M  .lt.0               )then
+  else if( M < 0               )then
      INFO = 5
-  else if( N  .lt.0               )then
+  else if( N < 0               )then
      INFO = 6
-  else if( LDA.lt.MAX( 1, NROWA ) )then
+  else if( LDA < MAX( 1, NROWA ) )then
      INFO = 9
-  else if( LDB.lt.MAX( 1, M     ) )then
+  else if( LDB < MAX( 1, M     ) )then
      INFO = 11
   end if
-  if( INFO.ne.0 )then
+  if( INFO /= 0 )then
      CALL XERBLA( 'DTRSM ', INFO )
      RETURN
   end if
   !
   !     Quick return if possible.
   !
-  if( N.eq.0 ) &
+  if( N == 0 ) &
        RETURN
   !
-  !     And when  alpha.eq.zero.
+  !     And when  alpha == zero.
   !
-  if( ALPHA.eq.ZERO )then
+  if( ALPHA == ZERO )then
      do J =  1, N
         do I =  1, M
            B( I, J ) = ZERO
@@ -2200,13 +2211,13 @@ subroutine DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
         !
         if( UPPER )then
            do J =  1, N
-              if( ALPHA.ne.ONE )then
+              if( ALPHA /= ONE )then
                  do I =  1, M
                     B( I, J ) = ALPHA*B( I, J )
                  end do
               end if
               do K =  M, 1, -1
-                 if( B( K, J ).ne.ZERO )then
+                 if( B( K, J ) /= ZERO )then
                     if( NOUNIT ) &
                          B( K, J ) = B( K, J )/A( K, K )
                     do I =  1, K - 1
@@ -2217,13 +2228,13 @@ subroutine DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
            end do
         else
            do J =  1, N
-              if( ALPHA.ne.ONE )then
+              if( ALPHA /= ONE )then
                  do I =  1, M
                     B( I, J ) = ALPHA*B( I, J )
                  end do
               end if
               do K =  1, M
-                 if( B( K, J ).ne.ZERO )then
+                 if( B( K, J ) /= ZERO )then
                     if( NOUNIT ) &
                          B( K, J ) = B( K, J )/A( K, K )
                     do I =  K + 1, M
@@ -2270,13 +2281,13 @@ subroutine DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
         !
         if( UPPER )then
            do J =  1, N
-              if( ALPHA.ne.ONE )then
+              if( ALPHA /= ONE )then
                  do I =  1, M
                     B( I, J ) = ALPHA*B( I, J )
                  end do
               end if
               do K =  1, J - 1
-                 if( A( K, J ).ne.ZERO )then
+                 if( A( K, J ) /= ZERO )then
                     do I =  1, M
                        B( I, J ) = B( I, J ) - A( K, J )*B( I, K )
                     end do
@@ -2291,13 +2302,13 @@ subroutine DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
            end do
         else
            do J =  N, 1, -1
-              if( ALPHA.ne.ONE )then
+              if( ALPHA /= ONE )then
                  do I =  1, M
                     B( I, J ) = ALPHA*B( I, J )
                  end do
               end if
               do K =  J + 1, N
-                 if( A( K, J ).ne.ZERO )then
+                 if( A( K, J ) /= ZERO )then
                     do I =  1, M
                        B( I, J ) = B( I, J ) - A( K, J )*B( I, K )
                     end do
@@ -2324,14 +2335,14 @@ subroutine DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
                  end do
               end if
               do J =  1, K - 1
-                 if( A( J, K ).ne.ZERO )then
+                 if( A( J, K ) /= ZERO )then
                     TEMP = A( J, K )
                     do I =  1, M
                        B( I, J ) = B( I, J ) - TEMP*B( I, K )
                     end do
                  end if
               end do
-              if( ALPHA.ne.ONE )then
+              if( ALPHA /= ONE )then
                  do I =  1, M
                     B( I, K ) = ALPHA*B( I, K )
                  end do
@@ -2346,14 +2357,14 @@ subroutine DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
                  end do
               end if
               do J =  K + 1, N
-                 if( A( J, K ).ne.ZERO )then
+                 if( A( J, K ) /= ZERO )then
                     TEMP = A( J, K )
                     do I =  1, M
                        B( I, J ) = B( I, J ) - TEMP*B( I, K )
                     end do
                  end if
               end do
-              if( ALPHA.ne.ONE )then
+              if( ALPHA /= ONE )then
                  do I =  1, M
                     B( I, K ) = ALPHA*B( I, K )
                  end do
@@ -2368,30 +2379,32 @@ subroutine DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   !     End of DTRSM .
   !
 end subroutine DTRSM
-!============================================================================
+!==============================================================================
 integer function idamax(n,dx,incx)
   !
   !     finds the index of element having max. absolute value.
   !     jack dongarra, linpack, 3/11/78.
   !     modified 3/93 to return if incx .le. 0.
   !
+  !----------------------------------------------------------------------------
   real*8  dx(*),dmax
   integer i,incx,ix,n
   !
   idamax = 0
-  if( n.lt.1 .or. incx.le.0 ) return
+  if( n < 1 .or. incx <= 0 ) RETURN
   idamax = 1
-  if(n.eq.1)return
+  if(n == 1)RETURN
 
   ix = 1
   dmax = dabs(dx(1))
   ix = ix + incx
   do i =  2,n
-     if(.not. (dabs(dx(ix)).le.dmax) ) then 
+     if(.not. (dabs(dx(ix)) <= dmax) ) then
         idamax = i
         dmax = dabs(dx(ix))
      end if
      ix = ix + incx
   end do
-  return
+  RETURN
 end function idamax
+!==============================================================================

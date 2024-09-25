@@ -1,13 +1,11 @@
-!============================================================================
 ! This is a collection of LAPACK routines that BATSRUS uses and independent
-! of the real precision. 
+! of the real precision.
 ! You are encouraged to use the local LAPACK library if available.
 !
 ! subroutines: xerbla, lsame
 !
 ! function:    ilaenv
-! 
-!============================================================================
+!
 subroutine XERBLA( SRNAME, INFO )
 
   !
@@ -17,6 +15,7 @@ subroutine XERBLA( SRNAME, INFO )
   !     February 29, 1992
   !
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   character*6        SRNAME
   integer            INFO
   !     ..
@@ -53,7 +52,7 @@ subroutine XERBLA( SRNAME, INFO )
   !     End of XERBLA
   !
 end subroutine XERBLA
-!============================================================================
+!==============================================================================
 logical          FUNCTION LSAME( CA, CB )
   !
   !  -- LAPACK auxiliary routine (version 1.1) --
@@ -62,6 +61,7 @@ logical          FUNCTION LSAME( CA, CB )
   !     February 29, 1992
   !
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   character          CA, CB
   !     ..
   !
@@ -86,7 +86,7 @@ logical          FUNCTION LSAME( CA, CB )
   !
   !     Test if the characters are equal
   !
-  LSAME = CA.eq.CB
+  LSAME = CA == CB
   if( LSAME ) &
        RETURN
   !
@@ -102,42 +102,42 @@ logical          FUNCTION LSAME( CA, CB )
   INTA = ICHAR( CA )
   INTB = ICHAR( CB )
   !
-  if( ZCODE.eq.90 .OR. ZCODE.eq.122 ) then
+  if( ZCODE == 90 .OR. ZCODE == 122 ) then
      !
      !        ASCII is assumed - ZCODE is the ASCII code of either lower or
      !        upper case 'Z'.
      !
-     if( INTA.GE.97 .and. INTA.LE.122 ) INTA = INTA - 32
-     if( INTB.GE.97 .and. INTB.LE.122 ) INTB = INTB - 32
+     if( INTA >= 97 .and. INTA <= 122 ) INTA = INTA - 32
+     if( INTB >= 97 .and. INTB <= 122 ) INTB = INTB - 32
      !
-  else if( ZCODE.eq.233 .OR. ZCODE.eq.169 ) then
+  else if( ZCODE == 233 .OR. ZCODE == 169 ) then
      !
      !        EBCDIC is assumed - ZCODE is the EBCDIC code of either lower or
      !        upper case 'Z'.
      !
-     if( INTA.GE.129 .and. INTA.LE.137 .OR. &
-          INTA.GE.145 .and. INTA.LE.153 .OR. &
-          INTA.GE.162 .and. INTA.LE.169 ) INTA = INTA + 64
-     if( INTB.GE.129 .and. INTB.LE.137 .OR. &
-          INTB.GE.145 .and. INTB.LE.153 .OR. &
-          INTB.GE.162 .and. INTB.LE.169 ) INTB = INTB + 64
+     if( INTA >= 129 .and. INTA <= 137 .OR. &
+          INTA >= 145 .and. INTA <= 153 .OR. &
+          INTA >= 162 .and. INTA <= 169 ) INTA = INTA + 64
+     if( INTB >= 129 .and. INTB <= 137 .OR. &
+          INTB >= 145 .and. INTB <= 153 .OR. &
+          INTB >= 162 .and. INTB <= 169 ) INTB = INTB + 64
      !
-  else if( ZCODE.eq.218 .OR. ZCODE.eq.250 ) then
+  else if( ZCODE == 218 .OR. ZCODE == 250 ) then
      !
      !        ASCII is assumed, on Prime machines - ZCODE is the ASCII code
      !        plus 128 of either lower or upper case 'Z'.
      !
-     if( INTA.GE.225 .and. INTA.LE.250 ) INTA = INTA - 32
-     if( INTB.GE.225 .and. INTB.LE.250 ) INTB = INTB - 32
+     if( INTA >= 225 .and. INTA <= 250 ) INTA = INTA - 32
+     if( INTB >= 225 .and. INTB <= 250 ) INTB = INTB - 32
   end if
-  LSAME = INTA.eq.INTB
+  LSAME = INTA == INTB
   !
   !     RETURN
   !
   !     End of LSAME
   !
 end FUNCTION LSAME
-!=============================================================================
+!==============================================================================
 integer FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
   !
   !  -- LAPACK auxiliary routine (version 2.0) --
@@ -146,6 +146,7 @@ integer FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
   !     September 30, 1994
   !
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   character*( * )    NAME, OPTS
   integer            ISPEC, N1, N2, N3, N4
   !     ..
@@ -231,7 +232,7 @@ integer FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
   !      the optimal blocksize for STRTRI as follows:
   !
   !      NB = ILAENV( 1, 'STRTRI', UPLO // DIAG, N, -1, -1, -1 )
-  !      if( NB.LE.1 ) NB = MAX( 1, N )
+  !      if( NB <= 1 ) NB = MAX( 1, N )
   !
   !  =====================================================================
   !
@@ -249,7 +250,7 @@ integer FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
 
   !
   !     Invalid value for ISPEC
-  if(ISPEC > 0) then 
+  if(ISPEC > 0) then
      ILAENV = -1
      RETURN
   end if
@@ -264,53 +265,53 @@ integer FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
      SUBNAM = NAME
      IC = ICHAR( SUBNAM( 1:1 ) )
      IZ = ICHAR( 'Z' )
-     if( IZ.eq.90 .OR. IZ.eq.122 ) then
+     if( IZ == 90 .OR. IZ == 122 ) then
         !
         !        ASCII character set
         !
-        if( IC.GE.97 .and. IC.LE.122 ) then
+        if( IC >= 97 .and. IC <= 122 ) then
            SUBNAM( 1:1 ) = CHAR( IC-32 )
            do I = 2, 6
               IC = ICHAR( SUBNAM( I:I ) )
-              if( IC.GE.97 .and. IC.LE.122 ) &
+              if( IC >= 97 .and. IC <= 122 ) &
                    SUBNAM( I:I ) = CHAR( IC-32 )
            end do
         end if
         !
-     else if( IZ.eq.233 .OR. IZ.eq.169 ) then
+     else if( IZ == 233 .OR. IZ == 169 ) then
         !
         !        EBCDIC character set
         !
-        if( ( IC.GE.129 .and. IC.LE.137 ) .OR. &
-             ( IC.GE.145 .and. IC.LE.153 ) .OR. &
-             ( IC.GE.162 .and. IC.LE.169 ) ) then
+        if( ( IC >= 129 .and. IC <= 137 ) .OR. &
+             ( IC >= 145 .and. IC <= 153 ) .OR. &
+             ( IC >= 162 .and. IC <= 169 ) ) then
            SUBNAM( 1:1 ) = CHAR( IC+64 )
            do I = 2, 6
               IC = ICHAR( SUBNAM( I:I ) )
-              if( ( IC.GE.129 .and. IC.LE.137 ) .OR. &
-                   ( IC.GE.145 .and. IC.LE.153 ) .OR. &
-                   ( IC.GE.162 .and. IC.LE.169 ) ) &
+              if( ( IC >= 129 .and. IC <= 137 ) .OR. &
+                   ( IC >= 145 .and. IC <= 153 ) .OR. &
+                   ( IC >= 162 .and. IC <= 169 ) ) &
                    SUBNAM( I:I ) = CHAR( IC+64 )
            end do
         end if
         !
-     else if( IZ.eq.218 .OR. IZ.eq.250 ) then
+     else if( IZ == 218 .OR. IZ == 250 ) then
         !
         !        Prime machines:  ASCII+128
         !
-        if( IC.GE.225 .and. IC.LE.250 ) then
+        if( IC >= 225 .and. IC <= 250 ) then
            SUBNAM( 1:1 ) = CHAR( IC-32 )
            do I = 2, 6
               IC = ICHAR( SUBNAM( I:I ) )
-              if( IC.GE.225 .and. IC.LE.250 ) &
+              if( IC >= 225 .and. IC <= 250 ) &
                    SUBNAM( I:I ) = CHAR( IC-32 )
            end do
         end if
      end if
      !
      C1 = SUBNAM( 1:1 )
-     SNAME = C1.eq.'S' .OR. C1.eq.'D'
-     CNAME = C1.eq.'C' .OR. C1.eq.'Z'
+     SNAME = C1 == 'S' .OR. C1 == 'D'
+     CNAME = C1 == 'C' .OR. C1 == 'Z'
      if( .not.( CNAME .OR. SNAME ) ) &
           RETURN
      C2 = SUBNAM( 2:3 )
@@ -318,7 +319,7 @@ integer FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
      C4 = C3( 2:3 )
      !
 
-     if(ISPEC == 1) then       
+     if(ISPEC == 1) then
         !
         !
         !     ISPEC = 1:  block size
@@ -329,145 +330,145 @@ integer FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
         !
         NB = 1
         !
-        if( C2.eq.'GE' ) then
-           if( C3.eq.'TRF' ) then
+        if( C2 == 'GE' ) then
+           if( C3 == 'TRF' ) then
               if( SNAME ) then
                  NB = 64
               else
                  NB = 64
               end if
-           else if( C3.eq.'QRF' .OR. C3.eq.'RQF' .OR. C3.eq.'LQF' .OR. &
-                C3.eq.'QLF' ) then
+           else if( C3 == 'QRF' .OR. C3 == 'RQF' .OR. C3 == 'LQF' .OR. &
+                C3 == 'QLF' ) then
               if( SNAME ) then
                  NB = 32
               else
                  NB = 32
               end if
-           else if( C3.eq.'HRD' ) then
+           else if( C3 == 'HRD' ) then
               if( SNAME ) then
                  NB = 32
               else
                  NB = 32
               end if
-           else if( C3.eq.'BRD' ) then
+           else if( C3 == 'BRD' ) then
               if( SNAME ) then
                  NB = 32
               else
                  NB = 32
               end if
-           else if( C3.eq.'TRI' ) then
+           else if( C3 == 'TRI' ) then
               if( SNAME ) then
                  NB = 64
               else
                  NB = 64
               end if
            end if
-        else if( C2.eq.'PO' ) then
-           if( C3.eq.'TRF' ) then
+        else if( C2 == 'PO' ) then
+           if( C3 == 'TRF' ) then
               if( SNAME ) then
                  NB = 64
               else
                  NB = 64
               end if
            end if
-        else if( C2.eq.'SY' ) then
-           if( C3.eq.'TRF' ) then
+        else if( C2 == 'SY' ) then
+           if( C3 == 'TRF' ) then
               if( SNAME ) then
                  NB = 64
               else
                  NB = 64
               end if
-           else if( SNAME .and. C3.eq.'TRD' ) then
+           else if( SNAME .and. C3 == 'TRD' ) then
               NB = 1
-           else if( SNAME .and. C3.eq.'GST' ) then
+           else if( SNAME .and. C3 == 'GST' ) then
               NB = 64
            end if
-        else if( CNAME .and. C2.eq.'HE' ) then
-           if( C3.eq.'TRF' ) then
+        else if( CNAME .and. C2 == 'HE' ) then
+           if( C3 == 'TRF' ) then
               NB = 64
-           else if( C3.eq.'TRD' ) then
+           else if( C3 == 'TRD' ) then
               NB = 1
-           else if( C3.eq.'GST' ) then
+           else if( C3 == 'GST' ) then
               NB = 64
            end if
-        else if( SNAME .and. C2.eq.'OR' ) then
-           if( C3( 1:1 ).eq.'G' ) then
-              if( C4.eq.'QR' .OR. C4.eq.'RQ' .OR. C4.eq.'LQ' .OR. &
-                   C4.eq.'QL' .OR. C4.eq.'HR' .OR. C4.eq.'TR' .OR. &
-                   C4.eq.'BR' ) then
+        else if( SNAME .and. C2 == 'OR' ) then
+           if( C3( 1:1 ) == 'G' ) then
+              if( C4 == 'QR' .OR. C4 == 'RQ' .OR. C4 == 'LQ' .OR. &
+                   C4 == 'QL' .OR. C4 == 'HR' .OR. C4 == 'TR' .OR. &
+                   C4 == 'BR' ) then
                  NB = 32
               end if
-           else if( C3( 1:1 ).eq.'M' ) then
-              if( C4.eq.'QR' .OR. C4.eq.'RQ' .OR. C4.eq.'LQ' .OR. &
-                   C4.eq.'QL' .OR. C4.eq.'HR' .OR. C4.eq.'TR' .OR. &
-                   C4.eq.'BR' ) then
-                 NB = 32
-              end if
-           end if
-        else if( CNAME .and. C2.eq.'UN' ) then
-           if( C3( 1:1 ).eq.'G' ) then
-              if( C4.eq.'QR' .OR. C4.eq.'RQ' .OR. C4.eq.'LQ' .OR. &
-                   C4.eq.'QL' .OR. C4.eq.'HR' .OR. C4.eq.'TR' .OR. &
-                   C4.eq.'BR' ) then
-                 NB = 32
-              end if
-           else if( C3( 1:1 ).eq.'M' ) then
-              if( C4.eq.'QR' .OR. C4.eq.'RQ' .OR. C4.eq.'LQ' .OR. &
-                   C4.eq.'QL' .OR. C4.eq.'HR' .OR. C4.eq.'TR' .OR. &
-                   C4.eq.'BR' ) then
+           else if( C3( 1:1 ) == 'M' ) then
+              if( C4 == 'QR' .OR. C4 == 'RQ' .OR. C4 == 'LQ' .OR. &
+                   C4 == 'QL' .OR. C4 == 'HR' .OR. C4 == 'TR' .OR. &
+                   C4 == 'BR' ) then
                  NB = 32
               end if
            end if
-        else if( C2.eq.'GB' ) then
-           if( C3.eq.'TRF' ) then
+        else if( CNAME .and. C2 == 'UN' ) then
+           if( C3( 1:1 ) == 'G' ) then
+              if( C4 == 'QR' .OR. C4 == 'RQ' .OR. C4 == 'LQ' .OR. &
+                   C4 == 'QL' .OR. C4 == 'HR' .OR. C4 == 'TR' .OR. &
+                   C4 == 'BR' ) then
+                 NB = 32
+              end if
+           else if( C3( 1:1 ) == 'M' ) then
+              if( C4 == 'QR' .OR. C4 == 'RQ' .OR. C4 == 'LQ' .OR. &
+                   C4 == 'QL' .OR. C4 == 'HR' .OR. C4 == 'TR' .OR. &
+                   C4 == 'BR' ) then
+                 NB = 32
+              end if
+           end if
+        else if( C2 == 'GB' ) then
+           if( C3 == 'TRF' ) then
               if( SNAME ) then
-                 if( N4.LE.64 ) then
+                 if( N4 <= 64 ) then
                     NB = 1
                  else
                     NB = 32
                  end if
               else
-                 if( N4.LE.64 ) then
-                    NB = 1
-                 else
-                    NB = 32
-                 end if
-              end if
-           end if
-        else if( C2.eq.'PB' ) then
-           if( C3.eq.'TRF' ) then
-              if( SNAME ) then
-                 if( N2.LE.64 ) then
-                    NB = 1
-                 else
-                    NB = 32
-                 end if
-              else
-                 if( N2.LE.64 ) then
+                 if( N4 <= 64 ) then
                     NB = 1
                  else
                     NB = 32
                  end if
               end if
            end if
-        else if( C2.eq.'TR' ) then
-           if( C3.eq.'TRI' ) then
+        else if( C2 == 'PB' ) then
+           if( C3 == 'TRF' ) then
+              if( SNAME ) then
+                 if( N2 <= 64 ) then
+                    NB = 1
+                 else
+                    NB = 32
+                 end if
+              else
+                 if( N2 <= 64 ) then
+                    NB = 1
+                 else
+                    NB = 32
+                 end if
+              end if
+           end if
+        else if( C2 == 'TR' ) then
+           if( C3 == 'TRI' ) then
               if( SNAME ) then
                  NB = 64
               else
                  NB = 64
               end if
            end if
-        else if( C2.eq.'LA' ) then
-           if( C3.eq.'UUM' ) then
+        else if( C2 == 'LA' ) then
+           if( C3 == 'UUM' ) then
               if( SNAME ) then
                  NB = 64
               else
                  NB = 64
               end if
            end if
-        else if( SNAME .and. C2.eq.'ST' ) then
-           if( C3.eq.'EBZ' ) then
+        else if( SNAME .and. C2 == 'ST' ) then
+           if( C3 == 'EBZ' ) then
               NB = 1
            end if
         end if
@@ -476,77 +477,77 @@ integer FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
         !
      end if
 
-     if(ISPEC == 2) then 
+     if(ISPEC == 2) then
         !
         !     ISPEC = 2:  minimum block size
         !
         NBMIN = 2
-        if( C2.eq.'GE' ) then
-           if( C3.eq.'QRF' .OR. C3.eq.'RQF' .OR. C3.eq.'LQF' .OR. &
-                C3.eq.'QLF' ) then
+        if( C2 == 'GE' ) then
+           if( C3 == 'QRF' .OR. C3 == 'RQF' .OR. C3 == 'LQF' .OR. &
+                C3 == 'QLF' ) then
               if( SNAME ) then
                  NBMIN = 2
               else
                  NBMIN = 2
               end if
-           else if( C3.eq.'HRD' ) then
+           else if( C3 == 'HRD' ) then
               if( SNAME ) then
                  NBMIN = 2
               else
                  NBMIN = 2
               end if
-           else if( C3.eq.'BRD' ) then
+           else if( C3 == 'BRD' ) then
               if( SNAME ) then
                  NBMIN = 2
               else
                  NBMIN = 2
               end if
-           else if( C3.eq.'TRI' ) then
+           else if( C3 == 'TRI' ) then
               if( SNAME ) then
                  NBMIN = 2
               else
                  NBMIN = 2
               end if
            end if
-        else if( C2.eq.'SY' ) then
-           if( C3.eq.'TRF' ) then
+        else if( C2 == 'SY' ) then
+           if( C3 == 'TRF' ) then
               if( SNAME ) then
                  NBMIN = 8
               else
                  NBMIN = 8
               end if
-           else if( SNAME .and. C3.eq.'TRD' ) then
+           else if( SNAME .and. C3 == 'TRD' ) then
               NBMIN = 2
            end if
-        else if( CNAME .and. C2.eq.'HE' ) then
-           if( C3.eq.'TRD' ) then
+        else if( CNAME .and. C2 == 'HE' ) then
+           if( C3 == 'TRD' ) then
               NBMIN = 2
            end if
-        else if( SNAME .and. C2.eq.'OR' ) then
-           if( C3( 1:1 ).eq.'G' ) then
-              if( C4.eq.'QR' .OR. C4.eq.'RQ' .OR. C4.eq.'LQ' .OR. &
-                   C4.eq.'QL' .OR. C4.eq.'HR' .OR. C4.eq.'TR' .OR. &
-                   C4.eq.'BR' ) then
+        else if( SNAME .and. C2 == 'OR' ) then
+           if( C3( 1:1 ) == 'G' ) then
+              if( C4 == 'QR' .OR. C4 == 'RQ' .OR. C4 == 'LQ' .OR. &
+                   C4 == 'QL' .OR. C4 == 'HR' .OR. C4 == 'TR' .OR. &
+                   C4 == 'BR' ) then
                  NBMIN = 2
               end if
-           else if( C3( 1:1 ).eq.'M' ) then
-              if( C4.eq.'QR' .OR. C4.eq.'RQ' .OR. C4.eq.'LQ' .OR. &
-                   C4.eq.'QL' .OR. C4.eq.'HR' .OR. C4.eq.'TR' .OR. &
-                   C4.eq.'BR' ) then
+           else if( C3( 1:1 ) == 'M' ) then
+              if( C4 == 'QR' .OR. C4 == 'RQ' .OR. C4 == 'LQ' .OR. &
+                   C4 == 'QL' .OR. C4 == 'HR' .OR. C4 == 'TR' .OR. &
+                   C4 == 'BR' ) then
                  NBMIN = 2
               end if
            end if
-        else if( CNAME .and. C2.eq.'UN' ) then
-           if( C3( 1:1 ).eq.'G' ) then
-              if( C4.eq.'QR' .OR. C4.eq.'RQ' .OR. C4.eq.'LQ' .OR. &
-                   C4.eq.'QL' .OR. C4.eq.'HR' .OR. C4.eq.'TR' .OR. &
-                   C4.eq.'BR' ) then
+        else if( CNAME .and. C2 == 'UN' ) then
+           if( C3( 1:1 ) == 'G' ) then
+              if( C4 == 'QR' .OR. C4 == 'RQ' .OR. C4 == 'LQ' .OR. &
+                   C4 == 'QL' .OR. C4 == 'HR' .OR. C4 == 'TR' .OR. &
+                   C4 == 'BR' ) then
                  NBMIN = 2
               end if
-           else if( C3( 1:1 ).eq.'M' ) then
-              if( C4.eq.'QR' .OR. C4.eq.'RQ' .OR. C4.eq.'LQ' .OR. &
-                   C4.eq.'QL' .OR. C4.eq.'HR' .OR. C4.eq.'TR' .OR. &
-                   C4.eq.'BR' ) then
+           else if( C3( 1:1 ) == 'M' ) then
+              if( C4 == 'QR' .OR. C4 == 'RQ' .OR. C4 == 'LQ' .OR. &
+                   C4 == 'QL' .OR. C4 == 'HR' .OR. C4 == 'TR' .OR. &
+                   C4 == 'BR' ) then
                  NBMIN = 2
               end if
            end if
@@ -555,53 +556,53 @@ integer FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
         RETURN
      end if
 
-     if(ISPEC == 3) then 
+     if(ISPEC == 3) then
         !
         !     ISPEC = 3:  crossover point
         !
         NX = 0
-        if( C2.eq.'GE' ) then
-           if( C3.eq.'QRF' .OR. C3.eq.'RQF' .OR. C3.eq.'LQF' .OR. &
-                C3.eq.'QLF' ) then
+        if( C2 == 'GE' ) then
+           if( C3 == 'QRF' .OR. C3 == 'RQF' .OR. C3 == 'LQF' .OR. &
+                C3 == 'QLF' ) then
               if( SNAME ) then
                  NX = 128
               else
                  NX = 128
               end if
-           else if( C3.eq.'HRD' ) then
+           else if( C3 == 'HRD' ) then
               if( SNAME ) then
                  NX = 128
               else
                  NX = 128
               end if
-           else if( C3.eq.'BRD' ) then
+           else if( C3 == 'BRD' ) then
               if( SNAME ) then
                  NX = 128
               else
                  NX = 128
               end if
            end if
-        else if( C2.eq.'SY' ) then
-           if( SNAME .and. C3.eq.'TRD' ) then
+        else if( C2 == 'SY' ) then
+           if( SNAME .and. C3 == 'TRD' ) then
               NX = 1
            end if
-        else if( CNAME .and. C2.eq.'HE' ) then
-           if( C3.eq.'TRD' ) then
+        else if( CNAME .and. C2 == 'HE' ) then
+           if( C3 == 'TRD' ) then
               NX = 1
            end if
-        else if( SNAME .and. C2.eq.'OR' ) then
-           if( C3( 1:1 ).eq.'G' ) then
-              if( C4.eq.'QR' .OR. C4.eq.'RQ' .OR. C4.eq.'LQ' .OR. &
-                   C4.eq.'QL' .OR. C4.eq.'HR' .OR. C4.eq.'TR' .OR. &
-                   C4.eq.'BR' ) then
+        else if( SNAME .and. C2 == 'OR' ) then
+           if( C3( 1:1 ) == 'G' ) then
+              if( C4 == 'QR' .OR. C4 == 'RQ' .OR. C4 == 'LQ' .OR. &
+                   C4 == 'QL' .OR. C4 == 'HR' .OR. C4 == 'TR' .OR. &
+                   C4 == 'BR' ) then
                  NX = 128
               end if
            end if
-        else if( CNAME .and. C2.eq.'UN' ) then
-           if( C3( 1:1 ).eq.'G' ) then
-              if( C4.eq.'QR' .OR. C4.eq.'RQ' .OR. C4.eq.'LQ' .OR. &
-                   C4.eq.'QL' .OR. C4.eq.'HR' .OR. C4.eq.'TR' .OR. &
-                   C4.eq.'BR' ) then
+        else if( CNAME .and. C2 == 'UN' ) then
+           if( C3( 1:1 ) == 'G' ) then
+              if( C4 == 'QR' .OR. C4 == 'RQ' .OR. C4 == 'LQ' .OR. &
+                   C4 == 'QL' .OR. C4 == 'HR' .OR. C4 == 'TR' .OR. &
+                   C4 == 'BR' ) then
                  NX = 128
               end if
            end if
@@ -612,7 +613,7 @@ integer FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
      !
   end if
 
-  if(ISPEC == 4) then 
+  if(ISPEC == 4) then
      !
      !     ISPEC = 4:  number of shifts (used by xHSEQR)
      !
@@ -620,7 +621,7 @@ integer FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
      RETURN
   end if
 
-  if(ISPEC == 5) then 
+  if(ISPEC == 5) then
      !
      !     ISPEC = 5:  minimum column dimension (not used)
      !
@@ -628,8 +629,7 @@ integer FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
      RETURN
   end if
 
-
-  if(ISPEC == 6) then 
+  if(ISPEC == 6) then
      !
      !     ISPEC = 6:  crossover point for SVD (used by xGELSS and xGESVD)
      !
@@ -645,8 +645,7 @@ integer FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
      RETURN
   end if
 
-
-  if(ISPEC == 8) then 
+  if(ISPEC == 8) then
      !
      !     ISPEC = 8:  crossover point for multishift (used by xHSEQR)
      !
@@ -657,23 +656,21 @@ integer FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
   !     End of ILAENV
   !
 end FUNCTION ILAENV
-!============================================================================
-!============================================================================
-! This is a collection of single precision LAPACK routines that BATSRUS uses. 
+!==============================================================================
+! This is a collection of single precision LAPACK routines that BATSRUS uses.
 ! You are encouraged to use the local LAPACK library if available.
 !
 ! subroutines: sgetrf, sgetrs, sgetf2, slaswp
-! 
-!============================================================================
-!============================================================================
+!
 subroutine SGETRF( M, N, A, LDA, IPIV, INFO )
   !
   !  -- LAPACK routine (version 3.0) --
   !     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
   !     Courant Institute, Argonne National Lab, and Rice University
-  !     March 31, 1993 
+  !     March 31, 1993
   !
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   integer            INFO, LDA, M, N
   !     ..
   !     .. Array Arguments ..
@@ -744,27 +741,27 @@ subroutine SGETRF( M, N, A, LDA, IPIV, INFO )
   !     Test the input parameters.
   !
   INFO = 0
-  if( M.lt.0 ) then
+  if( M < 0 ) then
      INFO = -1
-  else if( N.lt.0 ) then
+  else if( N < 0 ) then
      INFO = -2
-  else if( LDA.lt.MAX( 1, M ) ) then
+  else if( LDA < MAX( 1, M ) ) then
      INFO = -4
   end if
-  if( INFO.ne.0 ) then
+  if( INFO /= 0 ) then
      CALL XERBLA( 'SGETRF', -INFO )
      RETURN
   end if
   !
   !     Quick return if possible
   !
-  if( M.eq.0 .OR. N.eq.0 ) &
+  if( M == 0 .OR. N == 0 ) &
        RETURN
   !
   !     Determine the block size for this environment.
   !
   NB = ILAENV( 1, 'SGETRF', ' ', M, N, -1, -1 )
-  if( NB.LE.1 .OR. NB.GE.MIN( M, N ) ) then
+  if( NB <= 1 .OR. NB >= MIN( M, N ) ) then
      !
      !        Use unblocked code.
      !
@@ -783,7 +780,7 @@ subroutine SGETRF( M, N, A, LDA, IPIV, INFO )
         !
         !           Adjust INFO and the pivot indices.
         !
-        if( INFO.eq.0 .and. IINFO.GT.0 ) &
+        if( INFO == 0 .and. IINFO > 0 ) &
              INFO = IINFO + J - 1
         do I = J, MIN( M, J+JB-1 )
            IPIV( I ) = J - 1 + IPIV( I )
@@ -793,7 +790,7 @@ subroutine SGETRF( M, N, A, LDA, IPIV, INFO )
         !
         CALL SLASWP( J-1, A, LDA, J, J+JB-1, IPIV, 1 )
         !
-        if( J+JB.LE.N ) then
+        if( J+JB <= N ) then
            !
            !              Apply interchanges to columns J+JB:N.
            !
@@ -805,7 +802,7 @@ subroutine SGETRF( M, N, A, LDA, IPIV, INFO )
            CALL STRSM( 'Left', 'Lower', 'No transpose', 'Unit', JB, &
                 N-J-JB+1, ONE, A( J, J ), LDA, A( J, J+JB ), &
                 LDA )
-           if( J+JB.LE.M ) then
+           if( J+JB <= M ) then
               !
               !                 Update trailing submatrix.
               !
@@ -822,15 +819,16 @@ subroutine SGETRF( M, N, A, LDA, IPIV, INFO )
   !     End of SGETRF
   !
 end subroutine SGETRF
-!===========================================================================
+!==============================================================================
 subroutine SGETRS( TRANS, N, NRHS, A, LDA, IPIV, B, LDB, INFO )
   !
   !  -- LAPACK routine (version 3.0) --
   !     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
   !     Courant Institute, Argonne National Lab, and Rice University
-  !     March 31, 1993 
+  !     March 31, 1993
   !
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   character          TRANS
   integer            INFO, LDA, LDB, N, NRHS
   !     ..
@@ -909,23 +907,23 @@ subroutine SGETRS( TRANS, N, NRHS, A, LDA, IPIV, B, LDB, INFO )
   if( .not.NOTRAN .and. .not.LSAME( TRANS, 'T' ) .and. .not. &
        LSAME( TRANS, 'C' ) ) then
      INFO = -1
-  else if( N.lt.0 ) then
+  else if( N < 0 ) then
      INFO = -2
-  else if( NRHS.lt.0 ) then
+  else if( NRHS < 0 ) then
      INFO = -3
-  else if( LDA.lt.MAX( 1, N ) ) then
+  else if( LDA < MAX( 1, N ) ) then
      INFO = -5
-  else if( LDB.lt.MAX( 1, N ) ) then
+  else if( LDB < MAX( 1, N ) ) then
      INFO = -8
   end if
-  if( INFO.ne.0 ) then
+  if( INFO /= 0 ) then
      CALL XERBLA( 'SGETRS', -INFO )
      RETURN
   end if
   !
   !     Quick return if possible
   !
-  if( N.eq.0 .OR. NRHS.eq.0 ) &
+  if( N == 0 .OR. NRHS == 0 ) &
        RETURN
   !
   if( NOTRAN ) then
@@ -969,7 +967,7 @@ subroutine SGETRS( TRANS, N, NRHS, A, LDA, IPIV, B, LDB, INFO )
   !     End of SGETRS
   !
 end subroutine SGETRS
-!===========================================================================
+!==============================================================================
 subroutine SGETF2( M, N, A, LDA, IPIV, INFO )
   !
   !  -- LAPACK routine (version 3.0) --
@@ -978,6 +976,7 @@ subroutine SGETF2( M, N, A, LDA, IPIV, INFO )
   !     June 30, 1992
   !
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   integer            INFO, LDA, M, N
   !     ..
   !     .. Array Arguments ..
@@ -1048,21 +1047,21 @@ subroutine SGETF2( M, N, A, LDA, IPIV, INFO )
   !     Test the input parameters.
   !
   INFO = 0
-  if( M.lt.0 ) then
+  if( M < 0 ) then
      INFO = -1
-  else if( N.lt.0 ) then
+  else if( N < 0 ) then
      INFO = -2
-  else if( LDA.lt.MAX( 1, M ) ) then
+  else if( LDA < MAX( 1, M ) ) then
      INFO = -4
   end if
-  if( INFO.ne.0 ) then
+  if( INFO /= 0 ) then
      CALL XERBLA( 'SGETF2', -INFO )
      RETURN
   end if
   !
   !     Quick return if possible
   !
-  if( M.eq.0 .OR. N.eq.0 ) &
+  if( M == 0 .OR. N == 0 ) &
        RETURN
   !
   do J = 1, MIN( M, N )
@@ -1071,24 +1070,24 @@ subroutine SGETF2( M, N, A, LDA, IPIV, INFO )
      !
      JP = J - 1 + ISAMAX( M-J+1, A( J, J ), 1 )
      IPIV( J ) = JP
-     if( A( JP, J ).ne.ZERO ) then
+     if( A( JP, J ) /= ZERO ) then
         !
         !           Apply the interchange to columns 1:N.
         !
-        if( JP.ne.J ) &
+        if( JP /= J ) &
              CALL SSWAP( N, A( J, 1 ), LDA, A( JP, 1 ), LDA )
         !
         !           Compute elements J+1:M of J-th column.
         !
-        if( J.lt.M ) &
+        if( J < M ) &
              CALL SSCAL( M-J, ONE / A( J, J ), A( J+1, J ), 1 )
         !
-     else if( INFO.eq.0 ) then
+     else if( INFO == 0 ) then
         !
         INFO = J
      end if
      !
-     if( J.lt.MIN( M, N ) ) then
+     if( J < MIN( M, N ) ) then
         !
         !           Update trailing submatrix.
         !
@@ -1101,7 +1100,7 @@ subroutine SGETF2( M, N, A, LDA, IPIV, INFO )
   !     End of SGETF2
   !
 end subroutine SGETF2
-!===========================================================================
+!==============================================================================
 
 subroutine SLASWP( N, A, LDA, K1, K2, IPIV, INCX )
   !
@@ -1111,6 +1110,7 @@ subroutine SLASWP( N, A, LDA, K1, K2, IPIV, INCX )
   !     June 30, 1999
   !
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   integer            INCX, K1, K2, LDA, N
   !     ..
   !     .. Array Arguments ..
@@ -1171,12 +1171,12 @@ subroutine SLASWP( N, A, LDA, K1, K2, IPIV, INCX )
   !
   !     Interchange row I with row IPIV(I) for each of rows K1 through K2.
   !
-  if( INCX.GT.0 ) then
+  if( INCX > 0 ) then
      IX0 = K1
      I1 = K1
      I2 = K2
      INC = 1
-  else if( INCX.lt.0 ) then
+  else if( INCX < 0 ) then
      IX0 = 1 + ( 1-K2 )*INCX
      I1 = K2
      I2 = K1
@@ -1186,12 +1186,12 @@ subroutine SLASWP( N, A, LDA, K1, K2, IPIV, INCX )
   end if
   !
   N32 = ( N / 32 )*32
-  if( N32.ne.0 ) then
+  if( N32 /= 0 ) then
      do J = 1, N32, 32
         IX = IX0
         do I = I1, I2, INC
            IP = IPIV( IX )
-           if( IP.ne.I ) then
+           if( IP /= I ) then
               do K = J, J + 31
                  TEMP = A( I, K )
                  A( I, K ) = A( IP, K )
@@ -1202,12 +1202,12 @@ subroutine SLASWP( N, A, LDA, K1, K2, IPIV, INCX )
         end do
      end do
   end if
-  if( N32.ne.N ) then
+  if( N32 /= N ) then
      N32 = N32 + 1
      IX = IX0
      do I = I1, I2, INC
         IP = IPIV( IX )
-        if( IP.ne.I ) then
+        if( IP /= I ) then
            do K = N32, N
               TEMP = A( I, K )
               A( I, K ) = A( IP, K )
@@ -1223,15 +1223,12 @@ subroutine SLASWP( N, A, LDA, K1, K2, IPIV, INCX )
   !     End of SLASWP
   !
 end subroutine SLASWP
-!=============================================================================
-!=============================================================================
-! This is a collection of real*8 LAPACK routines that BATSRUS uses. 
+!==============================================================================
+! This is a collection of real*8 LAPACK routines that BATSRUS uses.
 ! You are encouraged to use the local LAPACK library if available.
 !
 ! subroutines: dgetrf, dgetrs, dgetf2, dlaswp
-! 
-!=============================================================================
-!=============================================================================
+!
 subroutine DGETRF( M, N, A, LDA, IPIV, INFO )
 
   !
@@ -1241,6 +1238,7 @@ subroutine DGETRF( M, N, A, LDA, IPIV, INFO )
   !     September 30, 1994
   !
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   integer            INFO, LDA, M, N
   !     ..
   !     .. Array Arguments ..
@@ -1311,27 +1309,27 @@ subroutine DGETRF( M, N, A, LDA, IPIV, INFO )
   !     Test the input parameters.
   !
   INFO = 0
-  if( M.lt.0 ) then
+  if( M < 0 ) then
      INFO = -1
-  else if( N.lt.0 ) then
+  else if( N < 0 ) then
      INFO = -2
-  else if( LDA.lt.MAX( 1, M ) ) then
+  else if( LDA < MAX( 1, M ) ) then
      INFO = -4
   end if
-  if( INFO.ne.0 ) then
+  if( INFO /= 0 ) then
      CALL XERBLA( 'DGETRF', -INFO )
      RETURN
   end if
   !
   !     Quick return if possible
   !
-  if( M.eq.0 .OR. N.eq.0 ) &
+  if( M == 0 .OR. N == 0 ) &
        RETURN
   !
   !     Determine the block size for this environment.
   !
   NB = ILAENV( 1, 'DGETRF', ' ', M, N, -1, -1 )
-  if( NB.LE.1 .OR. NB.GE.MIN( M, N ) ) then
+  if( NB <= 1 .OR. NB >= MIN( M, N ) ) then
      !
      !        Use unblocked code.
      !
@@ -1350,7 +1348,7 @@ subroutine DGETRF( M, N, A, LDA, IPIV, INFO )
         !
         !           Adjust INFO and the pivot indices.
         !
-        if( INFO.eq.0 .and. IINFO.GT.0 ) &
+        if( INFO == 0 .and. IINFO > 0 ) &
              INFO = IINFO + J - 1
         do I = J, MIN( M, J+JB-1 )
            IPIV( I ) = J - 1 + IPIV( I )
@@ -1360,7 +1358,7 @@ subroutine DGETRF( M, N, A, LDA, IPIV, INFO )
         !
         CALL DLASWP( J-1, A, LDA, J, J+JB-1, IPIV, 1 )
         !
-        if( J+JB.LE.N ) then
+        if( J+JB <= N ) then
            !
            !              Apply interchanges to columns J+JB:N.
            !
@@ -1372,7 +1370,7 @@ subroutine DGETRF( M, N, A, LDA, IPIV, INFO )
            CALL DTRSM( 'Left', 'Lower', 'No transpose', 'Unit', JB, &
                 N-J-JB+1, ONE, A( J, J ), LDA, A( J, J+JB ), &
                 LDA )
-           if( J+JB.LE.M ) then
+           if( J+JB <= M ) then
               !
               !                 Update trailing submatrix.
               !
@@ -1384,7 +1382,7 @@ subroutine DGETRF( M, N, A, LDA, IPIV, INFO )
         end if
      end do
   end if
-  if (INFO.GT.0) then
+  if (INFO > 0) then
      PRINT *,'LAPACK routine DGETRF:'
      PRINT *,'U(',INFO,INFO,') is exactly zero. The matrix'
      PRINT *,'is singular: the inverse cannot be computed.'
@@ -1395,7 +1393,7 @@ subroutine DGETRF( M, N, A, LDA, IPIV, INFO )
   !     End of DGETRF
   !
 end subroutine DGETRF
-!=============================================================================
+!==============================================================================
 subroutine DGETRS( TRANS, N, NRHS, A, LDA, IPIV, B, LDB, INFO )
   !
   !  -- LAPACK routine (version 2.0) --
@@ -1404,6 +1402,7 @@ subroutine DGETRS( TRANS, N, NRHS, A, LDA, IPIV, B, LDB, INFO )
   !     September 30, 1994
   !
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   character          TRANS
   integer            INFO, LDA, LDB, N, NRHS
   !     ..
@@ -1482,23 +1481,23 @@ subroutine DGETRS( TRANS, N, NRHS, A, LDA, IPIV, B, LDB, INFO )
   if( .not.NOTRAN .and. .not.LSAME( TRANS, 'T' ) .and. .not. &
        LSAME( TRANS, 'C' ) ) then
      INFO = -1
-  else if( N.lt.0 ) then
+  else if( N < 0 ) then
      INFO = -2
-  else if( NRHS.lt.0 ) then
+  else if( NRHS < 0 ) then
      INFO = -3
-  else if( LDA.lt.MAX( 1, N ) ) then
+  else if( LDA < MAX( 1, N ) ) then
      INFO = -5
-  else if( LDB.lt.MAX( 1, N ) ) then
+  else if( LDB < MAX( 1, N ) ) then
      INFO = -8
   end if
-  if( INFO.ne.0 ) then
+  if( INFO /= 0 ) then
      CALL XERBLA( 'DGETRS', -INFO )
      RETURN
   end if
   !
   !     Quick return if possible
   !
-  if( N.eq.0 .OR. NRHS.eq.0 ) &
+  if( N == 0 .OR. NRHS == 0 ) &
        RETURN
   !
   if( NOTRAN ) then
@@ -1542,7 +1541,7 @@ subroutine DGETRS( TRANS, N, NRHS, A, LDA, IPIV, B, LDB, INFO )
   !     End of DGETRS
   !
 end subroutine DGETRS
-!=============================================================================
+!==============================================================================
 subroutine DGETF2( M, N, A, LDA, IPIV, INFO )
   !
   !  -- LAPACK routine (version 2.0) --
@@ -1551,6 +1550,7 @@ subroutine DGETF2( M, N, A, LDA, IPIV, INFO )
   !     September 30, 1994
   !
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   integer            INFO, LDA, M, N
   !     ..
   !     .. Array Arguments ..
@@ -1623,21 +1623,21 @@ subroutine DGETF2( M, N, A, LDA, IPIV, INFO )
   !     Test the input parameters.
   !
   INFO = 0
-  if( M.lt.0 ) then
+  if( M < 0 ) then
      INFO = -1
-  else if( N.lt.0 ) then
+  else if( N < 0 ) then
      INFO = -2
-  else if( LDA.lt.MAX( 1, M ) ) then
+  else if( LDA < MAX( 1, M ) ) then
      INFO = -4
   end if
-  if( INFO.ne.0 ) then
+  if( INFO /= 0 ) then
      CALL XERBLA( 'DGETF2', -INFO )
      RETURN
   end if
   !
   !     Quick return if possible
   !
-  if( M.eq.0 .OR. N.eq.0 ) &
+  if( M == 0 .OR. N == 0 ) &
        RETURN
   !
   do J = 1, MIN( M, N )
@@ -1646,24 +1646,24 @@ subroutine DGETF2( M, N, A, LDA, IPIV, INFO )
      !
      JP = J - 1 + IDAMAX( M-J+1, A( J, J ), 1 )
      IPIV( J ) = JP
-     if( A( JP, J ).ne.ZERO ) then
+     if( A( JP, J ) /= ZERO ) then
         !
         !           Apply the interchange to columns 1:N.
         !
-        if( JP.ne.J ) &
+        if( JP /= J ) &
              CALL DSWAP( N, A( J, 1 ), LDA, A( JP, 1 ), LDA )
         !
         !           Compute elements J+1:M of J-th column.
         !
-        if( J.lt.M ) &
+        if( J < M ) &
              CALL DSCAL( M-J, ONE / A( J, J ), A( J+1, J ), 1 )
         !
-     else if( INFO.eq.0 ) then
+     else if( INFO == 0 ) then
         !
         INFO = J
      end if
      !
-     if( J.lt.MIN( M, N ) ) then
+     if( J < MIN( M, N ) ) then
         !
         !           Update trailing submatrix.
         !
@@ -1676,7 +1676,7 @@ subroutine DGETF2( M, N, A, LDA, IPIV, INFO )
   !     End of DGETF2
   !
 end subroutine DGETF2
-!=============================================================================
+!==============================================================================
 subroutine DLASWP( N, A, LDA, K1, K2, IPIV, INCX )
   !
   !  -- LAPACK auxiliary routine (version 2.0) --
@@ -1685,6 +1685,7 @@ subroutine DLASWP( N, A, LDA, K1, K2, IPIV, INCX )
   !     October 31, 1992
   !
   !     .. Scalar Arguments ..
+  !----------------------------------------------------------------------------
   integer            INCX, K1, K2, LDA, N
   !     ..
   !     .. Array Arguments ..
@@ -1741,30 +1742,30 @@ subroutine DLASWP( N, A, LDA, K1, K2, IPIV, INCX )
   !
   !     Interchange row I with row IPIV(I) for each of rows K1 through K2.
   !
-  if( INCX.eq.0 ) &
+  if( INCX == 0 ) &
        RETURN
-  if( INCX.GT.0 ) then
+  if( INCX > 0 ) then
      IX = K1
   else
      IX = 1 + ( 1-K2 )*INCX
   end if
-  if( INCX.eq.1 ) then
+  if( INCX == 1 ) then
      do I = K1, K2
         IP = IPIV( I )
-        if( IP.ne.I ) &
+        if( IP /= I ) &
              CALL DSWAP( N, A( I, 1 ), LDA, A( IP, 1 ), LDA )
      end do
-  else if( INCX.GT.1 ) then
+  else if( INCX > 1 ) then
      do I = K1, K2
         IP = IPIV( IX )
-        if( IP.ne.I ) &
+        if( IP /= I ) &
              CALL DSWAP( N, A( I, 1 ), LDA, A( IP, 1 ), LDA )
         IX = IX + INCX
      end do
-  else if( INCX.lt.0 ) then
+  else if( INCX < 0 ) then
      do I = K2, K1, -1
         IP = IPIV( IX )
-        if( IP.ne.I ) &
+        if( IP /= I ) &
              CALL DSWAP( N, A( I, 1 ), LDA, A( IP, 1 ), LDA )
         IX = IX + INCX
      end do
@@ -1775,4 +1776,4 @@ subroutine DLASWP( N, A, LDA, K1, K2, IPIV, INCX )
   !     End of DLASWP
   !
 end subroutine DLASWP
-!============================================================================
+!==============================================================================
