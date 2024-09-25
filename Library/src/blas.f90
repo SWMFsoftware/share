@@ -2,7 +2,7 @@
 ! This is a collection of single precision BLAS routines that BATSRUS uses. 
 ! You are encouraged to use the local BLAS library if available.
 !
-! Subroutines: scopy, sgemm, sgemv, sger,  sscal, sswap, strsm
+! subroutines: scopy, sgemm, sgemv, sger,  sscal, sswap, strsm
 !
 ! Functions:   isamax
 !=============================================================================
@@ -30,14 +30,14 @@ subroutine scopy(n,sx,incx,sy,incy)
   return
 end subroutine scopy
 !=============================================================================
-SUBROUTINE SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
+subroutine SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
      BETA, C, LDC )
   !     .. Scalar Arguments ..
-  CHARACTER*1        TRANSA, TRANSB
-  INTEGER            M, N, K, LDA, LDB, LDC
-  REAL*4             ALPHA, BETA
+  character*1        TRANSA, TRANSB
+  integer            M, N, K, LDA, LDB, LDC
+  real*4             ALPHA, BETA
   !     .. Array Arguments ..
-  REAL*4             A( LDA, * ), B( LDB, * ), C( LDC, * )
+  real*4             A( LDA, * ), B( LDB, * ), C( LDC, * )
   !     ..
   !
   !  Purpose
@@ -54,10 +54,10 @@ SUBROUTINE SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
   !  alpha and beta are scalars, and A, B and C are matrices, with op( A )
   !  an m by k matrix,  op( B )  a  k by n matrix and  C an m by n matrix.
   !
-  !  Parameters
+  !  parameters
   !  ==========
   !
-  !  TRANSA - CHARACTER*1.
+  !  TRANSA - character*1.
   !           On entry, TRANSA specifies the form of op( A ) to be used in
   !           the matrix multiplication as follows:
   !
@@ -69,7 +69,7 @@ SUBROUTINE SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
   !
   !           Unchanged on exit.
   !
-  !  TRANSB - CHARACTER*1.
+  !  TRANSB - character*1.
   !           On entry, TRANSB specifies the form of op( B ) to be used in
   !           the matrix multiplication as follows:
   !
@@ -81,28 +81,28 @@ SUBROUTINE SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
   !
   !           Unchanged on exit.
   !
-  !  M      - INTEGER.
+  !  M      - integer.
   !           On entry,  M  specifies  the number  of rows  of the  matrix
   !           op( A )  and of the  matrix  C.  M  must  be at least  zero.
   !           Unchanged on exit.
   !
-  !  N      - INTEGER.
+  !  N      - integer.
   !           On entry,  N  specifies the number  of columns of the matrix
   !           op( B ) and the number of columns of the matrix C. N must be
   !           at least zero.
   !           Unchanged on exit.
   !
-  !  K      - INTEGER.
+  !  K      - integer.
   !           On entry,  K  specifies  the number of columns of the matrix
   !           op( A ) and the number of rows of the matrix op( B ). K must
   !           be at least  zero.
   !           Unchanged on exit.
   !
-  !  ALPHA  - REAL*4          .
+  !  ALPHA  - real*4          .
   !           On entry, ALPHA specifies the scalar alpha.
   !           Unchanged on exit.
   !
-  !  A      - REAL*4           array of DIMENSION ( LDA, ka ), where ka is
+  !  A      - real*4           array of DIMENSION ( LDA, ka ), where ka is
   !           k  when  TRANSA = 'N' or 'n',  and is  m  otherwise.
   !           Before entry with  TRANSA = 'N' or 'n',  the leading  m by k
   !           part of the array  A  must contain the matrix  A,  otherwise
@@ -110,14 +110,14 @@ SUBROUTINE SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
   !           matrix A.
   !           Unchanged on exit.
   !
-  !  LDA    - INTEGER.
+  !  LDA    - integer.
   !           On entry, LDA specifies the first dimension of A as declared
   !           in the calling (sub) program. When  TRANSA = 'N' or 'n' then
   !           LDA must be at least  max( 1, m ), otherwise  LDA must be at
   !           least  max( 1, k ).
   !           Unchanged on exit.
   !
-  !  B      - REAL*4           array of DIMENSION ( LDB, kb ), where kb is
+  !  B      - real*4           array of DIMENSION ( LDB, kb ), where kb is
   !           n  when  TRANSB = 'N' or 'n',  and is  k  otherwise.
   !           Before entry with  TRANSB = 'N' or 'n',  the leading  k by n
   !           part of the array  B  must contain the matrix  B,  otherwise
@@ -125,26 +125,26 @@ SUBROUTINE SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
   !           matrix B.
   !           Unchanged on exit.
   !
-  !  LDB    - INTEGER.
+  !  LDB    - integer.
   !           On entry, LDB specifies the first dimension of B as declared
   !           in the calling (sub) program. When  TRANSB = 'N' or 'n' then
   !           LDB must be at least  max( 1, k ), otherwise  LDB must be at
   !           least  max( 1, n ).
   !           Unchanged on exit.
   !
-  !  BETA   - REAL*4          .
+  !  BETA   - real*4          .
   !           On entry,  BETA  specifies the scalar  beta.  When  BETA  is
   !           supplied as zero then C need not be set on input.
   !           Unchanged on exit.
   !
-  !  C      - REAL*4           array of DIMENSION ( LDC, n ).
+  !  C      - real*4           array of DIMENSION ( LDC, n ).
   !           Before entry, the leading  m by n  part of the array  C must
   !           contain the matrix  C,  except when  beta  is zero, in which
   !           case C need not be set on entry.
   !           On exit, the array  C  is overwritten by the  m by n  matrix
   !           ( alpha*op( A )*op( B ) + beta*C ).
   !
-  !  LDC    - INTEGER.
+  !  LDC    - integer.
   !           On entry, LDC specifies the first dimension of C as declared
   !           in  the  calling  (sub)  program.   LDC  must  be  at  least
   !           max( 1, m ).
@@ -160,20 +160,20 @@ SUBROUTINE SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
   !     Sven Hammarling, Numerical Algorithms Group Ltd.
   !
   !
-  !     .. External Functions ..
-  LOGICAL            LSAME
-  EXTERNAL           LSAME
-  !     .. External Subroutines ..
-  EXTERNAL           XERBLA
+  !     .. external Functions ..
+  logical            LSAME
+  external           LSAME
+  !     .. external subroutines ..
+  external           XERBLA
   !     .. Intrinsic Functions ..
   INTRINSIC          MAX
   !     .. Local Scalars ..
-  LOGICAL            NOTA, NOTB
-  INTEGER            I, INFO, J, L, NCOLA, NROWA, NROWB
-  REAL*4             TEMP
-  !     .. Parameters ..
-  REAL*4             ONE         , ZERO
-  PARAMETER        ( ONE = 1.0E+0, ZERO = 0.0E+0 )
+  logical            NOTA, NOTB
+  integer            I, INFO, J, L, NCOLA, NROWA, NROWB
+  real*4             TEMP
+  !     .. parameters ..
+  real*4             ONE         , ZERO
+  parameter        ( ONE = 1.0E+0, ZERO = 0.0E+0 )
   !     ..
   !     .. Executable Statements ..
   !
@@ -183,175 +183,175 @@ SUBROUTINE SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
   !
   NOTA  = LSAME( TRANSA, 'N' )
   NOTB  = LSAME( TRANSB, 'N' )
-  IF( NOTA )THEN
+  if( NOTA )then
      NROWA = M
      NCOLA = K
-  ELSE
+  else
      NROWA = K
      NCOLA = M
-  END IF
-  IF( NOTB )THEN
+  end if
+  if( NOTB )then
      NROWB = K
-  ELSE
+  else
      NROWB = N
-  END IF
+  end if
   !
   !     Test the input parameters.
   !
   INFO = 0
-  IF(      ( .NOT.NOTA                 ).AND. &
-       ( .NOT.LSAME( TRANSA, 'C' ) ).AND. &
-       ( .NOT.LSAME( TRANSA, 'T' ) )      )THEN
+  if(      ( .not.NOTA                 ).and. &
+       ( .not.LSAME( TRANSA, 'C' ) ).and. &
+       ( .not.LSAME( TRANSA, 'T' ) )      )then
      INFO = 1
-  ELSE IF( ( .NOT.NOTB                 ).AND. &
-       ( .NOT.LSAME( TRANSB, 'C' ) ).AND. &
-       ( .NOT.LSAME( TRANSB, 'T' ) )      )THEN
+  else if( ( .not.NOTB                 ).and. &
+       ( .not.LSAME( TRANSB, 'C' ) ).and. &
+       ( .not.LSAME( TRANSB, 'T' ) )      )then
      INFO = 2
-  ELSE IF( M  .LT.0               )THEN
+  else if( M  .lt.0               )then
      INFO = 3
-  ELSE IF( N  .LT.0               )THEN
+  else if( N  .lt.0               )then
      INFO = 4
-  ELSE IF( K  .LT.0               )THEN
+  else if( K  .lt.0               )then
      INFO = 5
-  ELSE IF( LDA.LT.MAX( 1, NROWA ) )THEN
+  else if( LDA.lt.MAX( 1, NROWA ) )then
      INFO = 8
-  ELSE IF( LDB.LT.MAX( 1, NROWB ) )THEN
+  else if( LDB.lt.MAX( 1, NROWB ) )then
      INFO = 10
-  ELSE IF( LDC.LT.MAX( 1, M     ) )THEN
+  else if( LDC.lt.MAX( 1, M     ) )then
      INFO = 13
-  END IF
-  IF( INFO.NE.0 )THEN
+  end if
+  if( INFO.ne.0 )then
      CALL XERBLA( 'SGEMM ', INFO )
      RETURN
-  END IF
+  end if
   !
   !     Quick return if possible.
   !
-  IF( ( M.EQ.0 ).OR.( N.EQ.0 ).OR. &
-       ( ( ( ALPHA.EQ.ZERO ).OR.( K.EQ.0 ) ).AND.( BETA.EQ.ONE ) ) ) &
+  if( ( M.eq.0 ).OR.( N.eq.0 ).OR. &
+       ( ( ( ALPHA.eq.ZERO ).OR.( K.eq.0 ) ).and.( BETA.eq.ONE ) ) ) &
        RETURN
   !
   !     And if  alpha.eq.zero.
   !
-  IF( ALPHA.EQ.ZERO )THEN
-     IF( BETA.EQ.ZERO )THEN
+  if( ALPHA.eq.ZERO )then
+     if( BETA.eq.ZERO )then
         do J =  1, N
            do I =  1, M
               C( I, J ) = ZERO
            end do
         end do
-     ELSE
+     else
         do J =  1, N
            do I =  1, M
               C( I, J ) = BETA*C( I, J )
            end do
         end do
-     END IF
+     end if
      RETURN
-  END IF
+  end if
   !
   !     Start the operations.
   !
-  IF( NOTB )THEN
-     IF( NOTA )THEN
+  if( NOTB )then
+     if( NOTA )then
         !
         !           Form  C := alpha*A*B + beta*C.
         !
         do J =  1, N
-           IF( BETA.EQ.ZERO )THEN
+           if( BETA.eq.ZERO )then
               do I =  1, M
                  C( I, J ) = ZERO
               end do
-           ELSE IF( BETA.NE.ONE )THEN
+           else if( BETA.ne.ONE )then
               do I =  1, M
                  C( I, J ) = BETA*C( I, J )
               end do
-           END IF
-           DO L = 1, K
-              IF( B( L, J ).NE.ZERO )THEN
+           end if
+           do L = 1, K
+              if( B( L, J ).ne.ZERO )then
                  TEMP = ALPHA*B( L, J )
                  do I =  1, M
                     C( I, J ) = C( I, J ) + TEMP*A( I, L )
                  end do
-              END IF
+              end if
            end do
         end do
-     ELSE
+     else
         !
         !           Form  C := alpha*A'*B + beta*C
         !
         do J =  1, N
            do I =  1, M
               TEMP = ZERO
-              DO L = 1, K
+              do L = 1, K
                  TEMP = TEMP + A( L, I )*B( L, J )
               end do
-              IF( BETA.EQ.ZERO )THEN
+              if( BETA.eq.ZERO )then
                  C( I, J ) = ALPHA*TEMP
-              ELSE
+              else
                  C( I, J ) = ALPHA*TEMP + BETA*C( I, J )
-              END IF
+              end if
            end do
         end do
-     END IF
-  ELSE
-     IF( NOTA )THEN
+     end if
+  else
+     if( NOTA )then
         !
         !           Form  C := alpha*A*B' + beta*C
         !
         do J =  1, N
-           IF( BETA.EQ.ZERO )THEN
+           if( BETA.eq.ZERO )then
               do I =  1, M
                  C( I, J ) = ZERO
               end do
-           ELSE IF( BETA.NE.ONE )THEN
+           else if( BETA.ne.ONE )then
               do I =  1, M
                  C( I, J ) = BETA*C( I, J )
               end do
-           END IF
-           DO L = 1, K
-              IF( B( J, L ).NE.ZERO )THEN
+           end if
+           do L = 1, K
+              if( B( J, L ).ne.ZERO )then
                  TEMP = ALPHA*B( J, L )
                  do I =  1, M
                     C( I, J ) = C( I, J ) + TEMP*A( I, L )
                  end do
-              END IF
+              end if
            end do
         end do
-     ELSE
+     else
         !
         !           Form  C := alpha*A'*B' + beta*C
         !
         do J =  1, N
            do I =  1, M
               TEMP = ZERO
-              DO L = 1, K
+              do L = 1, K
                  TEMP = TEMP + A( L, I )*B( J, L )
               end do
-              IF( BETA.EQ.ZERO )THEN
+              if( BETA.eq.ZERO )then
                  C( I, J ) = ALPHA*TEMP
-              ELSE
+              else
                  C( I, J ) = ALPHA*TEMP + BETA*C( I, J )
-              END IF
+              end if
            end do
         end do
-     END IF
-  END IF
+     end if
+  end if
   !
   RETURN
   !
   !     End of SGEMM .
   !
-END SUBROUTINE SGEMM
+end subroutine SGEMM
 !=============================================================================
-SUBROUTINE SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
+subroutine SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
      BETA, Y, INCY )
   !     .. Scalar Arguments ..
-  REAL*4             ALPHA, BETA
-  INTEGER            INCX, INCY, LDA, M, N
-  CHARACTER*1        TRANS
+  real*4             ALPHA, BETA
+  integer            INCX, INCY, LDA, M, N
+  character*1        TRANS
   !     .. Array Arguments ..
-  REAL*4             A( LDA, * ), X( * ), Y( * )
+  real*4             A( LDA, * ), X( * ), Y( * )
   !     ..
   !
   !  Purpose
@@ -364,10 +364,10 @@ SUBROUTINE SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
   !  where alpha and beta are scalars, x and y are vectors and A is an
   !  m by n matrix.
   !
-  !  Parameters
+  !  parameters
   !  ==========
   !
-  !  TRANS  - CHARACTER*1.
+  !  TRANS  - character*1.
   !           On entry, TRANS specifies the operation to be performed as
   !           follows:
   !
@@ -379,32 +379,32 @@ SUBROUTINE SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
   !
   !           Unchanged on exit.
   !
-  !  M      - INTEGER.
+  !  M      - integer.
   !           On entry, M specifies the number of rows of the matrix A.
   !           M must be at least zero.
   !           Unchanged on exit.
   !
-  !  N      - INTEGER.
+  !  N      - integer.
   !           On entry, N specifies the number of columns of the matrix A.
   !           N must be at least zero.
   !           Unchanged on exit.
   !
-  !  ALPHA  - REAL*4          .
+  !  ALPHA  - real*4          .
   !           On entry, ALPHA specifies the scalar alpha.
   !           Unchanged on exit.
   !
-  !  A      - REAL*4           array of DIMENSION ( LDA, n ).
+  !  A      - real*4           array of DIMENSION ( LDA, n ).
   !           Before entry, the leading m by n part of the array A must
   !           contain the matrix of coefficients.
   !           Unchanged on exit.
   !
-  !  LDA    - INTEGER.
+  !  LDA    - integer.
   !           On entry, LDA specifies the first dimension of A as declared
   !           in the calling (sub) program. LDA must be at least
   !           max( 1, m ).
   !           Unchanged on exit.
   !
-  !  X      - REAL*4           array of DIMENSION at least
+  !  X      - real*4           array of DIMENSION at least
   !           ( 1 + ( n - 1 )*abs( INCX ) ) when TRANS = 'N' or 'n'
   !           and at least
   !           ( 1 + ( m - 1 )*abs( INCX ) ) otherwise.
@@ -412,17 +412,17 @@ SUBROUTINE SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
   !           vector x.
   !           Unchanged on exit.
   !
-  !  INCX   - INTEGER.
+  !  INCX   - integer.
   !           On entry, INCX specifies the increment for the elements of
   !           X. INCX must not be zero.
   !           Unchanged on exit.
   !
-  !  BETA   - REAL*4          .
+  !  BETA   - real*4          .
   !           On entry, BETA specifies the scalar beta. When BETA is
   !           supplied as zero then Y need not be set on input.
   !           Unchanged on exit.
   !
-  !  Y      - REAL*4           array of DIMENSION at least
+  !  Y      - real*4           array of DIMENSION at least
   !           ( 1 + ( m - 1 )*abs( INCY ) ) when TRANS = 'N' or 'n'
   !           and at least
   !           ( 1 + ( n - 1 )*abs( INCY ) ) otherwise.
@@ -430,7 +430,7 @@ SUBROUTINE SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
   !           must contain the vector y. On exit, Y is overwritten by the
   !           updated vector y.
   !
-  !  INCY   - INTEGER.
+  !  INCY   - integer.
   !           On entry, INCY specifies the increment for the elements of
   !           Y. INCY must not be zero.
   !           Unchanged on exit.
@@ -445,17 +445,17 @@ SUBROUTINE SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
   !     Richard Hanson, Sandia National Labs.
   !
   !
-  !     .. Parameters ..
-  REAL*4             ONE         , ZERO
-  PARAMETER        ( ONE = 1.0E+0, ZERO = 0.0E+0 )
+  !     .. parameters ..
+  real*4             ONE         , ZERO
+  parameter        ( ONE = 1.0E+0, ZERO = 0.0E+0 )
   !     .. Local Scalars ..
-  REAL*4             TEMP
-  INTEGER            I, INFO, IX, IY, J, JX, JY, KX, KY, LENX, LENY
-  !     .. External Functions ..
-  LOGICAL            LSAME
-  EXTERNAL           LSAME
-  !     .. External Subroutines ..
-  EXTERNAL           XERBLA
+  real*4             TEMP
+  integer            I, INFO, IX, IY, J, JX, JY, KX, KY, LENX, LENY
+  !     .. external Functions ..
+  logical            LSAME
+  external           LSAME
+  !     .. external subroutines ..
+  external           XERBLA
   !     .. Intrinsic Functions ..
   INTRINSIC          MAX
   !     ..
@@ -464,120 +464,120 @@ SUBROUTINE SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
   !     Test the input parameters.
   !
   INFO = 0
-  IF     ( .NOT.LSAME( TRANS, 'N' ).AND. &
-       .NOT.LSAME( TRANS, 'T' ).AND. &
-       .NOT.LSAME( TRANS, 'C' )      )THEN
+  if     ( .not.LSAME( TRANS, 'N' ).and. &
+       .not.LSAME( TRANS, 'T' ).and. &
+       .not.LSAME( TRANS, 'C' )      )then
      INFO = 1
-  ELSE IF( M.LT.0 )THEN
+  else if( M.lt.0 )then
      INFO = 2
-  ELSE IF( N.LT.0 )THEN
+  else if( N.lt.0 )then
      INFO = 3
-  ELSE IF( LDA.LT.MAX( 1, M ) )THEN
+  else if( LDA.lt.MAX( 1, M ) )then
      INFO = 6
-  ELSE IF( INCX.EQ.0 )THEN
+  else if( INCX.eq.0 )then
      INFO = 8
-  ELSE IF( INCY.EQ.0 )THEN
+  else if( INCY.eq.0 )then
      INFO = 11
-  END IF
-  IF( INFO.NE.0 )THEN
+  end if
+  if( INFO.ne.0 )then
      CALL XERBLA( 'SGEMV ', INFO )
      RETURN
-  END IF
+  end if
   !
   !     Quick return if possible.
   !
-  IF( ( M.EQ.0 ).OR.( N.EQ.0 ).OR. &
-       ( ( ALPHA.EQ.ZERO ).AND.( BETA.EQ.ONE ) ) ) &
+  if( ( M.eq.0 ).OR.( N.eq.0 ).OR. &
+       ( ( ALPHA.eq.ZERO ).and.( BETA.eq.ONE ) ) ) &
        RETURN
   !
   !     Set  LENX  and  LENY, the lengths of the vectors x and y, and set
   !     up the start points in  X  and  Y.
   !
-  IF( LSAME( TRANS, 'N' ) )THEN
+  if( LSAME( TRANS, 'N' ) )then
      LENX = N
      LENY = M
-  ELSE
+  else
      LENX = M
      LENY = N
-  END IF
-  IF( INCX.GT.0 )THEN
+  end if
+  if( INCX.GT.0 )then
      KX = 1
-  ELSE
+  else
      KX = 1 - ( LENX - 1 )*INCX
-  END IF
-  IF( INCY.GT.0 )THEN
+  end if
+  if( INCY.GT.0 )then
      KY = 1
-  ELSE
+  else
      KY = 1 - ( LENY - 1 )*INCY
-  END IF
+  end if
   !
   !     Start the operations. In this version the elements of A are
   !     accessed sequentially with one pass through A.
   !
   !     First form  y := beta*y.
   !
-  IF( BETA.NE.ONE )THEN
-     IF( INCY.EQ.1 )THEN
-        IF( BETA.EQ.ZERO )THEN
+  if( BETA.ne.ONE )then
+     if( INCY.eq.1 )then
+        if( BETA.eq.ZERO )then
            do I =  1, LENY
               Y( I ) = ZERO
            end do
-        ELSE
+        else
            do I =  1, LENY
               Y( I ) = BETA*Y( I )
            end do
-        END IF
-     ELSE
+        end if
+     else
         IY = KY
-        IF( BETA.EQ.ZERO )THEN
+        if( BETA.eq.ZERO )then
            do I =  1, LENY
               Y( IY ) = ZERO
               IY      = IY   + INCY
            end do
-        ELSE
+        else
            do I =  1, LENY
               Y( IY ) = BETA*Y( IY )
               IY      = IY           + INCY
            end do
-        END IF
-     END IF
-  END IF
-  IF( ALPHA.EQ.ZERO ) &
+        end if
+     end if
+  end if
+  if( ALPHA.eq.ZERO ) &
        RETURN
-  IF( LSAME( TRANS, 'N' ) )THEN
+  if( LSAME( TRANS, 'N' ) )then
      !
      !        Form  y := alpha*A*x + y.
      !
      JX = KX
-     IF( INCY.EQ.1 )THEN
+     if( INCY.eq.1 )then
         do J =  1, N
-           IF( X( JX ).NE.ZERO )THEN
+           if( X( JX ).ne.ZERO )then
               TEMP = ALPHA*X( JX )
               do I =  1, M
                  Y( I ) = Y( I ) + TEMP*A( I, J )
               end do
-           END IF
+           end if
            JX = JX + INCX
         end do
-     ELSE
+     else
         do J =  1, N
-           IF( X( JX ).NE.ZERO )THEN
+           if( X( JX ).ne.ZERO )then
               TEMP = ALPHA*X( JX )
               IY   = KY
               do I =  1, M
                  Y( IY ) = Y( IY ) + TEMP*A( I, J )
                  IY      = IY      + INCY
               end do
-           END IF
+           end if
            JX = JX + INCX
         end do
-     END IF
-  ELSE
+     end if
+  else
      !
      !        Form  y := alpha*A'*x + y.
      !
      JY = KY
-     IF( INCX.EQ.1 )THEN
+     if( INCX.eq.1 )then
         do J =  1, N
            TEMP = ZERO
            do I =  1, M
@@ -586,7 +586,7 @@ SUBROUTINE SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
            Y( JY ) = Y( JY ) + ALPHA*TEMP
            JY      = JY      + INCY
         end do
-     ELSE
+     else
         do J =  1, N
            TEMP = ZERO
            IX   = KX
@@ -597,21 +597,21 @@ SUBROUTINE SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
            Y( JY ) = Y( JY ) + ALPHA*TEMP
            JY      = JY      + INCY
         end do
-     END IF
-  END IF
+     end if
+  end if
   !
   RETURN
   !
   !     End of SGEMV .
   !
-END SUBROUTINE SGEMV
+end subroutine SGEMV
 !=============================================================================
-SUBROUTINE SGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
+subroutine SGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
   !     .. Scalar Arguments ..
-  REAL*4             ALPHA
-  INTEGER            INCX, INCY, LDA, M, N
+  real*4             ALPHA
+  integer            INCX, INCY, LDA, M, N
   !     .. Array Arguments ..
-  REAL*4             A( LDA, * ), X( * ), Y( * )
+  real*4             A( LDA, * ), X( * ), Y( * )
   !     ..
   !
   !  Purpose
@@ -624,51 +624,51 @@ SUBROUTINE SGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
   !  where alpha is a scalar, x is an m element vector, y is an n element
   !  vector and A is an m by n matrix.
   !
-  !  Parameters
+  !  parameters
   !  ==========
   !
-  !  M      - INTEGER.
+  !  M      - integer.
   !           On entry, M specifies the number of rows of the matrix A.
   !           M must be at least zero.
   !           Unchanged on exit.
   !
-  !  N      - INTEGER.
+  !  N      - integer.
   !           On entry, N specifies the number of columns of the matrix A.
   !           N must be at least zero.
   !           Unchanged on exit.
   !
-  !  ALPHA  - REAL*4          .
+  !  ALPHA  - real*4          .
   !           On entry, ALPHA specifies the scalar alpha.
   !           Unchanged on exit.
   !
-  !  X      - REAL*4           array of dimension at least
+  !  X      - real*4           array of dimension at least
   !           ( 1 + ( m - 1 )*abs( INCX ) ).
   !           Before entry, the incremented array X must contain the m
   !           element vector x.
   !           Unchanged on exit.
   !
-  !  INCX   - INTEGER.
+  !  INCX   - integer.
   !           On entry, INCX specifies the increment for the elements of
   !           X. INCX must not be zero.
   !           Unchanged on exit.
   !
-  !  Y      - REAL*4           array of dimension at least
+  !  Y      - real*4           array of dimension at least
   !           ( 1 + ( n - 1 )*abs( INCY ) ).
   !           Before entry, the incremented array Y must contain the n
   !           element vector y.
   !           Unchanged on exit.
   !
-  !  INCY   - INTEGER.
+  !  INCY   - integer.
   !           On entry, INCY specifies the increment for the elements of
   !           Y. INCY must not be zero.
   !           Unchanged on exit.
   !
-  !  A      - REAL*4           array of DIMENSION ( LDA, n ).
+  !  A      - real*4           array of DIMENSION ( LDA, n ).
   !           Before entry, the leading m by n part of the array A must
   !           contain the matrix of coefficients. On exit, A is
   !           overwritten by the updated matrix.
   !
-  !  LDA    - INTEGER.
+  !  LDA    - integer.
   !           On entry, LDA specifies the first dimension of A as declared
   !           in the calling (sub) program. LDA must be at least
   !           max( 1, m ).
@@ -684,14 +684,14 @@ SUBROUTINE SGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
   !     Richard Hanson, Sandia National Labs.
   !
   !
-  !     .. Parameters ..
-  REAL*4             ZERO
-  PARAMETER        ( ZERO = 0.0E+0 )
+  !     .. parameters ..
+  real*4             ZERO
+  parameter        ( ZERO = 0.0E+0 )
   !     .. Local Scalars ..
-  REAL*4             TEMP
-  INTEGER            I, INFO, IX, J, JY, KX
-  !     .. External Subroutines ..
-  EXTERNAL           XERBLA
+  real*4             TEMP
+  integer            I, INFO, IX, J, JY, KX
+  !     .. external subroutines ..
+  external           XERBLA
   !     .. Intrinsic Functions ..
   INTRINSIC          MAX
   !     ..
@@ -700,69 +700,69 @@ SUBROUTINE SGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
   !     Test the input parameters.
   !
   INFO = 0
-  IF     ( M.LT.0 )THEN
+  if     ( M.lt.0 )then
      INFO = 1
-  ELSE IF( N.LT.0 )THEN
+  else if( N.lt.0 )then
      INFO = 2
-  ELSE IF( INCX.EQ.0 )THEN
+  else if( INCX.eq.0 )then
      INFO = 5
-  ELSE IF( INCY.EQ.0 )THEN
+  else if( INCY.eq.0 )then
      INFO = 7
-  ELSE IF( LDA.LT.MAX( 1, M ) )THEN
+  else if( LDA.lt.MAX( 1, M ) )then
      INFO = 9
-  END IF
-  IF( INFO.NE.0 )THEN
+  end if
+  if( INFO.ne.0 )then
      CALL XERBLA( 'SGER  ', INFO )
      RETURN
-  END IF
+  end if
   !
   !     Quick return if possible.
   !
-  IF( ( M.EQ.0 ).OR.( N.EQ.0 ).OR.( ALPHA.EQ.ZERO ) ) &
+  if( ( M.eq.0 ).OR.( N.eq.0 ).OR.( ALPHA.eq.ZERO ) ) &
        RETURN
   !
   !     Start the operations. In this version the elements of A are
   !     accessed sequentially with one pass through A.
   !
-  IF( INCY.GT.0 )THEN
+  if( INCY.GT.0 )then
      JY = 1
-  ELSE
+  else
      JY = 1 - ( N - 1 )*INCY
-  END IF
-  IF( INCX.EQ.1 )THEN
+  end if
+  if( INCX.eq.1 )then
      do J =  1, N
-        IF( Y( JY ).NE.ZERO )THEN
+        if( Y( JY ).ne.ZERO )then
            TEMP = ALPHA*Y( JY )
            do I =  1, M
               A( I, J ) = A( I, J ) + X( I )*TEMP
            end do
-        END IF
+        end if
         JY = JY + INCY
      end do
-  ELSE
-     IF( INCX.GT.0 )THEN
+  else
+     if( INCX.GT.0 )then
         KX = 1
-     ELSE
+     else
         KX = 1 - ( M - 1 )*INCX
-     END IF
+     end if
      do J =  1, N
-        IF( Y( JY ).NE.ZERO )THEN
+        if( Y( JY ).ne.ZERO )then
            TEMP = ALPHA*Y( JY )
            IX   = KX
            do I =  1, M
               A( I, J ) = A( I, J ) + X( IX )*TEMP
               IX        = IX        + INCX
            end do
-        END IF
+        end if
         JY = JY + INCY
      end do
-  END IF
+  end if
   !
   RETURN
   !
   !     End of SGER  .
   !
-END SUBROUTINE SGER
+end subroutine SGER
 !=============================================================================
 subroutine sscal(n,sa,sx,incx)
   !
@@ -808,14 +808,14 @@ subroutine sswap (n,sx,incx,sy,incy)
   end do
 end subroutine sswap
 !=============================================================================
-SUBROUTINE STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
+subroutine STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
      B, LDB )
   !     .. Scalar Arguments ..
-  CHARACTER*1        SIDE, UPLO, TRANSA, DIAG
-  INTEGER            M, N, LDA, LDB
-  REAL*4             ALPHA
+  character*1        SIDE, UPLO, TRANSA, DIAG
+  integer            M, N, LDA, LDB
+  real*4             ALPHA
   !     .. Array Arguments ..
-  REAL*4             A( LDA, * ), B( LDB, * )
+  real*4             A( LDA, * ), B( LDB, * )
   !     ..
   !
   !  Purpose
@@ -832,10 +832,10 @@ SUBROUTINE STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   !
   !  The matrix X is overwritten on B.
   !
-  !  Parameters
+  !  parameters
   !  ==========
   !
-  !  SIDE   - CHARACTER*1.
+  !  SIDE   - character*1.
   !           On entry, SIDE specifies whether op( A ) appears on the left
   !           or right of X as follows:
   !
@@ -845,7 +845,7 @@ SUBROUTINE STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   !
   !           Unchanged on exit.
   !
-  !  UPLO   - CHARACTER*1.
+  !  UPLO   - character*1.
   !           On entry, UPLO specifies whether the matrix A is an upper or
   !           lower triangular matrix as follows:
   !
@@ -855,7 +855,7 @@ SUBROUTINE STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   !
   !           Unchanged on exit.
   !
-  !  TRANSA - CHARACTER*1.
+  !  TRANSA - character*1.
   !           On entry, TRANSA specifies the form of op( A ) to be used in
   !           the matrix multiplication as follows:
   !
@@ -867,7 +867,7 @@ SUBROUTINE STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   !
   !           Unchanged on exit.
   !
-  !  DIAG   - CHARACTER*1.
+  !  DIAG   - character*1.
   !           On entry, DIAG specifies whether or not A is unit triangular
   !           as follows:
   !
@@ -878,23 +878,23 @@ SUBROUTINE STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   !
   !           Unchanged on exit.
   !
-  !  M      - INTEGER.
+  !  M      - integer.
   !           On entry, M specifies the number of rows of B. M must be at
   !           least zero.
   !           Unchanged on exit.
   !
-  !  N      - INTEGER.
+  !  N      - integer.
   !           On entry, N specifies the number of columns of B.  N must be
   !           at least zero.
   !           Unchanged on exit.
   !
-  !  ALPHA  - REAL*4          .
+  !  ALPHA  - real*4          .
   !           On entry,  ALPHA specifies the scalar  alpha. When  alpha is
   !           zero then  A is not referenced and  B need not be set before
   !           entry.
   !           Unchanged on exit.
   !
-  !  A      - REAL*4           array of DIMENSION ( LDA, k ), where k is m
+  !  A      - real*4           array of DIMENSION ( LDA, k ), where k is m
   !           when  SIDE = 'L' or 'l'  and is  n  when  SIDE = 'R' or 'r'.
   !           Before entry  with  UPLO = 'U' or 'u',  the  leading  k by k
   !           upper triangular part of the array  A must contain the upper
@@ -908,19 +908,19 @@ SUBROUTINE STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   !           A  are not referenced either,  but are assumed to be  unity.
   !           Unchanged on exit.
   !
-  !  LDA    - INTEGER.
+  !  LDA    - integer.
   !           On entry, LDA specifies the first dimension of A as declared
   !           in the calling (sub) program.  When  SIDE = 'L' or 'l'  then
   !           LDA  must be at least  max( 1, m ),  when  SIDE = 'R' or 'r'
   !           then LDA must be at least max( 1, n ).
   !           Unchanged on exit.
   !
-  !  B      - REAL*4           array of DIMENSION ( LDB, n ).
+  !  B      - real*4           array of DIMENSION ( LDB, n ).
   !           Before entry,  the leading  m by n part of the array  B must
   !           contain  the  right-hand  side  matrix  B,  and  on exit  is
   !           overwritten by the solution matrix  X.
   !
-  !  LDB    - INTEGER.
+  !  LDB    - integer.
   !           On entry, LDB specifies the first dimension of B as declared
   !           in  the  calling  (sub)  program.   LDB  must  be  at  least
   !           max( 1, m ).
@@ -937,255 +937,255 @@ SUBROUTINE STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   !     Sven Hammarling, Numerical Algorithms Group Ltd.
   !
   !
-  !     .. External Functions ..
-  LOGICAL            LSAME
-  EXTERNAL           LSAME
-  !     .. External Subroutines ..
-  EXTERNAL           XERBLA
+  !     .. external Functions ..
+  logical            LSAME
+  external           LSAME
+  !     .. external subroutines ..
+  external           XERBLA
   !     .. Intrinsic Functions ..
   INTRINSIC          MAX
   !     .. Local Scalars ..
-  LOGICAL            LSIDE, NOUNIT, UPPER
-  INTEGER            I, INFO, J, K, NROWA
-  REAL*4             TEMP
-  !     .. Parameters ..
-  REAL*4             ONE         , ZERO
-  PARAMETER        ( ONE = 1.0E+0, ZERO = 0.0E+0 )
+  logical            LSIDE, NOUNIT, UPPER
+  integer            I, INFO, J, K, NROWA
+  real*4             TEMP
+  !     .. parameters ..
+  real*4             ONE         , ZERO
+  parameter        ( ONE = 1.0E+0, ZERO = 0.0E+0 )
   !     ..
   !     .. Executable Statements ..
   !
   !     Test the input parameters.
   !
   LSIDE  = LSAME( SIDE  , 'L' )
-  IF( LSIDE )THEN
+  if( LSIDE )then
      NROWA = M
-  ELSE
+  else
      NROWA = N
-  END IF
+  end if
   NOUNIT = LSAME( DIAG  , 'N' )
   UPPER  = LSAME( UPLO  , 'U' )
   !
   INFO   = 0
-  IF(      ( .NOT.LSIDE                ).AND. &
-       ( .NOT.LSAME( SIDE  , 'R' ) )      )THEN
+  if(      ( .not.LSIDE                ).and. &
+       ( .not.LSAME( SIDE  , 'R' ) )      )then
      INFO = 1
-  ELSE IF( ( .NOT.UPPER                ).AND. &
-       ( .NOT.LSAME( UPLO  , 'L' ) )      )THEN
+  else if( ( .not.UPPER                ).and. &
+       ( .not.LSAME( UPLO  , 'L' ) )      )then
      INFO = 2
-  ELSE IF( ( .NOT.LSAME( TRANSA, 'N' ) ).AND. &
-       ( .NOT.LSAME( TRANSA, 'T' ) ).AND. &
-       ( .NOT.LSAME( TRANSA, 'C' ) )      )THEN
+  else if( ( .not.LSAME( TRANSA, 'N' ) ).and. &
+       ( .not.LSAME( TRANSA, 'T' ) ).and. &
+       ( .not.LSAME( TRANSA, 'C' ) )      )then
      INFO = 3
-  ELSE IF( ( .NOT.LSAME( DIAG  , 'U' ) ).AND. &
-       ( .NOT.LSAME( DIAG  , 'N' ) )      )THEN
+  else if( ( .not.LSAME( DIAG  , 'U' ) ).and. &
+       ( .not.LSAME( DIAG  , 'N' ) )      )then
      INFO = 4
-  ELSE IF( M  .LT.0               )THEN
+  else if( M  .lt.0               )then
      INFO = 5
-  ELSE IF( N  .LT.0               )THEN
+  else if( N  .lt.0               )then
      INFO = 6
-  ELSE IF( LDA.LT.MAX( 1, NROWA ) )THEN
+  else if( LDA.lt.MAX( 1, NROWA ) )then
      INFO = 9
-  ELSE IF( LDB.LT.MAX( 1, M     ) )THEN
+  else if( LDB.lt.MAX( 1, M     ) )then
      INFO = 11
-  END IF
-  IF( INFO.NE.0 )THEN
+  end if
+  if( INFO.ne.0 )then
      CALL XERBLA( 'STRSM ', INFO )
      RETURN
-  END IF
+  end if
   !
   !     Quick return if possible.
   !
-  IF( N.EQ.0 ) &
+  if( N.eq.0 ) &
        RETURN
   !
   !     And when  alpha.eq.zero.
   !
-  IF( ALPHA.EQ.ZERO )THEN
+  if( ALPHA.eq.ZERO )then
      do J =  1, N
         do I =  1, M
            B( I, J ) = ZERO
         end do
      end do
      RETURN
-  END IF
+  end if
   !
   !     Start the operations.
   !
-  IF( LSIDE )THEN
-     IF( LSAME( TRANSA, 'N' ) )THEN
+  if( LSIDE )then
+     if( LSAME( TRANSA, 'N' ) )then
         !
         !           Form  B := alpha*inv( A )*B.
         !
-        IF( UPPER )THEN
+        if( UPPER )then
            do J =  1, N
-              IF( ALPHA.NE.ONE )THEN
+              if( ALPHA.ne.ONE )then
                  do I =  1, M
                     B( I, J ) = ALPHA*B( I, J )
                  end do
-              END IF
+              end if
               do K =  M, 1, -1
-                 IF( B( K, J ).NE.ZERO )THEN
-                    IF( NOUNIT ) &
+                 if( B( K, J ).ne.ZERO )then
+                    if( NOUNIT ) &
                          B( K, J ) = B( K, J )/A( K, K )
                     do I =  1, K - 1
                        B( I, J ) = B( I, J ) - B( K, J )*A( I, K )
                     end do
-                 END IF
+                 end if
               end do
            end do
-        ELSE
+        else
            do J =  1, N
-              IF( ALPHA.NE.ONE )THEN
+              if( ALPHA.ne.ONE )then
                  do I =  1, M
                     B( I, J ) = ALPHA*B( I, J )
                  end do
-              END IF
+              end if
               do K =  1, M
-                 IF( B( K, J ).NE.ZERO )THEN
-                    IF( NOUNIT ) &
+                 if( B( K, J ).ne.ZERO )then
+                    if( NOUNIT ) &
                          B( K, J ) = B( K, J )/A( K, K )
                     do I =  K + 1, M
                        B( I, J ) = B( I, J ) - B( K, J )*A( I, K )
                     end do
-                 END IF
+                 end if
               end do
            end do
-        END IF
-     ELSE
+        end if
+     else
         !
         !           Form  B := alpha*inv( A' )*B.
         !
-        IF( UPPER )THEN
+        if( UPPER )then
            do J =  1, N
               do I =  1, M
                  TEMP = ALPHA*B( I, J )
                  do K =  1, I - 1
                     TEMP = TEMP - A( K, I )*B( K, J )
                  end do
-                 IF( NOUNIT ) &
+                 if( NOUNIT ) &
                       TEMP = TEMP/A( I, I )
                  B( I, J ) = TEMP
               end do
            end do
-        ELSE
+        else
            do J =  1, N
               do I =  M, 1, -1
                  TEMP = ALPHA*B( I, J )
                  do K =  I + 1, M
                     TEMP = TEMP - A( K, I )*B( K, J )
                  end do
-                 IF( NOUNIT ) &
+                 if( NOUNIT ) &
                       TEMP = TEMP/A( I, I )
                  B( I, J ) = TEMP
               end do
            end do
-        END IF
-     END IF
-  ELSE
-     IF( LSAME( TRANSA, 'N' ) )THEN
+        end if
+     end if
+  else
+     if( LSAME( TRANSA, 'N' ) )then
         !
         !           Form  B := alpha*B*inv( A ).
         !
-        IF( UPPER )THEN
+        if( UPPER )then
            do J =  1, N
-              IF( ALPHA.NE.ONE )THEN
+              if( ALPHA.ne.ONE )then
                  do I =  1, M
                     B( I, J ) = ALPHA*B( I, J )
                  end do
-              END IF
+              end if
               do K =  1, J - 1
-                 IF( A( K, J ).NE.ZERO )THEN
+                 if( A( K, J ).ne.ZERO )then
                     do I =  1, M
                        B( I, J ) = B( I, J ) - A( K, J )*B( I, K )
                     end do
-                 END IF
+                 end if
               end do
-              IF( NOUNIT )THEN
+              if( NOUNIT )then
                  TEMP = ONE/A( J, J )
                  do I =  1, M
                     B( I, J ) = TEMP*B( I, J )
                  end do
-              END IF
+              end if
            end do
-        ELSE
+        else
            do J =  N, 1, -1
-              IF( ALPHA.NE.ONE )THEN
+              if( ALPHA.ne.ONE )then
                  do I =  1, M
                     B( I, J ) = ALPHA*B( I, J )
                  end do
-              END IF
+              end if
               do K =  J + 1, N
-                 IF( A( K, J ).NE.ZERO )THEN
+                 if( A( K, J ).ne.ZERO )then
                     do I =  1, M
                        B( I, J ) = B( I, J ) - A( K, J )*B( I, K )
                     end do
-                 END IF
+                 end if
               end do
-              IF( NOUNIT )THEN
+              if( NOUNIT )then
                  TEMP = ONE/A( J, J )
                  do I =  1, M
                     B( I, J ) = TEMP*B( I, J )
                  end do
-              END IF
+              end if
            end do
-        END IF
-     ELSE
+        end if
+     else
         !
         !           Form  B := alpha*B*inv( A' ).
         !
-        IF( UPPER )THEN
+        if( UPPER )then
            do K =  N, 1, -1
-              IF( NOUNIT )THEN
+              if( NOUNIT )then
                  TEMP = ONE/A( K, K )
                  do I =  1, M
                     B( I, K ) = TEMP*B( I, K )
                  end do
-              END IF
+              end if
               do J =  1, K - 1
-                 IF( A( J, K ).NE.ZERO )THEN
+                 if( A( J, K ).ne.ZERO )then
                     TEMP = A( J, K )
                     do I =  1, M
                        B( I, J ) = B( I, J ) - TEMP*B( I, K )
                     end do
-                 END IF
+                 end if
               end do
-              IF( ALPHA.NE.ONE )THEN
+              if( ALPHA.ne.ONE )then
                  do I =  1, M
                     B( I, K ) = ALPHA*B( I, K )
                  end do
-              END IF
+              end if
            end do
-        ELSE
+        else
            do K =  1, N
-              IF( NOUNIT )THEN
+              if( NOUNIT )then
                  TEMP = ONE/A( K, K )
                  do I =  1, M
                     B( I, K ) = TEMP*B( I, K )
                  end do
-              END IF
+              end if
               do J =  K + 1, N
-                 IF( A( J, K ).NE.ZERO )THEN
+                 if( A( J, K ).ne.ZERO )then
                     TEMP = A( J, K )
                     do I =  1, M
                        B( I, J ) = B( I, J ) - TEMP*B( I, K )
                     end do
-                 END IF
+                 end if
               end do
-              IF( ALPHA.NE.ONE )THEN
+              if( ALPHA.ne.ONE )then
                  do I =  1, M
                     B( I, K ) = ALPHA*B( I, K )
                  end do
-              END IF
+              end if
            end do
-        END IF
-     END IF
-  END IF
+        end if
+     end if
+  end if
   !
   RETURN
   !
   !     End of STRSM .
   !
-END SUBROUTINE STRSM
+end subroutine STRSM
 !=============================================================================
 integer function isamax(n,sx,incx)
   !
@@ -1219,7 +1219,7 @@ end function isamax
 ! This is a collection of real*8 BLAS routines that BATSRUS uses. 
 ! You are encouraged to use the local BLAS library if available.
 !
-! Subroutines: dcopy, dgemm, dgemv, dger,  dscal, dswap, dtrsm
+! subroutines: dcopy, dgemm, dgemv, dger,  dscal, dswap, dtrsm
 !
 !=============================================================================
 subroutine  dcopy(n,dx,incx,dy,incy)
@@ -1245,14 +1245,14 @@ subroutine  dcopy(n,dx,incx,dy,incy)
   return
 end subroutine dcopy
 !=============================================================================
-SUBROUTINE DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
+subroutine DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
      BETA, C, LDC )
   !     .. Scalar Arguments ..
-  CHARACTER*1        TRANSA, TRANSB
-  INTEGER            M, N, K, LDA, LDB, LDC
-  REAL*8   ALPHA, BETA
+  character*1        TRANSA, TRANSB
+  integer            M, N, K, LDA, LDB, LDC
+  real*8   ALPHA, BETA
   !     .. Array Arguments ..
-  REAL*8   A( LDA, * ), B( LDB, * ), C( LDC, * )
+  real*8   A( LDA, * ), B( LDB, * ), C( LDC, * )
   !     ..
   !
   !  Purpose
@@ -1269,10 +1269,10 @@ SUBROUTINE DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
   !  alpha and beta are scalars, and A, B and C are matrices, with op( A )
   !  an m by k matrix,  op( B )  a  k by n matrix and  C an m by n matrix.
   !
-  !  Parameters
+  !  parameters
   !  ==========
   !
-  !  TRANSA - CHARACTER*1.
+  !  TRANSA - character*1.
   !           On entry, TRANSA specifies the form of op( A ) to be used in
   !           the matrix multiplication as follows:
   !
@@ -1284,7 +1284,7 @@ SUBROUTINE DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
   !
   !           Unchanged on exit.
   !
-  !  TRANSB - CHARACTER*1.
+  !  TRANSB - character*1.
   !           On entry, TRANSB specifies the form of op( B ) to be used in
   !           the matrix multiplication as follows:
   !
@@ -1296,28 +1296,28 @@ SUBROUTINE DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
   !
   !           Unchanged on exit.
   !
-  !  M      - INTEGER.
+  !  M      - integer.
   !           On entry,  M  specifies  the number  of rows  of the  matrix
   !           op( A )  and of the  matrix  C.  M  must  be at least  zero.
   !           Unchanged on exit.
   !
-  !  N      - INTEGER.
+  !  N      - integer.
   !           On entry,  N  specifies the number  of columns of the matrix
   !           op( B ) and the number of columns of the matrix C. N must be
   !           at least zero.
   !           Unchanged on exit.
   !
-  !  K      - INTEGER.
+  !  K      - integer.
   !           On entry,  K  specifies  the number of columns of the matrix
   !           op( A ) and the number of rows of the matrix op( B ). K must
   !           be at least  zero.
   !           Unchanged on exit.
   !
-  !  ALPHA  - REAL*8.
+  !  ALPHA  - real*8.
   !           On entry, ALPHA specifies the scalar alpha.
   !           Unchanged on exit.
   !
-  !  A      - REAL*8 array of DIMENSION ( LDA, ka ), where ka is
+  !  A      - real*8 array of DIMENSION ( LDA, ka ), where ka is
   !           k  when  TRANSA = 'N' or 'n',  and is  m  otherwise.
   !           Before entry with  TRANSA = 'N' or 'n',  the leading  m by k
   !           part of the array  A  must contain the matrix  A,  otherwise
@@ -1325,14 +1325,14 @@ SUBROUTINE DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
   !           matrix A.
   !           Unchanged on exit.
   !
-  !  LDA    - INTEGER.
+  !  LDA    - integer.
   !           On entry, LDA specifies the first dimension of A as declared
   !           in the calling (sub) program. When  TRANSA = 'N' or 'n' then
   !           LDA must be at least  max( 1, m ), otherwise  LDA must be at
   !           least  max( 1, k ).
   !           Unchanged on exit.
   !
-  !  B      - REAL*8 array of DIMENSION ( LDB, kb ), where kb is
+  !  B      - real*8 array of DIMENSION ( LDB, kb ), where kb is
   !           n  when  TRANSB = 'N' or 'n',  and is  k  otherwise.
   !           Before entry with  TRANSB = 'N' or 'n',  the leading  k by n
   !           part of the array  B  must contain the matrix  B,  otherwise
@@ -1340,26 +1340,26 @@ SUBROUTINE DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
   !           matrix B.
   !           Unchanged on exit.
   !
-  !  LDB    - INTEGER.
+  !  LDB    - integer.
   !           On entry, LDB specifies the first dimension of B as declared
   !           in the calling (sub) program. When  TRANSB = 'N' or 'n' then
   !           LDB must be at least  max( 1, k ), otherwise  LDB must be at
   !           least  max( 1, n ).
   !           Unchanged on exit.
   !
-  !  BETA   - REAL*8.
+  !  BETA   - real*8.
   !           On entry,  BETA  specifies the scalar  beta.  When  BETA  is
   !           supplied as zero then C need not be set on input.
   !           Unchanged on exit.
   !
-  !  C      - REAL*8 array of DIMENSION ( LDC, n ).
+  !  C      - real*8 array of DIMENSION ( LDC, n ).
   !           Before entry, the leading  m by n  part of the array  C must
   !           contain the matrix  C,  except when  beta  is zero, in which
   !           case C need not be set on entry.
   !           On exit, the array  C  is overwritten by the  m by n  matrix
   !           ( alpha*op( A )*op( B ) + beta*C ).
   !
-  !  LDC    - INTEGER.
+  !  LDC    - integer.
   !           On entry, LDC specifies the first dimension of C as declared
   !           in  the  calling  (sub)  program.   LDC  must  be  at  least
   !           max( 1, m ).
@@ -1375,20 +1375,20 @@ SUBROUTINE DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
   !     Sven Hammarling, Numerical Algorithms Group Ltd.
   !
   !
-  !     .. External Functions ..
-  LOGICAL            LSAME
-  EXTERNAL           LSAME
-  !     .. External Subroutines ..
-  EXTERNAL           XERBLA
+  !     .. external Functions ..
+  logical            LSAME
+  external           LSAME
+  !     .. external subroutines ..
+  external           XERBLA
   !     .. Intrinsic Functions ..
   INTRINSIC          MAX
   !     .. Local Scalars ..
-  LOGICAL            NOTA, NOTB
-  INTEGER            I, INFO, J, L, NCOLA, NROWA, NROWB
-  REAL*8   TEMP
-  !     .. Parameters ..
-  REAL*8   ONE    , ZERO
-  PARAMETER        ( ONE = 1, ZERO = 0 )
+  logical            NOTA, NOTB
+  integer            I, INFO, J, L, NCOLA, NROWA, NROWB
+  real*8   TEMP
+  !     .. parameters ..
+  real*8   ONE    , ZERO
+  parameter        ( ONE = 1, ZERO = 0 )
   !     ..
   !     .. Executable Statements ..
   !
@@ -1398,175 +1398,175 @@ SUBROUTINE DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
   !
   NOTA  = LSAME( TRANSA, 'N' )
   NOTB  = LSAME( TRANSB, 'N' )
-  IF( NOTA )THEN
+  if( NOTA )then
      NROWA = M
      NCOLA = K
-  ELSE
+  else
      NROWA = K
      NCOLA = M
-  END IF
-  IF( NOTB )THEN
+  end if
+  if( NOTB )then
      NROWB = K
-  ELSE
+  else
      NROWB = N
-  END IF
+  end if
   !
   !     Test the input parameters.
   !
   INFO = 0
-  IF(      ( .NOT.NOTA                 ).AND. &
-       ( .NOT.LSAME( TRANSA, 'C' ) ).AND. &
-       ( .NOT.LSAME( TRANSA, 'T' ) )      )THEN
+  if(      ( .not.NOTA                 ).and. &
+       ( .not.LSAME( TRANSA, 'C' ) ).and. &
+       ( .not.LSAME( TRANSA, 'T' ) )      )then
      INFO = 1
-  ELSE IF( ( .NOT.NOTB                 ).AND. &
-       ( .NOT.LSAME( TRANSB, 'C' ) ).AND. &
-       ( .NOT.LSAME( TRANSB, 'T' ) )      )THEN
+  else if( ( .not.NOTB                 ).and. &
+       ( .not.LSAME( TRANSB, 'C' ) ).and. &
+       ( .not.LSAME( TRANSB, 'T' ) )      )then
      INFO = 2
-  ELSE IF( M  .LT.0               )THEN
+  else if( M  .lt.0               )then
      INFO = 3
-  ELSE IF( N  .LT.0               )THEN
+  else if( N  .lt.0               )then
      INFO = 4
-  ELSE IF( K  .LT.0               )THEN
+  else if( K  .lt.0               )then
      INFO = 5
-  ELSE IF( LDA.LT.MAX( 1, NROWA ) )THEN
+  else if( LDA.lt.MAX( 1, NROWA ) )then
      INFO = 8
-  ELSE IF( LDB.LT.MAX( 1, NROWB ) )THEN
+  else if( LDB.lt.MAX( 1, NROWB ) )then
      INFO = 10
-  ELSE IF( LDC.LT.MAX( 1, M     ) )THEN
+  else if( LDC.lt.MAX( 1, M     ) )then
      INFO = 13
-  END IF
-  IF( INFO.NE.0 )THEN
+  end if
+  if( INFO.ne.0 )then
      CALL XERBLA( 'DGEMM ', INFO )
      RETURN
-  END IF
+  end if
   !
   !     Quick return if possible.
   !
-  IF( ( M.EQ.0 ).OR.( N.EQ.0 ).OR. &
-       ( ( ( ALPHA.EQ.ZERO ).OR.( K.EQ.0 ) ).AND.( BETA.EQ.ONE ) ) ) &
+  if( ( M.eq.0 ).OR.( N.eq.0 ).OR. &
+       ( ( ( ALPHA.eq.ZERO ).OR.( K.eq.0 ) ).and.( BETA.eq.ONE ) ) ) &
        RETURN
   !
   !     And if  alpha.eq.zero.
   !
-  IF( ALPHA.EQ.ZERO )THEN
-     IF( BETA.EQ.ZERO )THEN
+  if( ALPHA.eq.ZERO )then
+     if( BETA.eq.ZERO )then
         do J =  1, N
            do I =  1, M
               C( I, J ) = ZERO
            end do
         end do
-     ELSE
+     else
         do J =  1, N
            do I =  1, M
               C( I, J ) = BETA*C( I, J )
            end do
         end do
-     END IF
+     end if
      RETURN
-  END IF
+  end if
   !
   !     Start the operations.
   !
-  IF( NOTB )THEN
-     IF( NOTA )THEN
+  if( NOTB )then
+     if( NOTA )then
         !
         !           Form  C := alpha*A*B + beta*C.
         !
         do J =  1, N
-           IF( BETA.EQ.ZERO )THEN
+           if( BETA.eq.ZERO )then
               do I =  1, M
                  C( I, J ) = ZERO
               end do
-           ELSE IF( BETA.NE.ONE )THEN
+           else if( BETA.ne.ONE )then
               do I =  1, M
                  C( I, J ) = BETA*C( I, J )
               end do
-           END IF
-           DO  L = 1, K
-              IF( B( L, J ).NE.ZERO )THEN
+           end if
+           do  L = 1, K
+              if( B( L, J ).ne.ZERO )then
                  TEMP = ALPHA*B( L, J )
                  do I =  1, M
                     C( I, J ) = C( I, J ) + TEMP*A( I, L )
                  end do
-              END IF
+              end if
            end do
         end do
-     ELSE
+     else
         !
         !           Form  C := alpha*A'*B + beta*C
         !
         do J =  1, N
            do I =  1, M
               TEMP = ZERO
-              DO L = 1, K
+              do L = 1, K
                  TEMP = TEMP + A( L, I )*B( L, J )
               end do
-              IF( BETA.EQ.ZERO )THEN
+              if( BETA.eq.ZERO )then
                  C( I, J ) = ALPHA*TEMP
-              ELSE
+              else
                  C( I, J ) = ALPHA*TEMP + BETA*C( I, J )
-              END IF
+              end if
            end do
         end do
-     END IF
-  ELSE
-     IF( NOTA )THEN
+     end if
+  else
+     if( NOTA )then
         !
         !           Form  C := alpha*A*B' + beta*C
         !
         do J =  1, N
-           IF( BETA.EQ.ZERO )THEN
+           if( BETA.eq.ZERO )then
               do I =  1, M
                  C( I, J ) = ZERO
               end do
-           ELSE IF( BETA.NE.ONE )THEN
+           else if( BETA.ne.ONE )then
               do I =  1, M
                  C( I, J ) = BETA*C( I, J )
               end do
-           END IF
-           DO L = 1, K
-              IF( B( J, L ).NE.ZERO )THEN
+           end if
+           do L = 1, K
+              if( B( J, L ).ne.ZERO )then
                  TEMP = ALPHA*B( J, L )
                  do I =  1, M
                     C( I, J ) = C( I, J ) + TEMP*A( I, L )
                  end do
-              END IF
+              end if
            end do
         end do
-     ELSE
+     else
         !
         !           Form  C := alpha*A'*B' + beta*C
         !
         do J =  1, N
            do I =  1, M
               TEMP = ZERO
-              DO L = 1, K
+              do L = 1, K
                  TEMP = TEMP + A( L, I )*B( J, L )
               end do
-              IF( BETA.EQ.ZERO )THEN
+              if( BETA.eq.ZERO )then
                  C( I, J ) = ALPHA*TEMP
-              ELSE
+              else
                  C( I, J ) = ALPHA*TEMP + BETA*C( I, J )
-              END IF
+              end if
            end do
         end do
-     END IF
-  END IF
+     end if
+  end if
   !
   RETURN
   !
   !     End of DGEMM .
   !
-END SUBROUTINE DGEMM
+end subroutine DGEMM
 !============================================================================
-SUBROUTINE DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
+subroutine DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
      BETA, Y, INCY )
   !     .. Scalar Arguments ..
-  REAL*8   ALPHA, BETA
-  INTEGER            INCX, INCY, LDA, M, N
-  CHARACTER*1        TRANS
+  real*8   ALPHA, BETA
+  integer            INCX, INCY, LDA, M, N
+  character*1        TRANS
   !     .. Array Arguments ..
-  REAL*8   A( LDA, * ), X( * ), Y( * )
+  real*8   A( LDA, * ), X( * ), Y( * )
   !     ..
   !
   !  Purpose
@@ -1579,10 +1579,10 @@ SUBROUTINE DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
   !  where alpha and beta are scalars, x and y are vectors and A is an
   !  m by n matrix.
   !
-  !  Parameters
+  !  parameters
   !  ==========
   !
-  !  TRANS  - CHARACTER*1.
+  !  TRANS  - character*1.
   !           On entry, TRANS specifies the operation to be performed as
   !           follows:
   !
@@ -1594,32 +1594,32 @@ SUBROUTINE DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
   !
   !           Unchanged on exit.
   !
-  !  M      - INTEGER.
+  !  M      - integer.
   !           On entry, M specifies the number of rows of the matrix A.
   !           M must be at least zero.
   !           Unchanged on exit.
   !
-  !  N      - INTEGER.
+  !  N      - integer.
   !           On entry, N specifies the number of columns of the matrix A.
   !           N must be at least zero.
   !           Unchanged on exit.
   !
-  !  ALPHA  - REAL*8.
+  !  ALPHA  - real*8.
   !           On entry, ALPHA specifies the scalar alpha.
   !           Unchanged on exit.
   !
-  !  A      - REAL*8 array of DIMENSION ( LDA, n ).
+  !  A      - real*8 array of DIMENSION ( LDA, n ).
   !           Before entry, the leading m by n part of the array A must
   !           contain the matrix of coefficients.
   !           Unchanged on exit.
   !
-  !  LDA    - INTEGER.
+  !  LDA    - integer.
   !           On entry, LDA specifies the first dimension of A as declared
   !           in the calling (sub) program. LDA must be at least
   !           max( 1, m ).
   !           Unchanged on exit.
   !
-  !  X      - REAL*8 array of DIMENSION at least
+  !  X      - real*8 array of DIMENSION at least
   !           ( 1 + ( n - 1 )*abs( INCX ) ) when TRANS = 'N' or 'n'
   !           and at least
   !           ( 1 + ( m - 1 )*abs( INCX ) ) otherwise.
@@ -1627,17 +1627,17 @@ SUBROUTINE DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
   !           vector x.
   !           Unchanged on exit.
   !
-  !  INCX   - INTEGER.
+  !  INCX   - integer.
   !           On entry, INCX specifies the increment for the elements of
   !           X. INCX must not be zero.
   !           Unchanged on exit.
   !
-  !  BETA   - REAL*8.
+  !  BETA   - real*8.
   !           On entry, BETA specifies the scalar beta. When BETA is
   !           supplied as zero then Y need not be set on input.
   !           Unchanged on exit.
   !
-  !  Y      - REAL*8 array of DIMENSION at least
+  !  Y      - real*8 array of DIMENSION at least
   !           ( 1 + ( m - 1 )*abs( INCY ) ) when TRANS = 'N' or 'n'
   !           and at least
   !           ( 1 + ( n - 1 )*abs( INCY ) ) otherwise.
@@ -1645,7 +1645,7 @@ SUBROUTINE DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
   !           must contain the vector y. On exit, Y is overwritten by the
   !           updated vector y.
   !
-  !  INCY   - INTEGER.
+  !  INCY   - integer.
   !           On entry, INCY specifies the increment for the elements of
   !           Y. INCY must not be zero.
   !           Unchanged on exit.
@@ -1660,17 +1660,17 @@ SUBROUTINE DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
   !     Richard Hanson, Sandia National Labs.
   !
   !
-  !     .. Parameters ..
-  REAL*8   ONE         , ZERO
-  PARAMETER        ( ONE = 1, ZERO = 0 )
+  !     .. parameters ..
+  real*8   ONE         , ZERO
+  parameter        ( ONE = 1, ZERO = 0 )
   !     .. Local Scalars ..
-  REAL*8   TEMP
-  INTEGER            I, INFO, IX, IY, J, JX, JY, KX, KY, LENX, LENY
-  !     .. External Functions ..
-  LOGICAL            LSAME
-  EXTERNAL           LSAME
-  !     .. External Subroutines ..
-  EXTERNAL           XERBLA
+  real*8   TEMP
+  integer            I, INFO, IX, IY, J, JX, JY, KX, KY, LENX, LENY
+  !     .. external Functions ..
+  logical            LSAME
+  external           LSAME
+  !     .. external subroutines ..
+  external           XERBLA
   !     .. Intrinsic Functions ..
   INTRINSIC          MAX
   !     ..
@@ -1679,120 +1679,120 @@ SUBROUTINE DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
   !     Test the input parameters.
   !
   INFO = 0
-  IF     ( .NOT.LSAME( TRANS, 'N' ).AND. &
-       .NOT.LSAME( TRANS, 'T' ).AND. &
-       .NOT.LSAME( TRANS, 'C' )      )THEN
+  if     ( .not.LSAME( TRANS, 'N' ).and. &
+       .not.LSAME( TRANS, 'T' ).and. &
+       .not.LSAME( TRANS, 'C' )      )then
      INFO = 1
-  ELSE IF( M.LT.0 )THEN
+  else if( M.lt.0 )then
      INFO = 2
-  ELSE IF( N.LT.0 )THEN
+  else if( N.lt.0 )then
      INFO = 3
-  ELSE IF( LDA.LT.MAX( 1, M ) )THEN
+  else if( LDA.lt.MAX( 1, M ) )then
      INFO = 6
-  ELSE IF( INCX.EQ.0 )THEN
+  else if( INCX.eq.0 )then
      INFO = 8
-  ELSE IF( INCY.EQ.0 )THEN
+  else if( INCY.eq.0 )then
      INFO = 11
-  END IF
-  IF( INFO.NE.0 )THEN
+  end if
+  if( INFO.ne.0 )then
      CALL XERBLA( 'DGEMV ', INFO )
      RETURN
-  END IF
+  end if
   !
   !     Quick return if possible.
   !
-  IF( ( M.EQ.0 ).OR.( N.EQ.0 ).OR. &
-       ( ( ALPHA.EQ.ZERO ).AND.( BETA.EQ.ONE ) ) ) &
+  if( ( M.eq.0 ).OR.( N.eq.0 ).OR. &
+       ( ( ALPHA.eq.ZERO ).and.( BETA.eq.ONE ) ) ) &
        RETURN
   !
   !     Set  LENX  and  LENY, the lengths of the vectors x and y, and set
   !     up the start points in  X  and  Y.
   !
-  IF( LSAME( TRANS, 'N' ) )THEN
+  if( LSAME( TRANS, 'N' ) )then
      LENX = N
      LENY = M
-  ELSE
+  else
      LENX = M
      LENY = N
-  END IF
-  IF( INCX.GT.0 )THEN
+  end if
+  if( INCX.GT.0 )then
      KX = 1
-  ELSE
+  else
      KX = 1 - ( LENX - 1 )*INCX
-  END IF
-  IF( INCY.GT.0 )THEN
+  end if
+  if( INCY.GT.0 )then
      KY = 1
-  ELSE
+  else
      KY = 1 - ( LENY - 1 )*INCY
-  END IF
+  end if
   !
   !     Start the operations. In this version the elements of A are
   !     accessed sequentially with one pass through A.
   !
   !     First form  y := beta*y.
   !
-  IF( BETA.NE.ONE )THEN
-     IF( INCY.EQ.1 )THEN
-        IF( BETA.EQ.ZERO )THEN
+  if( BETA.ne.ONE )then
+     if( INCY.eq.1 )then
+        if( BETA.eq.ZERO )then
            do I =  1, LENY
               Y( I ) = ZERO
            end do
-        ELSE
+        else
            do I =  1, LENY
               Y( I ) = BETA*Y( I )
            end do
-        END IF
-     ELSE
+        end if
+     else
         IY = KY
-        IF( BETA.EQ.ZERO )THEN
+        if( BETA.eq.ZERO )then
            do I =  1, LENY
               Y( IY ) = ZERO
               IY      = IY   + INCY
            end do
-        ELSE
+        else
            do I =  1, LENY
               Y( IY ) = BETA*Y( IY )
               IY      = IY           + INCY
            end do
-        END IF
-     END IF
-  END IF
-  IF( ALPHA.EQ.ZERO ) &
+        end if
+     end if
+  end if
+  if( ALPHA.eq.ZERO ) &
        RETURN
-  IF( LSAME( TRANS, 'N' ) )THEN
+  if( LSAME( TRANS, 'N' ) )then
      !
      !        Form  y := alpha*A*x + y.
      !
      JX = KX
-     IF( INCY.EQ.1 )THEN
+     if( INCY.eq.1 )then
         do J =  1, N
-           IF( X( JX ).NE.ZERO )THEN
+           if( X( JX ).ne.ZERO )then
               TEMP = ALPHA*X( JX )
               do I =  1, M
                  Y( I ) = Y( I ) + TEMP*A( I, J )
               end do
-           END IF
+           end if
            JX = JX + INCX
         end do
-     ELSE
+     else
         do J =  1, N
-           IF( X( JX ).NE.ZERO )THEN
+           if( X( JX ).ne.ZERO )then
               TEMP = ALPHA*X( JX )
               IY   = KY
               do I =  1, M
                  Y( IY ) = Y( IY ) + TEMP*A( I, J )
                  IY      = IY      + INCY
               end do
-           END IF
+           end if
            JX = JX + INCX
         end do
-     END IF
-  ELSE
+     end if
+  else
      !
      !        Form  y := alpha*A'*x + y.
      !
      JY = KY
-     IF( INCX.EQ.1 )THEN
+     if( INCX.eq.1 )then
         do J =  1, N
            TEMP = ZERO
            do I =  1, M
@@ -1801,7 +1801,7 @@ SUBROUTINE DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
            Y( JY ) = Y( JY ) + ALPHA*TEMP
            JY      = JY      + INCY
         end do
-     ELSE
+     else
         do J =  1, N
            TEMP = ZERO
            IX   = KX
@@ -1812,21 +1812,21 @@ SUBROUTINE DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
            Y( JY ) = Y( JY ) + ALPHA*TEMP
            JY      = JY      + INCY
         end do
-     END IF
-  END IF
+     end if
+  end if
   !
   RETURN
   !
   !     End of DGEMV .
   !
-END SUBROUTINE DGEMV
+end subroutine DGEMV
 !============================================================================
-SUBROUTINE DGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
+subroutine DGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
   !     .. Scalar Arguments ..
-  REAL*8   ALPHA
-  INTEGER            INCX, INCY, LDA, M, N
+  real*8   ALPHA
+  integer            INCX, INCY, LDA, M, N
   !     .. Array Arguments ..
-  REAL*8   A( LDA, * ), X( * ), Y( * )
+  real*8   A( LDA, * ), X( * ), Y( * )
   !     ..
   !
   !  Purpose
@@ -1839,51 +1839,51 @@ SUBROUTINE DGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
   !  where alpha is a scalar, x is an m element vector, y is an n element
   !  vector and A is an m by n matrix.
   !
-  !  Parameters
+  !  parameters
   !  ==========
   !
-  !  M      - INTEGER.
+  !  M      - integer.
   !           On entry, M specifies the number of rows of the matrix A.
   !           M must be at least zero.
   !           Unchanged on exit.
   !
-  !  N      - INTEGER.
+  !  N      - integer.
   !           On entry, N specifies the number of columns of the matrix A.
   !           N must be at least zero.
   !           Unchanged on exit.
   !
-  !  ALPHA  - REAL*8.
+  !  ALPHA  - real*8.
   !           On entry, ALPHA specifies the scalar alpha.
   !           Unchanged on exit.
   !
-  !  X      - REAL*8 array of dimension at least
+  !  X      - real*8 array of dimension at least
   !           ( 1 + ( m - 1 )*abs( INCX ) ).
   !           Before entry, the incremented array X must contain the m
   !           element vector x.
   !           Unchanged on exit.
   !
-  !  INCX   - INTEGER.
+  !  INCX   - integer.
   !           On entry, INCX specifies the increment for the elements of
   !           X. INCX must not be zero.
   !           Unchanged on exit.
   !
-  !  Y      - REAL*8 array of dimension at least
+  !  Y      - real*8 array of dimension at least
   !           ( 1 + ( n - 1 )*abs( INCY ) ).
   !           Before entry, the incremented array Y must contain the n
   !           element vector y.
   !           Unchanged on exit.
   !
-  !  INCY   - INTEGER.
+  !  INCY   - integer.
   !           On entry, INCY specifies the increment for the elements of
   !           Y. INCY must not be zero.
   !           Unchanged on exit.
   !
-  !  A      - REAL*8 array of DIMENSION ( LDA, n ).
+  !  A      - real*8 array of DIMENSION ( LDA, n ).
   !           Before entry, the leading m by n part of the array A must
   !           contain the matrix of coefficients. On exit, A is
   !           overwritten by the updated matrix.
   !
-  !  LDA    - INTEGER.
+  !  LDA    - integer.
   !           On entry, LDA specifies the first dimension of A as declared
   !           in the calling (sub) program. LDA must be at least
   !           max( 1, m ).
@@ -1899,14 +1899,14 @@ SUBROUTINE DGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
   !     Richard Hanson, Sandia National Labs.
   !
   !
-  !     .. Parameters ..
-  REAL*8   ZERO
-  PARAMETER        ( ZERO = 0.0D+0 )
+  !     .. parameters ..
+  real*8   ZERO
+  parameter        ( ZERO = 0.0D+0 )
   !     .. Local Scalars ..
-  REAL*8   TEMP
-  INTEGER            I, INFO, IX, J, JY, KX
-  !     .. External Subroutines ..
-  EXTERNAL           XERBLA
+  real*8   TEMP
+  integer            I, INFO, IX, J, JY, KX
+  !     .. external subroutines ..
+  external           XERBLA
   !     .. Intrinsic Functions ..
   INTRINSIC          MAX
   !     ..
@@ -1915,69 +1915,69 @@ SUBROUTINE DGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
   !     Test the input parameters.
   !
   INFO = 0
-  IF     ( M.LT.0 )THEN
+  if     ( M.lt.0 )then
      INFO = 1
-  ELSE IF( N.LT.0 )THEN
+  else if( N.lt.0 )then
      INFO = 2
-  ELSE IF( INCX.EQ.0 )THEN
+  else if( INCX.eq.0 )then
      INFO = 5
-  ELSE IF( INCY.EQ.0 )THEN
+  else if( INCY.eq.0 )then
      INFO = 7
-  ELSE IF( LDA.LT.MAX( 1, M ) )THEN
+  else if( LDA.lt.MAX( 1, M ) )then
      INFO = 9
-  END IF
-  IF( INFO.NE.0 )THEN
+  end if
+  if( INFO.ne.0 )then
      CALL XERBLA( 'DGER  ', INFO )
      RETURN
-  END IF
+  end if
   !
   !     Quick return if possible.
   !
-  IF( ( M.EQ.0 ).OR.( N.EQ.0 ).OR.( ALPHA.EQ.ZERO ) ) &
+  if( ( M.eq.0 ).OR.( N.eq.0 ).OR.( ALPHA.eq.ZERO ) ) &
        RETURN
   !
   !     Start the operations. In this version the elements of A are
   !     accessed sequentially with one pass through A.
   !
-  IF( INCY.GT.0 )THEN
+  if( INCY.GT.0 )then
      JY = 1
-  ELSE
+  else
      JY = 1 - ( N - 1 )*INCY
-  END IF
-  IF( INCX.EQ.1 )THEN
+  end if
+  if( INCX.eq.1 )then
      do J =  1, N
-        IF( Y( JY ).NE.ZERO )THEN
+        if( Y( JY ).ne.ZERO )then
            TEMP = ALPHA*Y( JY )
            do I =  1, M
               A( I, J ) = A( I, J ) + X( I )*TEMP
            end do
-        END IF
+        end if
         JY = JY + INCY
      end do
-  ELSE
-     IF( INCX.GT.0 )THEN
+  else
+     if( INCX.GT.0 )then
         KX = 1
-     ELSE
+     else
         KX = 1 - ( M - 1 )*INCX
-     END IF
+     end if
      do J =  1, N
-        IF( Y( JY ).NE.ZERO )THEN
+        if( Y( JY ).ne.ZERO )then
            TEMP = ALPHA*Y( JY )
            IX   = KX
            do I =  1, M
               A( I, J ) = A( I, J ) + X( IX )*TEMP
               IX        = IX        + INCX
            end do
-        END IF
+        end if
         JY = JY + INCY
      end do
-  END IF
+  end if
   !
   RETURN
   !
   !     End of DGER  .
   !
-END SUBROUTINE DGER
+end subroutine DGER
 !============================================================================
 subroutine  dscal(n,da,dx,incx)
   !
@@ -2022,14 +2022,14 @@ subroutine  dswap (n,dx,incx,dy,incy)
   return
 end subroutine dswap
 !============================================================================
-SUBROUTINE DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
+subroutine DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
      B, LDB )
   !     .. Scalar Arguments ..
-  CHARACTER*1        SIDE, UPLO, TRANSA, DIAG
-  INTEGER            M, N, LDA, LDB
-  REAL*8   ALPHA
+  character*1        SIDE, UPLO, TRANSA, DIAG
+  integer            M, N, LDA, LDB
+  real*8   ALPHA
   !     .. Array Arguments ..
-  REAL*8   A( LDA, * ), B( LDB, * )
+  real*8   A( LDA, * ), B( LDB, * )
   !     ..
   !
   !  Purpose
@@ -2046,10 +2046,10 @@ SUBROUTINE DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   !
   !  The matrix X is overwritten on B.
   !
-  !  Parameters
+  !  parameters
   !  ==========
   !
-  !  SIDE   - CHARACTER*1.
+  !  SIDE   - character*1.
   !           On entry, SIDE specifies whether op( A ) appears on the left
   !           or right of X as follows:
   !
@@ -2059,7 +2059,7 @@ SUBROUTINE DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   !
   !           Unchanged on exit.
   !
-  !  UPLO   - CHARACTER*1.
+  !  UPLO   - character*1.
   !           On entry, UPLO specifies whether the matrix A is an upper or
   !           lower triangular matrix as follows:
   !
@@ -2069,7 +2069,7 @@ SUBROUTINE DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   !
   !           Unchanged on exit.
   !
-  !  TRANSA - CHARACTER*1.
+  !  TRANSA - character*1.
   !           On entry, TRANSA specifies the form of op( A ) to be used in
   !           the matrix multiplication as follows:
   !
@@ -2081,7 +2081,7 @@ SUBROUTINE DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   !
   !           Unchanged on exit.
   !
-  !  DIAG   - CHARACTER*1.
+  !  DIAG   - character*1.
   !           On entry, DIAG specifies whether or not A is unit triangular
   !           as follows:
   !
@@ -2092,23 +2092,23 @@ SUBROUTINE DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   !
   !           Unchanged on exit.
   !
-  !  M      - INTEGER.
+  !  M      - integer.
   !           On entry, M specifies the number of rows of B. M must be at
   !           least zero.
   !           Unchanged on exit.
   !
-  !  N      - INTEGER.
+  !  N      - integer.
   !           On entry, N specifies the number of columns of B.  N must be
   !           at least zero.
   !           Unchanged on exit.
   !
-  !  ALPHA  - REAL*8.
+  !  ALPHA  - real*8.
   !           On entry,  ALPHA specifies the scalar  alpha. When  alpha is
   !           zero then  A is not referenced and  B need not be set before
   !           entry.
   !           Unchanged on exit.
   !
-  !  A      - REAL*8 array of DIMENSION ( LDA, k ), where k is m
+  !  A      - real*8 array of DIMENSION ( LDA, k ), where k is m
   !           when  SIDE = 'L' or 'l'  and is  n  when  SIDE = 'R' or 'r'.
   !           Before entry  with  UPLO = 'U' or 'u',  the  leading  k by k
   !           upper triangular part of the array  A must contain the upper
@@ -2122,19 +2122,19 @@ SUBROUTINE DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   !           A  are not referenced either,  but are assumed to be  unity.
   !           Unchanged on exit.
   !
-  !  LDA    - INTEGER.
+  !  LDA    - integer.
   !           On entry, LDA specifies the first dimension of A as declared
   !           in the calling (sub) program.  When  SIDE = 'L' or 'l'  then
   !           LDA  must be at least  max( 1, m ),  when  SIDE = 'R' or 'r'
   !           then LDA must be at least max( 1, n ).
   !           Unchanged on exit.
   !
-  !  B      - REAL*8 array of DIMENSION ( LDB, n ).
+  !  B      - real*8 array of DIMENSION ( LDB, n ).
   !           Before entry,  the leading  m by n part of the array  B must
   !           contain  the  right-hand  side  matrix  B,  and  on exit  is
   !           overwritten by the solution matrix  X.
   !
-  !  LDB    - INTEGER.
+  !  LDB    - integer.
   !           On entry, LDB specifies the first dimension of B as declared
   !           in  the  calling  (sub)  program.   LDB  must  be  at  least
   !           max( 1, m ).
@@ -2151,255 +2151,255 @@ SUBROUTINE DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   !     Sven Hammarling, Numerical Algorithms Group Ltd.
   !
   !
-  !     .. External Functions ..
-  LOGICAL            LSAME
-  EXTERNAL           LSAME
-  !     .. External Subroutines ..
-  EXTERNAL           XERBLA
+  !     .. external Functions ..
+  logical            LSAME
+  external           LSAME
+  !     .. external subroutines ..
+  external           XERBLA
   !     .. Intrinsic Functions ..
   INTRINSIC          MAX
   !     .. Local Scalars ..
-  LOGICAL            LSIDE, NOUNIT, UPPER
-  INTEGER            I, INFO, J, K, NROWA
-  REAL*8             TEMP
-  !     .. Parameters ..
-  REAL*8             ONE    , ZERO
-  PARAMETER        ( ONE = 1, ZERO = 0 )
+  logical            LSIDE, NOUNIT, UPPER
+  integer            I, INFO, J, K, NROWA
+  real*8             TEMP
+  !     .. parameters ..
+  real*8             ONE    , ZERO
+  parameter        ( ONE = 1, ZERO = 0 )
   !     ..
   !     .. Executable Statements ..
   !
   !     Test the input parameters.
   !
   LSIDE  = LSAME( SIDE  , 'L' )
-  IF( LSIDE )THEN
+  if( LSIDE )then
      NROWA = M
-  ELSE
+  else
      NROWA = N
-  END IF
+  end if
   NOUNIT = LSAME( DIAG  , 'N' )
   UPPER  = LSAME( UPLO  , 'U' )
   !
   INFO   = 0
-  IF(      ( .NOT.LSIDE                ).AND. &
-       ( .NOT.LSAME( SIDE  , 'R' ) )      )THEN
+  if(      ( .not.LSIDE                ).and. &
+       ( .not.LSAME( SIDE  , 'R' ) )      )then
      INFO = 1
-  ELSE IF( ( .NOT.UPPER                ).AND. &
-       ( .NOT.LSAME( UPLO  , 'L' ) )      )THEN
+  else if( ( .not.UPPER                ).and. &
+       ( .not.LSAME( UPLO  , 'L' ) )      )then
      INFO = 2
-  ELSE IF( ( .NOT.LSAME( TRANSA, 'N' ) ).AND. &
-       ( .NOT.LSAME( TRANSA, 'T' ) ).AND. &
-       ( .NOT.LSAME( TRANSA, 'C' ) )      )THEN
+  else if( ( .not.LSAME( TRANSA, 'N' ) ).and. &
+       ( .not.LSAME( TRANSA, 'T' ) ).and. &
+       ( .not.LSAME( TRANSA, 'C' ) )      )then
      INFO = 3
-  ELSE IF( ( .NOT.LSAME( DIAG  , 'U' ) ).AND. &
-       ( .NOT.LSAME( DIAG  , 'N' ) )      )THEN
+  else if( ( .not.LSAME( DIAG  , 'U' ) ).and. &
+       ( .not.LSAME( DIAG  , 'N' ) )      )then
      INFO = 4
-  ELSE IF( M  .LT.0               )THEN
+  else if( M  .lt.0               )then
      INFO = 5
-  ELSE IF( N  .LT.0               )THEN
+  else if( N  .lt.0               )then
      INFO = 6
-  ELSE IF( LDA.LT.MAX( 1, NROWA ) )THEN
+  else if( LDA.lt.MAX( 1, NROWA ) )then
      INFO = 9
-  ELSE IF( LDB.LT.MAX( 1, M     ) )THEN
+  else if( LDB.lt.MAX( 1, M     ) )then
      INFO = 11
-  END IF
-  IF( INFO.NE.0 )THEN
+  end if
+  if( INFO.ne.0 )then
      CALL XERBLA( 'DTRSM ', INFO )
      RETURN
-  END IF
+  end if
   !
   !     Quick return if possible.
   !
-  IF( N.EQ.0 ) &
+  if( N.eq.0 ) &
        RETURN
   !
   !     And when  alpha.eq.zero.
   !
-  IF( ALPHA.EQ.ZERO )THEN
+  if( ALPHA.eq.ZERO )then
      do J =  1, N
         do I =  1, M
            B( I, J ) = ZERO
         end do
      end do
      RETURN
-  END IF
+  end if
   !
   !     Start the operations.
   !
-  IF( LSIDE )THEN
-     IF( LSAME( TRANSA, 'N' ) )THEN
+  if( LSIDE )then
+     if( LSAME( TRANSA, 'N' ) )then
         !
         !           Form  B := alpha*inv( A )*B.
         !
-        IF( UPPER )THEN
+        if( UPPER )then
            do J =  1, N
-              IF( ALPHA.NE.ONE )THEN
+              if( ALPHA.ne.ONE )then
                  do I =  1, M
                     B( I, J ) = ALPHA*B( I, J )
                  end do
-              END IF
+              end if
               do K =  M, 1, -1
-                 IF( B( K, J ).NE.ZERO )THEN
-                    IF( NOUNIT ) &
+                 if( B( K, J ).ne.ZERO )then
+                    if( NOUNIT ) &
                          B( K, J ) = B( K, J )/A( K, K )
                     do I =  1, K - 1
                        B( I, J ) = B( I, J ) - B( K, J )*A( I, K )
                     end do
-                 END IF
+                 end if
               end do
            end do
-        ELSE
+        else
            do J =  1, N
-              IF( ALPHA.NE.ONE )THEN
+              if( ALPHA.ne.ONE )then
                  do I =  1, M
                     B( I, J ) = ALPHA*B( I, J )
                  end do
-              END IF
+              end if
               do K =  1, M
-                 IF( B( K, J ).NE.ZERO )THEN
-                    IF( NOUNIT ) &
+                 if( B( K, J ).ne.ZERO )then
+                    if( NOUNIT ) &
                          B( K, J ) = B( K, J )/A( K, K )
                     do I =  K + 1, M
                        B( I, J ) = B( I, J ) - B( K, J )*A( I, K )
                     end do
-                 END IF
+                 end if
               end do
            end do
-        END IF
-     ELSE
+        end if
+     else
         !
         !           Form  B := alpha*inv( A' )*B.
         !
-        IF( UPPER )THEN
+        if( UPPER )then
            do J =  1, N
               do I =  1, M
                  TEMP = ALPHA*B( I, J )
                  do K =  1, I - 1
                     TEMP = TEMP - A( K, I )*B( K, J )
                  end do
-                 IF( NOUNIT ) &
+                 if( NOUNIT ) &
                       TEMP = TEMP/A( I, I )
                  B( I, J ) = TEMP
               end do
            end do
-        ELSE
+        else
            do J =  1, N
               do I =  M, 1, -1
                  TEMP = ALPHA*B( I, J )
                  do K =  I + 1, M
                     TEMP = TEMP - A( K, I )*B( K, J )
                  end do
-                 IF( NOUNIT ) &
+                 if( NOUNIT ) &
                       TEMP = TEMP/A( I, I )
                  B( I, J ) = TEMP
               end do
            end do
-        END IF
-     END IF
-  ELSE
-     IF( LSAME( TRANSA, 'N' ) )THEN
+        end if
+     end if
+  else
+     if( LSAME( TRANSA, 'N' ) )then
         !
         !           Form  B := alpha*B*inv( A ).
         !
-        IF( UPPER )THEN
+        if( UPPER )then
            do J =  1, N
-              IF( ALPHA.NE.ONE )THEN
+              if( ALPHA.ne.ONE )then
                  do I =  1, M
                     B( I, J ) = ALPHA*B( I, J )
                  end do
-              END IF
+              end if
               do K =  1, J - 1
-                 IF( A( K, J ).NE.ZERO )THEN
+                 if( A( K, J ).ne.ZERO )then
                     do I =  1, M
                        B( I, J ) = B( I, J ) - A( K, J )*B( I, K )
                     end do
-                 END IF
+                 end if
               end do
-              IF( NOUNIT )THEN
+              if( NOUNIT )then
                  TEMP = ONE/A( J, J )
                  do I =  1, M
                     B( I, J ) = TEMP*B( I, J )
                  end do
-              END IF
+              end if
            end do
-        ELSE
+        else
            do J =  N, 1, -1
-              IF( ALPHA.NE.ONE )THEN
+              if( ALPHA.ne.ONE )then
                  do I =  1, M
                     B( I, J ) = ALPHA*B( I, J )
                  end do
-              END IF
+              end if
               do K =  J + 1, N
-                 IF( A( K, J ).NE.ZERO )THEN
+                 if( A( K, J ).ne.ZERO )then
                     do I =  1, M
                        B( I, J ) = B( I, J ) - A( K, J )*B( I, K )
                     end do
-                 END IF
+                 end if
               end do
-              IF( NOUNIT )THEN
+              if( NOUNIT )then
                  TEMP = ONE/A( J, J )
                  do I =  1, M
                     B( I, J ) = TEMP*B( I, J )
                  end do
-              END IF
+              end if
            end do
-        END IF
-     ELSE
+        end if
+     else
         !
         !           Form  B := alpha*B*inv( A' ).
         !
-        IF( UPPER )THEN
+        if( UPPER )then
            do K =  N, 1, -1
-              IF( NOUNIT )THEN
+              if( NOUNIT )then
                  TEMP = ONE/A( K, K )
                  do I =  1, M
                     B( I, K ) = TEMP*B( I, K )
                  end do
-              END IF
+              end if
               do J =  1, K - 1
-                 IF( A( J, K ).NE.ZERO )THEN
+                 if( A( J, K ).ne.ZERO )then
                     TEMP = A( J, K )
                     do I =  1, M
                        B( I, J ) = B( I, J ) - TEMP*B( I, K )
                     end do
-                 END IF
+                 end if
               end do
-              IF( ALPHA.NE.ONE )THEN
+              if( ALPHA.ne.ONE )then
                  do I =  1, M
                     B( I, K ) = ALPHA*B( I, K )
                  end do
-              END IF
+              end if
            end do
-        ELSE
+        else
            do K =  1, N
-              IF( NOUNIT )THEN
+              if( NOUNIT )then
                  TEMP = ONE/A( K, K )
                  do I =  1, M
                     B( I, K ) = TEMP*B( I, K )
                  end do
-              END IF
+              end if
               do J =  K + 1, N
-                 IF( A( J, K ).NE.ZERO )THEN
+                 if( A( J, K ).ne.ZERO )then
                     TEMP = A( J, K )
                     do I =  1, M
                        B( I, J ) = B( I, J ) - TEMP*B( I, K )
                     end do
-                 END IF
+                 end if
               end do
-              IF( ALPHA.NE.ONE )THEN
+              if( ALPHA.ne.ONE )then
                  do I =  1, M
                     B( I, K ) = ALPHA*B( I, K )
                  end do
-              END IF
+              end if
            end do
-        END IF
-     END IF
-  END IF
+        end if
+     end if
+  end if
   !
   RETURN
   !
   !     End of DTRSM .
   !
-END SUBROUTINE DTRSM
+end subroutine DTRSM
 !============================================================================
 integer function idamax(n,dx,incx)
   !
