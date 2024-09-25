@@ -271,11 +271,11 @@
 !
          IF( IC.GE.97 .AND. IC.LE.122 ) THEN
             SUBNAM( 1:1 ) = CHAR( IC-32 )
-            DO 10 I = 2, 6
+            DO I = 2, 6
                IC = ICHAR( SUBNAM( I:I ) )
                IF( IC.GE.97 .AND. IC.LE.122 ) &
                  SUBNAM( I:I ) = CHAR( IC-32 )
-   10       CONTINUE
+            end do
          END IF
 !
       ELSE IF( IZ.EQ.233 .OR. IZ.EQ.169 ) THEN
@@ -286,13 +286,13 @@
             ( IC.GE.145 .AND. IC.LE.153 ) .OR. &
             ( IC.GE.162 .AND. IC.LE.169 ) ) THEN
             SUBNAM( 1:1 ) = CHAR( IC+64 )
-            DO 20 I = 2, 6
+            DO I = 2, 6
                IC = ICHAR( SUBNAM( I:I ) )
                IF( ( IC.GE.129 .AND. IC.LE.137 ) .OR. &
                   ( IC.GE.145 .AND. IC.LE.153 ) .OR. &
                   ( IC.GE.162 .AND. IC.LE.169 ) ) &
                  SUBNAM( I:I ) = CHAR( IC+64 )
-   20       CONTINUE
+               end do 
          END IF
 !
       ELSE IF( IZ.EQ.218 .OR. IZ.EQ.250 ) THEN
@@ -301,11 +301,11 @@
 !
          IF( IC.GE.225 .AND. IC.LE.250 ) THEN
             SUBNAM( 1:1 ) = CHAR( IC-32 )
-            DO 30 I = 2, 6
+            DO I = 2, 6
                IC = ICHAR( SUBNAM( I:I ) )
                IF( IC.GE.225 .AND. IC.LE.250 ) &
                  SUBNAM( I:I ) = CHAR( IC-32 )
-   30       CONTINUE
+            end do
          END IF
       END IF
 !
@@ -765,7 +765,7 @@
 !
 !        Use blocked code.
 !
-         DO 20 J = 1, MIN( M, N ), NB
+         DO J = 1, MIN( M, N ), NB
             JB = MIN( MIN( M, N )-J+1, NB )
 !
 !           Factor diagonal and subdiagonal blocks and test for exact
@@ -777,9 +777,9 @@
 !
             IF( INFO.EQ.0 .AND. IINFO.GT.0 ) &
               INFO = IINFO + J - 1
-            DO 10 I = J, MIN( M, J+JB-1 )
+            DO I = J, MIN( M, J+JB-1 )
                IPIV( I ) = J - 1 + IPIV( I )
-   10       CONTINUE
+            end do
 !
 !           Apply interchanges to columns 1:J-1.
 !
@@ -807,7 +807,7 @@
                              LDA )
                END IF
             END IF
-   20    CONTINUE
+         end do
       END IF
       RETURN
 !
@@ -1065,7 +1065,7 @@
       IF( M.EQ.0 .OR. N.EQ.0 ) &
         RETURN
 !
-      DO 10 J = 1, MIN( M, N )
+      DO J = 1, MIN( M, N )
 !
 !        Find pivot and test for singularity.
 !
@@ -1095,7 +1095,7 @@
             CALL SGER( M-J, N-J, -ONE, A( J+1, J ), 1, A( J, J+1 ), LDA, &
                       A( J+1, J+1 ), LDA )
          END IF
-   10 CONTINUE
+      end do
       RETURN
 !
 !     End of SGETF2
@@ -1187,35 +1187,35 @@
 !
       N32 = ( N / 32 )*32
       IF( N32.NE.0 ) THEN
-         DO 30 J = 1, N32, 32
+         DO J = 1, N32, 32
             IX = IX0
-            DO 20 I = I1, I2, INC
+            DO I = I1, I2, INC
                IP = IPIV( IX )
                IF( IP.NE.I ) THEN
-                  DO 10 K = J, J + 31
+                  DO K = J, J + 31
                      TEMP = A( I, K )
                      A( I, K ) = A( IP, K )
                      A( IP, K ) = TEMP
-   10             CONTINUE
+                     end do 
                END IF
                IX = IX + INCX
-   20       CONTINUE
-   30    CONTINUE
+            end do
+         end do
       END IF
       IF( N32.NE.N ) THEN
          N32 = N32 + 1
          IX = IX0
-         DO 50 I = I1, I2, INC
+         DO I = I1, I2, INC
             IP = IPIV( IX )
             IF( IP.NE.I ) THEN
-               DO 40 K = N32, N
+               DO K = N32, N
                   TEMP = A( I, K )
                   A( I, K ) = A( IP, K )
                   A( IP, K ) = TEMP
-   40          CONTINUE
+                  end do 
             END IF
             IX = IX + INCX
-   50    CONTINUE
+            end do 
       END IF
 !
       RETURN
@@ -1344,7 +1344,7 @@
 !
 !        Use blocked code.
 !
-         DO 20 J = 1, MIN( M, N ), NB
+         DO J = 1, MIN( M, N ), NB
             JB = MIN( MIN( M, N )-J+1, NB )
 !
 !           Factor diagonal and subdiagonal blocks and test for exact
@@ -1356,9 +1356,9 @@
 !
             IF( INFO.EQ.0 .AND. IINFO.GT.0 ) &
               INFO = IINFO + J - 1
-            DO 10 I = J, MIN( M, J+JB-1 )
+            DO I = J, MIN( M, J+JB-1 )
                IPIV( I ) = J - 1 + IPIV( I )
-   10       CONTINUE
+            end do
 !
 !           Apply interchanges to columns 1:J-1.
 !
@@ -1386,7 +1386,7 @@
                              LDA )
                END IF
             END IF
-   20    CONTINUE
+         end do
       END IF
       IF (INFO.GT.0) THEN
         PRINT *,'LAPACK routine DGETRF:'
@@ -1650,7 +1650,7 @@
       IF( M.EQ.0 .OR. N.EQ.0 ) &
         RETURN
 !
-      DO 10 J = 1, MIN( M, N )
+      DO J = 1, MIN( M, N )
 !
 !        Find pivot and test for singularity.
 !
@@ -1680,7 +1680,7 @@
             CALL DGER( M-J, N-J, -ONE, A( J+1, J ), 1, A( J, J+1 ), &
                        LDA, A( J+1, J+1 ), LDA )
          END IF
-   10 CONTINUE
+      end do
       RETURN
 !
 !     End of DGETF2
@@ -1759,25 +1759,25 @@
          IX = 1 + ( 1-K2 )*INCX
       END IF
       IF( INCX.EQ.1 ) THEN
-         DO 10 I = K1, K2
+         DO I = K1, K2
             IP = IPIV( I )
             IF( IP.NE.I ) &
               CALL DSWAP( N, A( I, 1 ), LDA, A( IP, 1 ), LDA )
-   10    CONTINUE
+         end do
       ELSE IF( INCX.GT.1 ) THEN
-         DO 20 I = K1, K2
+         DO I = K1, K2
             IP = IPIV( IX )
             IF( IP.NE.I ) &
               CALL DSWAP( N, A( I, 1 ), LDA, A( IP, 1 ), LDA )
             IX = IX + INCX
-   20    CONTINUE
+            end do 
       ELSE IF( INCX.LT.0 ) THEN
-         DO 30 I = K2, K1, -1
+         DO I = K2, K1, -1
             IP = IPIV( IX )
             IF( IP.NE.I ) &
               CALL DSWAP( N, A( I, 1 ), LDA, A( IP, 1 ), LDA )
             IX = IX + INCX
-   30    CONTINUE
+         end do
       END IF
 !
       RETURN
