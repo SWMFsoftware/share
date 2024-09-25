@@ -78,8 +78,6 @@
 !  CB      (input) character*1
 !          CA and CB specify the single characters to be compared.
 !
-!     .. Intrinsic Functions ..
-      INTRINSIC          ICHAR
 !     ..
 !     .. Local Scalars ..
       integer            INTA, INTB, ZCODE
@@ -245,9 +243,7 @@
       character*6        SUBNAM
       integer            I, IC, IZ, NB, NBMIN, NX
 !     ..
-!     .. Intrinsic Functions ..
-      INTRINSIC          CHAR, ICHAR, INT, MIN, real
-!     ..
+
 !     .. Executable Statements ..
 !
       GO TO ( 100, 100, 100, 400, 500, 600, 700, 800 ) ISPEC
@@ -728,10 +724,6 @@
       integer            ILAENV
       external           ILAENV
 !     ..
-!     .. Intrinsic Functions ..
-      INTRINSIC          MAX, MIN
-!     ..
-!     .. Executable Statements ..
 !
 !     Test the input parameters.
 !
@@ -893,10 +885,6 @@
 !     .. external subroutines ..
       external           SLASWP, STRSM, XERBLA
 !     ..
-!     .. Intrinsic Functions ..
-      INTRINSIC          MAX
-!     ..
-!     .. Executable Statements ..
 !
 !     Test the input parameters.
 !
@@ -1040,10 +1028,6 @@
 !     .. external subroutines ..
       external           SGER, SSCAL, SSWAP, XERBLA
 !     ..
-!     .. Intrinsic Functions ..
-      INTRINSIC          MAX, MIN
-!     ..
-!     .. Executable Statements ..
 !
 !     Test the input parameters.
 !
@@ -1307,10 +1291,6 @@
       integer            ILAENV
       external           ILAENV
 !     ..
-!     .. Intrinsic Functions ..
-      INTRINSIC          MAX, MIN
-!     ..
-!     .. Executable Statements ..
 !
 !     Test the input parameters.
 !
@@ -1478,10 +1458,6 @@
 !     .. external subroutines ..
       external           XERBLA, DLASWP, DTRSM
 !     ..
-!     .. Intrinsic Functions ..
-      INTRINSIC          MAX
-!     ..
-!     .. Executable Statements ..
 !
 !     Test the input parameters.
 !
@@ -1625,9 +1601,7 @@
 !     .. external subroutines ..
       external           XERBLA, DGER, DSCAL, DSWAP
 !     ..
-!     .. Intrinsic Functions ..
-      INTRINSIC          MAX, MIN
-!     ..
+
 !     .. Executable Statements ..
 !
 !     Test the input parameters.

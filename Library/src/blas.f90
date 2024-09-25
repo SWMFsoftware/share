@@ -165,8 +165,6 @@ subroutine SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
   external           LSAME
   !     .. external subroutines ..
   external           XERBLA
-  !     .. Intrinsic Functions ..
-  INTRINSIC          MAX
   !     .. Local Scalars ..
   logical            NOTA, NOTB
   integer            I, INFO, J, L, NCOLA, NROWA, NROWB
@@ -456,13 +454,7 @@ subroutine SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
   external           LSAME
   !     .. external subroutines ..
   external           XERBLA
-  !     .. Intrinsic Functions ..
-  INTRINSIC          MAX
-  !     ..
-  !     .. Executable Statements ..
-  !
-  !     Test the input parameters.
-  !
+
   INFO = 0
   if     ( .not.LSAME( TRANS, 'N' ).and. &
        .not.LSAME( TRANS, 'T' ).and. &
@@ -692,13 +684,7 @@ subroutine SGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
   integer            I, INFO, IX, J, JY, KX
   !     .. external subroutines ..
   external           XERBLA
-  !     .. Intrinsic Functions ..
-  INTRINSIC          MAX
-  !     ..
-  !     .. Executable Statements ..
-  !
-  !     Test the input parameters.
-  !
+
   INFO = 0
   if     ( M.lt.0 )then
      INFO = 1
@@ -942,9 +928,7 @@ subroutine STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   external           LSAME
   !     .. external subroutines ..
   external           XERBLA
-  !     .. Intrinsic Functions ..
-  INTRINSIC          MAX
-  !     .. Local Scalars ..
+
   logical            LSIDE, NOUNIT, UPPER
   integer            I, INFO, J, K, NROWA
   real*4             TEMP
@@ -1380,8 +1364,6 @@ subroutine DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
   external           LSAME
   !     .. external subroutines ..
   external           XERBLA
-  !     .. Intrinsic Functions ..
-  INTRINSIC          MAX
   !     .. Local Scalars ..
   logical            NOTA, NOTB
   integer            I, INFO, J, L, NCOLA, NROWA, NROWB
@@ -1671,13 +1653,7 @@ subroutine DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
   external           LSAME
   !     .. external subroutines ..
   external           XERBLA
-  !     .. Intrinsic Functions ..
-  INTRINSIC          MAX
-  !     ..
-  !     .. Executable Statements ..
-  !
-  !     Test the input parameters.
-  !
+
   INFO = 0
   if     ( .not.LSAME( TRANS, 'N' ).and. &
        .not.LSAME( TRANS, 'T' ).and. &
@@ -1907,13 +1883,7 @@ subroutine DGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
   integer            I, INFO, IX, J, JY, KX
   !     .. external subroutines ..
   external           XERBLA
-  !     .. Intrinsic Functions ..
-  INTRINSIC          MAX
-  !     ..
-  !     .. Executable Statements ..
-  !
-  !     Test the input parameters.
-  !
+
   INFO = 0
   if     ( M.lt.0 )then
      INFO = 1
@@ -2156,8 +2126,6 @@ subroutine DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
   external           LSAME
   !     .. external subroutines ..
   external           XERBLA
-  !     .. Intrinsic Functions ..
-  INTRINSIC          MAX
   !     .. Local Scalars ..
   logical            LSIDE, NOUNIT, UPPER
   integer            I, INFO, J, K, NROWA
