@@ -46,6 +46,7 @@ contains
   !============================================================================
 
   subroutine xerbla( SRNAME, INFO )
+    !$acc routine seq 
 
     !
     !  -- LAPACK auxiliary routine (version 1.1) --
@@ -81,6 +82,7 @@ contains
     !     .. Executable Statements ..
     !
     !--------------------------------------------------------------------------
+#ifndef _OPENACC    
     WRITE( *, FMT = 9999 )SRNAME, INFO
     !
     call CON_STOP_EXT('LAPACK::xerbla')
@@ -90,9 +92,11 @@ contains
     !
     !     End of xerbla
     !
+#endif    
   end subroutine xerbla
   !============================================================================
   logical          function LSAME( CA, CB )
+    !$acc routine seq 
     !
     !  -- LAPACK auxiliary routine (version 1.1) --
     !     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -178,6 +182,7 @@ contains
   end function LSAME
   !============================================================================
   integer function ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
+    !$acc routine seq 
     !
     !  -- LAPACK auxiliary routine (version 2.0) --
     !     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -702,6 +707,7 @@ contains
   ! subroutines: sgetrf, sgetrs, sgetf2, slaswp
   !
   subroutine SGETRF( M, N, A, LDA, IPIV, INFO )
+    !$acc routine seq 
     !
     !  -- LAPACK routine (version 3.0) --
     !     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -854,6 +860,7 @@ contains
   end subroutine SGETRF
   !============================================================================
   subroutine SGETRS( TRANS, N, NRHS, A, LDA, IPIV, B, LDB, INFO )
+    !$acc routine seq 
     !
     !  -- LAPACK routine (version 3.0) --
     !     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -995,6 +1002,7 @@ contains
   end subroutine SGETRS
   !============================================================================
   subroutine SGETF2( M, N, A, LDA, IPIV, INFO )
+    !$acc routine seq 
     !
     !  -- LAPACK routine (version 3.0) --
     !     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -1122,6 +1130,7 @@ contains
   !============================================================================
 
   subroutine SLASWP( N, A, LDA, K1, K2, IPIV, INCX )
+    !$acc routine seq 
     !
     !  -- LAPACK auxiliary routine (version 3.0) --
     !     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -1249,6 +1258,7 @@ contains
   ! subroutines: dgetrf, dgetrs, dgetf2, dlaswp
   !
   subroutine DGETRF( M, N, A, LDA, IPIV, INFO )
+    !$acc routine seq 
 
     !
     !  -- LAPACK routine (version 2.0) --
@@ -1394,12 +1404,14 @@ contains
           end if
        end do
     end if
+#ifndef _OPENACC    
     if (INFO > 0) then
        PRINT *,'LAPACK routine DGETRF:'
        PRINT *,'U(',INFO,INFO,') is exactly zero. The matrix'
        PRINT *,'is singular: the inverse cannot be computed.'
        call CON_STOP_EXT('LAPACK::DGETRF')
     endif
+#endif    
     RETURN
     !
     !     End of DGETRF
@@ -1407,6 +1419,7 @@ contains
   end subroutine DGETRF
   !============================================================================
   subroutine DGETRS( TRANS, N, NRHS, A, LDA, IPIV, B, LDB, INFO )
+    !$acc routine seq 
     !
     !  -- LAPACK routine (version 2.0) --
     !     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -1549,6 +1562,7 @@ contains
   end subroutine DGETRS
   !============================================================================
   subroutine DGETF2( M, N, A, LDA, IPIV, INFO )
+    !$acc routine seq 
     !
     !  -- LAPACK routine (version 2.0) --
     !     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -1677,6 +1691,7 @@ contains
   end subroutine DGETF2
   !============================================================================
   subroutine DLASWP( N, A, LDA, K1, K2, IPIV, INCX )
+    !$acc routine seq 
     !
     !  -- LAPACK auxiliary routine (version 2.0) --
     !     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -1774,6 +1789,7 @@ contains
   !============================================================================
 
   subroutine scopy(n,sx,incx,sy,incy)
+    !$acc routine seq 
     !
     !     copies a vector, x, to a vector, y.
     !     uses unrolled loops for increments equal to 1.
@@ -1800,6 +1816,7 @@ contains
   !============================================================================
   subroutine SGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
        BETA, C, LDC )
+    !$acc routine seq     
     !     .. Scalar Arguments ..
     character ::        TRANSA, TRANSB
     integer ::            M, N, K, LDA, LDB, LDC
@@ -2109,6 +2126,7 @@ contains
   !============================================================================
   subroutine SGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
        BETA, Y, INCY )
+    !$acc routine seq 
     !     .. Scalar Arguments ..
     real*4 ::             ALPHA, BETA
     integer ::            INCX, INCY, LDA, M, N
@@ -2360,6 +2378,7 @@ contains
   end subroutine SGEMV
   !============================================================================
   subroutine SGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
+    !$acc routine seq 
     !     .. Scalar Arguments ..
     real*4 ::             ALPHA
     integer ::            INCX, INCY, LDA, M, N
@@ -2511,6 +2530,7 @@ contains
   end subroutine SGER
   !============================================================================
   subroutine sscal(n,sa,sx,incx)
+    !$acc routine seq 
     !
     !     scales a vector by a constant.
     !     uses unrolled loops for increment equal to 1.
@@ -2531,6 +2551,7 @@ contains
   end subroutine sscal
   !============================================================================
   subroutine sswap (n,sx,incx,sy,incy)
+    !$acc routine seq 
     !
     !     interchanges two vectors.
     !     uses unrolled loops for increments equal to 1.
@@ -2558,6 +2579,7 @@ contains
   !============================================================================
   subroutine STRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
        B, LDB )
+    !$acc routine seq 
     !     .. Scalar Arguments ..
     character ::        SIDE, UPLO, TRANSA, DIAG
     integer ::            M, N, LDA, LDB
@@ -2930,6 +2952,7 @@ contains
   end subroutine STRSM
   !============================================================================
   integer function isamax(n,sx,incx)
+    !$acc routine seq 
     !
     !     finds the index of element having max. absolute value.
     !     jack dongarra, linpack, 3/11/78.
@@ -2964,6 +2987,7 @@ contains
   ! subroutines: dcopy, dgemm, dgemv, dger,  dscal, dswap, dtrsm
   !
   subroutine  dcopy(n,dx,incx,dy,incy)
+    !$acc routine seq 
     !
     !     copies a vector, x, to a vector, y.
     !     uses unrolled loops for increments equal to one.
@@ -2989,6 +3013,7 @@ contains
   !============================================================================
   subroutine DGEMM ( TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, &
        BETA, C, LDC )
+    !$acc routine seq     
     !     .. Scalar Arguments ..
     character ::        TRANSA, TRANSB
     integer ::            M, N, K, LDA, LDB, LDC
@@ -3297,6 +3322,7 @@ contains
   !============================================================================
   subroutine DGEMV ( TRANS, M, N, ALPHA, A, LDA, X, INCX, &
        BETA, Y, INCY )
+    !$acc routine seq     
     !     .. Scalar Arguments ..
     real*8 ::   ALPHA, BETA
     integer ::            INCX, INCY, LDA, M, N
@@ -3548,6 +3574,7 @@ contains
   end subroutine DGEMV
   !============================================================================
   subroutine DGER  ( M, N, ALPHA, X, INCX, Y, INCY, A, LDA )
+    !$acc routine seq 
     !     .. Scalar Arguments ..
     real*8 ::   ALPHA
     integer ::            INCX, INCY, LDA, M, N
@@ -3699,6 +3726,7 @@ contains
   end subroutine DGER
   !============================================================================
   subroutine  dscal(n,da,dx,incx)
+    !$acc routine seq 
     !
     !     scales a vector by a constant.
     !     uses unrolled loops for increment equal to one.
@@ -3718,6 +3746,7 @@ contains
   end subroutine dscal
   !============================================================================
   subroutine  dswap (n,dx,incx,dy,incy)
+    !$acc routine seq 
     !
     !     interchanges two vectors.
     !     uses unrolled loops for increments equal one.
@@ -3745,6 +3774,7 @@ contains
   !============================================================================
   subroutine DTRSM ( SIDE, UPLO, TRANSA, DIAG, M, N, ALPHA, A, LDA, &
        B, LDB )
+    !$acc routine seq     
     !     .. Scalar Arguments ..
     character ::        SIDE, UPLO, TRANSA, DIAG
     integer ::            M, N, LDA, LDB
@@ -4117,6 +4147,7 @@ contains
   end subroutine DTRSM
   !============================================================================
   integer function idamax(n,dx,incx)
+    !$acc routine seq 
     !
     !     finds the index of element having max. absolute value.
     !     jack dongarra, linpack, 3/11/78.
