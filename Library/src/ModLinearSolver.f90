@@ -1982,7 +1982,8 @@ contains
 
   subroutine multiply_right_precond(TypePrecond, TypePrecondSide, &
        nVar, nDim, nI, nJ, nK, a_II, x_I)
-
+    !$acc routine vector
+    
     ! Multiply x_I with the right preconditioner matrix using the
     ! a_II matrix which was obtained with "get_precond_matrix"
     ! TypePrecond defines which type of preconditioner is used
@@ -2004,6 +2005,7 @@ contains
     !--------------------------------------------------------------------------
     if(TypePrecondSide == 'left') RETURN
 
+#ifndef _OPENACC    
     select case(TypePrecondSide)
     case('left', 'right', 'symmetric')
     case default
@@ -2015,7 +2017,8 @@ contains
        write(*,*)'ERROR in ', NameSub, ' nDim=', nDim
        call CON_stop(NameSub//': invalid value for nDim')
     end if
-
+#endif
+    
     select case(TypePrecond)
     case('DILU')
        ! Currently DILU can only be applied from the left
@@ -2054,7 +2057,9 @@ contains
                a_II(1,3), a_II(1,5), a_II(1,7))
        end select
     case default
+#ifndef _OPENACC       
        call CON_stop(NameSub//': unknown value for TypePrecond='//TypePrecond)
+#endif       
     end select
 
   end subroutine multiply_right_precond
@@ -2129,6 +2134,7 @@ contains
 
     nVarIJK = nVar*nI*nJ*nK
     !$omp parallel do
+    !$acc parallel loop gang independent
     do iBlock=1,nBlock
        call multiply_right_precond( &
             Param%TypePrecond, Param%TypePrecondSide,&
