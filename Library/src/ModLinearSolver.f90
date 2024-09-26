@@ -1433,7 +1433,8 @@ contains
   !============================================================================
 
   subroutine Uhepta(inverse,nblock,N,M1,M2,x,f,f1,f2)
-
+    !$acc routine vector
+    
     ! G. Toth, 2001
 
     ! This routine multiplies x with the upper triagonal U or U^{-1}
@@ -1490,6 +1491,8 @@ contains
        call upper_hepta_scalar(inverse,nblock,M1,M2,x,f,f1,f2)
        RETURN
     end if
+    
+#ifndef _OPENACC    
     if(n <= 20)then
        ! F90 VERSION
        if(inverse)then
@@ -1546,7 +1549,7 @@ contains
           end do
        end if
     end if
-
+#endif
     ! call timing_stop('Uhepta')
 
   end subroutine Uhepta
@@ -1658,7 +1661,8 @@ contains
   !============================================================================
 
   subroutine upper_hepta_scalar(IsInverse, nBlock, m1, m2, x, f, f1, f2)
-
+    !$acc routine vector
+    
     ! G. Toth, 2009
 
     ! This routine multiplies x with the upper triagonal U or U^{-1}
@@ -1675,9 +1679,10 @@ contains
 
     integer :: j
     !--------------------------------------------------------------------------
-
+    
     if(IsInverse)then
        !  x' := U^{-1}.x = x - F.x'(j+1) - F1.x'(j+M1) - F2.x'(j+M2)
+       !$acc loop seq
        do j=nblock-1,1,-1
           !  x' := U^{-1}.x = x - F.x'(j+1) - F1.x'(j+M1) - F2.x'(j+M2)
           if (j+M2<=nblock) then
@@ -1690,6 +1695,7 @@ contains
        end do
     else
        !  x := U.x = x + F.x(j+1) + F1.x(j+M1) + F2.x(j+M2)
+       !$acc loop seq
        do j=1,nblock-1
           if (j+M2<=nblock) then
              x(j) = x(j) + f(j)*x(j+1) + f1(j)*x(j+M1) + f2(j)*x(j+M2)
@@ -1724,7 +1730,9 @@ contains
     integer :: j
     !--------------------------------------------------------------------------
     ! x' = L^{-1}.x = D^{-1}.(x - E2.x'(j-M2) - E1.x'(j-M1) - E.x'(j-1))
-    !$acc loop vector independent private(Work1)
+
+    ! Warning: This seq loop could be bottleneck.
+    !$acc loop seq
     do j=1, nblock
        work1 = x(j)
        if (j > M2) then
