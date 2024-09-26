@@ -1877,7 +1877,8 @@ contains
   !============================================================================
   subroutine multiply_left_precond(TypePrecond, TypePrecondSide, &
        nVar, nDim, nI, nJ, nK, a_II, x_I)
-
+    !$acc routine vector
+    
     ! Multiply x_I with the left preconditioner matrix using the
     ! a_II matrix which was obtained with "get_precond_matrix"
     ! TypePrecond defines which type of preconditioner is used
@@ -1898,6 +1899,7 @@ contains
     !--------------------------------------------------------------------------
     if(TypePrecondSide == 'right') RETURN
 
+#ifndef _OPENACC    
     select case(TypePrecondSide)
     case('left', 'right', 'symmetric')
     case default
@@ -1909,8 +1911,10 @@ contains
        write(*,*)'ERROR in ', NameSub, ' nDim=', nDim
        call CON_stop(NameSub//': invalid value for nDim')
     end if
+#endif    
 
     select case(TypePrecond)
+#ifndef _OPENACC       
     case('BLOCKJACOBI')
        ! Multiply with the inverted diagonal blocks of the matrix
        call multiply_block_jacobi(nI*nJ*nK, nVar, x_I, &
@@ -1931,6 +1935,7 @@ contains
                a_II(1,1), a_II(1,2), a_II(1,3), a_II(1,4), a_II(1,5), &
                a_II(1,6), a_II(1,7))
        end select
+#endif       
     case('BILU', 'MBILU')
        ! Multiply with L^-1 from the LU decomposition
        select case(nDim)
@@ -1967,7 +1972,9 @@ contains
 
        end if
     case default
+#ifndef _OPENACC       
        call CON_stop(NameSub//': unknown value for TypePrecond='//TypePrecond)
+#endif       
     end select
 
   end subroutine multiply_left_precond
@@ -2272,6 +2279,7 @@ contains
                Rhs_I(1:nImpl) = JacobiPrec_I(1:nImpl)*Rhs_I(1:nImpl)
        else
           !$omp parallel do private( n )
+          !$acc parallel loop gang private(n)
           do iBlock=1,nBlock
 
              ! Preconditioning Jac_VVCIB matrix
