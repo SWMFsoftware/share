@@ -1138,6 +1138,7 @@ contains
   !
 
   subroutine prehepta(nBlock, n, m1, m2, PrecondParam, d, e, f, e1, f1, e2, f2)
+    !$acc routine vector
 
     ! This routine constructs an incomplete block LU-decomposition
     ! of a hepta- or penta-diagonal matrix in such a way that L+U has the
@@ -1226,6 +1227,8 @@ contains
     ! pivot:   integer array which contains the sequence generated
     !          by partial pivoting in subroutine 'Lapack_getrf'.
     !
+
+#ifndef _OPENACC
     ! these used to be automatic arrays
     real,    allocatable :: dd(:,:)
     integer, allocatable :: pivot(:)
@@ -1234,11 +1237,21 @@ contains
 
     ! info variable for lapack routines
     integer :: i, j, info, iPrecond
-
+#endif
     !--------------------------------------------------------------------------
 
     ! call timing_start('precond')
 
+    if( (n == 1) .and. (nint(PrecondParam) /= Dilu_) ) then
+       call prehepta_scalar(nBlock, m1, m2, PrecondParam, d, e, f, e1, f1, e2, f2)
+       RETURN
+    else
+#ifdef _OPENACC
+       write(*,*)'Error: not supported on GPU yet!'
+#endif
+    endif
+
+#ifndef _OPENACC
     ! Allocate arrays that used to be automatic
     allocate(dd(N,N), pivot(N))
 
@@ -1350,9 +1363,75 @@ contains
     deallocate(dd, pivot)
 
     ! call timing_stop('precond')
-
+#endif
   end subroutine prehepta
   !============================================================================
+  subroutine prehepta_scalar(nBlock, m1, m2, PrecondParam, d, e, f, e1, f1, e2, f2)
+    !$acc routine vector
+
+    integer, intent(in)                        :: M1, M2, nblock
+    real, intent(in)                           :: PrecondParam
+    real, intent(inout), dimension(nBlock) :: d
+    real, intent(inout), dimension(nBlock), optional :: &
+         e, f, e1, f1, e2, f2
+
+    ! these used to be automatic arrays
+    real ::     dd
+
+    ! info variable for lapack routines
+    integer :: i, j, info, iPrecond
+
+    !--------------------------------------------------------------------------
+
+    iPrecond = nint(PrecondParam)
+
+    do j=1, nBlock
+
+       dd = d(j)
+
+       if (iPrecond < GaussSeidel_)then
+          if (j > 1 ) dd = dd - e(j)*f(j- 1)
+          if (j > m1) dd = dd - e1(j)*f1(j-M1)
+          if (j > m2) dd = dd - e2(j)*f2(j-M2)
+       end if
+       if(iPrecond <= Mbilu_)then
+          if (j > M2) then
+             dd = dd + PrecondParam*(e2(j)*f(j-M2))
+             dd = dd + PrecondParam*(e2(j)*f1(j-M2))
+          end if
+
+          if (j > M1) dd = dd + PrecondParam*(e1(j)*f(j-M1))
+
+          if (j > M1 .and. j-M1 <= nBlock-M2) &
+               dd = dd + PrecondParam*(e1(j)*f2(j-M1))
+
+          if (j > 1 .and. j-1 <= nBlock-M2) &
+               dd = dd + PrecondParam*(e(j)*f2(j-1))
+
+          if (j>1 .and. j-1 <= nBlock-M1) &
+               dd = dd + PrecondParam*(e(j)*f1(j-1))
+       end if
+
+       d(j) = 1./dd
+
+       ! For Jacobi prec no need to do anything with upper diagonal blocks
+       if (nint(PrecondParam) == BlockJacobi_) CYCLE
+
+       if (j   < nBlock)then
+          f(j) = d(j)*f(j)
+       end if
+       if (j+M1 <= nBlock)then
+          f1(j) = d(j)*f1(j)
+       end if
+       if (j+M2 <= nBlock)then
+          f2(j) = d(j)*f2(j)
+       end if
+
+    end do
+
+  end subroutine prehepta_scalar
+  !============================================================================
+
   subroutine Uhepta(inverse,nblock,N,M1,M2,x,f,f1,f2)
 
     ! G. Toth, 2001
