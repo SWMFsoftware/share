@@ -1552,6 +1552,7 @@ contains
   end subroutine Uhepta
   !============================================================================
   subroutine Lhepta(nblock,N,M1,M2,x,d,e,e1,e2)
+    !$acc routine vector
 
     ! G. Toth, 2001
     !
@@ -1611,6 +1612,8 @@ contains
        call lower_hepta_scalar(nblock,M1,M2,x,d,e,e1,e2)
        RETURN
     end if
+
+#ifndef _OPENACC    
     ! Allocate arrays that used to be automatic
     allocate(work(N))
     if(n <= 20)then
@@ -1648,7 +1651,7 @@ contains
        enddo
     end if
     deallocate(work)
-
+#endif
     ! call timing_stop('Lhepta')
 
   end subroutine Lhepta
@@ -1702,7 +1705,7 @@ contains
   !============================================================================
 
   subroutine lower_hepta_scalar(nBlock, M1, M2, x, d, e, e1, e2)
-
+    !$acc routine vector
     ! G. Toth, 2009
     !
     ! This routine multiplies x with the lower triangular matrix L^{-1},
@@ -1721,6 +1724,7 @@ contains
     integer :: j
     !--------------------------------------------------------------------------
     ! x' = L^{-1}.x = D^{-1}.(x - E2.x'(j-M2) - E1.x'(j-M1) - E.x'(j-1))
+    !$acc loop vector independent private(Work1)
     do j=1, nblock
        work1 = x(j)
        if (j > M2) then
