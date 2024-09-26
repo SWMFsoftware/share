@@ -1823,7 +1823,8 @@ contains
   end subroutine multiply_block_jacobi
   !============================================================================
   subroutine get_precond_matrix(PrecondParam, nVar, nDim, nI, nJ, nK, a_II)
-
+    !$acc routine vector
+    
     ! Create approximate L-U decomposition of a_II matrix that corresponds to
     ! an nDim dimensional grid with nI*nJ*nK cells and nVar variables per cell.
 
@@ -1855,7 +1856,9 @@ contains
             a_II(1,6), a_II(1,7))
     case default
        write(*,*)'ERROR in ', NameSub, ' nDim=', nDim
+#ifndef _OPENACC       
        call CON_stop(NameSub//': invalid value for nDim')
+#endif       
     end select
 
   end subroutine get_precond_matrix
@@ -2276,6 +2279,7 @@ contains
                   nVar, nDim, nI, nJ, nK, Jac_VVCIB(1,1,1,1,1,1,iBlock), &
                   Rhs_I(n))
 
+#ifndef _OPENACC             
              ! Initial guess x --> P_R^{-1}.x where P_R^{-1} = I, U, LU for
              ! left, symmetric and right preconditioning, respectively
              ! Multiplication with LU is NOT implemented
@@ -2284,6 +2288,7 @@ contains
                   call multiply_initial_guess( &
                   nVar, nDim, nI, nJ, nK, Jac_VVCIB(1,1,1,1,1,1,iBlock), &
                   x_I(n))
+#endif             
           end do
           !$omp end parallel do
        end if
