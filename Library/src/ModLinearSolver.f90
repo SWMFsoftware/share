@@ -12,7 +12,7 @@
 module ModLinearSolver
 
   use ModMpi
-  use ModUtilities, ONLY: CON_stop
+  use ModUtilities, ONLY: CON_stop, CON_stop_simple
   use ModBlasLapack, ONLY: BLAS_gemm, BLAS_copy, BLAS_gemv, &
        LAPACK_getrf, LAPACK_getrs
   use omp_lib
@@ -1247,7 +1247,7 @@ contains
        RETURN
     else
 #ifdef _OPENACC
-       write(*,*)'Error: not supported on GPU yet!'
+       call CON_stop_simple('Error: unsupported on GPU!')       
 #endif
     endif
 
@@ -1374,17 +1374,17 @@ contains
     real, intent(inout), dimension(nBlock) :: d
     real, intent(inout), dimension(nBlock), optional :: &
          e, f, e1, f1, e2, f2
-
-    ! these used to be automatic arrays
-    real ::     dd
+    
+    real :: dd
 
     ! info variable for lapack routines
-    integer :: i, j, info, iPrecond
+    integer :: j, iPrecond
 
     !--------------------------------------------------------------------------
 
     iPrecond = nint(PrecondParam)
 
+    !$acc loop vector independent private(dd)
     do j=1, nBlock
 
        dd = d(j)
