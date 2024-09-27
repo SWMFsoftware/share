@@ -5872,10 +5872,8 @@ pro get_log, file, wlog, wlognames, logtime, timeunit, rownames, $
         wlognames = strarr(nwlog+5)
         wlognames = ['year', 'mo', 'dy', 'hr', 'mn', 'sc', wlognamesRead(1:*)]
 
-        ;; standardize the variable names
-        if wlognamesRead(1) eq 'dbn_nez' then wlognames(6)='B_NorthGeomag'
-        if wlognamesRead(2) eq 'dbe_nez' then wlognames(7)='B_EastGeomag'
-        if wlognamesRead(3) eq 'dbz_nez' then wlognames(8)='B_DownGeomag'
+        print,wlognames
+        
         for i = 0, nt-1 do begin
            wlog(i,0) = fix(strmid(value.(0)[i],0, 4))
            wlog(i,1) = fix(strmid(value.(0)[i],5, 2))
@@ -5890,6 +5888,14 @@ pro get_log, file, wlog, wlognames, logtime, timeunit, rownames, $
         wlog = dblarr(nt, nwlog)
         for i = 0, nwlog-1 do wlog(*,i) = value.(i)
      endelse
+     ;; standardize the variable names
+     i = where(wlognames eq 'dbn_nez')
+     if i gt 0 then wlognames[i] = 'B_NorthGeomag'
+     i = where(wlognames eq 'dbe_nez')
+     if i gt 0 then wlognames[i] = 'B_EastGeomag'
+     i = where(wlognames eq 'bz_nez')
+     if i gt 0 then wlognames[i] = 'B_DownGeomag'
+
      if verbose then print,'wlognames=', wlognames
 
      ;; exclude lines with any non-finite values

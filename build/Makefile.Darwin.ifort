@@ -63,7 +63,7 @@ LflagMpi = ${Lflag} ${MPILIB}
 
 # BLAS and LAPACK libraries
 LBLAS =
-BLAS  = lapack.o blas.o
+BLAS  = 
 
 
 #

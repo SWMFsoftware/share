@@ -136,11 +136,11 @@ LflagMpi = ${Lflag} ${MPILIB}
 
 #
 # BLAS and LAPACK libraries
-# BATSRUS contains its own BLAS and LAPACK libraries in lapack.o and blas.o
+# BATSRUS contains its own BLAS and LAPACK libraries
 # but it may perform better with an OS specific version.
 #
 LBLAS =
-BLAS  = lapack.o blas.o
+BLAS  = 
 
 
 #

@@ -12,7 +12,7 @@
 module ModLinearSolver
 
   use ModMpi
-  use ModUtilities, ONLY: CON_stop
+  use ModUtilities, ONLY: CON_stop, CON_stop_simple
   use ModBlasLapack, ONLY: BLAS_gemm, BLAS_copy, BLAS_gemv, &
        LAPACK_getrf, LAPACK_getrs
   use omp_lib
@@ -1138,6 +1138,7 @@ contains
   !
 
   subroutine prehepta(nBlock, n, m1, m2, PrecondParam, d, e, f, e1, f1, e2, f2)
+    !$acc routine vector
 
     ! This routine constructs an incomplete block LU-decomposition
     ! of a hepta- or penta-diagonal matrix in such a way that L+U has the
@@ -1226,6 +1227,8 @@ contains
     ! pivot:   integer array which contains the sequence generated
     !          by partial pivoting in subroutine 'Lapack_getrf'.
     !
+
+#ifndef _OPENACC
     ! these used to be automatic arrays
     real,    allocatable :: dd(:,:)
     integer, allocatable :: pivot(:)
@@ -1234,11 +1237,21 @@ contains
 
     ! info variable for lapack routines
     integer :: i, j, info, iPrecond
-
+#endif
     !--------------------------------------------------------------------------
 
     ! call timing_start('precond')
 
+    if( (n == 1) .and. (nint(PrecondParam) /= Dilu_) ) then
+       call prehepta_scalar(nBlock, m1, m2, PrecondParam, d, e, f, e1, f1, e2, f2)
+       RETURN
+    else
+#ifdef _OPENACC
+       call CON_stop_simple('Error: unsupported on GPU!')
+#endif
+    endif
+
+#ifndef _OPENACC
     ! Allocate arrays that used to be automatic
     allocate(dd(N,N), pivot(N))
 
@@ -1350,10 +1363,77 @@ contains
     deallocate(dd, pivot)
 
     ! call timing_stop('precond')
-
+#endif
   end subroutine prehepta
   !============================================================================
+  subroutine prehepta_scalar(nBlock, m1, m2, PrecondParam, d, e, f, e1, f1, e2, f2)
+    !$acc routine vector
+
+    integer, intent(in)                        :: M1, M2, nblock
+    real, intent(in)                           :: PrecondParam
+    real, intent(inout), dimension(nBlock) :: d
+    real, intent(inout), dimension(nBlock), optional :: &
+         e, f, e1, f1, e2, f2
+
+    real :: dd
+
+    ! info variable for lapack routines
+    integer :: j, iPrecond
+
+    !--------------------------------------------------------------------------
+
+    iPrecond = nint(PrecondParam)
+
+    !$acc loop vector independent private(dd)
+    do j=1, nBlock
+
+       dd = d(j)
+
+       if (iPrecond < GaussSeidel_)then
+          if (j > 1 ) dd = dd - e(j)*f(j- 1)
+          if (j > m1) dd = dd - e1(j)*f1(j-M1)
+          if (j > m2) dd = dd - e2(j)*f2(j-M2)
+       end if
+       if(iPrecond <= Mbilu_)then
+          if (j > M2) then
+             dd = dd + PrecondParam*(e2(j)*f(j-M2))
+             dd = dd + PrecondParam*(e2(j)*f1(j-M2))
+          end if
+
+          if (j > M1) dd = dd + PrecondParam*(e1(j)*f(j-M1))
+
+          if (j > M1 .and. j-M1 <= nBlock-M2) &
+               dd = dd + PrecondParam*(e1(j)*f2(j-M1))
+
+          if (j > 1 .and. j-1 <= nBlock-M2) &
+               dd = dd + PrecondParam*(e(j)*f2(j-1))
+
+          if (j>1 .and. j-1 <= nBlock-M1) &
+               dd = dd + PrecondParam*(e(j)*f1(j-1))
+       end if
+
+       d(j) = 1./dd
+
+       ! For Jacobi prec no need to do anything with upper diagonal blocks
+       if (nint(PrecondParam) == BlockJacobi_) CYCLE
+
+       if (j   < nBlock)then
+          f(j) = d(j)*f(j)
+       end if
+       if (j+M1 <= nBlock)then
+          f1(j) = d(j)*f1(j)
+       end if
+       if (j+M2 <= nBlock)then
+          f2(j) = d(j)*f2(j)
+       end if
+
+    end do
+
+  end subroutine prehepta_scalar
+  !============================================================================
+
   subroutine Uhepta(inverse,nblock,N,M1,M2,x,f,f1,f2)
+    !$acc routine vector
 
     ! G. Toth, 2001
 
@@ -1411,6 +1491,8 @@ contains
        call upper_hepta_scalar(inverse,nblock,M1,M2,x,f,f1,f2)
        RETURN
     end if
+
+#ifndef _OPENACC
     if(n <= 20)then
        ! F90 VERSION
        if(inverse)then
@@ -1467,12 +1549,13 @@ contains
           end do
        end if
     end if
-
+#endif
     ! call timing_stop('Uhepta')
 
   end subroutine Uhepta
   !============================================================================
   subroutine Lhepta(nblock,N,M1,M2,x,d,e,e1,e2)
+    !$acc routine vector
 
     ! G. Toth, 2001
     !
@@ -1532,6 +1615,8 @@ contains
        call lower_hepta_scalar(nblock,M1,M2,x,d,e,e1,e2)
        RETURN
     end if
+
+#ifndef _OPENACC
     ! Allocate arrays that used to be automatic
     allocate(work(N))
     if(n <= 20)then
@@ -1569,13 +1654,14 @@ contains
        enddo
     end if
     deallocate(work)
-
+#endif
     ! call timing_stop('Lhepta')
 
   end subroutine Lhepta
   !============================================================================
 
   subroutine upper_hepta_scalar(IsInverse, nBlock, m1, m2, x, f, f1, f2)
+    !$acc routine vector
 
     ! G. Toth, 2009
 
@@ -1596,6 +1682,7 @@ contains
 
     if(IsInverse)then
        !  x' := U^{-1}.x = x - F.x'(j+1) - F1.x'(j+M1) - F2.x'(j+M2)
+       !$acc loop seq
        do j=nblock-1,1,-1
           !  x' := U^{-1}.x = x - F.x'(j+1) - F1.x'(j+M1) - F2.x'(j+M2)
           if (j+M2<=nblock) then
@@ -1608,6 +1695,7 @@ contains
        end do
     else
        !  x := U.x = x + F.x(j+1) + F1.x(j+M1) + F2.x(j+M2)
+       !$acc loop seq
        do j=1,nblock-1
           if (j+M2<=nblock) then
              x(j) = x(j) + f(j)*x(j+1) + f1(j)*x(j+M1) + f2(j)*x(j+M2)
@@ -1623,7 +1711,7 @@ contains
   !============================================================================
 
   subroutine lower_hepta_scalar(nBlock, M1, M2, x, d, e, e1, e2)
-
+    !$acc routine vector
     ! G. Toth, 2009
     !
     ! This routine multiplies x with the lower triangular matrix L^{-1},
@@ -1642,6 +1730,9 @@ contains
     integer :: j
     !--------------------------------------------------------------------------
     ! x' = L^{-1}.x = D^{-1}.(x - E2.x'(j-M2) - E1.x'(j-M1) - E.x'(j-1))
+
+    ! Warning: This seq loop could be bottleneck.
+    !$acc loop seq
     do j=1, nblock
        work1 = x(j)
        if (j > M2) then
@@ -1744,6 +1835,7 @@ contains
   end subroutine multiply_block_jacobi
   !============================================================================
   subroutine get_precond_matrix(PrecondParam, nVar, nDim, nI, nJ, nK, a_II)
+    !$acc routine vector
 
     ! Create approximate L-U decomposition of a_II matrix that corresponds to
     ! an nDim dimensional grid with nI*nJ*nK cells and nVar variables per cell.
@@ -1776,13 +1868,16 @@ contains
             a_II(1,6), a_II(1,7))
     case default
        write(*,*)'ERROR in ', NameSub, ' nDim=', nDim
+#ifndef _OPENACC
        call CON_stop(NameSub//': invalid value for nDim')
+#endif
     end select
 
   end subroutine get_precond_matrix
   !============================================================================
   subroutine multiply_left_precond(TypePrecond, TypePrecondSide, &
        nVar, nDim, nI, nJ, nK, a_II, x_I)
+    !$acc routine vector
 
     ! Multiply x_I with the left preconditioner matrix using the
     ! a_II matrix which was obtained with "get_precond_matrix"
@@ -1804,6 +1899,7 @@ contains
     !--------------------------------------------------------------------------
     if(TypePrecondSide == 'right') RETURN
 
+#ifndef _OPENACC
     select case(TypePrecondSide)
     case('left', 'right', 'symmetric')
     case default
@@ -1815,8 +1911,10 @@ contains
        write(*,*)'ERROR in ', NameSub, ' nDim=', nDim
        call CON_stop(NameSub//': invalid value for nDim')
     end if
+#endif
 
     select case(TypePrecond)
+#ifndef _OPENACC
     case('BLOCKJACOBI')
        ! Multiply with the inverted diagonal blocks of the matrix
        call multiply_block_jacobi(nI*nJ*nK, nVar, x_I, &
@@ -1837,6 +1935,7 @@ contains
                a_II(1,1), a_II(1,2), a_II(1,3), a_II(1,4), a_II(1,5), &
                a_II(1,6), a_II(1,7))
        end select
+#endif
     case('BILU', 'MBILU')
        ! Multiply with L^-1 from the LU decomposition
        select case(nDim)
@@ -1873,7 +1972,9 @@ contains
 
        end if
     case default
+#ifndef _OPENACC
        call CON_stop(NameSub//': unknown value for TypePrecond='//TypePrecond)
+#endif
     end select
 
   end subroutine multiply_left_precond
@@ -1881,6 +1982,7 @@ contains
 
   subroutine multiply_right_precond(TypePrecond, TypePrecondSide, &
        nVar, nDim, nI, nJ, nK, a_II, x_I)
+    !$acc routine vector
 
     ! Multiply x_I with the right preconditioner matrix using the
     ! a_II matrix which was obtained with "get_precond_matrix"
@@ -1903,6 +2005,7 @@ contains
     !--------------------------------------------------------------------------
     if(TypePrecondSide == 'left') RETURN
 
+#ifndef _OPENACC
     select case(TypePrecondSide)
     case('left', 'right', 'symmetric')
     case default
@@ -1914,6 +2017,7 @@ contains
        write(*,*)'ERROR in ', NameSub, ' nDim=', nDim
        call CON_stop(NameSub//': invalid value for nDim')
     end if
+#endif
 
     select case(TypePrecond)
     case('DILU')
@@ -1953,7 +2057,9 @@ contains
                a_II(1,3), a_II(1,5), a_II(1,7))
        end select
     case default
+#ifndef _OPENACC
        call CON_stop(NameSub//': unknown value for TypePrecond='//TypePrecond)
+#endif
     end select
 
   end subroutine multiply_right_precond
@@ -2028,6 +2134,7 @@ contains
 
     nVarIJK = nVar*nI*nJ*nK
     !$omp parallel do
+    !$acc parallel loop gang independent
     do iBlock=1,nBlock
        call multiply_right_precond( &
             Param%TypePrecond, Param%TypePrecondSide,&
@@ -2178,6 +2285,7 @@ contains
                Rhs_I(1:nImpl) = JacobiPrec_I(1:nImpl)*Rhs_I(1:nImpl)
        else
           !$omp parallel do private( n )
+          !$acc parallel loop gang private(n)
           do iBlock=1,nBlock
 
              ! Preconditioning Jac_VVCIB matrix
@@ -2197,6 +2305,7 @@ contains
                   nVar, nDim, nI, nJ, nK, Jac_VVCIB(1,1,1,1,1,1,iBlock), &
                   Rhs_I(n))
 
+#ifndef _OPENACC
              ! Initial guess x --> P_R^{-1}.x where P_R^{-1} = I, U, LU for
              ! left, symmetric and right preconditioning, respectively
              ! Multiplication with LU is NOT implemented
@@ -2205,6 +2314,7 @@ contains
                   call multiply_initial_guess( &
                   nVar, nDim, nI, nJ, nK, Jac_VVCIB(1,1,1,1,1,1,iBlock), &
                   x_I(n))
+#endif
           end do
           !$omp end parallel do
        end if
