@@ -2094,6 +2094,7 @@ contains
 
     nVarIJK = nVar*nI*nJ*nK
     !$omp parallel do
+    !$acc parallel loop gang independent
     do iBlock=1,nBlock
        call multiply_left_precond( &
             Param%TypePrecond, Param%TypePrecondSide,&
