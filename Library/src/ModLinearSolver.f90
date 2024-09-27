@@ -1384,7 +1384,7 @@ contains
 
     iPrecond = nint(PrecondParam)
 
-    !$acc loop vector independent private(dd)
+    !$acc loop seq
     do j=1, nBlock
 
        dd = d(j)
