@@ -1384,7 +1384,7 @@ contains
 
     iPrecond = nint(PrecondParam)
 
-    !$acc loop vector independent private(dd)
+    !$acc loop seq
     do j=1, nBlock
 
        dd = d(j)
@@ -2094,6 +2094,7 @@ contains
 
     nVarIJK = nVar*nI*nJ*nK
     !$omp parallel do
+    !$acc parallel loop gang independent
     do iBlock=1,nBlock
        call multiply_left_precond( &
             Param%TypePrecond, Param%TypePrecondSide,&
