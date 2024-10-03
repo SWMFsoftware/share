@@ -213,8 +213,6 @@ contains
     ! **  outer loop starts here..
     !-------------- compute initial residual vector --------------
 
-    !$acc update device(Sol)
-
     RESTARTLOOP: do
        !
        !           Krylov_II(1):=A*Sol
@@ -398,8 +396,6 @@ contains
        ! exit from outer loop if converged or too many iterations
        if (ro <= Tol1 .or. its >= Iter) EXIT RESTARTLOOP
     end do RESTARTLOOP
-
-    !$acc update host(Sol)
 
 !    call cpu_time(finish)
 !    print '("TimeEndMainLoop = ",f6.3," seconds.")',finish-start
@@ -2262,7 +2258,14 @@ contains
          Param%TypePrecondSide = 'symmetric'
 
     ! Initialize solution vector if needed
-    if(.not.Param%UseInitialGuess) x_I = 0.0
+    if(.not.Param%UseInitialGuess) x_I = 0
+#ifdef _OPENACC
+    ! So far, initial guess is not supported on GPU.
+    !$acc parallel loop gang vector independent
+    do i = 1, nVar*nI*nJ*nK*nBlock
+       x_I(i) = 0
+    end do
+#endif    
 
     ! Get preconditioning matrix if required.
     ! Precondition RHS and initial guess (for symmetric prec only)
