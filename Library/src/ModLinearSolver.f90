@@ -2265,7 +2265,7 @@ contains
     do i = 1, nVar*nI*nJ*nK*nBlock
        x_I(i) = 0
     end do
-#endif    
+#endif
 
     ! Get preconditioning matrix if required.
     ! Precondition RHS and initial guess (for symmetric prec only)
