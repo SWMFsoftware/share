@@ -217,26 +217,18 @@ contains
        !
        !           Krylov_II(1):=A*Sol
        !
-       if(IsInit.or.its>0)then
-          call matvec(Sol,Krylov_II,n)
-#ifdef _OPENACC
+       if(IsInit .or. its>0)then
+          call matvec(Sol, Krylov_II, n)
           !$acc parallel loop
           do i = 1, n
-             Krylov_II(i,1)=Rhs(i) - Krylov_II(i,1)
+             Krylov_II(i,1) = Rhs(i) - Krylov_II(i,1)
           end do
-#else
-          Krylov_II(:,1)=Rhs - Krylov_II(:,1)
-#endif
        else
-#ifdef _OPENACC
+          ! Save a matvec when starting from zero initial condition
           !$acc parallel loop
           do i = 1, n
-             Krylov_II(i,1)=Rhs(i)
+             Krylov_II(i,1) = Rhs(i)
           end do
-#else
-          ! Save a matvec when starting from zero initial condition
-          Krylov_II(:,1)=Rhs
-#endif
        endif
        !-------------------------------------------------------------
 
@@ -386,7 +378,7 @@ contains
        ! now form linear combination to get solution
        !$acc parallel
        do j=1, i
-         !$acc loop gang vector independent
+          !$acc loop gang vector independent
           do k = 1, n
              Sol(k) = Sol(k) + rs(j)*Krylov_II(k,j)
           end do
@@ -397,8 +389,8 @@ contains
        if (ro <= Tol1 .or. its >= Iter) EXIT RESTARTLOOP
     end do RESTARTLOOP
 
-!    call cpu_time(finish)
-!    print '("TimeEndMainLoop = ",f6.3," seconds.")',finish-start
+    !    call cpu_time(finish)
+    !    print '("TimeEndMainLoop = ",f6.3," seconds.")',finish-start
 
     Iter=its
     Tol=Tol/Tol1*ro ! (relative) tolerance achieved
@@ -1003,7 +995,7 @@ contains
           if(iComm /= MPI_COMM_SELF)then
              call MPI_COMM_SIZE(iComm, nProc, iError)
              if(nProc>1)call MPI_allreduce( &
-               MPI_IN_PLACE, Maximum, 1, MPI_REAL, MPI_MAX, iComm, iError)
+                  MPI_IN_PLACE, Maximum, 1, MPI_REAL, MPI_MAX, iComm, iError)
           end if
        endif
        ! Formulate an integer power of 2 near Ratio*Maximum
@@ -2239,14 +2231,17 @@ contains
     ! Local variables
     integer:: n, iBlock, i, j, k, iVar
     integer:: nVarIjk, nImpl
+    !$acc declare create(nVarIjk, nImpl)
 
     character(len=*), parameter:: NameSub = 'solve_linear_multiblock'
     !--------------------------------------------------------------------------
     ! Number of variables per block
     nVarIjk = nVar*nI*nJ*nK
+    !$acc update device(nVarIjk)
 
     ! Number of variables per processor
     nImpl   = nVarIjk*nBlock
+    !$acc update device(nImpl)
 
     ! Make sure that left preconditioning is used when necessary
     select case(Param%TypePrecond)
@@ -2257,14 +2252,15 @@ contains
     if(Param%UseInitialGuess .and. Param%TypePrecondSide == 'right') &
          Param%TypePrecondSide = 'symmetric'
 
-    ! Initialize solution vector if needed
-    if(.not.Param%UseInitialGuess) x_I = 0
 #ifdef _OPENACC
     ! So far, initial guess is not supported on GPU.
     !$acc parallel loop gang vector independent
-    do i = 1, nVar*nI*nJ*nK*nBlock
+    do i = 1, nImpl
        x_I(i) = 0
     end do
+#else
+    ! Initialize solution vector if needed
+    if(.not.Param%UseInitialGuess) x_I = 0
 #endif
 
     ! Get preconditioning matrix if required.
