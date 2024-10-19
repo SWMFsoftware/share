@@ -11,7 +11,7 @@ my $swmf_software     = "git\@github.com:SWMFsoftware";
 # The project name should be all capitalized.
 my %url = (
     "BATSRUS.JL"         => "https://github.com/henry2004y",
-    "GITM"               => "https://github.com/GITMCode",
+    "GITM"               => "git\@github.com:GITMCode",
     "MGITM"              => "git\@github.com:dpawlows",
     "VAC"                => "https://github.com/gtoth-umich",
     "VISANAMATLAB"       => "https://github.com/henry2004y",
