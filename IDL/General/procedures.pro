@@ -1480,6 +1480,9 @@ pro slice_data
   islice1=0                     ; slice index in a multiplot frame
   iplot=0                       ; plot index for animation
   for islice=1,nslice do begin
+     if islice1 eq 0 then begin
+        !p.multi[0:3]=[0,multix,multiy,0]
+     endif
      ix=dslice*(islice-1)+firstslice-1
      dirname=var3d(slicedir-1)
      case slicedir of
