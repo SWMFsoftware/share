@@ -1554,7 +1554,9 @@ contains
     ! Call set_acc_error_handler so the code can stop all MPI processes
     ! unless the environment variable SWMF_NOACCERRORHANDLER is set to "Y".
 
+#ifndef NOACCMODULE
     use openacc
+#endif
 
     integer, intent(in) :: iComm, iProc
     integer, intent(out):: nGpu, iGpu
@@ -1573,9 +1575,12 @@ contains
     call MPI_comm_size(iLocalComm, nLocalProc, iError)
     call MPI_comm_rank(iLocalComm, iLocalProc, iError)
 
+#ifdef NOACCMODULE
+    nGpu = nLocalProc
+#else
     ! Determine the number of GPUs
     nGpu = acc_get_num_devices(ACC_DEVICE_NVIDIA)
-
+#endif
     if (nGpu <= 0) call CON_stop(NameSub//': No GPUs detected on the node')
 
     iGpu = iLocalProc
@@ -1591,6 +1596,7 @@ contains
 
     call MPI_Comm_free(iLocalComm, iError)
 
+#ifndef NOACCMODULE
     ! Set the OpenACC error handler so it can stop all MPI processes
     ! unless requested otherwise for debugging purposes
     call get_environment_variable(NameEnvVar, StringEnvVar)
@@ -1599,7 +1605,8 @@ contains
     else
        call set_acc_error_handler()
     end if
-
+#endif
+    
   end subroutine init_gpu
   !============================================================================
   subroutine acc_error_handler() bind(C)
@@ -1611,6 +1618,7 @@ contains
 
   end subroutine acc_error_handler
   !============================================================================
+#ifndef NOACCMODULE
   subroutine set_acc_error_handler()
 
     use iso_c_binding, ONLY: c_funloc
@@ -1627,6 +1635,7 @@ contains
     call acc_set_error_routine(c_funloc(acc_error_handler))
 
   end subroutine set_acc_error_handler
+#endif
   !============================================================================
 #endif
 
