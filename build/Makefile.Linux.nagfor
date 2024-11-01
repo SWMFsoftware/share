@@ -73,7 +73,7 @@ BLAS  =
 	${COMPILE.f90} ${Cflag4} $<
 
 .F90.o:
-	${COMPILE.f90} -DsysLinux -DcompNAGF95 ${Cflag3} $<
+	${COMPILE.f90} ${Cflag3} $<
 
 .f.o:
 	${COMPILE.f77} ${Cflag4} -132 -dusty $<

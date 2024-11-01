@@ -73,7 +73,7 @@ BLAS  =
 	${COMPILE.f90} ${Cflag3} $<
 
 .F90.o:
-	${COMPILE.f90} -DsysLinux -DcompGFORTRAN ${Cflag3} $<
+	${COMPILE.f90} ${Cflag3} $<
 
 .f.o:
 	${COMPILE.f77} ${Cflag3} -ffixed-line-length-132 $<

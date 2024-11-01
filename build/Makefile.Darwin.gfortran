@@ -76,9 +76,7 @@ BLAS  =
 	${COMPILE.f90} ${Cflag3} $<
 
 .F90.o:
-	cpp -C -P -DsysDarwin -DcompGFORTRAN -lang-c $*.F90 | grep -v '^#' > $*.f95
-	${COMPILE.f90} -o $*.o ${Cflag3} $*.f95
-	rm -f $*.f95
+	${COMPILE.f90} ${Cflag3} $<
 
 .f.o:
 	${COMPILE.f77} ${Cflag3} -ffixed-line-length-132 $<

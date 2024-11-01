@@ -154,7 +154,7 @@ BLAS  =
 	${COMPILE.f90} ${Cflag4} $<
 
 .F90.o:
-	${COMPILE.f90} -DsysLinux -DcompPGF90 ${Cflag4} $<
+	${COMPILE.f90} ${Cflag4} $<
 
 .f.o:
 	${COMPILE.f77} ${Cflag4} -Mextend $<

@@ -73,7 +73,7 @@ BLAS  =
 	${MOVE_MOD}
 
 .F90.o:
-	${COMPILE.f90} -DsysDarwin -DcompAbsoft ${Cflag3} $<
+	${COMPILE.f90} ${Cflag3} $<
 	${MOVE_MOD}
 
 .f.o:
