@@ -1606,7 +1606,7 @@ contains
        call set_acc_error_handler()
     end if
 #endif
-    
+
   end subroutine init_gpu
   !============================================================================
   subroutine acc_error_handler() bind(C)
@@ -1635,8 +1635,8 @@ contains
     call acc_set_error_routine(c_funloc(acc_error_handler))
 
   end subroutine set_acc_error_handler
-#endif
   !============================================================================
+#endif
 #endif
 
 end module ModUtilities
