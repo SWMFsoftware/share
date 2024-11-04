@@ -27,83 +27,83 @@ program post_idl
 
   ! This is copied from ModKind, because PostIDL.exe may be compiled with
   ! different precision then the rest of the codes.
-  integer, parameter :: Real4_=selected_real_kind(6,30)
-  integer, parameter :: Real8_=selected_real_kind(12,100)
-  integer, parameter :: nByteReal = 4 + (1.00000000041 - 1.0)*10000000000.0
+  integer, parameter:: Real4_=selected_real_kind(6,30)
+  integer, parameter:: Real8_=selected_real_kind(12,100)
+  integer, parameter:: nByteReal = 4 + (1.00000000041 - 1.0)*10000000000.0
 
   ! Global variables
 
-  character(len=20) :: TypeFile='real4'
+  character(len=20):: TypeFile='real4'
 
   integer:: nCell_D(3), n1, n2, n3
-  integer:: iCell, nCellCheck, nCellPlot, nPlotVar, nParamPlot, nProc, nStep
-  real :: t
-  real, allocatable :: Coord_DC(:,:,:,:), PlotVar_VC(:,:,:,:)
-  real, allocatable :: GenCoord_DI(:,:) ! gen. coords for unstructured grids
-  real, allocatable :: PlotVar_V(:), PlotParam_I(:)
-  real, allocatable :: Param_I(:)
+  integer:: iCell, nCellCheck, nCellPlot, nPlotVar, nParamPlot=0, nProc, nStep
+  real:: t
+  real, allocatable:: Coord_DC(:,:,:,:), PlotVar_VC(:,:,:,:)
+  real, allocatable:: GenCoord_DI(:,:) ! gen. coords for unstructured grids
+  real, allocatable:: PlotVar_V(:), PlotParam_I(:)
+  real, allocatable:: Param_I(:)
 
-  real(Real4_)              :: DxCell4, Xyz4_D(3)
-  real(Real4_), allocatable :: PlotVar4_V(:)
-  real(Real8_)              :: DxCell8, Xyz8_D(3)
-  real(Real8_), allocatable :: PlotVar8_V(:)
+  real(Real4_):: DxCell4, Xyz4_D(3)
+  real(Real4_), allocatable:: PlotVar4_V(:)
+  real(Real8_):: DxCell8, Xyz8_D(3)
+  real(Real8_), allocatable:: PlotVar8_V(:)
 
   ! Coordinates, sizes, indices
-  real, dimension(3) :: Xyz_D, CoordMin_D, CoordMax_D
-  real, dimension(3) :: CellSizePlot_D, dCoordPlot_D, dCoordMin_D
-  real, dimension(3) :: GenCoord_D
+  real, dimension(3):: Xyz_D, CoordMin_D, CoordMax_D
+  real, dimension(3):: CellSizePlot_D, dCoordPlot_D, dCoordMin_D
+  real, dimension(3):: GenCoord_D
   real::    CellSize_D(3), CellSize1, dCoord1Plot
   real::    Fraction
-  real(selected_real_kind(12))  :: VolumeCheck, VolumePlot
+  real(selected_real_kind(12)):: VolumeCheck, VolumePlot
   integer:: Ijk_D(3), i, j, k, iVar
   integer:: IjkMin_D(3), IjkMax_D(3), iMin, iMax, jMin, jMax, kMin, kMax
 
   ! Variables related to sorting and averaging unstructured data
   logical:: DoSort3D = .false.                ! do sort unstructured 3D files?
-  integer, allocatable :: iSort_I(:)          ! indirect index for sorting
-  real, allocatable :: Sort_I(:)              ! sorting criterion
-  integer :: nSum                             ! number of points averaged
-  real, allocatable :: StateSum_V(:)          ! sum of states for averaging
-  real, allocatable :: CellSizeMin_D(:)       ! min cell size
+  integer, allocatable:: iSort_I(:)          ! indirect index for sorting
+  real, allocatable:: Sort_I(:)              ! sorting criterion
+  integer:: nSum                             ! number of points averaged
+  real, allocatable:: StateSum_V(:)          ! sum of states for averaging
+  real, allocatable:: CellSizeMin_D(:)       ! min cell size
 
   ! Variables relatex to Bx=0 plots
-  integer :: MaxCoincide = 20                 ! max number of coinciding points
-  integer, allocatable :: iCoincide_I(:)      ! indices of coinciding points
-  real,    allocatable :: zCoincide_I(:)      ! z of coinciding points
-  integer, allocatable :: iCoincideSort_I(:)  ! sorting indices by z
-  integer :: i1, iLeft, iRight,&
-       iLeftTemp, iRightTemp                  ! index of points next to Bx=0
-  real    :: zLeft, zRight                    ! z of the points next to Bx=0
-  real    :: BxLeft, BxRight                  ! magnetic field on two sides
-  real    :: WeightLeft, WeightRight          ! linear interpolation weights
-  integer :: iBx=0                            ! index of Bx plot variable
-  real    :: zCurrentSheet                    ! vars for the CS points
-  real    :: zCurrentSheetDist, zCurrentSheetMinDist
-  real    :: zCurrentSheetSelect, zLastCurrentSheet
+  integer:: MaxCoincide = 20                 ! max number of coinciding points
+  integer, allocatable:: iCoincide_I(:)      ! indices of coinciding points
+  real,    allocatable:: zCoincide_I(:)      ! z of coinciding points
+  integer, allocatable:: iCoincideSort_I(:)  ! sorting indices by z
+  integer:: i1, iLeft, iRight,&
+       iLeftTemp, iRightTemp                 ! index of points next to Bx=0
+  real:: zLeft, zRight                       ! z of the points next to Bx=0
+  real:: BxLeft, BxRight                     ! magnetic field on two sides
+  real:: WeightLeft, WeightRight             ! linear interpolation weights
+  integer:: iBx=0                            ! index of Bx plot variable
+  real:: zCurrentSheet                       ! vars for the CS points
+  real:: zCurrentSheetDist, zCurrentSheetMinDist
+  real:: zCurrentSheetSelect, zLastCurrentSheet
 
-  integer :: iDim, iDimCut_D(3), nDim, nParamExtra, l1, l2, l3, l4
-  real    :: ParamExtra_I(3)
+  integer:: iDim, iDimCut_D(3), nDim, nParamExtra, l1, l2, l3, l4
+  real:: ParamExtra_I(3)
   character(len=5):: NameCoord_D(3) = ['x    ','y    ','z    ']
   character(len=5):: NameCoordPlot_D(3)
 
-  logical :: IsStructured, DoReadBinary=.false., IsBx0
-  character (len=100) :: NameFile, NameFileHead, NameCoord
-  character (len=lStringLine) :: NameVar, NameUnit
+  logical:: IsStructured, DoReadBinary=.false., IsBx0
+  character(len=100):: NameFile, NameFileHead, NameCoord
+  character(len=lStringLine):: NameVar, NameUnit
   character(len=10), allocatable:: NameVar_V(:) ! plot var name array
-  integer :: l, iProc
+  integer:: l, iProc
 
   ! Variables for the 2D lookup table
-  integer :: iDim1, iDim2
-  integer :: iDim0 ! the ignored dimension
-  integer :: iError
-  real    :: CoordShift1, CoordShift2
+  integer:: iDim1, iDim2
+  integer:: iDim0 ! the ignored dimension
+  integer:: iError
+  real:: CoordShift1, CoordShift2
 
   ! Variables for checking binary compatibility
-  integer            :: nByteRealRead
+  integer:: nByteRealRead
 
   ! Variables for generalized coordinates
-  character (len=79) :: TypeGeometry = 'cartesian'
-  logical            :: UseDoubleCut = .false.
+  character(len=79):: TypeGeometry = 'cartesian'
+  logical:: UseDoubleCut = .false.
 
   ! Logarithmic radial coordinate
   logical:: IsLogRadius = .false.
@@ -118,7 +118,7 @@ program post_idl
   real:: rRound1    ! fully round distance
   real:: SqrtNDim   ! sqrt 2 or sqrt 3
 
-  integer :: nDimSim ! Dimension of simulation domain.
+  integer:: nDimSim ! Dimension of simulation domain.
 
   ! Periodicity of the simulation domain. Not needed here
   logical:: IsPeriodic_D(3)
@@ -127,15 +127,15 @@ program post_idl
   logical:: IsVerbose = .false.
 
   ! Tecplot related variables for reading tecplot .dat to save as idl file
-  logical :: DoReadTecplot = .false.
-  integer :: nHeaderTec=0, nNodeTec=0, nCellTec=0
-  integer :: iHeaderTec, iNodeTec, iCellTec, iNeiTec
-  character(len=500) :: StringTecHeader
-  real :: xMinTec, xMaxTec
-  real, allocatable :: XyzTec_DI(:,:), PlotVarTec_VI(:,:)
+  logical:: DoReadTecplot = .false.
+  integer:: nHeaderTec=0, nNodeTec=0, nCellTec=0
+  integer:: iHeaderTec, iNodeTec, iCellTec, iNeiTec
+  character(len=500):: StringTecHeader
+  real:: xMinTec, xMaxTec
+  real, allocatable:: XyzTec_DI(:,:), PlotVarTec_VI(:,:)
   integer, allocatable:: iNodeTec_II(:,:)
 
-  character (len=lStringLine) :: NameCommand, StringLine
+  character(len=lStringLine):: NameCommand, StringLine
   !----------------------------------------------------------------------------
   write(*,'(a)')'PostIDL (G.Toth 2000-) starting'
 
@@ -321,9 +321,9 @@ program post_idl
   write(*,*)'plot area size=', nCell_D
 
   ! Calculate dimensionality of the cut and add parameters if needed
-  nDim=0
-  nParamExtra=0
-  iDimCut_D=0
+  nDim = 0
+  nParamExtra = 0
+  iDimCut_D = 0
   if(IsBx0) then
      ! bx=0 isosurface is a function of (x, y) at height z
      nDim = 2
@@ -709,10 +709,9 @@ program post_idl
   else
      NameFile = NameFileHead(1:l-2)//'.out'
   end if
-  write(*,*)'writing file =',trim(NameFile)
+  write(*,*)'writing file =', trim(NameFile)
 
-  ! Param_I is the combination of eqpar and ParamExtra_I
-  allocate(Param_I(nParamPlot+nParamExtra))
+  allocate(Param_I(nParamPlot + nParamExtra))
   do i = 1, nParamPlot
      Param_I(i) = PlotParam_I(i)
   end do
@@ -931,10 +930,10 @@ contains
     ! Temporary variables to process the variable name string
     integer:: iVector, iVar, l
     character(len=10), allocatable:: NameVar_V(:)
-    character(len=10)             :: NameVector1, NameVector
+    character(len=10):: NameVector1, NameVector
 
     ! Variables for roundcube coordinate transformation
-    real :: r2, Dist1, Dist2, Coef1, Coef2
+    real:: r2, Dist1, Dist2, Coef1, Coef2
     !--------------------------------------------------------------------------
     if(TypeGeometry == 'cartesian' .or. NameFileHead(1:3) == 'cut')then
        GenCoord_D = Xyz_D

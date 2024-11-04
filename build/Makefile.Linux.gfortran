@@ -23,6 +23,8 @@ PRECISION  = ${DOUBLEPREC}
 MPILIB = 
 #MPILIB = -L${LIBDIR} -lNOMPI
 
+#ACCFLAG = -D_OPENACC -DTESTACC -DNOACCMODULE
+
 #OPENMPFLAG = -fopenmp
 
 # Define where modules are stored and add it to the search path
@@ -38,7 +40,7 @@ OPT2 = -O2
 OPT3 = -O3
 OPT4 = -O4
 
-CFLAG = ${SEARCH} -c -w -cpp ${OPENMPFLAG} ${DEBUG}
+CFLAG = ${SEARCH} -c -w -cpp ${OPENMPFLAG} ${ACCFLAG} ${DEBUG}
 
 Cflag0  = ${CFLAG} ${PRECISION} ${OPT0}
 Cflag1  = ${CFLAG} ${PRECISION} ${OPT1}
@@ -71,7 +73,7 @@ BLAS  =
 	${COMPILE.f90} ${Cflag3} $<
 
 .F90.o:
-	${COMPILE.f90} -DsysLinux -DcompGFORTRAN ${Cflag3} $<
+	${COMPILE.f90} ${Cflag3} $<
 
 .f.o:
 	${COMPILE.f77} ${Cflag3} -ffixed-line-length-132 $<

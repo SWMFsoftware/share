@@ -77,7 +77,7 @@ BLAS  =
 	${COMPILE.f90} ${Cflag4} $<
 
 .F90.o:
-	${COMPILE.f90} -DsysDarwin -Dcompifort ${Cflag4} $<
+	${COMPILE.f90} ${Cflag4} $<
 
 .f.o:
 	${COMPILE.f77} ${Cflag2} -132 $<

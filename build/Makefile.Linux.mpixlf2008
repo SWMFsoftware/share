@@ -77,7 +77,7 @@ BLAS  =
 	${COMPILE.f90} ${Cflag5} $<
 
 .F90.o:
-	cpp -C -P -DsysDarwin -DcompMPXLF90 $*.F90 | grep -v '^#' > $*.f
+	cpp -C -P $*.F90 | grep -v '^#' > $*.f
 	${COMPILE.f90} -qsuffix=f=f -o $*.o ${Cflag5} $*.f
 	rm -f $*.f
 

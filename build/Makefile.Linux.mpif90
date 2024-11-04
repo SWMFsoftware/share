@@ -79,7 +79,7 @@ BLAS  =
 	${MOVE_MOD}
 
 .F90.o:
-	${COMPILE.f90} -DsysLinux -Dcompmpif90 ${Cflag2} $<
+	${COMPILE.f90} ${Cflag2} $<
 	${MOVE_MOD}
 
 .f.o:

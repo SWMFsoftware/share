@@ -23,6 +23,9 @@ PRECISION  = ${DOUBLEPREC}
 MPILIB = 
 #MPILIB = -L${LIBDIR} -lNOMPI
 
+# Change the line below to enable debugging the ACC code
+#ACC_FLAG = -D_OPENACC -DTESTACC -DNOACCMODULE
+
 #OPENMPFLAG = -fopenmp
 
 # Define where modules are stored and add it to the search path
@@ -38,7 +41,7 @@ OPT2 = -O2
 OPT3 = -O3
 OPT4 = -O4
 
-CFLAG = ${SEARCH} -c -w -ideclient -Wc=`which gcc` -fpp -kind=byte ${OPENMPFLAG} ${DEBUG}
+CFLAG = ${SEARCH} -c -w -ideclient -Wc=`which gcc` -fpp -kind=byte ${OPENMPFLAG} ${ACCFLAG} ${DEBUG}
 
 Cflag0  = ${CFLAG} ${PRECISION} ${OPT0}
 Cflag1  = ${CFLAG} ${PRECISION} ${OPT1}

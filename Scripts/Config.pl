@@ -673,7 +673,7 @@ sub set_openacc_{
     # Set the OpenACC compilation flags in $MakefileConf
 
     # Check if OpenACC is available at all
-    if(not `grep ACCFLAG $MakefileConf`){
+    if(not `grep 'ACCFLAG =' $MakefileConf`){
 	warn "$WARNING there is no ACCFLAG in $MakefileConf\n";
 	$OpenACC = "no"; $NewOpenACC = "no";
 	return;
