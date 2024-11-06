@@ -11,7 +11,7 @@ pro close_device, pdf=pdf, delete=delete, verbose=verbose
   if not keyword_set(pdf) then return
 
   ; Default convert command
-  Convert = 'ps2pdf'
+  Convert = 'epspdf'
 
   ; Check if pdf is a string or a number
   siz = size(pdf)

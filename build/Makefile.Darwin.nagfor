@@ -23,8 +23,8 @@ PRECISION  = ${DOUBLEPREC}
 MPILIB = 
 #MPILIB = -L${LIBDIR} -lNOMPI
 
-# Change the line below to enable debugging the ACC code
-#ACC_FLAG = -D_OPENACC -DTESTACC -DNOACCMODULE
+# Compile the ACC code (for debugging it on the CPU)
+#ACCFLAG = -D_OPENACC -DTESTACC -DNOACCMODULE
 
 #OPENMPFLAG = -fopenmp
 
