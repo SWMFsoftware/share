@@ -23,15 +23,22 @@
 # To run on v100 GPU (up to 16 nodes, 4 gpus per node)
 # mem=256GB is not necessary
 ### PBS -lselect=1:ncpus=2:ngpus=1:model=sky_gpu
-#PBS -l select=16:model=cas_gpu:ncpus=4:ngpus=4:mem=256GB
+### PBS -l select=16:model=cas_gpu:ncpus=4:ngpus=4:mem=256GB
+### PBS -l place=scatter:excl
+
+# To run on A100 GPU (up to 32 nodes in prime time,
+# 64 in non-prime time, 4 gpus per node)
+# Note: it is necessary to specify large amount of memory. The default is too
+# little.
+#PBS -l select=2:model=mil_a100:ncpus=4:ngpus=4:mem=128GB
 #PBS -l place=scatter:excl
 
-# Select queue
-#PBS -q v100@pbspl4
-### PBS -q devel@pbspl4
 
-# A100 queues are not accessible without separate allocation
-### PBS -q gpu_36h_16n@pbspl4
+# Select queue for V100:
+### PBS -q v100@pbspl4
+### PBS -q devel@pbspl4
+# Select queue for A100 (prime time):
+#PBS -q p_gpu_normal@pbspl4
 
 # Set walltime
 #PBS -l walltime=00:10:00
@@ -50,15 +57,17 @@ module purge
 module use -a /nasa/nvidia/hpc_sdk/toss4/modulefiles
 module use -a /nasa/modulefiles/testing
 # compile with nvhpc-nompi(need to test other versions)
-module load nvhpc-nompi/24.1
+module load nvhpc-nompi/24.3
 # mpi-hpe/mpt works the best, but this openmpi also works:
 ### module load openmpi/4.1.6-toss4-nv24.1
-module load mpi-hpe/mpt
+module load mpi-hpe/mpt.2.30
 
-# set these for direct access to GPU memory with mpt:
+# (necessary) set this for direct access to GPU memory with mpt:
 setenv MPI_USE_CUDA true
-setenv MPI_DSM_VERBOSE
-setenv MPI_DSM_DISTRIBUTE
+
+# (optional) set these to utilize memory pinning: 
+### setenv MPI_DSM_VERBOSE
+### setenv MPI_DSM_DISTRIBUTE
 
 # these can probably be removed but need further testing:
 setenv CUDA_VISIBLE_DEVICES 0,1,2,3
@@ -86,7 +95,9 @@ cp PARAM.in.np64 PARAM.in
 ### mpiexec --mca btl tcp,self -np 64 --map-by numa --bind-to core --report-bindings --hostfile $PBS_NODEFILE ./BATSRUS.exe > runlog.np64
 ### mpiexec --mca btl ^vader -np 64 --map-by numa --bind-to core --report-bindings --hostfile $PBS_NODEFILE ./BATSRUS.exe > runlog.np64
 
+### print accelerator (GPU) info
+
 # use this for mpt:
-mpiexec -np 64 ./BATSRUS.exe > runlog.np64
+mpiexec -np 8 ./BATSRUS.exe > runlog.np8
 
 exit
