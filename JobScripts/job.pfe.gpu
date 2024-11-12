@@ -1,4 +1,8 @@
 #!/bin/tcsh
+
+# WARNING !!! The compilation must be done on the same compute node !!!
+#         !!! where the run is going to be performed                !!!
+
 # Job script for Pleiades computer at NASA Ames using the GPU nodes.
 # Currently the GPU nodes are on pbspl4, so it is best to
 # 
@@ -9,7 +13,7 @@
 # An alternative is to submit jobs for different CPU types and
 # keep the first one that started:
 #
-#   qsub.pfe.pl job.pfe.nvidia GPU gpu_sky gpu_cas
+#   qsub.pfe.pbspl.pl job.pfe.nvidia
 #
 # To check the status of submitted jobs, use
 #

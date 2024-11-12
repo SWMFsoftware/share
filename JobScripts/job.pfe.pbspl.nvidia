@@ -1,5 +1,8 @@
 #!/bin/csh
 
+# WARNING !!! The compilation must be done on the same compute node !!!
+#         !!! where the run is going to be performed                !!!
+
 # Job script for Pleiades computer at NASA Ames using the GPU nodes.
 # Currently the GPU nodes are on pbspl4, so it is best to
 # 
