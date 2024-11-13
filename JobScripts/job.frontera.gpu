@@ -1,9 +1,12 @@
 #!/bin/bash
 
-#!!!Important:
-#             make sure you have unloaded the impi and intel modules, otherwise they will 
-#             interfere with compiler settings (nvfortran, nvc, nvc++) and mpiexec. Instead,
-#             use the mpi library that comes with nvhpc, by setting $OPAL_PREFIX (see below).
+#!!!Important on MPI:
+#The default command to run MPI applications is ibrun. However, we haven't 
+#discovered any approach to make it work with nvhpc yet. BATSRUS has to be 
+#compiled with openmpi, which comes with nvhpc. To run BATSRUS, one has to use
+#mpiexec instead of ibrun.
+#It is the safest to unload the impi and intel modules, otherwise they 
+#will/may interfere with compiler settings (nvfortran, nvc, nvc++) and mpiexec.
 
 # Use default modules. To use IDL,
 # module load idl
@@ -18,7 +21,7 @@
 # ln -s $SCRATCH/run1 .
 #
 # submit the jobscript:
-# sbatch job.frontera
+# sbatch job.frontera.gpu
 #
 # monitor jobs:
 # squeue -u USERNAME
@@ -26,15 +29,15 @@
 # Continuous post-processing has to be done on the compute nodes with
 # sbatch job.postproc.frontera
 
-#SBATCH -J sub1               # Job name
-#SBATCH -o SWMF.o%j           # Name of stdout output file
-#SBATCH -e SWMF.e%j           # Name of stderr error file
-#SBATCH -p normal             # Queue (partition) name: normal or development
-#SBATCH -N 64                 # Total # of nodes 
-#SBATCH --tasks-per-node 56   # Number of MPI tasks per node. 
-#SBATCH -t 24:00:00           # Run time (hh:mm:ss)
+#SBATCH -J test               # Job name
+#SBATCH -o test.o%j           # Name of stdout output file
+#SBATCH -e test.e%j           # Name of stderr error file
+#SBATCH -p rtx                # Queue (partition) name: rtx for GPU
+#SBATCH -N 1                  # Total # of nodes 
+#SBATCH --tasks-per-node 4    # Number of MPI tasks per node (4 max). 
+#SBATCH -t 00:10:00           # Run time (hh:mm:ss)
 #SBATCH --mail-type=all       # Send email at begin and end of job
-###SBATCH --mail-user=your_email@umich.edu
+### SBATCH --mail-user=example@umich.edu
 #SBATCH -A BCS21001           # Project/Allocation name (may need change)
 
 # Any other commands must follow all #SBATCH directives...
@@ -61,15 +64,18 @@ export UCX_LOG_LEVEL=ERROR
 
 # force nvfortran to use its own mpi library
 # !!!use the following module commands for compilation with nvfortran:
-#    ml use /scratch1/projects/compilers/nvhpc20v7/modulefiles
-#    ml load nvhpc/20.7
-export OPAL_PREFIX=/scratch1/projects/compilers/nvhpc20v7/Linux_x86_64/20.7/comm_libs/mpi
+ml use /scratch1/projects/compilers/nvhpc23v7/modulefiles
+ml load nvhpc/23.7
+
+# module list
 
 # Launch MPI code... 
-# ibrun does not work for GPU launch for unknown reason, use mpirun even when documentation 
-# says not to.
 # change -n nGpus for # of gpus 
-mpirun -n 1 ./SWMF.exe  > runlog_`date +%y%m%d%H%M`
+mpirun -n 2 ./BATSRUS.exe  > runlog
+
+# Add node list to output:
+echo $SLURM_NODELIST >> runlog
+# mpirun -n 1 ./BATSRUS.exe  > runlog_`date +%y%m%d%H%M`
 
 # The first node running ./PostProc.pl
 # ibrun -n 1 ./PostProc.pl -r=300 -n=10 >& PostProc.log &
