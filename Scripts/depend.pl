@@ -8,6 +8,7 @@ use English;
 # Default values
 my $Output = "Makefile.DEPEND"; # Default output
 my $Help;                       # No help unless needed
+my $Verbose;                    # Verbosity
 my @search;                     # Array of search
 
 # Error and warning messages
@@ -17,9 +18,11 @@ my $WARNING = "WARNING in depend.pl:";
 # Read flags
 while($ARGV[0] =~ /-/){
     my $flag = shift(@ARGV);
-    if($flag =~ /^-o=/){$Output=$POSTMATCH};  # -o=Makefile.test
-    if($flag =~ /^-h/i){$Help=1};     # -h -help -H -Help
-    if($flag =~ /^(-p|-I)=?/){        # -p=path -Ipath -I path
+    if($flag =~ /^-o=/){$Output = $POSTMATCH};  # -o=Makefile.test
+    if($flag =~ /^-h/i){$Help = 1};             # -h -help -H -Help
+    if($flag =~ /^-v/){$Verbose = 1};           # -v
+    if($flag =~ /^-v=/){$Verbose = $POSTMATCH}; # -v=ModConductance
+    if($flag =~ /^(-p|-I)=?/){                  # -p=path -Ipath -I path
         # For "-I path" take the path from the next argument
 	push(@search, ($POSTMATCH or shift @ARGV));
     }
@@ -174,16 +177,19 @@ OBJECT:
     while($_ = <FILE>){
 	# Collect module file names corresponding to the modules
 	if(/^\s*module\s+(\w+)/i){
-	    my $module=uc("$1\.o"); # capitalize module name (ignore case)
+	    my $module = uc("$1\.o"); # capitalize module name (ignore case)
 	    $modulefile{$module}=$object;
+	    print "adding object $object to modulefile $module\n" if $Verbose;
 	}
 	# Check for 'use module'
 	if(/^\s*use\s+(\w+)/i){
 	    my $module="$1.o";
 
+	    print "using module $module\n" if $Verbose;
 	    # Append module object to the %use hash if it is not yet listed
-	    $use{$base}.=" $module" 
+	    $use{$base} .= " $module" 
 		unless $use{$base}=~/ $module\b/i;
+	    print "$base uses modules $use{$base}\n" if $Verbose;
 	}
 	# Check for 'include "filename"'
 	if(/^\s*include\s+[\"\']([^\'\"]+)/i and not /\bmpif.h\b/){
@@ -225,23 +231,34 @@ OBJECT:
     }
 }
 
+
+print "base files:", join(", ",@base), "\n" if $Verbose;
+print "modulefile hash:",join(", ",%modulefile),"\n" if $Verbose;
+
 my $base; # Name of base file
 foreach $base (@base){
+    print "working on $base\n" if $Verbose;
     my $use; # Space separeted list of used module objects
+
     $use = $use{$base};
+    print "$base uses $use\n" if $Verbose;
     if($use){
   	# Correct module names to file names
-  	my @use = split(' ',$use);
+  	my @use = split(' ', $use);
   	my $mfile;
 
+	print "initial use $use\n" if $Verbose eq $base;
 	# Convert object names into file names containing the module
 	foreach (@use){
+	    print "working on $_\n" if $Verbose eq $base;
 	    $_ = $modulefile{uc($_)};
+	    print "changed to $_\n" if $Verbose eq $base;
 	    $_ = '' if $_ eq "$base.o"; # no dependency on itself
+	    print "finally:$_\n" if $Verbose eq $base;
 	}
-	    
 	# Make string out of array
   	$use = ' '.join(' ',@use);
+	print "final use $use\n" if $Verbose eq $base;
     }
     my $depend;
     $depend = $include{$base}.$use;

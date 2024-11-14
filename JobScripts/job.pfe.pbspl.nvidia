@@ -1,5 +1,8 @@
 #!/bin/csh
 
+# WARNING !!! The compilation must be done on the same compute node !!!
+#         !!! where the run is going to be performed                !!!
+
 # Job script for Pleiades computer at NASA Ames using the GPU nodes.
 # Currently the GPU nodes are on pbspl4, so it is best to
 # 
@@ -21,16 +24,16 @@
 #PBS -S /bin/csh
 #PBS -N GPU
 
-# To run on v100 GPU (up to 4)
+# To run on v100 GPU (up to 4 per node)
 ### PBS -lselect=1:ncpus=2:ngpus=1:model=sky_gpu
-#PBS -lselect=1:ncpus=2:ngpus=1:model=cas_gpu
+#PBS -lselect=1:ncpus=2:ngpus=2:model=cas_gpu:mem=256GB
 
 # Select queue
 #PBS -q v100@pbspl4
 ###PBS -q devel@pbspl4
 
 # Set walltime
-#PBS -l walltime=1:00:00
+#PBS -l walltime=0:30:00
 
 # Merge output and error files
 #PBS -j oe
@@ -44,8 +47,8 @@
 # Load nvidia runtime libraries (should be the same as used for compilation)
 module purge
 module use -a /nasa/nvidia/hpc_sdk/toss4/modulefiles
-module load nvhpc/20.9
-# module load nvhpc/21.2
+module load nvhpc/24.3
+module list
 
 echo `which nvfortran`
 echo `which mpiexec`
@@ -53,7 +56,10 @@ echo `which mpiexec`
 # cd into the run directory
 cd $PBS_O_WORKDIR
 
-# run SWMF with proper number of CPU cores
+# run SWMF with proper number of CPU cores and GPUs
 mpiexec -n 2 ./SWMF.exe > runlog
+
+# compile some test on the compute node and run it
+#make -j test_swpc_large_gpu NP=2 >& test_np2.log
 
 exit
