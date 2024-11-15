@@ -30,17 +30,16 @@
 ### PBS -l select=16:model=cas_gpu:ncpus=4:ngpus=4:mem=256GB
 ### PBS -l place=scatter:excl
 
-# To run on A100 GPU (up to 32 nodes in prime time,
-# 64 in non-prime time, 4 gpus per node)
-# Note: it is necessary to specify large amount of memory. The default is too
-# little.
+# To run on A100 GPU
+# (up to 32 nodes in prime time, 64 nodes in non-prime time, 4 gpus per node)
+# Note: it is necessary to specify memory. The default is too little.
 #PBS -l select=2:model=mil_a100:ncpus=4:ngpus=4:mem=128GB
 #PBS -l place=scatter:excl
-
 
 # Select queue for V100:
 ### PBS -q v100@pbspl4
 ### PBS -q devel@pbspl4
+
 # Select queue for A100 (prime time):
 #PBS -q p_gpu_normal@pbspl4
 
@@ -59,12 +58,13 @@
 # Load nvidia runtime libraries (should be the same as used for compilation)
 module purge
 module use -a /nasa/nvidia/hpc_sdk/toss4/modulefiles
-module use -a /nasa/modulefiles/testing
-# compile with nvhpc-nompi(need to test other versions)
 module load nvhpc-nompi/24.3
-# mpi-hpe/mpt works the best, but this openmpi also works:
-### module load openmpi/4.1.6-toss4-nv24.1
+module use -a /nasa/modulefiles/testing
 module load mpi-hpe/mpt.2.30
+
+# To compile C and C++
+setenv MPICC_CC nvc
+setenv MPICXX_CXX nvc++
 
 # (necessary) set this for direct access to GPU memory with mpt:
 setenv MPI_USE_CUDA true
@@ -74,13 +74,8 @@ setenv MPI_USE_CUDA true
 ### setenv MPI_DSM_DISTRIBUTE
 
 # these can probably be removed but need further testing:
-setenv CUDA_VISIBLE_DEVICES 0,1,2,3
-setenv OMPI_FC nvfortran
-setenv MP_BIND yes
-setenv OMP_DYNAMIC FALSE
-setenv OMP_PROC_BIND true
-setenv OMP_PLACES cores
-setenv OMP_NUM_THREADS 1
+#setenv CUDA_VISIBLE_DEVICES 0,1,2,3
+#setenv MP_BIND yes
 
 # cd into the run directory
 cd $PBS_O_WORKDIR
@@ -89,19 +84,5 @@ cd $PBS_O_WORKDIR
 cat $PBS_NODEFILE
 
 # run SWMF with proper number of CPU cores
-cp PARAM.in.np64 PARAM.in
+mpiexec -n 8 ./SWMF.exe > runlog_`date +%y%m%d%H%M`
 
-# use this for openmpi, which requires:
-# turning off vader with --mca ..., or mpiexec complains about missing library
-# there is an option to pin memory for better perfomance: (sometimes openmpi does this by default)
-# memory pinning with --map-by ...
-
-### mpiexec --mca btl tcp,self -np 64 --map-by numa --bind-to core --report-bindings --hostfile $PBS_NODEFILE ./BATSRUS.exe > runlog.np64
-### mpiexec --mca btl ^vader -np 64 --map-by numa --bind-to core --report-bindings --hostfile $PBS_NODEFILE ./BATSRUS.exe > runlog.np64
-
-### print accelerator (GPU) info
-
-# use this for mpt:
-mpiexec -np 8 ./BATSRUS.exe > runlog.np8
-
-exit
