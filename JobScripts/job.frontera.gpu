@@ -64,8 +64,10 @@ export UCX_LOG_LEVEL=ERROR
 
 # force nvfortran to use its own mpi library
 # !!!use the following module commands for compilation with nvfortran:
-ml use /scratch1/projects/compilers/nvhpc23v7/modulefiles
-ml load nvhpc/23.7
+module purge
+ml use /scratch1/projects/compilers/nvhpc24v5/modulefiles
+ml load nvhpc-hpcx/24.5
+ml load gcc # this is needed for hpcx
 
 # module list
 
