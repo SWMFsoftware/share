@@ -1177,10 +1177,6 @@ sub create_makefile_rules{
 	    while($Rule = <INFILE>){
 		last unless $Rule =~ s/^\t//;
 
-		# Extract sleep command
-		my $Sleep;
-		$Sleep = $1 if $Rule =~ s/(; sleep \d+\n)//;
-
 		# Find source file name in the rule
 		$Rule =~ /([\w\.]+)\s*$/;
 
@@ -1190,7 +1186,7 @@ sub create_makefile_rules{
 		# Replace ${LINK.f90} with the $MpiCompiler
 		$Rule =~ s/\$\{LINK.f90\}/$MpiCompiler/;
 
-		print OUTFILE "$ObjectFile: $SrcFile\n\t$Rule$Sleep\n";
+		print OUTFILE "$ObjectFile: $SrcFile\n\t$Rule\n";
 	    }
 	}
 	close INFILE;
