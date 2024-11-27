@@ -69,6 +69,11 @@ ml use /scratch1/projects/compilers/nvhpc24v5/modulefiles
 ml load nvhpc-hpcx/24.5
 ml load gcc # this is needed for hpcx
 
+# -hpcx gives "UCX  ERROR gdr_pin_buffer failed." for large runs. 
+# online solution to set UCX_TLS=^gdr_copy doesn't work.
+# use -openmpi3 instead:
+# ml load nvhpc-openmpi3/24.5
+
 # module list
 
 # Launch MPI code... 
