@@ -1170,81 +1170,37 @@ contains
   subroutine  twopoints_on_sph(Lon1, Lat1,  Lon2, Lat2, &
        Lon, Lat, Orientation, HalfDist, Depth)
 
-    ! For a pair of points on sphere:
+    ! For a pair of points (Lon1,Lat1) and (Lon2,Lat2) on a sphere
+    ! calculate Orientation, the angle of the direction of the
+    ! vevtor from point 1 to point 2 with the local East direction.
+
     real, intent(in) :: Lon1, Lat1 ! Longitude and latitude of point 1
     real, intent(in) :: Lon2, Lat2 ! Longitude and latitude of point 2
     real, intent(out):: Lon,  Lat  ! Longitude and latitude of mid point
-    ! Angle of rotation from direction of local parallel to direction
-    ! from point 1 to point 2
     real, intent(out):: Orientation
-    ! Half  of linear distance between two points, normalized  per  the
-    ! sphere radius:
-    real, optional, intent(out):: HalfDist
-    ! Depth of the midpoint below the  spherical surface, normalized per the
-    ! sphere  radius:
-    real, optional, intent(out):: Depth
-    ! Unit  vectors from the  sphere center  to points 1,2
-    real :: Dir1_D(0:2), Dir2_D(0:2)
-    ! Unit  direction vectors for mid point and  for Dir2_D  - Dir1_D
-    real :: DirMid_D(0:2), Dir12_D(0:2)
-    ! Unit dirrection  vectors for local parallel and meridian:
-    real ::  DirPar_D(0:2), DirMer_D(0:2)
-    ! Half distance  between points, squared:
-    real :: HalfDist2
-    ! Distance from the mid point to the sphere center
-    real :: rMidPoint
-    ! sin/cos:
-    ! For point 1:
-    real :: SinLon1, CosLon1, SinLat1,  CosLat1
-    ! For point 2:
-    real :: SinLon2, CosLon2, SinLat2,  CosLat2
-    ! For mid  point:
-    real :: SinLon, CosLon, SinLat,  CosLat
-    ! For orientation aangle
-    real :: CosOrientation, SinOrientation
+
+    real, optional, intent(out):: HalfDist ! half distance between points
+    real, optional, intent(out):: Depth ! Depth of midpoint below surface
+
+    ! Unit vectors pointing to the two points
+    real :: Dir1_D(3), Dir2_D(3)
     !--------------------------------------------------------------------------
-    ! This is lonlat_to_xyz
-    SinLon1 = sin(Lon1); CosLon1 = cos(Lon1)
-    SinLat1 = sin(Lat1); CosLat1 = cos(Lat1)
-    Dir1_D = [CosLat1*CosLon1, CosLat1*SinLon1, SinLat1]
+    call lonlat_to_xyz(Lon1, Lat1, Dir1_D) ! unit vector to point 1
+    call lonlat_to_xyz(Lon2, Lat2, Dir2_D) ! unit vector to point 2
+    call xyz_to_lonlat(Dir1_D + Dir2_D, Lon, Lat) ! direction to midpoint
 
-    ! This is lonlat_to_xyz
-    SinLon2 = sin(Lon2); CosLon2 = cos(Lon2)
-    SinLat2 = sin(Lat2); CosLat2 = cos(Lat2)
-    Dir2_D = [CosLat2*CosLon2, CosLat2*SinLon2, SinLat2]
+    ! Half distance
+    if(present(HalfDist)) HalfDist = 0.5*norm2(Dir2_D - Dir1_D)
+    ! Depth = sqrt(1 - HalfDist^2) from the Pythagoras theorem: 
+    if(present(Depth)) Depth = 1 - sqrt(1 - 0.25*sum((Dir2_D - Dir1_D)**2))
 
-    ! HalfDist2 = 0.5*norm2(Dir2_D - Dir1_D)
-    HalfDist2  = sin(0.5*(Lat2 - Lat1))**2 + &
-         CosLat1*CosLat2*sin(0.5*(Lon2 - Lon1))**2
-    rMidPoint = sqrt(1 - HalfDist2)
+    ! Rotate mid point to the +X axis and see where Dir2_D goes
+    Dir2_D = matmul(rot_matrix_y(Lat), matmul(rot_matrix_z(-Lon), Dir2_D))
 
-    if(present(HalfDist))  HalfDist = sqrt(HalfDist2)
-    if(present(Depth)) Depth = 1 - rMidPoint
-
-    ! This part is the same as xyz_to_lonlat
-    ! Unit vector toward the mid point:
-    DirMid_D = (Dir2_D + Dir1_D)*0.5/rMidPoint
-    SinLat = DirMid_D(2); CosLat = sqrt(1 - SinLat**2)
-    CosLon = DirMid_D(0)/CosLat; SinLon = DirMid_D(1)/CosLat
-    Lat = asin(SinLat); Lon = acos(CosLon)
-    if(SinLon < 0.0) Lon = cTwoPi - Lon
-
-    ! This might be correct.
-    ! Direction  vectors for parallel and meridian:
-    DirPar_D = [-SinLon, CosLon, 0.0]
-    DirMer_D = [-SinLat*CosLon, -SinLat*SinLon, CosLat]
-
-    ! This is clearly incorrect as Orientation will always be positive.
-    ! atan2 function is required. Then the normalization is not needed.
-
-    ! Direction unit vector from point 1 to point 2:
-    Dir12_D = (Dir2_D - Dir1_D)*0.5/sqrt(HalfDist2)
-
-    ! Its projections on the parallel and  meridian  directions:
-    CosOrientation = sum(Dir12_D*DirPar_D)
-    SinOrientation = sum(Dir12_D*DirMer_D)
-    Orientation  = acos(CosOrientation)
-    if(SinOrientation < 0.0)  Orientation = cTwoPi - Orientation
+    ! Now the orientation is simply the polar angle of point 2 in the Y-Z plane
+    Orientation = atan2(Dir2_D(3), Dir2_D(2))
+    ! Keep angle positive
+    if(Orientation < 0) Orientation = Orientation + cTwoPi
 
   end subroutine twopoints_on_sph
   !============================================================================
