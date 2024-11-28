@@ -1191,7 +1191,7 @@ contains
 
     ! Half distance
     if(present(HalfDist)) HalfDist = 0.5*norm2(Dir2_D - Dir1_D)
-    ! Depth = sqrt(1 - HalfDist^2) from the Pythagoras theorem: 
+    ! Depth = sqrt(1 - HalfDist^2) from the Pythagoras theorem:
     if(present(Depth)) Depth = 1 - sqrt(1 - 0.25*sum((Dir2_D - Dir1_D)**2))
 
     ! Rotate mid point to the +X axis and see where Dir2_D goes
