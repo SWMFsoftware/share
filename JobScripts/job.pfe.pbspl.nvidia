@@ -28,31 +28,47 @@
 #   V100 GPU   #
 ################
 
-# Up to 16 nodes, 4 gpus per node
-# mem=256GB is necessary for running on 4 gpus per node. The default is too large.
-### PBS -lselect=1:ncpus=2:ngpus=1:model=sky_gpu
-### PBS -l select=16:model=cas_gpu:ncpus=4:ngpus=4:mem=256GB
-### PBS -l place=scatter:excl
+# Max 36 CPUs and 4 (8 on devel) GPUs for sky_gpu
+# Using 10 CPU cores can speed up compilation
+# Extra CPU cores can be used by non-GPU models of the SWMF
+### PBS -l select=1:ncpus=10:ngpus=1:model=sky_gpu:mem=256GB 
 
-# Select queue for V100:
+# Max 48 CPUs and 4 GPUs for cas_gpu
+# For multinode jobs ncpu and ngpu are usually the same (1 GPU/MPI process)
+# mem=256GB is necessary for running on 4 GPUs per node. The default is too large.
+### PBS -l select=16:ncpus=4:ngpus=4:model=cas_gpu:mem=256GB
+
+# Select queue:
+# Max 16 nodes, 4 gpus per node, 24 hours
 ### PBS -q v100@pbspl4
+
+# Max 2 sky_gpu nodes with 8 GPUs per node between 8am and 5pm PST
 ### PBS -q devel@pbspl4
 
 ################
 #   A100 GPU   #
 ################
 
-# Up to 32 nodes in prime time, 64 nodes in non-prime time, 4 gpus per node
+# Max 32 nodes in prime time, 64 nodes in non-prime time, 4 gpus per node
 # Note: it is necessary to specify memory. The default is too little.
 #PBS -l select=2:model=mil_a100:ncpus=4:ngpus=4:mem=128GB
-#PBS -l place=scatter:excl
 
-# Select queue for A100 (prime time):
+# Select queue:
+# Max 32 nodes for 24 hours: prime time
 #PBS -q p_gpu_normal@pbspl4
+
+# Max 64 nodes for 12 hours: non-prime time
+### PBS -q np_gpu_wide
+
+# Max 2 nodes for 2 hours
+### PBS -q gpu_devel 
 
 ################
 #   Both GPU   #
 ################
+
+# Use all nodes exclusively and distribute the CPUs and GPUs evenly among the nodes
+### PBS -l place=scatter:excl
 
 # Set walltime
 #PBS -l walltime=00:10:00
