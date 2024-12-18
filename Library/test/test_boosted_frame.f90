@@ -2,7 +2,14 @@
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 !===========================TESTS==============================================
-module ModTestExactRs
+module ModTestBoostedFrame
+
+  ! Test the code in ModBoostedFrame and plot all figures in the paper
+  ! Sokolov, I. V. and Gombosi, T. I. (2024),
+  ! Physics-Based Forecasting of Tomorrow's Solar Wind at 1 AU
+  ! Revision history:
+  ! 12/18/2024 - Tests the schemes and plot figures for the paper
+  !              by Sokolov&Gombosi (2004)
   use ModExactRs
   use ModPlotFile
   use ModBoostedFrame, ONLY: set_param, update_hydro_var, update_mhd8wave_var
@@ -1144,10 +1151,10 @@ contains
     !==========================================================================
   end subroutine test_mhd_t
   !============================================================================
-end module ModTestExactRs
+end module ModTestBoostedFrame
 !==============================================================================
 program test_program
-  use ModTestExactRs, ONLY: get_hydro_rs, test_hydro_x, test_hydro_t, &
+  use ModTestBoostedFrame, ONLY: get_hydro_rs, test_hydro_x, test_hydro_t, &
        get_mhd_rs, test_mhd_x, test_mhd_t
   implicit none
   !----------------------------------------------------------------------------
