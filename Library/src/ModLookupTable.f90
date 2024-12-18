@@ -41,6 +41,7 @@ module ModLookupTable
 
   integer, public, parameter:: MaxTable = 40 ! maximum number of tables
   integer, public :: nTable = 0     ! actual number of tables
+  !$acc declare create(nTable)
 
   public:: TableType
   type TableType
@@ -1200,7 +1201,8 @@ contains
   !============================================================================
 
   subroutine interpolate_arg1(iTable, Arg1, Value_V, DoExtrapolate)
-
+    !$acc routine seq
+    
     ! Return the array of values Value_V corresponding to argument Arg1.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
@@ -1219,7 +1221,8 @@ contains
   !============================================================================
 
   subroutine interpolate_arg2(iTable, Arg1, Arg2, Value_V, DoExtrapolate)
-
+    !$acc routine seq
+    
     ! Return the array of values Value_V corresponding to arguments
     ! Arg1 and Arg2.
     ! If DoExtrapolate is not present, stop with an error if the arguments
@@ -1240,7 +1243,8 @@ contains
   !============================================================================
 
   subroutine interpolate_arg3(iTable, Arg1, Arg2, Arg3, Value_V, DoExtrapolate)
-
+    !$acc routine seq
+    
     ! Return the array of values Value_V corresponding to arguments
     ! Arg1, Arg2 and Arg3.
     ! If DoExtrapolate is not present, stop with an error if the arguments
@@ -1262,7 +1266,8 @@ contains
 
   subroutine interpolate_arg4(iTable, Arg1, Arg2, Arg3, Arg4, Value_V, &
        DoExtrapolate)
-
+    !$acc routine seq
+    
     ! Return the array of values Value_V corresponding to arguments
     ! Arg1, Arg2, Arg3, and Arg4.
     ! If DoExtrapolate is not present, stop with an error if the arguments
@@ -1284,7 +1289,8 @@ contains
 
   subroutine interpolate_arg5(iTable, Arg1, Arg2, Arg3, Arg4, Arg5, Value_V, &
        DoExtrapolate)
-
+    !$acc routine seq
+    
     ! Return the array of values Value_V corresponding to arguments
     ! Arg1, Arg2, Arg3, Arg4, and Arg5.
     ! If DoExtrapolate is not present, stop with an error if the arguments
@@ -1305,7 +1311,8 @@ contains
   !============================================================================
 
   subroutine interpolate_arg1_scalar(iTable, Arg1, Value, DoExtrapolate)
-
+    !$acc routine seq
+    
     ! Return the scalar Value corresponding to argument Arg1.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
@@ -1327,7 +1334,8 @@ contains
   !============================================================================
 
   subroutine interpolate_arg2_scalar(iTable, Arg1, Arg2, Value, DoExtrapolate)
-
+    !$acc routine seq
+    
     ! Return the scalar Value corresponding to arguments Arg1 and Arg2.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
@@ -1350,7 +1358,8 @@ contains
 
   subroutine interpolate_arg3_scalar(iTable, Arg1, Arg2, Arg3, Value, &
        DoExtrapolate)
-
+    !$acc routine seq
+    
     ! Return the scalar Value corresponding to arguments Arg1, Arg2 and Arg3.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
@@ -1374,7 +1383,8 @@ contains
 
   subroutine interpolate_arg4_scalar(iTable, Arg1, Arg2, Arg3, Arg4, Value, &
        DoExtrapolate)
-
+    !$acc routine seq
+    
     ! Return the scalar Value corresponding to arguments Arg1 ... Arg4.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
@@ -1398,7 +1408,8 @@ contains
 
   subroutine interpolate_arg5_scalar(iTable, Arg1, Arg2, Arg3, Arg4, Arg5, &
        Value, DoExtrapolate)
-
+    !$acc routine seq
+    
     ! Return the scalar Value corresponding to arguments Arg1 ... Arg5.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
@@ -1419,9 +1430,10 @@ contains
 
   end subroutine interpolate_arg5_scalar
   !============================================================================
-
+  
   subroutine interpolate_arg_array(iTable, ArgIn_I, Value_V, DoExtrapolate)
-
+    !$acc routine seq
+    
     ! Return the array of values Value_V corresponding to arguments
     ! ArgIn_I in iTable. Use linear interpolation.
     ! If DoExtrapolate is not present, stop with an error if the arguments
@@ -1438,13 +1450,16 @@ contains
     real :: Arg_I(5)
     type(TableType), pointer:: Ptr
 
-    integer, parameter :: MinIndex_I(5) = 1
+    integer :: MinIndex_I(5)
 
     character(len=*), parameter:: NameSub = 'interpolate_arg_array'
     !--------------------------------------------------------------------------
+#ifndef _OPENACC    
     if(iTable < 1 .or. iTable > nTable) call CON_stop(NameSub// &
          ': incorrect value for iTable=', iTable)
-
+#endif    
+    MinIndex_I = 1
+    
     Ptr => Table_I(iTable)
     Arg_I(1:Ptr%nIndex) = ArgIn_I(1:Ptr%nIndex)
 
@@ -1683,6 +1698,7 @@ contains
   subroutine copy_lookup_table_to_gpu()
     integer :: iTable
 
+    !$acc update device(nTable)
     !$acc update device(Table_I)
 
     ! Openacc does not support deep copy for user-defined type.

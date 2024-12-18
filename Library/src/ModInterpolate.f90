@@ -73,7 +73,7 @@ contains
   !============================================================================
   real function interpolate_scalar(a_C, nDim, Min_D, Max_D, x_D, &
        x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Interpolate scalar default precision real array of up to 5 dimensions
     ! Index and distance can be returned in 1D only
 
@@ -117,14 +117,16 @@ contains
             Min_D(4), Max_D(4), Min_D(5), Max_D(5), &
             x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
     case default
+#ifndef _OPENACC       
        call CON_stop(NameSub//' nDim should be 1 to 5')
+#endif       
     end select
 
   end function interpolate_scalar
   !============================================================================
   real function interpolate_scalar4(a_C, nDim, Min_D, Max_D, x_D, &
        x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Interpolate scalar single precision real array of up to 5 dimensions
     ! Index and distance can be returned in 1D only
 
@@ -168,14 +170,16 @@ contains
              Min_D(4), Max_D(4), Min_D(5), Max_D(5), &
              x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
      case default
-       call CON_stop(NameSub//' nDim should be 1 to 5')
+#ifndef _OPENACC        
+        call CON_stop(NameSub//' nDim should be 1 to 5')
+#endif        
     end select
 
   end function interpolate_scalar4
   !============================================================================
   real function linear_scalar_real(a_I, iMin, iMax, x, x_I, DoExtrapolate, &
        iCell, Dist)
-
+    !$acc routine seq
     ! Interface for default precision real array
 
     integer, intent(in) :: iMin, iMax
@@ -216,7 +220,7 @@ contains
   !============================================================================
   real function linear_scalar_real4(a_I, iMin, iMax, x, x_I, DoExtrapolate, &
        iCell, Dist)
-
+    !$acc routine seq
     ! Interface for default precision real array
 
     integer,      intent(in) :: iMin, iMax
@@ -257,7 +261,7 @@ contains
   real function bilinear_scalar_real( &
        a_II, iMin, iMax, jMin, jMax, Xy_D, x_I, y_I, DoExtrapolate, &
        iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Interface with default precision real array
 
     integer, intent(in):: iMin, iMax, jMin, jMax
@@ -309,7 +313,7 @@ contains
   real function bilinear_scalar_real4( &
        a_II, iMin, iMax, jMin, jMax, Xy_D, x_I, y_I, DoExtrapolate, &
        iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Interface with single precision array
 
     integer, intent(in):: iMin, iMax, jMin, jMax
@@ -361,7 +365,7 @@ contains
   real function trilinear_scalar_real( &
        a_III, iMin, iMax, jMin, jMax, kMin, kMax, Xyz_D, &
        x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Calculate trilinear interpolation of a_III at position Xyz_D
 
     integer, intent(in):: iMin, iMax, jMin, jMax, kMin, kMax
@@ -428,7 +432,7 @@ contains
   real function trilinear_scalar_real4( &
        a_III, iMin, iMax, jMin, jMax, kMin, kMax, Xyz_D, &
        x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Calculate trilinear interpolation of a_III at position Xyz_D
 
     integer,      intent(in):: iMin, iMax, jMin, jMax, kMin, kMax
@@ -495,7 +499,7 @@ contains
   real function quadlinear_scalar_real( &
        a_I4, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, &
        x_D, x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Calculate quadlinear interpolation of a_I4 at position x_D
 
     integer, intent(in):: iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax
@@ -578,7 +582,7 @@ contains
   real function quadlinear_scalar_real4( &
        a_I4, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, &
        x_D, x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Calculate quadlinear interpolation of a_I4 at position x_D
 
     integer,      intent(in):: iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax
@@ -661,7 +665,7 @@ contains
   real function pentalinear_scalar_real( &
        a_I5, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, mMin, mMax, &
        x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Calculate pentalinear interpolation of default prec. a_I5 at position x_D
 
     integer, intent(in):: &
@@ -774,7 +778,7 @@ contains
   real function pentalinear_scalar_real4( &
        a_I5, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, mMin, mMax, &
        x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Calculate pentalinear interpolation of single prec. a_I5 at position x_D
 
     integer, intent(in):: &
@@ -979,7 +983,7 @@ contains
        a_VC, nVar, nDim, Min_D, Max_D, x_D, &
        x1_I, x2_I, x3_I, x4_I, x5_I, &
        x8_D, x8_I, DoExtrapolate, iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Interpolate default precision real vector array of up to 5 dimensions
     ! Double precision coordinate x8_D and x8_I can be used in 1D only
     ! Index and distance can be returned in 1D only
@@ -1034,7 +1038,9 @@ contains
             Min_D(4), Max_D(4), Min_D(5), Max_D(5), &
             x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
     case default
+#ifndef _OPENACC      
        call CON_stop(NameSub//' nDim should be 1 to 5')
+#endif       
     end select
 
   end function interpolate_vector
@@ -1043,7 +1049,7 @@ contains
        a_VC, nVar, nDim, Min_D, Max_D, x_D, &
        x1_I, x2_I, x3_I, x4_I, x5_I, &
        x8_D, x8_I, DoExtrapolate, iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Interpolate single precision real vector array of up to 5 dimensions
     ! Double precision coordinate x8_D and x8_I can be used in 1D only
     ! Index and distance can be returned in 1D only
@@ -1097,15 +1103,17 @@ contains
              Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
              Min_D(4), Max_D(4), Min_D(5), Max_D(5), &
              x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
-    case default
-       call CON_stop(NameSub//' nDim should be 1 to 5')
+     case default
+#ifndef _OPENACC        
+        call CON_stop(NameSub//' nDim should be 1 to 5')
+#endif        
     end select
 
   end function interpolate_vector4
   !============================================================================
   function linear_vector_real(a_VI, nVar, iMin, iMax, x, x_I, x8, x8_I, &
        DoExtrapolate, iCell, Dist)
-
+    !$acc routine seq
     ! interpolate default precision real a_VI vector array
 
     integer, intent(in):: nVar, iMin, iMax
@@ -1155,7 +1163,7 @@ contains
   !============================================================================
   function linear_vector_real4(a_VI, nVar, iMin, iMax, x, x_I, x8, x8_I, &
        DoExtrapolate, iCell, Dist)
-
+    !$acc routine seq
     ! interpolate single precision real a_VI vector array
 
     integer,      intent(in):: nVar, iMin, iMax
@@ -1205,7 +1213,7 @@ contains
   function bilinear_vector_real( &
        a_VII, nVar, iMin, iMax, jMin, jMax, Xy_D, x_I, y_I, DoExtrapolate, &
        iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Calculate bilinear interpolation of default precision real a_VII
 
     integer, intent(in) :: nVar, iMin, iMax, jMin, jMax
@@ -1262,7 +1270,7 @@ contains
   function bilinear_vector_real4( &
        a_VII, nVar, iMin, iMax, jMin, jMax, Xy_D, x_I, y_I, DoExtrapolate, &
        iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Calculate bilinear interpolation of default precision real a_VII
 
     integer,      intent(in):: nVar, iMin, iMax, jMin, jMax
@@ -1319,7 +1327,7 @@ contains
   function trilinear_vector_real( &
        a_VIII, nVar, iMin, iMax, jMin, jMax, kMin, kMax, Xyz_D, &
        x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Calculate trilinear interpolation of a_III at position Xyz_D
 
     integer, intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax
@@ -1388,7 +1396,7 @@ contains
   function trilinear_vector_real4( &
        a_VIII, nVar, iMin, iMax, jMin, jMax, kMin, kMax, Xyz_D, &
        x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Calculate trilinear interpolation of a_III at position Xyz_D
 
     integer,      intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax
@@ -1457,7 +1465,7 @@ contains
   function quadlinear_vector_real( &
        a_VI4, nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, x_D, &
        x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Calculate quadlinear interpolation of single precision a_I4
 
     integer, intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax
@@ -1543,7 +1551,7 @@ contains
   function quadlinear_vector_real4( &
        a_VI4, nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, x_D, &
        x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Calculate quadlinear interpolation of single precision a_I4
 
     integer, intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax
@@ -1631,7 +1639,7 @@ contains
        a_VI5, nVar, &
        iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, mMin, mMax, x_D, &
        x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Calculate pentalinear interpolation of default precision a_I5
 
     integer, intent(in):: &
@@ -1746,7 +1754,7 @@ contains
        a_VI5, nVar, &
        iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, mMin, mMax, x_D, &
        x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
-
+    !$acc routine seq
     ! Calculate pentalinear interpolation of single precision a_I5
 
     integer, intent(in):: &
@@ -1860,7 +1868,7 @@ contains
   !============================================================================
   subroutine fit_parabola(x_I, y_I, &
        xExtremumOut, yExtremumOut, Weight2Out_I, Weight3Out_I)
-
+    
     ! Given 3 discrete points at x_D and 3 function values y_D
     ! with the middle point being the discrete extrem value,
     ! find the extremum value of the parabola going through the points,
