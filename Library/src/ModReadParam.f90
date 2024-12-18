@@ -607,6 +607,7 @@ contains
   end subroutine read_var_c
   !============================================================================
   subroutine read_integer(IntVar, iError)
+
     integer,           intent(out):: IntVar
     integer, optional, intent(out):: iError
     !--------------------------------------------------------------------------
@@ -643,8 +644,9 @@ contains
   end subroutine read_var_i
   !============================================================================
   subroutine read_real4(Real4Var,iError,StartTimeIn)
+
     ! Read a single precision real variable
-    ! Arguments
+
     real(Real4_),           intent(out):: Real4Var
     integer, optional,      intent(out):: iError
     real(Real8_), optional, intent(in) :: StartTimeIn
@@ -654,8 +656,9 @@ contains
   end subroutine read_real4
   !============================================================================
   subroutine read_real8(RealVar,iError,StartTimeIn)
+
     ! Read a double precision real variable
-    ! Arguments
+
     real(Real8_),           intent(out):: RealVar
     integer, optional,      intent(out):: iError
     real(Real8_), optional, intent(in) :: StartTimeIn
@@ -668,7 +671,6 @@ contains
 
     ! Read a single precision real variable described by Name
 
-    ! Arguments
     character (len=*),      intent(in) :: Name
     real(Real4_),           intent(out):: Real4Var
     real(Real8_), optional, intent(in) :: StartTimeIn
@@ -685,7 +687,6 @@ contains
 
     ! Read a double precision real variable described by Name
 
-    ! Arguments
     character (len=*),      intent(in) :: Name
     real(Real8_),           intent(out):: RealVar
     real(Real8_), optional, intent(in) :: StartTimeIn
@@ -782,8 +783,9 @@ contains
   end subroutine read_var_r8
   !============================================================================
   subroutine read_logical(IsLogicVar, iError)
+
     ! Read a logical variable
-    ! Arguments
+
     logical, intent(out)          :: IsLogicVar
     integer, optional, intent(out):: iError
     !--------------------------------------------------------------------------
@@ -795,7 +797,6 @@ contains
 
     ! Read a logical variable described by Name
 
-    ! Arguments
     character (len=*), intent(in) :: Name
     logical, intent(out)          :: IsLogicVar
     integer, optional, intent(out):: iError
