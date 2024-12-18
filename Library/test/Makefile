@@ -569,3 +569,15 @@ test_poisson_bracket_check:
 	@ls -l test_poisson.diff
 
 #######################################################################
+test_boosted_frame_exe:
+	@(cd ../src; make LIB)
+	@make test_boosted_frame.o
+	${LINK.f90} -o test_boosted_frame.exe test_boosted_frame.o \
+		-L${LIBDIR} -lSHARE ${Lflag}
+
+test_boosted_frame:
+	@make test_boosted_frame_exe
+	-@(./test_boosted_frame.exe)
+
+######################################################################
+
