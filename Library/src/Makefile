@@ -20,7 +20,6 @@ ModMpiInterfaces.f90: MpiTemplate.f90 SWMF_MPI_routines.dat
 
 OBJECTS = \
 	ModBlasLapack.o\
-	ModBoostedFrame.o\
 	ModConst.o\
 	ModCoordTransform.o\
 	ModCubicEquation.o\
