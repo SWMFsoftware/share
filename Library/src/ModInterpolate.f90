@@ -1967,7 +1967,7 @@ contains
   !============================================================================
   subroutine test_interpolation
 
-    ! integer :: a_I(0:2) = [ 10, 20, 30 ]
+    real :: a_I(0:2) = [ 10., 20., 30. ]
 
     real :: a_II(2,3) = reshape([ 1., 20., 3., 40., 5., 60. ], [2, 3] )
 
@@ -2086,17 +2086,17 @@ contains
     end do
 
     ! Test for normal conditions.
-    ! write(*,'(a)')'Testing function linear for uniform grid'
-    ! Result = linear(a_I, 0, 2, 1.1)
-    ! GoodResult = 21.0
-    ! if(abs(Result - GoodResult) > 1.e-5) &
-    !      write(*,*) 'Test failed: Result=',Result,' differs from ',GoodResult
+    write(*,'(a)')'Testing function linear for uniform grid'
+    Result = linear(a_I, 0, 2, 1.1)
+    GoodResult = 21.0
+    if(abs(Result - GoodResult) > 1.e-5) &
+         write(*,*) 'Test failed: Result=',Result,' differs from ',GoodResult
 
-    ! write(*,'(a)')'Testing function linear for non-uniform grid'
-    ! Result = linear(a_I, 0, 2, 2.2, x02_I)
-    ! GoodResult = 21.0
-    ! if(abs(Result - GoodResult) > 1.e-5) &
-    !      write(*,*) 'Test failed: Result=',Result,' differs from ',GoodResult
+    write(*,'(a)')'Testing function linear for non-uniform grid'
+    Result = linear(a_I, 0, 2, 2.2, x02_I)
+    GoodResult = 21.0
+    if(abs(Result - GoodResult) > 1.e-5) &
+         write(*,*) 'Test failed: Result=',Result,' differs from ',GoodResult
 
     write(*,'(a)')'Testing function bilinear for uniform grid'
     Result = bilinear(a_II, 1, 2, 1, 3, [1.1, 2.2])
