@@ -61,30 +61,45 @@ module ModInterpolate
   public :: find_cell           ! find cell in non-uniform grid
   public :: fit_parabola        ! fit a parabola around an extremum
   public :: test_interpolation  ! unit test
-     
+
   interface linear
-     module procedure linear_scalar, linear_scalar_real4, &
-          linear_vector, linear_vector_real4
+     module procedure linear_scalar, linear_vector
+  end interface
+
+  interface linear_real4
+     module procedure linear_scalar_real4, linear_vector_real4
   end interface
 
   interface bilinear
-     module procedure bilinear_scalar, bilinear_scalar_real4, &
-          bilinear_vector, bilinear_vector_real4
+     module procedure bilinear_scalar, bilinear_vector
+  end interface
+
+  interface bilinear_real4
+     module procedure bilinear_scalar_real4, bilinear_vector_real4
   end interface
 
   interface trilinear
-     module procedure trilinear_scalar, trilinear_scalar_real4, &
-          trilinear_vector, trilinear_vector_real4
+     module procedure trilinear_scalar, trilinear_vector
+  end interface
+
+  interface trilinear_real4
+     module procedure trilinear_scalar_real4, trilinear_vector_real4
   end interface
 
   interface quadlinear
-     module procedure quadlinear_scalar, quadlinear_scalar_real4, &
-          quadlinear_vector, quadlinear_vector_real4
+     module procedure quadlinear_scalar, quadlinear_vector
+  end interface
+
+  interface quadlinear_real4
+     module procedure quadlinear_scalar_real4, quadlinear_vector_real4
   end interface
 
   interface pentalinear
-     module procedure pentalinear_scalar, pentalinear_scalar_real4, &
-          pentalinear_vector, pentalinear_vector_real4
+     module procedure pentalinear_scalar, pentalinear_vector
+  end interface
+
+  interface pentalinear_real4
+     module procedure pentalinear_scalar_real4, pentalinear_vector_real4
   end interface
 
 contains
@@ -95,7 +110,7 @@ contains
     ! Interpolate scalar default precision real array of up to 5 dimensions
     ! Index and distance can be returned in 1D only
 
-    real,    intent(in):: a_C(*)
+    real, intent(in):: a_C(*)
     integer, intent(in):: nDim
     integer, intent(in):: Min_D(nDim), Max_D(nDim)
 
@@ -201,7 +216,7 @@ contains
     ! Interface for default precision real array
 
     integer, intent(in) :: iMin, iMax
-    real(Real8_), intent(in) :: a_I(iMin:iMax)
+    real, intent(in) :: a_I(iMin:iMax)
     real,    intent(in), optional:: x, x_I(iMin:), Dist
     logical, intent(in), optional :: DoExtrapolate
     integer, intent(in), optional :: iCell
@@ -283,7 +298,7 @@ contains
     ! Interface with default precision real array
 
     integer, intent(in):: iMin, iMax, jMin, jMax
-    real(Real8_), intent(in):: a_II(iMin:iMax,jMin:jMax)
+    real, intent(in):: a_II(iMin:iMax,jMin:jMax)
     real,    intent(in), optional:: Xy_D(2), x_I(iMin:), y_I(jMin:), Dist_D(2)
     logical, intent(in), optional:: DoExtrapolate
     integer, intent(in), optional:: iCell_D(2)
@@ -387,7 +402,7 @@ contains
     ! Calculate trilinear interpolation of a_III at position Xyz_D
 
     integer, intent(in):: iMin, iMax, jMin, jMax, kMin, kMax
-    real(Real8_), intent(in):: a_III(iMin:iMax,jMin:jMax,kMin:kMax)
+    real, intent(in):: a_III(iMin:iMax,jMin:jMax,kMin:kMax)
     real,    intent(in), optional:: &
          Xyz_D(3), x_I(iMin:), y_I(jMin:), z_I(kMin:), Dist_D(3)
     logical, intent(in), optional:: DoExtrapolate
@@ -521,7 +536,7 @@ contains
     ! Calculate quadlinear interpolation of a_I4 at position x_D
 
     integer, intent(in):: iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax
-    real(Real8_), intent(in):: a_I4(iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax)
+    real, intent(in):: a_I4(iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax)
     real,    intent(in), optional:: &
          x_D(4), x1_I(iMin:), x2_I(jMin:), x3_I(kMin:), x4_I(lMin:), Dist_D(:)
     logical, intent(in), optional:: DoExtrapolate
@@ -688,7 +703,7 @@ contains
 
     integer, intent(in):: &
          iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, mMin, mMax
-    real(Real8_), intent(in):: &
+    real, intent(in):: &
          a_I5(iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax,mMin:mMax)
 
     real,    intent(in), optional:: x_D(5), Dist_D(5), &
@@ -914,15 +929,15 @@ contains
     ! Double precision coordinate x8_D and x8_I can be used in 1D only
     ! Index and distance can be returned in 1D only
 
-    real,    intent(in):: a_VC(*)
+    real, intent(in):: a_VC(*)
     integer, intent(in):: nVar
     integer, intent(in):: nDim
     integer, intent(in):: Min_D(nDim), Max_D(nDim)
 
     real,    optional, intent(in):: x_D(nDim)
     real,    optional, intent(in):: x1_I(:), x2_I(:), x3_I(:), x4_I(:), x5_I(:)
-    real(Real8_), optional, intent(in):: x8_D(nDim)
-    real(Real8_), optional, intent(in):: x8_I(:)
+    real, optional, intent(in):: x8_D(nDim)
+    real, optional, intent(in):: x8_I(:)
     logical, optional, intent(in):: DoExtrapolate
     integer, optional, intent(in):: iCell_D(nDim)
     real,    optional, intent(in):: Dist_D(nDim)
@@ -987,8 +1002,8 @@ contains
 
     real,    optional, intent(in):: x_D(nDim)
     real,    optional, intent(in):: x1_I(:), x2_I(:), x3_I(:), x4_I(:), x5_I(:)
-    real(Real8_), optional, intent(in):: x8_D(nDim)
-    real(Real8_), optional, intent(in):: x8_I(:)
+    real, optional, intent(in):: x8_D(nDim)
+    real, optional, intent(in):: x8_I(:)
     logical, optional, intent(in):: DoExtrapolate
     integer, optional, intent(in):: iCell_D(nDim)
     real,    optional, intent(in):: Dist_D(nDim)
@@ -1043,10 +1058,10 @@ contains
     ! interpolate default precision real a_VI vector array
 
     integer, intent(in):: nVar, iMin, iMax
-    real(Real8_), intent(in):: a_VI(nVar,iMin:iMax)
+    real, intent(in):: a_VI(nVar,iMin:iMax)
 
     real,         intent(in), optional :: x, x_I(iMin:), Dist
-    real(Real8_), intent(in), optional :: x8, x8_I(iMin:)
+    real, intent(in), optional :: x8, x8_I(iMin:)
     logical,      intent(in), optional :: DoExtrapolate
     integer,      intent(in), optional :: iCell
 
@@ -1096,7 +1111,7 @@ contains
     real(Real4_), intent(in):: a_VI(nVar,iMin:iMax)
 
     real,         intent(in), optional :: x, x_I(iMin:), Dist
-    real(Real8_), intent(in), optional :: x8, x8_I(iMin:)
+    real, intent(in), optional :: x8, x8_I(iMin:)
     logical,      intent(in), optional :: DoExtrapolate
     integer,      intent(in), optional :: iCell
 
@@ -1143,7 +1158,7 @@ contains
     ! Calculate bilinear interpolation of default precision real a_VII
 
     integer, intent(in):: nVar, iMin, iMax, jMin, jMax
-    real(Real8_), intent(in):: a_VII(nVar, iMin:iMax,jMin:jMax)
+    real, intent(in):: a_VII(nVar, iMin:iMax,jMin:jMax)
 
     real,    intent(in), optional:: Xy_D(2), x_I(iMin:), y_I(jMin:), Dist_D(2)
     logical, intent(in), optional:: DoExtrapolate
@@ -1257,7 +1272,7 @@ contains
     ! Calculate trilinear interpolation of a_III at position Xyz_D
 
     integer, intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax
-    real(Real8_), intent(in):: a_VIII(nVar,iMin:iMax,jMin:jMax,kMin:kMax)
+    real, intent(in):: a_VIII(nVar,iMin:iMax,jMin:jMax,kMin:kMax)
 
     real,    intent(in), optional:: &
          Xyz_D(3), x_I(iMin:), y_I(jMin:), z_I(kMin:), Dist_D(3)
@@ -1395,7 +1410,7 @@ contains
     ! Calculate quadlinear interpolation of single precision a_I4
 
     integer, intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax
-    real(Real8_), intent(in):: &
+    real, intent(in):: &
          a_VI4(nVar,iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax)
     real,    intent(in), optional:: &
          x_D(4), x1_I(iMin:), x2_I(jMin:), x3_I(kMin:), x4_I(lMin:), Dist_D(4)
@@ -1571,7 +1586,7 @@ contains
 
     integer, intent(in):: &
          nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, mMin, mMax
-    real(Real8_), intent(in):: &
+    real, intent(in):: &
          a_VI5(nVar,iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax,mMin:mMax)
     real,    intent(in), optional:: x_D(5), Dist_D(5), &
          x1_I(iMin:), x2_I(jMin:), x3_I(kMin:), x4_I(lMin:), x5_I(mMin:)
@@ -2038,13 +2053,13 @@ contains
          write(*,*) 'Test failed: Result=',Result,' differs from ',GoodResult
 
     write(*,'(a)')'Testing function trilinear for uniform grid'
-    Result = trilinear(a_III, 1, 2, 1, 2, 0, 2, [1.1, 1.2, 1.3])
+    Result = trilinear_real4(a_III, 1, 2, 1, 2, 0, 2, [1.1, 1.2, 1.3])
     GoodResult = 11236.2
     if(abs(Result - GoodResult) > 1.e-2) &
          write(*,*) 'Test failed: Result=',Result,' differs from ',GoodResult
 
     write(*,'(a)')'Testing function trilinear for nonuniform grid'
-    Result = trilinear(a_III, 1, 2, 1, 2, 0, 2, [1.1, 1.2, 1.3], &
+    Result = trilinear_real4(a_III, 1, 2, 1, 2, 0, 2, [1.1, 1.2, 1.3], &
          x12_I, x12_I, x02_I)
     GoodResult = 112.362
     if(abs(Result - GoodResult) > 1.e-2) &
@@ -2104,28 +2119,28 @@ contains
          write(*,*) 'Test failed: Result=',Result,' differs from ',GoodResult
 
     write(*,'(a)')'Testing trilinear out-of-bounds: +Z for uniform grid'
-    Result = trilinear(a_III, 1, 2, 1, 2, 0, 2, [1., 1., 2.4], &
+    Result = trilinear_real4(a_III, 1, 2, 1, 2, 0, 2, [1., 1., 2.4], &
          DoExtrapolate=.false.)
     GoodResult = 10000.0
     if(abs(Result - GoodResult) > 1.e-2) &
          write(*,*) 'Test failed: Result=',Result,' differs from ',GoodResult
 
     write(*,'(a)')'Testing trilinear out-of-bounds: +Z for nonuniform grid'
-    Result = trilinear(a_III, 1, 2, 1, 2, 0, 2, [1., 1., 4.1], &
+    Result = trilinear_real4(a_III, 1, 2, 1, 2, 0, 2, [1., 1., 4.1], &
          x12_I, x12_I, x02_I, DoExtrapolate=.false.)
     GoodResult = 10000.0
     if(abs(Result - GoodResult) > 1.e-6) &
          write(*,*) 'Test failed: Result=',Result,' differs from ',GoodResult
 
     write(*,'(a)')'Testing trilinear out-of-bounds: -Z for uniform grid'
-    Result = trilinear(a_III, 1, 2, 1, 2, 0, 2, [1., 1., -0.4], &
+    Result = trilinear_real4(a_III, 1, 2, 1, 2, 0, 2, [1., 1., -0.4], &
          DoExtrapolate=.false.)
     GoodResult = 1.0
     if(abs(Result - GoodResult) > 1.e-6) &
          write(*,*) 'Test failed: Result=',Result,' differs from ',GoodResult
 
     write(*,'(a)')'Testing trilinear out-of-bounds: -Z for nonuniform grid'
-    Result = trilinear(a_III, 1, 2, 1, 2, 0, 2, [1., 1., 0.1], &
+    Result = trilinear_real4(a_III, 1, 2, 1, 2, 0, 2, [1., 1., 0.1], &
          x12_I, x12_I, x02_I, DoExtrapolate=.false.)
     GoodResult = 1.0
     if(abs(Result - GoodResult) > 1.e-2) &
@@ -2159,14 +2174,14 @@ contains
          write(*,*) 'Test failed: Result=',Result,' differs from ',GoodResult
 
     write(*,'(a)')'Testing trilinear extrapolation: +Z uniform'
-    Result = trilinear(a_III, 1, 2, 1, 2, 0, 2, [1.3, 1.9, 2.60], &
+    Result = trilinear_real4(a_III, 1, 2, 1, 2, 0, 2, [1.3, 1.9, 2.60], &
          DoExtrapolate=.true.)
     GoodResult = 212958.38
     if(abs(Result - GoodResult) > 1.0) &
          write(*,*) 'Test failed: Result=',Result,' differs from ',GoodResult
 
     write(*,'(a)')'Testing trilinear extrapolation: +Z nonuniform'
-    Result = trilinear(a_III, 1, 2, 1, 2, 0, 2, [1.3, 1.9, 5.2], &
+    Result = trilinear_real4(a_III, 1, 2, 1, 2, 0, 2, [1.3, 1.9, 5.2], &
          x12_I, x12_I, x02_I, DoExtrapolate=.true.)
     GoodResult = 212958.38
     if(abs(Result - GoodResult) > 1.0) &
