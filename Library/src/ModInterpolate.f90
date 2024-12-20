@@ -2,7 +2,7 @@
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 
-module ModInterpolateScalar
+module ModInterpolate
 
   ! Calculate second order accurate interpolation for
   !
@@ -51,23 +51,41 @@ module ModInterpolateScalar
 
   public :: interpolate_scalar  ! interpolate real scalar in 1...5D
   public :: interpolate_scalar4 ! single precision scalar
+  public :: interpolate_vector  ! interpolate real vector in 1...5D
+  public :: interpolate_vector4 ! single precision vector
+  public :: linear              ! interpolate integer/real/complex in 1D
+  public :: bilinear            ! interpolate integer/real/complex in 2D
+  public :: trilinear           ! interpolate integer/real/complex in 3D
+  public :: quadlinear          ! interpolate integer/real/complex in 4D
+  public :: pentalinear         ! interpolate integer/real/complex in 5D
+  public :: find_cell           ! find cell in non-uniform grid
+  public :: fit_parabola        ! fit a parabola around an extremum
+  public :: test_interpolation  ! unit test
+     
+  interface linear
+     module procedure linear_scalar, linear_scalar_real4, &
+          linear_vector, linear_vector_real4
+  end interface
 
-  ! interpolate real in 1D
-  public :: linear_scalar, linear_scalar_real4
+  interface bilinear
+     module procedure bilinear_scalar, bilinear_scalar_real4, &
+          bilinear_vector, bilinear_vector_real4
+  end interface
 
-  ! interpolate real in 2D
-  public :: bilinear_scalar, bilinear_scalar_real4
+  interface trilinear
+     module procedure trilinear_scalar, trilinear_scalar_real4, &
+          trilinear_vector, trilinear_vector_real4
+  end interface
 
-  ! interpolate real in 3D
-  public :: trilinear_scalar, trilinear_scalar_real4
+  interface quadlinear
+     module procedure quadlinear_scalar, quadlinear_scalar_real4, &
+          quadlinear_vector, quadlinear_vector_real4
+  end interface
 
-  ! interpolate real in 4D
-  public :: quadlinear_scalar, quadlinear_scalar_real4
-
-  ! interpolate real in 5D
-  public :: pentalinear_scalar, pentalinear_scalar_real4
-
-  character(len=*), parameter :: NameMod='ModInterpolateScalar'
+  interface pentalinear
+     module procedure pentalinear_scalar, pentalinear_scalar_real4, &
+          pentalinear_vector, pentalinear_vector_real4
+  end interface
 
 contains
   !============================================================================
@@ -183,7 +201,7 @@ contains
     ! Interface for default precision real array
 
     integer, intent(in) :: iMin, iMax
-    real,    intent(in) :: a_I(iMin:iMax)
+    real(Real8_), intent(in) :: a_I(iMin:iMax)
     real,    intent(in), optional:: x, x_I(iMin:), Dist
     logical, intent(in), optional :: DoExtrapolate
     integer, intent(in), optional :: iCell
@@ -265,7 +283,7 @@ contains
     ! Interface with default precision real array
 
     integer, intent(in):: iMin, iMax, jMin, jMax
-    real,    intent(in):: a_II(iMin:iMax,jMin:jMax)
+    real(Real8_), intent(in):: a_II(iMin:iMax,jMin:jMax)
     real,    intent(in), optional:: Xy_D(2), x_I(iMin:), y_I(jMin:), Dist_D(2)
     logical, intent(in), optional:: DoExtrapolate
     integer, intent(in), optional:: iCell_D(2)
@@ -369,7 +387,7 @@ contains
     ! Calculate trilinear interpolation of a_III at position Xyz_D
 
     integer, intent(in):: iMin, iMax, jMin, jMax, kMin, kMax
-    real,    intent(in):: a_III(iMin:iMax,jMin:jMax,kMin:kMax)
+    real(Real8_), intent(in):: a_III(iMin:iMax,jMin:jMax,kMin:kMax)
     real,    intent(in), optional:: &
          Xyz_D(3), x_I(iMin:), y_I(jMin:), z_I(kMin:), Dist_D(3)
     logical, intent(in), optional:: DoExtrapolate
@@ -503,7 +521,7 @@ contains
     ! Calculate quadlinear interpolation of a_I4 at position x_D
 
     integer, intent(in):: iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax
-    real,    intent(in):: a_I4(iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax)
+    real(Real8_), intent(in):: a_I4(iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax)
     real,    intent(in), optional:: &
          x_D(4), x1_I(iMin:), x2_I(jMin:), x3_I(kMin:), x4_I(lMin:), Dist_D(:)
     logical, intent(in), optional:: DoExtrapolate
@@ -670,7 +688,7 @@ contains
 
     integer, intent(in):: &
          iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, mMin, mMax
-    real,    intent(in):: &
+    real(Real8_), intent(in):: &
          a_I5(iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax,mMin:mMax)
 
     real,    intent(in), optional:: x_D(5), Dist_D(5), &
@@ -887,98 +905,6 @@ contains
          +                        Dx1L*a_I5(i2,j2,k2,l2,m2)))))
   end function pentalinear_scalar_real4
   !============================================================================
-end module ModInterpolateScalar
-!==============================================================================
-module ModInterpolate
-
-  ! Calculate second order accurate interpolation for
-  !
-  ! - a uniform grid with normalized coordinates, or
-  ! - non-uniform grid with actual coordinates, or
-  ! - any mixture of the two, i.e. only some of the coordinates are uniform
-  !
-  ! Normalized coordinates mean that the coordinates coincide with the
-  ! indexes at the grid points. For uniform grid this is a very fast algorithm.
-  ! For non-uniform grid a binary search is needed. The coordinates are assumed
-  ! to be either monotone increasing or monotone decreasing.
-  !
-  ! One can interpolate both scalar and vector valued arrays of
-  ! integers, single and double precision reals, and complex numbers.
-  !
-  ! If the coordinates are outside the allowed ranges and the DoExtrapolate
-  ! argument is not present the code stops. If the DoExtrapolate argument
-  ! is present and false, the last grid cell value is used. If DoExtrapolate
-  ! is present and true, second order extrapolation is used.
-
-  ! Examples of usage:
-  !
-  ! Cell based 2D uniform grid with ghost cells, scalar valued:
-  !
-  !     InterpolatedValue = bilinear(Value_II, 0, nI+1, 0, nJ+1, &
-  !                         [ (x - x0)/DeltaX, (y - y0)/DeltaY) ] )
-  !
-  ! Node based 2D grid with x(1)=y(1)=0.0, vector valued:
-  !
-  !     InterpolatedValue_V = bilinear(Value_VII, nVar, 1, nI, 1, nJ, &
-  !                        [ x/DeltaX+1, y/DeltaY+1 ] )
-  !
-  ! Nonuniform 3D grid with ghost cells, third coordinate is uniform,
-  ! scalar valued:
-  !
-  !     InterpolatedValue = trilinear(Value_III, -1, nI+2, -1, nJ+2, -1, nK+2,&
-  !                       [ x, y, (z - z0)/DeltaZ ], x_I, y_I)
-  !
-
-  use ModInterpolateScalar
-  use ModUtilities, ONLY: CON_stop, find_cell
-  use ModKind,      ONLY: Real4_, Real8_
-
-  implicit none
-
-  private ! except
-
-  public :: interpolate_scalar  ! interpolate real scalar in 1...5D
-  public :: interpolate_scalar4 ! single precision scalar
-  public :: interpolate_vector  ! interpolate real vector in 1...5D
-  public :: interpolate_vector4 ! single precision vector
-  public :: linear              ! interpolate integer/real/complex in 1D
-  public :: bilinear            ! interpolate integer/real/complex in 2D
-  public :: trilinear           ! interpolate integer/real/complex in 3D
-  public :: quadlinear          ! interpolate integer/real/complex in 4D
-  public :: pentalinear         ! interpolate integer/real/complex in 5D
-  public :: find_cell           ! find cell in non-uniform grid
-  public :: fit_parabola        ! fit a parabola around an extremum
-  public :: test_interpolation  ! unit test
-
-  character(len=*), parameter :: NameMod='ModInterpolate'
-
-  interface linear
-     module procedure linear_scalar, linear_scalar_real4, &
-          linear_vector, linear_vector_real4
-  end interface
-
-  interface bilinear
-     module procedure bilinear_scalar, bilinear_scalar_real4, &
-          bilinear_vector, bilinear_vector_real4
-  end interface
-
-  interface trilinear
-     module procedure trilinear_scalar, trilinear_scalar_real4, &
-          trilinear_vector, trilinear_vector_real4
-  end interface
-
-  interface quadlinear
-     module procedure quadlinear_scalar, quadlinear_scalar_real4, &
-          quadlinear_vector, quadlinear_vector_real4
-  end interface
-
-  interface pentalinear
-     module procedure pentalinear_scalar, pentalinear_scalar_real4, &
-          pentalinear_vector, pentalinear_vector_real4
-  end interface
-
-contains
-  !============================================================================
   function interpolate_vector( &
        a_VC, nVar, nDim, Min_D, Max_D, x_D, &
        x1_I, x2_I, x3_I, x4_I, x5_I, &
@@ -1117,7 +1043,7 @@ contains
     ! interpolate default precision real a_VI vector array
 
     integer, intent(in):: nVar, iMin, iMax
-    real,    intent(in):: a_VI(nVar,iMin:iMax)
+    real(Real8_), intent(in):: a_VI(nVar,iMin:iMax)
 
     real,         intent(in), optional :: x, x_I(iMin:), Dist
     real(Real8_), intent(in), optional :: x8, x8_I(iMin:)
@@ -1216,8 +1142,8 @@ contains
     !$acc routine seq
     ! Calculate bilinear interpolation of default precision real a_VII
 
-    integer, intent(in) :: nVar, iMin, iMax, jMin, jMax
-    real, intent(in)    :: a_VII(nVar, iMin:iMax,jMin:jMax)
+    integer, intent(in):: nVar, iMin, iMax, jMin, jMax
+    real(Real8_), intent(in):: a_VII(nVar, iMin:iMax,jMin:jMax)
 
     real,    intent(in), optional:: Xy_D(2), x_I(iMin:), y_I(jMin:), Dist_D(2)
     logical, intent(in), optional:: DoExtrapolate
@@ -1331,7 +1257,7 @@ contains
     ! Calculate trilinear interpolation of a_III at position Xyz_D
 
     integer, intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax
-    real,    intent(in):: a_VIII(nVar,iMin:iMax,jMin:jMax,kMin:kMax)
+    real(Real8_), intent(in):: a_VIII(nVar,iMin:iMax,jMin:jMax,kMin:kMax)
 
     real,    intent(in), optional:: &
          Xyz_D(3), x_I(iMin:), y_I(jMin:), z_I(kMin:), Dist_D(3)
@@ -1469,7 +1395,8 @@ contains
     ! Calculate quadlinear interpolation of single precision a_I4
 
     integer, intent(in):: nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax
-    real,    intent(in):: a_VI4(nVar,iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax)
+    real(Real8_), intent(in):: &
+         a_VI4(nVar,iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax)
     real,    intent(in), optional:: &
          x_D(4), x1_I(iMin:), x2_I(jMin:), x3_I(kMin:), x4_I(lMin:), Dist_D(4)
     logical, intent(in), optional:: DoExtrapolate
@@ -1644,7 +1571,7 @@ contains
 
     integer, intent(in):: &
          nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, mMin, mMax
-    real,    intent(in):: &
+    real(Real8_), intent(in):: &
          a_VI5(nVar,iMin:iMax,jMin:jMax,kMin:kMax,lMin:lMax,mMin:mMax)
     real,    intent(in), optional:: x_D(5), Dist_D(5), &
          x1_I(iMin:), x2_I(jMin:), x3_I(kMin:), x4_I(lMin:), x5_I(mMin:)
