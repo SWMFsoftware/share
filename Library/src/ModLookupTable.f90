@@ -1202,7 +1202,7 @@ contains
 
   subroutine interpolate_arg1(iTable, Arg1, Value_V, DoExtrapolate)
     !$acc routine seq
-    
+
     ! Return the array of values Value_V corresponding to argument Arg1.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
@@ -1222,7 +1222,7 @@ contains
 
   subroutine interpolate_arg2(iTable, Arg1, Arg2, Value_V, DoExtrapolate)
     !$acc routine seq
-    
+
     ! Return the array of values Value_V corresponding to arguments
     ! Arg1 and Arg2.
     ! If DoExtrapolate is not present, stop with an error if the arguments
@@ -1244,7 +1244,7 @@ contains
 
   subroutine interpolate_arg3(iTable, Arg1, Arg2, Arg3, Value_V, DoExtrapolate)
     !$acc routine seq
-    
+
     ! Return the array of values Value_V corresponding to arguments
     ! Arg1, Arg2 and Arg3.
     ! If DoExtrapolate is not present, stop with an error if the arguments
@@ -1267,7 +1267,7 @@ contains
   subroutine interpolate_arg4(iTable, Arg1, Arg2, Arg3, Arg4, Value_V, &
        DoExtrapolate)
     !$acc routine seq
-    
+
     ! Return the array of values Value_V corresponding to arguments
     ! Arg1, Arg2, Arg3, and Arg4.
     ! If DoExtrapolate is not present, stop with an error if the arguments
@@ -1290,7 +1290,7 @@ contains
   subroutine interpolate_arg5(iTable, Arg1, Arg2, Arg3, Arg4, Arg5, Value_V, &
        DoExtrapolate)
     !$acc routine seq
-    
+
     ! Return the array of values Value_V corresponding to arguments
     ! Arg1, Arg2, Arg3, Arg4, and Arg5.
     ! If DoExtrapolate is not present, stop with an error if the arguments
@@ -1312,7 +1312,7 @@ contains
 
   subroutine interpolate_arg1_scalar(iTable, Arg1, Value, DoExtrapolate)
     !$acc routine seq
-    
+
     ! Return the scalar Value corresponding to argument Arg1.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
@@ -1335,7 +1335,7 @@ contains
 
   subroutine interpolate_arg2_scalar(iTable, Arg1, Arg2, Value, DoExtrapolate)
     !$acc routine seq
-    
+
     ! Return the scalar Value corresponding to arguments Arg1 and Arg2.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
@@ -1359,7 +1359,7 @@ contains
   subroutine interpolate_arg3_scalar(iTable, Arg1, Arg2, Arg3, Value, &
        DoExtrapolate)
     !$acc routine seq
-    
+
     ! Return the scalar Value corresponding to arguments Arg1, Arg2 and Arg3.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
@@ -1384,7 +1384,7 @@ contains
   subroutine interpolate_arg4_scalar(iTable, Arg1, Arg2, Arg3, Arg4, Value, &
        DoExtrapolate)
     !$acc routine seq
-    
+
     ! Return the scalar Value corresponding to arguments Arg1 ... Arg4.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
@@ -1409,7 +1409,7 @@ contains
   subroutine interpolate_arg5_scalar(iTable, Arg1, Arg2, Arg3, Arg4, Arg5, &
        Value, DoExtrapolate)
     !$acc routine seq
-    
+
     ! Return the scalar Value corresponding to arguments Arg1 ... Arg5.
     ! If DoExtrapolate is not present, stop with an error if the arguments
     ! are out of range. If it is present and false, return the value of
@@ -1430,10 +1430,10 @@ contains
 
   end subroutine interpolate_arg5_scalar
   !============================================================================
-  
+
   subroutine interpolate_arg_array(iTable, ArgIn_I, Value_V, DoExtrapolate)
     !$acc routine seq
-    
+
     ! Return the array of values Value_V corresponding to arguments
     ! ArgIn_I in iTable. Use linear interpolation.
     ! If DoExtrapolate is not present, stop with an error if the arguments
@@ -1452,14 +1452,14 @@ contains
 
     integer :: MinIndex_I(5)
 
+#ifndef _OPENACC
     character(len=*), parameter:: NameSub = 'interpolate_arg_array'
     !--------------------------------------------------------------------------
-#ifndef _OPENACC    
     if(iTable < 1 .or. iTable > nTable) call CON_stop(NameSub// &
          ': incorrect value for iTable=', iTable)
-#endif    
+#endif
     MinIndex_I = 1
-    
+
     Ptr => Table_I(iTable)
     Arg_I(1:Ptr%nIndex) = ArgIn_I(1:Ptr%nIndex)
 

@@ -117,9 +117,9 @@ contains
             Min_D(4), Max_D(4), Min_D(5), Max_D(5), &
             x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
     case default
-#ifndef _OPENACC       
+#ifndef _OPENACC
        call CON_stop(NameSub//' nDim should be 1 to 5')
-#endif       
+#endif
     end select
 
   end function interpolate_scalar
@@ -170,9 +170,9 @@ contains
              Min_D(4), Max_D(4), Min_D(5), Max_D(5), &
              x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
      case default
-#ifndef _OPENACC        
+#ifndef _OPENACC
         call CON_stop(NameSub//' nDim should be 1 to 5')
-#endif        
+#endif
     end select
 
   end function interpolate_scalar4
@@ -1038,9 +1038,9 @@ contains
             Min_D(4), Max_D(4), Min_D(5), Max_D(5), &
             x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
     case default
-#ifndef _OPENACC      
+#ifndef _OPENACC
        call CON_stop(NameSub//' nDim should be 1 to 5')
-#endif       
+#endif
     end select
 
   end function interpolate_vector
@@ -1104,9 +1104,9 @@ contains
              Min_D(4), Max_D(4), Min_D(5), Max_D(5), &
              x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
      case default
-#ifndef _OPENACC        
+#ifndef _OPENACC
         call CON_stop(NameSub//' nDim should be 1 to 5')
-#endif        
+#endif
     end select
 
   end function interpolate_vector4
@@ -1868,7 +1868,7 @@ contains
   !============================================================================
   subroutine fit_parabola(x_I, y_I, &
        xExtremumOut, yExtremumOut, Weight2Out_I, Weight3Out_I)
-    
+
     ! Given 3 discrete points at x_D and 3 function values y_D
     ! with the middle point being the discrete extrem value,
     ! find the extremum value of the parabola going through the points,
