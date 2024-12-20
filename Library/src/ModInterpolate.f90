@@ -53,19 +53,19 @@ module ModInterpolateScalar
   public :: interpolate_scalar4 ! single precision scalar
 
   ! interpolate real in 1D
-  public :: linear_scalar_real, linear_scalar_real4
+  public :: linear_scalar, linear_scalar_real4
 
   ! interpolate real in 2D
-  public :: bilinear_scalar_real, bilinear_scalar_real4
+  public :: bilinear_scalar, bilinear_scalar_real4
 
   ! interpolate real in 3D
-  public :: trilinear_scalar_real, trilinear_scalar_real4
+  public :: trilinear_scalar, trilinear_scalar_real4
 
   ! interpolate real in 4D
-  public :: quadlinear_scalar_real, quadlinear_scalar_real4
+  public :: quadlinear_scalar, quadlinear_scalar_real4
 
   ! interpolate real in 5D
-  public :: pentalinear_scalar_real, pentalinear_scalar_real4
+  public :: pentalinear_scalar, pentalinear_scalar_real4
 
   character(len=*), parameter :: NameMod='ModInterpolateScalar'
 
@@ -92,27 +92,27 @@ contains
     select case(nDim)
     case(1)
        if(present(iCell_D))then
-          interpolate_scalar = linear_scalar_real( a_C, &
+          interpolate_scalar = linear_scalar( a_C, &
                Min_D(1), Max_D(1), x_D(1), iCell=iCell_D(1), Dist=Dist_D(1))
        else
-          interpolate_scalar = linear_scalar_real( a_C, &
+          interpolate_scalar = linear_scalar( a_C, &
                Min_D(1), Max_D(1), x_D(1), x1_I, DoExtrapolate)
        end if
     case(2)
-       interpolate_scalar = bilinear_scalar_real( a_C, &
+       interpolate_scalar = bilinear_scalar( a_C, &
             Min_D(1), Max_D(1), Min_D(2), Max_D(2), &
             x_D, x1_I, x2_I, DoExtrapolate, iCell_D, Dist_D)
     case(3)
-       interpolate_scalar = trilinear_scalar_real( a_C, &
+       interpolate_scalar = trilinear_scalar( a_C, &
             Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
             x_D, x1_I, x2_I, x3_I, DoExtrapolate, iCell_D, Dist_D)
     case(4)
-       interpolate_scalar = quadlinear_scalar_real( a_C, &
+       interpolate_scalar = quadlinear_scalar( a_C, &
             Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
             Min_D(4), Max_D(4), &
             x_D, x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
     case(5)
-       interpolate_scalar = pentalinear_scalar_real( a_C, &
+       interpolate_scalar = pentalinear_scalar( a_C, &
             Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
             Min_D(4), Max_D(4), Min_D(5), Max_D(5), &
             x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
@@ -177,7 +177,7 @@ contains
 
   end function interpolate_scalar4
   !============================================================================
-  real function linear_scalar_real(a_I, iMin, iMax, x, x_I, DoExtrapolate, &
+  real function linear_scalar(a_I, iMin, iMax, x, x_I, DoExtrapolate, &
        iCell, Dist)
     !$acc routine seq
     ! Interface for default precision real array
@@ -191,7 +191,7 @@ contains
     integer :: i1, i2
     real    :: Dx1, Dx2
 
-    character(len=*), parameter:: NameSub = 'linear_scalar_real'
+    character(len=*), parameter:: NameSub = 'linear_scalar'
     !--------------------------------------------------------------------------
     if ( present(iCell) .and. present(Dist) ) then
 
@@ -214,9 +214,9 @@ contains
     end if
 
     ! Perform interpolation (or extrapolation)
-    linear_scalar_real = Dx2*a_I(i1) + Dx1*a_I(i2)
+    linear_scalar = Dx2*a_I(i1) + Dx1*a_I(i2)
 
-  end function linear_scalar_real
+  end function linear_scalar
   !============================================================================
   real function linear_scalar_real4(a_I, iMin, iMax, x, x_I, DoExtrapolate, &
        iCell, Dist)
@@ -258,7 +258,7 @@ contains
     linear_scalar_real4 = Dx2*a_I(i1) + Dx1*a_I(i2)
   end function linear_scalar_real4
   !============================================================================
-  real function bilinear_scalar_real( &
+  real function bilinear_scalar( &
        a_II, iMin, iMax, jMin, jMax, Xy_D, x_I, y_I, DoExtrapolate, &
        iCell_D, Dist_D)
     !$acc routine seq
@@ -272,7 +272,7 @@ contains
 
     integer :: i1, i2, j1, j2
     real    :: Dx1, Dx2, Dy1, Dy2
-    character(len=*), parameter:: NameSub = 'bilinear_scalar_real'
+    character(len=*), parameter:: NameSub = 'bilinear_scalar'
     !--------------------------------------------------------------------------
     if ( present(iCell_D) .and. present(Dist_D) ) then
 
@@ -304,11 +304,11 @@ contains
     end if
 
     ! Perform interpolation (or extrapolation)
-    bilinear_scalar_real = Dy2*( Dx2*a_II(i1,j1)   &
+    bilinear_scalar = Dy2*( Dx2*a_II(i1,j1)   &
          +                  Dx1*a_II(i2,j1))  &
          +            Dy1*( Dx2*a_II(i1,j2)   &
          +                  Dx1*a_II(i2,j2))
-  end function bilinear_scalar_real
+  end function bilinear_scalar
   !============================================================================
   real function bilinear_scalar_real4( &
        a_II, iMin, iMax, jMin, jMax, Xy_D, x_I, y_I, DoExtrapolate, &
@@ -362,7 +362,7 @@ contains
          +                  Dx1*a_II(i2,j2))
   end function bilinear_scalar_real4
   !============================================================================
-  real function trilinear_scalar_real( &
+  real function trilinear_scalar( &
        a_III, iMin, iMax, jMin, jMax, kMin, kMax, Xyz_D, &
        x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
     !$acc routine seq
@@ -378,7 +378,7 @@ contains
     integer :: i1, i2, j1, j2, k1, k2
     real    :: Dx1, Dx2, Dy1, Dy2, Dz1, Dz2
 
-    character(len=*), parameter:: NameSub = 'trilinear_scalar_real'
+    character(len=*), parameter:: NameSub = 'trilinear_scalar'
     !--------------------------------------------------------------------------
     if ( present(iCell_D) .and. present(Dist_D) ) then
 
@@ -419,7 +419,7 @@ contains
     end if
 
     ! Perform interpolation (or extrapolation)
-    trilinear_scalar_real = Dz2*( Dy2*( Dx2*a_III(i1,j1,k1)   &
+    trilinear_scalar = Dz2*( Dy2*( Dx2*a_III(i1,j1,k1)   &
          +                         Dx1*a_III(i2,j1,k1))  &
          +                   Dy1*( Dx2*a_III(i1,j2,k1)   &
          +                         Dx1*a_III(i2,j2,k1))) &
@@ -427,7 +427,7 @@ contains
          +                         Dx1*a_III(i2,j1,k2))  &
          +                   Dy1*( Dx2*a_III(i1,j2,k2)   &
          +                         Dx1*a_III(i2,j2,k2)))
-  end function trilinear_scalar_real
+  end function trilinear_scalar
   !============================================================================
   real function trilinear_scalar_real4( &
        a_III, iMin, iMax, jMin, jMax, kMin, kMax, Xyz_D, &
@@ -496,7 +496,7 @@ contains
          +                         Dx1*a_III(i2,j2,k2)))
   end function trilinear_scalar_real4
   !============================================================================
-  real function quadlinear_scalar_real( &
+  real function quadlinear_scalar( &
        a_I4, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, &
        x_D, x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
     !$acc routine seq
@@ -511,7 +511,7 @@ contains
 
     integer :: i1, i2, j1, j2, k1, k2, l1, l2
     real    :: Dx1L, Dx1R, Dx2L, Dx2R, Dx3L, Dx3R, Dx4L, Dx4R
-    character(len=*), parameter:: NameSub = 'quadlinear_scalar_real'
+    character(len=*), parameter:: NameSub = 'quadlinear_scalar'
     !--------------------------------------------------------------------------
     if ( present(iCell_D) .and. present(Dist_D) ) then
 
@@ -560,7 +560,7 @@ contains
 
     end if
 
-    quadlinear_scalar_real = &
+    quadlinear_scalar = &
          +Dx4R*(Dx3R*(Dx2R*(Dx1R*a_I4(i1,j1,k1,l1)   &
          +                  Dx1L*a_I4(i2,j1,k1,l1))  &
          +            Dx2L*(Dx1R*a_I4(i1,j2,k1,l1)   &
@@ -577,7 +577,7 @@ contains
          +                  Dx1L*a_I4(i2,j1,k2,l2))  &
          +            Dx2L*(Dx1R*a_I4(i1,j2,k2,l2)   &
          +                  Dx1L*a_I4(i2,j2,k2,l2))))
-  end function quadlinear_scalar_real
+  end function quadlinear_scalar
   !============================================================================
   real function quadlinear_scalar_real4( &
        a_I4, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, &
@@ -662,7 +662,7 @@ contains
          +                  Dx1L*a_I4(i2,j2,k2,l2))))
   end function quadlinear_scalar_real4
   !============================================================================
-  real function pentalinear_scalar_real( &
+  real function pentalinear_scalar( &
        a_I5, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, mMin, mMax, &
        x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
     !$acc routine seq
@@ -681,7 +681,7 @@ contains
     integer :: i1, i2, j1, j2, k1, k2, l1, l2, m1, m2
     real    :: Dx1L, Dx1R, Dx2L, Dx2R, Dx3L, Dx3R, Dx4L, Dx4R, Dx5L, Dx5R
 
-    character(len=*), parameter:: NameSub = 'pentalinear_scalar_real'
+    character(len=*), parameter:: NameSub = 'pentalinear_scalar'
     !--------------------------------------------------------------------------
     if ( present(iCell_D) .and. present(Dist_D) ) then
 
@@ -739,7 +739,7 @@ contains
 
     end if
 
-    pentalinear_scalar_real = &
+    pentalinear_scalar = &
          +Dx5R*(Dx4R*(Dx3R*(Dx2R*(Dx1R*a_I5(i1,j1,k1,l1,m1)     &
          +                        Dx1L*a_I5(i2,j1,k1,l1,m1))    &
          +                  Dx2L*(Dx1R*a_I5(i1,j2,k1,l1,m1)     &
@@ -773,7 +773,7 @@ contains
          +                  Dx2L*(Dx1R*a_I5(i1,j2,k2,l2,m2)     &
          +                        Dx1L*a_I5(i2,j2,k2,l2,m2)))))
 
-  end function pentalinear_scalar_real
+  end function pentalinear_scalar
   !============================================================================
   real function pentalinear_scalar_real4( &
        a_I5, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, mMin, mMax, &
@@ -953,28 +953,28 @@ module ModInterpolate
   character(len=*), parameter :: NameMod='ModInterpolate'
 
   interface linear
-     module procedure linear_scalar_real, linear_scalar_real4, &
-          linear_vector_real, linear_vector_real4
+     module procedure linear_scalar, linear_scalar_real4, &
+          linear_vector, linear_vector_real4
   end interface
 
   interface bilinear
-     module procedure bilinear_scalar_real, bilinear_scalar_real4, &
-          bilinear_vector_real, bilinear_vector_real4
+     module procedure bilinear_scalar, bilinear_scalar_real4, &
+          bilinear_vector, bilinear_vector_real4
   end interface
 
   interface trilinear
-     module procedure trilinear_scalar_real, trilinear_scalar_real4, &
-          trilinear_vector_real, trilinear_vector_real4
+     module procedure trilinear_scalar, trilinear_scalar_real4, &
+          trilinear_vector, trilinear_vector_real4
   end interface
 
   interface quadlinear
-     module procedure quadlinear_scalar_real, quadlinear_scalar_real4, &
-          quadlinear_vector_real, quadlinear_vector_real4
+     module procedure quadlinear_scalar, quadlinear_scalar_real4, &
+          quadlinear_vector, quadlinear_vector_real4
   end interface
 
   interface pentalinear
-     module procedure pentalinear_scalar_real, pentalinear_scalar_real4, &
-          pentalinear_vector_real, pentalinear_vector_real4
+     module procedure pentalinear_scalar, pentalinear_scalar_real4, &
+          pentalinear_vector, pentalinear_vector_real4
   end interface
 
 contains
@@ -1009,31 +1009,31 @@ contains
     select case(nDim)
     case(1)
        if(present(iCell_D))then
-          interpolate_vector = linear_vector_real( a_VC, nVar, &
+          interpolate_vector = linear_vector( a_VC, nVar, &
                Min_D(1), Max_D(1), iCell=iCell_D(1), Dist=Dist_D(1))
        elseif(present(x8_D))then
-          interpolate_vector = linear_vector_real( a_VC, nVar, &
+          interpolate_vector = linear_vector( a_VC, nVar, &
                Min_D(1), Max_D(1), x8=x8_D(1), x8_I=x8_I, &
                DoExtrapolate=DoExtrapolate)
        else
-          interpolate_vector = linear_vector_real( a_VC, nVar, &
+          interpolate_vector = linear_vector( a_VC, nVar, &
                Min_D(1), Max_D(1), x_D(1), x1_I, DoExtrapolate=DoExtrapolate)
        end if
     case(2)
-       interpolate_vector = bilinear_vector_real( a_VC, nVar, &
+       interpolate_vector = bilinear_vector( a_VC, nVar, &
             Min_D(1), Max_D(1), Min_D(2), Max_D(2), &
             x_D, x1_I, x2_I, DoExtrapolate, iCell_D, Dist_D)
     case(3)
-       interpolate_vector = trilinear_vector_real( a_VC, nVar, &
+       interpolate_vector = trilinear_vector( a_VC, nVar, &
             Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
             x_D, x1_I, x2_I, x3_I, DoExtrapolate, iCell_D, Dist_D)
     case(4)
-       interpolate_vector = quadlinear_vector_real( a_VC, nVar, &
+       interpolate_vector = quadlinear_vector( a_VC, nVar, &
             Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
             Min_D(4), Max_D(4), &
             x_D, x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
     case(5)
-       interpolate_vector = pentalinear_vector_real( a_VC, nVar, &
+       interpolate_vector = pentalinear_vector( a_VC, nVar, &
             Min_D(1), Max_D(1), Min_D(2), Max_D(2), Min_D(3), Max_D(3), &
             Min_D(4), Max_D(4), Min_D(5), Max_D(5), &
             x_D, x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
@@ -1111,7 +1111,7 @@ contains
 
   end function interpolate_vector4
   !============================================================================
-  function linear_vector_real(a_VI, nVar, iMin, iMax, x, x_I, x8, x8_I, &
+  function linear_vector(a_VI, nVar, iMin, iMax, x, x_I, x8, x8_I, &
        DoExtrapolate, iCell, Dist)
     !$acc routine seq
     ! interpolate default precision real a_VI vector array
@@ -1125,12 +1125,12 @@ contains
     integer,      intent(in), optional :: iCell
 
     ! return value
-    real                :: linear_vector_real(nVar)
+    real                :: linear_vector(nVar)
 
     integer :: i1, i2
     real    :: Dx1, Dx2
 
-    character(len=*), parameter:: NameSub = 'linear_vector_real'
+    character(len=*), parameter:: NameSub = 'linear_vector'
     !--------------------------------------------------------------------------
     if ( present(iCell) .and. present(Dist) ) then
 
@@ -1157,9 +1157,9 @@ contains
     end if
 
     ! Perform interpolation (or extrapolation) for multiple variables
-    linear_vector_real = Dx2*a_VI(:,i1) + Dx1*a_VI(:,i2)
+    linear_vector = Dx2*a_VI(:,i1) + Dx1*a_VI(:,i2)
 
-  end function linear_vector_real
+  end function linear_vector
   !============================================================================
   function linear_vector_real4(a_VI, nVar, iMin, iMax, x, x_I, x8, x8_I, &
        DoExtrapolate, iCell, Dist)
@@ -1210,7 +1210,7 @@ contains
     linear_vector_real4 = Dx2*a_VI(:,i1) + Dx1*a_VI(:,i2)
   end function linear_vector_real4
   !============================================================================
-  function bilinear_vector_real( &
+  function bilinear_vector( &
        a_VII, nVar, iMin, iMax, jMin, jMax, Xy_D, x_I, y_I, DoExtrapolate, &
        iCell_D, Dist_D)
     !$acc routine seq
@@ -1224,12 +1224,12 @@ contains
     integer, intent(in), optional:: iCell_D(2)
 
     ! return value
-    real                :: bilinear_vector_real(nVar)
+    real                :: bilinear_vector(nVar)
 
     integer :: i1, i2, j1, j2
     real :: Dx1, Dx2, Dy1, Dy2
 
-    character(len=*), parameter:: NameSub = 'bilinear_vector_real'
+    character(len=*), parameter:: NameSub = 'bilinear_vector'
     !--------------------------------------------------------------------------
     if ( present(iCell_D) .and. present(Dist_D) ) then
 
@@ -1261,11 +1261,11 @@ contains
     end if
 
     ! Perform interpolation (or extrapolation) for multiple variables
-    bilinear_vector_real = Dy2*( Dx2*a_VII(:,i1,j1)   &
+    bilinear_vector = Dy2*( Dx2*a_VII(:,i1,j1)   &
          +                  Dx1*a_VII(:,i2,j1))  &
          +            Dy1*( Dx2*a_VII(:,i1,j2)   &
          +                  Dx1*a_VII(:,i2,j2))
-  end function bilinear_vector_real
+  end function bilinear_vector
   !============================================================================
   function bilinear_vector_real4( &
        a_VII, nVar, iMin, iMax, jMin, jMax, Xy_D, x_I, y_I, DoExtrapolate, &
@@ -1324,7 +1324,7 @@ contains
          +                  Dx1*a_VII(:,i2,j2))
   end function bilinear_vector_real4
   !============================================================================
-  function trilinear_vector_real( &
+  function trilinear_vector( &
        a_VIII, nVar, iMin, iMax, jMin, jMax, kMin, kMax, Xyz_D, &
        x_I, y_I, z_I, DoExtrapolate, iCell_D, Dist_D)
     !$acc routine seq
@@ -1339,11 +1339,11 @@ contains
     integer,    intent(in), optional :: iCell_D(3)
 
     ! return value
-    real :: trilinear_vector_real(nVar)
+    real :: trilinear_vector(nVar)
 
     integer :: i1, i2, j1, j2, k1, k2
     real    :: Dx1, Dx2, Dy1, Dy2, Dz1, Dz2
-    character(len=*), parameter:: NameSub = 'trilinear_vector_real'
+    character(len=*), parameter:: NameSub = 'trilinear_vector'
     !--------------------------------------------------------------------------
     if ( present(iCell_D) .and. present(Dist_D) ) then
 
@@ -1383,7 +1383,7 @@ contains
 
     end if
 
-    trilinear_vector_real = Dz2*(Dy2*(Dx2*a_VIII(:,i1,j1,k1)   &
+    trilinear_vector = Dz2*(Dy2*(Dx2*a_VIII(:,i1,j1,k1)   &
          +                       Dx1*a_VIII(:,i2,j1,k1))  &
          +                  Dy1*(Dx2*a_VIII(:,i1,j2,k1)   &
          +                       Dx1*a_VIII(:,i2,j2,k1))) &
@@ -1391,7 +1391,7 @@ contains
          +                       Dx1*a_VIII(:,i2,j1,k2))  &
          +                  Dy1*(Dx2*a_VIII(:,i1,j2,k2)   &
          +                       Dx1*a_VIII(:,i2,j2,k2)))
-  end function trilinear_vector_real
+  end function trilinear_vector
   !============================================================================
   function trilinear_vector_real4( &
        a_VIII, nVar, iMin, iMax, jMin, jMax, kMin, kMax, Xyz_D, &
@@ -1462,7 +1462,7 @@ contains
          +                       Dx1*a_VIII(:,i2,j2,k2)))
   end function trilinear_vector_real4
   !============================================================================
-  function quadlinear_vector_real( &
+  function quadlinear_vector( &
        a_VI4, nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, x_D, &
        x1_I, x2_I, x3_I, x4_I, DoExtrapolate, iCell_D, Dist_D)
     !$acc routine seq
@@ -1476,11 +1476,11 @@ contains
     integer, intent(in), optional:: iCell_D(4)
 
     ! return value
-    real :: quadlinear_vector_real(nVar)
+    real :: quadlinear_vector(nVar)
 
     integer :: i1, i2, j1, j2, k1, k2, l1, l2
     real    :: Dx1L, Dx1R, Dx2L, Dx2R, Dx3L, Dx3R, Dx4L, Dx4R
-    character(len=*), parameter:: NameSub = 'quadlinear_vector_real'
+    character(len=*), parameter:: NameSub = 'quadlinear_vector'
     !--------------------------------------------------------------------------
     if ( present(iCell_D) .and. present(Dist_D) ) then
 
@@ -1529,7 +1529,7 @@ contains
 
     end if
 
-    quadlinear_vector_real = &
+    quadlinear_vector = &
          +Dx4R*(Dx3R*(Dx2R*(Dx1R*a_VI4(:,i1,j1,k1,l1)   &
          +                  Dx1L*a_VI4(:,i2,j1,k1,l1))  &
          +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k1,l1)   &
@@ -1546,7 +1546,7 @@ contains
          +                  Dx1L*a_VI4(:,i2,j1,k2,l2))  &
          +            Dx2L*(Dx1R*a_VI4(:,i1,j2,k2,l2)   &
          +                  Dx1L*a_VI4(:,i2,j2,k2,l2))))
-  end function quadlinear_vector_real
+  end function quadlinear_vector
   !============================================================================
   function quadlinear_vector_real4( &
        a_VI4, nVar, iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, x_D, &
@@ -1635,7 +1635,7 @@ contains
          +                  Dx1L*a_VI4(:,i2,j2,k2,l2))))
   end function quadlinear_vector_real4
   !============================================================================
-  function pentalinear_vector_real( &
+  function pentalinear_vector( &
        a_VI5, nVar, &
        iMin, iMax, jMin, jMax, kMin, kMax, lMin, lMax, mMin, mMax, x_D, &
        x1_I, x2_I, x3_I, x4_I, x5_I, DoExtrapolate, iCell_D, Dist_D)
@@ -1653,11 +1653,11 @@ contains
     integer, intent(in), optional:: iCell_D(5)
 
     ! return value
-    real :: pentalinear_vector_real(nVar)
+    real :: pentalinear_vector(nVar)
 
     integer :: i1, i2, j1, j2, k1, k2, l1, l2, m1, m2
     real    :: Dx1L, Dx1R, Dx2L, Dx2R, Dx3L, Dx3R, Dx4L, Dx4R, Dx5L, Dx5R
-    character(len=*), parameter:: NameSub = 'pentalinear_vector_real'
+    character(len=*), parameter:: NameSub = 'pentalinear_vector'
     !--------------------------------------------------------------------------
     if ( present(iCell_D) .and. present(Dist_D) ) then
 
@@ -1715,7 +1715,7 @@ contains
 
     end if
 
-    pentalinear_vector_real = &
+    pentalinear_vector = &
          +Dx5R*(Dx4R*(Dx3R*(Dx2R*(Dx1R*a_VI5(:,i1,j1,k1,l1,m1)     &
          +                        Dx1L*a_VI5(:,i2,j1,k1,l1,m1))    &
          +                  Dx2L*(Dx1R*a_VI5(:,i1,j2,k1,l1,m1)     &
@@ -1748,7 +1748,7 @@ contains
          +                        Dx1L*a_VI5(:,i2,j1,k2,l2,m2))    &
          +                  Dx2L*(Dx1R*a_VI5(:,i1,j2,k2,l2,m2)     &
          +                        Dx1L*a_VI5(:,i2,j2,k2,l2,m2)))))
-  end function pentalinear_vector_real
+  end function pentalinear_vector
   !============================================================================
   function pentalinear_vector_real4( &
        a_VI5, nVar, &
