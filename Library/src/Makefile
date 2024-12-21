@@ -47,7 +47,6 @@ OBJECTS = \
 	ModNumConst.o\
 	ModPlanetConst.o\
 	ModPlotFile.o\
-	ModPoissonBracket.o\
 	ModProcessVarName.o\
 	ModRandomNumber.o\
 	ModReadParam.o\

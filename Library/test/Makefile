@@ -26,7 +26,6 @@ help:
 	@echo "   test_plot_file        - test ModPlotFile"
 	@echo "   test_plot_file_simple - test ModPlotFileSimple"
 	@echo "   test_process_var_name - test ModProcessVarName"
-	@echo "   test_poisson_bracket  - test ModPoissonBracket"
 	@echo "   test_random_number    - test ModRandomNumber"
 	@echo "   test_ray_trace        - test CON_ray_trace"
 	@echo "   test_sort             - test ModSort"
@@ -62,7 +61,6 @@ test:
 	-@make test_planet_field
 	-@make test_plot_file
 	-@make test_plot_file_simple
-	-@make test_poisson_bracket
 	-@make test_random_number
 	-@make test_ray_trace
 	-@make test_sort
@@ -537,35 +535,5 @@ test_process_var_name_check:
 		test_process_var_name_compile.tmp test_process_var_name.tmp \
 		> test_process_var_name.diff)
 	@ls -l test_process_var_name.diff
-
-#######################################################################
-# optimization fails with gcc12 + nagfor
-test_poisson_bracket.o: test_poisson_bracket.f90
-	${COMPILE.f90} ${Cflag0} test_poisson_bracket.f90
-
-test_poisson_bracket_exe:
-	@(cd ../src; make LIB)
-	@make test_poisson_bracket.o
-	${LINK.f90} -o test_poisson.exe test_poisson_bracket.o \
-		-L${LIBDIR} -lSHARE ${Lflag}
-
-test_poisson_bracket:
-	rm -f test_poisson*.out test_dsa_*.out
-	@echo test_poisson_bracket starting	>  test_poisson.diff
-	@make test_poisson_bracket_exe		>> test_poisson.diff
-	@echo './test_poisson.exe'		>> test_poisson.diff
-	-@(./test_poisson.exe > test_poisson.diff)
-	@make test_poisson_bracket_check
-
-test_poisson_bracket_check:
-	-@(${DIFFNUM} -b -r=1e-6 -a=1e-7 \
-		test_poisson.out test_poisson.ref.out.gz > test_poisson.diff)
-	-@(${DIFFNUM} -b -r=1e-6 -a=1e-7 \
-		test_poisson2d.out test_poisson2d.ref.out.gz \
-		>> test_poisson.diff)
-	-@(${DIFFNUM} -b -a=1e-7 \
-		test_dsa_sa_mhd.out test_dsa_poisson.ref \
-		>> test_poisson.diff)
-	@ls -l test_poisson.diff
 
 #######################################################################

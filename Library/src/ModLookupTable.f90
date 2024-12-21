@@ -37,16 +37,18 @@ module ModLookupTable
   public:: interpolate_lookup_table ! interpolate from lookup table
   public:: get_lookup_table         ! get information from a lookup table
   public:: test_lookup_table        ! unit test
+  public:: copy_lookup_table_to_gpu ! copy Table_I to GPU
 
   integer, public, parameter:: MaxTable = 40 ! maximum number of tables
   integer, public :: nTable = 0     ! actual number of tables
+  !$acc declare create(nTable)
 
   public:: TableType
   type TableType
      character(len=100):: NameTable        ! unique name for identification
      character(len=4)  :: NameCommand      ! command: load, make, save
      character(len=100):: NameFile         ! file name containing the table
-     character(len=10) :: TypeFile='real4' ! file type (ascii, real4, real8)
+     character(len=10) :: TypeFile         ! file type (ascii, real4, real8)
      character(len=500):: StringDescription! description of table
      character(len=500):: NameVar          ! name of indexes and values
      integer:: nIndex                      ! number of function arguments
@@ -71,6 +73,7 @@ module ModLookupTable
 
   ! The array of tables
   type(TableType), public, target :: Table_I(MaxTable)
+  !$acc declare create(Table_I)
 
   ! private variables
 
@@ -191,6 +194,8 @@ contains
     ! For sake of more concise source code, use a pointer to the table
     Ptr => Table_I(iTable)
     Ptr%NameTable = NameTable
+
+    Ptr%TypeFile = 'real4'
 
     Ptr%NameCommand = NameCommand
     call lower_case(Ptr%NameCommand)
@@ -405,6 +410,7 @@ contains
        ! For sake of more concise source code, use a pointer to the table
        Ptr => Table_I(iTable)
        Ptr%NameTable = NameTable
+       Ptr%TypeFile = 'real4'
        if(iTableName == 1)then
 
           ! Read the parameters for this table
@@ -1195,6 +1201,7 @@ contains
   !============================================================================
 
   subroutine interpolate_arg1(iTable, Arg1, Value_V, DoExtrapolate)
+    !$acc routine seq
 
     ! Return the array of values Value_V corresponding to argument Arg1.
     ! If DoExtrapolate is not present, stop with an error if the arguments
@@ -1214,6 +1221,7 @@ contains
   !============================================================================
 
   subroutine interpolate_arg2(iTable, Arg1, Arg2, Value_V, DoExtrapolate)
+    !$acc routine seq
 
     ! Return the array of values Value_V corresponding to arguments
     ! Arg1 and Arg2.
@@ -1235,6 +1243,7 @@ contains
   !============================================================================
 
   subroutine interpolate_arg3(iTable, Arg1, Arg2, Arg3, Value_V, DoExtrapolate)
+    !$acc routine seq
 
     ! Return the array of values Value_V corresponding to arguments
     ! Arg1, Arg2 and Arg3.
@@ -1257,6 +1266,7 @@ contains
 
   subroutine interpolate_arg4(iTable, Arg1, Arg2, Arg3, Arg4, Value_V, &
        DoExtrapolate)
+    !$acc routine seq
 
     ! Return the array of values Value_V corresponding to arguments
     ! Arg1, Arg2, Arg3, and Arg4.
@@ -1279,6 +1289,7 @@ contains
 
   subroutine interpolate_arg5(iTable, Arg1, Arg2, Arg3, Arg4, Arg5, Value_V, &
        DoExtrapolate)
+    !$acc routine seq
 
     ! Return the array of values Value_V corresponding to arguments
     ! Arg1, Arg2, Arg3, Arg4, and Arg5.
@@ -1300,6 +1311,7 @@ contains
   !============================================================================
 
   subroutine interpolate_arg1_scalar(iTable, Arg1, Value, DoExtrapolate)
+    !$acc routine seq
 
     ! Return the scalar Value corresponding to argument Arg1.
     ! If DoExtrapolate is not present, stop with an error if the arguments
@@ -1322,6 +1334,7 @@ contains
   !============================================================================
 
   subroutine interpolate_arg2_scalar(iTable, Arg1, Arg2, Value, DoExtrapolate)
+    !$acc routine seq
 
     ! Return the scalar Value corresponding to arguments Arg1 and Arg2.
     ! If DoExtrapolate is not present, stop with an error if the arguments
@@ -1345,6 +1358,7 @@ contains
 
   subroutine interpolate_arg3_scalar(iTable, Arg1, Arg2, Arg3, Value, &
        DoExtrapolate)
+    !$acc routine seq
 
     ! Return the scalar Value corresponding to arguments Arg1, Arg2 and Arg3.
     ! If DoExtrapolate is not present, stop with an error if the arguments
@@ -1369,6 +1383,7 @@ contains
 
   subroutine interpolate_arg4_scalar(iTable, Arg1, Arg2, Arg3, Arg4, Value, &
        DoExtrapolate)
+    !$acc routine seq
 
     ! Return the scalar Value corresponding to arguments Arg1 ... Arg4.
     ! If DoExtrapolate is not present, stop with an error if the arguments
@@ -1393,6 +1408,7 @@ contains
 
   subroutine interpolate_arg5_scalar(iTable, Arg1, Arg2, Arg3, Arg4, Arg5, &
        Value, DoExtrapolate)
+    !$acc routine seq
 
     ! Return the scalar Value corresponding to arguments Arg1 ... Arg5.
     ! If DoExtrapolate is not present, stop with an error if the arguments
@@ -1416,6 +1432,7 @@ contains
   !============================================================================
 
   subroutine interpolate_arg_array(iTable, ArgIn_I, Value_V, DoExtrapolate)
+    !$acc routine seq
 
     ! Return the array of values Value_V corresponding to arguments
     ! ArgIn_I in iTable. Use linear interpolation.
@@ -1433,12 +1450,15 @@ contains
     real :: Arg_I(5)
     type(TableType), pointer:: Ptr
 
-    integer, parameter :: MinIndex_I(5) = 1
+    integer :: MinIndex_I(5)
 
+#ifndef _OPENACC
     character(len=*), parameter:: NameSub = 'interpolate_arg_array'
     !--------------------------------------------------------------------------
     if(iTable < 1 .or. iTable > nTable) call CON_stop(NameSub// &
          ': incorrect value for iTable=', iTable)
+#endif
+    MinIndex_I = 1
 
     Ptr => Table_I(iTable)
     Arg_I(1:Ptr%nIndex) = ArgIn_I(1:Ptr%nIndex)
@@ -1675,7 +1695,33 @@ contains
 
   end subroutine get_lookup_table
   !============================================================================
+  subroutine copy_lookup_table_to_gpu()
+    integer :: iTable
 
+    !$acc update device(nTable)
+    !$acc update device(Table_I)
+
+    ! Openacc does not support deep copy for user-defined type.
+    !--------------------------------------------------------------------------
+    do iTable = 1, nTable
+       !$acc enter data copyin(Table_I(iTable)%nIndex_I)
+       !$acc enter data copyin(Table_I(iTable)%IndexMin_I)
+       !$acc enter data copyin(Table_I(iTable)%IndexMax_I)
+       !$acc enter data copyin(Table_I(iTable)%dIndex_I)
+       !$acc enter data copyin(Table_I(iTable)%IsLogIndex_I)
+       !$acc enter data copyin(Table_I(iTable)%Value_VC)
+       !$acc enter data copyin(Table_I(iTable)%Value4_VC)
+       !$acc enter data copyin(Table_I(iTable)%Param_I)
+       !$acc enter data copyin(Table_I(iTable)%IsUniform_I)
+       !$acc enter data copyin(Table_I(iTable)%Index1_I)
+       !$acc enter data copyin(Table_I(iTable)%Index2_I)
+       !$acc enter data copyin(Table_I(iTable)%Index3_I)
+       !$acc enter data copyin(Table_I(iTable)%Index4_I)
+       !$acc enter data copyin(Table_I(iTable)%Index5_I)
+    end do
+
+  end subroutine copy_lookup_table_to_gpu
+  !============================================================================
   subroutine test_lookup_table
 
     use ModNumConst, ONLY: cPi, cHalfPi
