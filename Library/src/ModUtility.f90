@@ -1554,8 +1554,8 @@ contains
 #else
     i_gang = iBlock
 #endif
-  end function i_gang  
-  !============================================================================  
+  end function i_gang
+  !============================================================================
 #ifdef _OPENACC
   subroutine init_gpu(iComm, iProc, nGpu, iGpu)
 
