@@ -53,6 +53,7 @@ module ModUtilities
 #ifdef _OPENACC
   public:: init_gpu
 #endif
+  public:: i_gang
 
   logical, public :: DoFlush = .true. ! parameter for flush_unit
   logical, public :: DoMakeDir = .true. ! parameter for make_dir
@@ -1543,6 +1544,17 @@ contains
     end if
 
   end subroutine find_cell8
+  !============================================================================
+  integer function i_gang(iBlock)
+    !$acc routine seq
+    integer, intent(in) :: iBlock
+#ifndef _OPENACC
+    !--------------------------------------------------------------------------
+    i_gang = 1
+#else
+    i_gang = iBlock
+#endif
+  end function i_gang
   !============================================================================
 #ifdef _OPENACC
   subroutine init_gpu(iComm, iProc, nGpu, iGpu)
