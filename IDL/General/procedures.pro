@@ -4336,10 +4336,30 @@ pro plot_func
            plot,xx,yy,XSTYLE=noaxis+1,YSTYLE=noaxis+1,/NODATA,/NOERASE
      endif
 
-     if showmap or showusa then $
-        map_set, 0.0, 180., $
-                 /cylindrical, /continent, usa=showusa, /noborder, /noerase, $
-                 limit=[yrange(0),xrange(0),yrange(1),xrange(1)]
+     if showmap or showusa then begin
+        if plotmod eq 'lonlatn' then begin
+           if !y.range(0) lt !y.range(1) then $
+              map_set, 90.0, 0.0, latdel=10, /azimuthal, /continent, $
+                       usa=showusa, /noborder, /noerase, $
+                       limit=[90+yrange(0),0,90,360] $
+           else $
+              map_set, 90.0, 0.0, latdel=10, /azimuthal, /continent, $
+                       usa=showusa, /noborder, /noerase, $
+                       limit=[yrange(0),xrange(0),yrange(1),xrange(1)]
+        end else if plotmod eq 'lonlats' then begin
+           if !y.range(0) lt !y.range(1) then $
+              map_set, -90.0, 0.0, latdel=10, /azimuthal, /continent, $
+                       usa=showusa, /noborder, /noerase, $
+                       limit=[-90,0,-90+yrange(1),360] $
+           else $
+              map_set, -90.0, 0.0, latdel=10, /azimuthal, /continent, $
+                       usa=showusa, /noborder, /noerase, $
+                       limit=[yrange(0),xrange(0),yrange(1),xrange(1)]
+        end else $
+           map_set, 0.0, 180., $
+                    /cylindrical, /continent, usa=showusa, /noborder, $
+                    /noerase, limit=[yrange(0),xrange(0),yrange(1),xrange(1)]
+     endif
 
      !p.title = ''
 
