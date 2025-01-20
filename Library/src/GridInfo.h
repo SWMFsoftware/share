@@ -46,6 +46,8 @@ public:
     }
   }
 
+  void is_grid_new(bool in) { isNewGrid = in; }
+
   bool is_grid_new() const { return isNewGrid; }
 
   int get_patch_size(int iDim) { return patchSize[iDim]; }
