@@ -3,7 +3,6 @@
 #  portions used with permission 
 #  For more information, see http://csem.engin.umich.edu/tools/swmf
 use strict;
-use English;
 
 # Default values
 my $Output = "Makefile.DEPEND"; # Default output
@@ -18,13 +17,13 @@ my $WARNING = "WARNING in depend.pl:";
 # Read flags
 while($ARGV[0] =~ /-/){
     my $flag = shift(@ARGV);
-    if($flag =~ /^-o=/){$Output = $POSTMATCH};  # -o=Makefile.test
-    if($flag =~ /^-h/i){$Help = 1};             # -h -help -H -Help
-    if($flag =~ /^-v/){$Verbose = 1};           # -v
-    if($flag =~ /^-v=/){$Verbose = $POSTMATCH}; # -v=ModConductance
+    if($flag =~ /^-o=/){$Output = $'};  # -o=Makefile.test
+    if($flag =~ /^-h/i){$Help = 1};     # -h -help -H -Help
+    if($flag =~ /^-v/){$Verbose = 1};   # -v
+    if($flag =~ /^-v=/){$Verbose = $'}; # -v=ModConductance
     if($flag =~ /^(-p|-I)=?/){                  # -p=path -Ipath -I path
         # For "-I path" take the path from the next argument
-	push(@search, ($POSTMATCH or shift @ARGV));
+	push(@search, ($' or shift @ARGV));
     }
 }
 
