@@ -3,10 +3,12 @@
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 module ModPlotFile
 
-  ! Save or read VAC/IDL type plotfiles from 1 up to 3 dimensions.
+  ! Save or read SWMF (aka IDL) plotfiles from 1 up to 3 dimensions.
   ! ASCII, single (real4), or double (real8) precision binary file formats
   ! can be used.
-  ! The plot file contains 4 or 5 header lines:
+  !
+  ! The plot file contains 4 or 5 header lines
+  ! (each line is one record in binary format):
   !
   !    Header
   !    nStep Time nDim nParam nVar
@@ -23,12 +25,17 @@ module ModPlotFile
   ! Param1.. (nParam reals) parameter values (omitted if nParam is zero)
   ! NameVar  (string) space separated list of names for the
   !                   nDim coordinates, nVar variables and nParam parameters
+  !                   It is up to 500 characters.
   !
   ! The header is followed by the coordinate/variable data.
-  ! In ASCII files each line contains the coordinates+variables for one cell.
+  ! In ASCII files each line contains the coordinates+variables for one cell,
+  ! and the lines should have the same length.
   ! The cells are ordered such that the first coordinate index changes fastest.
-  ! In binary files the coordinates are saved in a single array, followed by
-  ! the variables, saved as one record per variable.
+  !
+  ! In binary files the coordinates are saved in a single array of size
+  ! n1 x ... nNDim x nDim (note that nDim is the last index),
+  ! followed by the variables, each of size n1 x ..., saved as one record
+  ! per variable.
   !
   ! For save_plot_file the coordinates can be either given as full arrays,
   ! or for Cartesian grids they can be given as 1D arrays for each dimension,
