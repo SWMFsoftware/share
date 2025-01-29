@@ -83,7 +83,7 @@ MPILIB =
 
 #OPENMPFLAG = -mp
 
-#ACCFLAG = -acc -gpu=cc70
+#ACCFLAG = -acc -gpu=ccnative
 
 #
 # This is the search path for used modules
