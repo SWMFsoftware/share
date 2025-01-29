@@ -380,16 +380,12 @@ public:
   std::string addPlasmaVar(std::string varString, int is) const;
   std::string expandVariable(std::string inVars) const;
   double getSmoothFactor(int i, int j, int k) const;
-  void divide_processors(int &npx, int &npy, int &npz, int nprocs);
   /** day of year **/
   int doy(int yr, int mo, int dy);
   /** Convert real time into simulation time in second. **/
   double convert_time(int yr, int mo, int dy, int hr, int mn, int sc,
                       double msc);
   int second_to_clock_time(int second);
-  void find_sat_points(double **pointList_ID, long &nPoint, int nPointMax,
-                       double plotRange_I[6], double xStart, double xEnd,
-                       double yStart, double yEnd, double zStart, double zEnd);
   void read_satellite_file(std::string filename);
   void PrintFluidPicInterface();
   void setStateVar(double *state_I, int *iPoint_I);
