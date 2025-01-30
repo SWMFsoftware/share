@@ -83,8 +83,6 @@ MPILIB =
 
 #OPENMPFLAG = -mp
 
-#ACCFLAG = -acc -Minfo=all -DOPENACC # -ta=tesla:cc35 cc70 
-
 #
 # This is the search path for used modules
 #
@@ -110,7 +108,7 @@ OPT4 = -O4
 
 # Flags that are always need for compilation:
 
-CFLAG = ${SEARCH} -c -Mpreprocess ${OPENMPFLAG} ${ACCFLAG} ${DEBUG}
+CFLAG = ${SEARCH} -c -Mpreprocess ${OPENMPFLAG} ${DEBUG}
 
 Cflag0  = ${CFLAG} ${PRECISION} ${OPT0} 
 Cflag1  = ${CFLAG} ${PRECISION} ${OPT1}
@@ -130,7 +128,7 @@ CFLAGS = ${CFLAG} -Msave
 # The linker flags. LflagMpi is for parallel code with the (NO)MPI library.
 # Lflag is for non-parallel code. Put here extra flags for the linking phase.
 #
-Lflag    = ${PRECISION} ${OPENMPFLAG} ${ACCFLAG} ${CPPLIB} ${DEBUG}
+Lflag    = ${PRECISION} ${OPENMPFLAG} ${CPPLIB} ${DEBUG}
 LflagMpi = ${Lflag} ${MPILIB}
 
 
