@@ -23,6 +23,7 @@ module ModHyperGeometric
 contains
   !============================================================================
   real function psi_semi(n)
+    !$acc routine seq
     integer, intent(in) :: n
 
     ! Definition of psi function: psi(z) = d\log(\Gamma(z))/dz
@@ -38,6 +39,7 @@ contains
   end function psi_semi
   !============================================================================
   real function psi_int(n)
+    !$acc routine seq
     integer, intent(in) :: n
 
     ! Definition of psi function: psi(z) = d\log(\Gamma(z))/dz
@@ -53,6 +55,7 @@ contains
   end function psi_int
   !============================================================================
   real function factorial(n)
+    !$acc routine seq
     integer, intent(in) :: n
     ! n! = \Gamma(n+1)
     integer :: k
@@ -65,6 +68,7 @@ contains
   end function factorial
   !============================================================================
   real function gamma_semi(n)
+    !$acc routine seq
     integer, intent(in) :: n
     ! \Gamma(0.5 + n)
     integer :: k
@@ -79,6 +83,7 @@ contains
 
   ! Hypergeometric series
   real function hypergeom(A, B, C, Z)
+    !$acc routine seq
 
     ! Input parameters and argument
     real, intent(in) :: A, B, C, Z
@@ -108,6 +113,7 @@ contains
   !============================================================================
   recursive function hyper_semi_semi_int(nA, nB, nC, ZIn, OneMinusZIn) &
        RESULT(FuncVal)
+    !$acc routine seq
     integer,        intent(in) :: nA, nB, nC
     real, optional, intent(in) :: ZIn, OneMinusZIn
     real    :: Z, OneMinusZ
@@ -132,8 +138,10 @@ contains
     elseif(present(OneMinusZIn))then
        OneMinusZ = OneMinusZIn; Z = 1.0 - OneMinusZ
     else
+#ifndef _OPENACC      
        call CON_stop(&
             NameSub//': ZIn or OneMinusZIn should be present')
+#endif
     end if
     ! Real arguments of the hypergeometric function:
     A =  0.50 + real(nA); B = 0.50 + real(nB); C = real(nC)
@@ -233,14 +241,17 @@ contains
   ! k^\prime=sqrt(1 - k^2)=exp(-u)
   !
   real function toroid_p(n, Kappa2In, KappaPrime2In)
+    !$acc routine seq
     ! tilde{P} function, integer n > 0 or n=0, related to k**3 * (k^\prime)**n
     integer, intent(in):: n
     real, optional, intent(in) :: Kappa2In, KappaPrime2In
     real :: Kappa2, KappaPrime2
     character(len=*), parameter:: NameSub = 'toroid_p'
     !--------------------------------------------------------------------------
+#ifndef _OPENACC   
     if(n < 0)call CON_stop(&
          NameSub//': argument n should be non-negative')
+#endif
     if(present(Kappa2In))then
        toroid_p = 0.250*hyper_semi_semi_int(nA=1, nB=1+n, nC=3, &
             ZIn = Kappa2In)
@@ -248,19 +259,24 @@ contains
        toroid_p = 0.250*hyper_semi_semi_int(nA=1, nB=1+n, nC=3, &
             OneMinusZIn = KappaPrime2In)
     else
+#ifndef _OPENACC
        call CON_stop(&
             NameSub//': Kappa2In or KappaPrime2InIn should be present')
+#endif
     end if
   end function toroid_p
   !============================================================================
   real function toroid_q(n, KappaPrime2In, Kappa2In)
+    !$acc routine seq
     ! tilde{Q}_n function, integer n > 0, related to k**3 * (k^\prime)**n
     integer, intent(in):: n
     real, optional, intent(in) :: KappaPrime2In, Kappa2In
     character(len=*), parameter:: NameSub = 'toroid_q'
     !--------------------------------------------------------------------------
+#ifndef _OPENACC 
     if(n < 0)call CON_stop(&
          NameSub//': argument n should be non-negative')
+#endif
     if(present(KappaPrime2In))then
        toroid_q = hyper_semi_semi_int(nA=1, nB=1+n, nC=n+1, &
             ZIn = KappaPrime2In)
@@ -268,8 +284,10 @@ contains
        toroid_q = hyper_semi_semi_int(nA=1, nB=1+n, nC=n+1, &
             OneMinusZIn = Kappa2In)
     else
+#ifndef _OPENACC      
        call CON_stop(&
             NameSub//': Kappa2In or KappaPrime2InIn should be present')
+#endif
     end if
     toroid_q = -toroid_q*cSqrtPi*gamma_semi(n-1)/factorial(n)
   end function toroid_q
@@ -279,6 +297,7 @@ contains
   !==============================|Inductances|=================================
   !                              v           v
   real function scr_inductance(KappaPrime2)
+    !$acc routine seq
     real, intent(in):: KappaPrime2
 
     ! for a superconducting ring calculate the ratio of inductance
@@ -309,6 +328,7 @@ contains
   end function scr_inductance
   !============================================================================
   real function l0_ext_inductance(KappaPrime2)
+    !$acc routine seq
     real, intent(in):: KappaPrime2
 
     ! calculate the ratio of external inductance
@@ -319,6 +339,7 @@ contains
   end function l0_ext_inductance
   !============================================================================
   real function l0_int_inductance(KappaPrime2)
+    !$acc routine seq
     real, intent(in):: KappaPrime2
 
     ! calculate the ratio of self-inductance of a uniform ring current
@@ -338,6 +359,7 @@ contains
   end function l0_int_inductance
   !============================================================================
   real function l0_tor_inductance(KappaPrime2)
+    !$acc routine seq
     real, intent(in):: KappaPrime2
 
     ! calculate the ratio of self-inductance of a uniform ring current
@@ -360,12 +382,14 @@ contains
   end function l0_tor_inductance
   !============================================================================
   real function cothu(KappaPrime2In)
+    !$acc routine seq
     real, intent(in)     :: KappaPrime2In
     !--------------------------------------------------------------------------
     cothu = 1 + 2*KappaPrime2In/(1 - KappaPrime2In)
   end function cothu
   !============================================================================
   subroutine calc_elliptic_int_1kind(Z, KElliptic)
+    !$acc routine seq
     real, intent(in):: Z
     real, intent(out):: KElliptic
     character(len=*), parameter:: NameSub = 'calc_elliptic_int_1kind'
@@ -375,6 +399,7 @@ contains
   end subroutine calc_elliptic_int_1kind
   !============================================================================
   subroutine calc_elliptic_int_2kind(ArgK,EElliptic)
+    !$acc routine seq
 
     real, intent(in):: ArgK
     real, intent(out):: EElliptic
