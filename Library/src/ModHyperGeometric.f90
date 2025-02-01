@@ -127,7 +127,7 @@ contains
     integer :: n ! Discriminator= c - a -b
 
     ! Loop variable
-    integer :: i 
+    integer :: i
 
     integer :: iTry
 
@@ -137,12 +137,12 @@ contains
     character(len=*), parameter:: NameSub = 'hyper_semi_semi_int'
     !--------------------------------------------------------------------------
 
-    ! If n = nC - (1 + nA + nB) is less than zero, change the values 
+    ! If n = nC - (1 + nA + nB) is less than zero, change the values
     ! of nA, nB and try again
     do iTry = 1, 2
        if(iTry == 1)then
           nA = nAIn; nB = nBIn; nC = nCIn
-       else 
+       else
           nA = nAIn + n; nB = nBIn + n; nC = nCIn
        end if
        n = nC - (1 + nA + nB)
@@ -152,7 +152,7 @@ contains
        elseif(present(OneMinusZIn))then
           OneMinusZ = OneMinusZIn; Z = 1.0 - OneMinusZ
        else
-#ifndef _OPENACC      
+#ifndef _OPENACC
           call CON_stop(&
                NameSub//': ZIn or OneMinusZIn should be present')
 #endif
@@ -232,7 +232,7 @@ contains
        end if
 
        if(iTry == 2) FuncVal = FuncVal/OneMinusZ**n
-       return 
+       RETURN
     end do
   end function hyper_semi_semi_int
   !============================================================================
@@ -262,7 +262,7 @@ contains
     real :: Kappa2, KappaPrime2
     character(len=*), parameter:: NameSub = 'toroid_p'
     !--------------------------------------------------------------------------
-#ifndef _OPENACC   
+#ifndef _OPENACC
     if(n < 0)call CON_stop(&
          NameSub//': argument n should be non-negative')
 #endif
@@ -286,7 +286,7 @@ contains
     real, optional, intent(in) :: KappaPrime2In, Kappa2In
     character(len=*), parameter:: NameSub = 'toroid_q'
     !--------------------------------------------------------------------------
-#ifndef _OPENACC 
+#ifndef _OPENACC
     if(n < 0)call CON_stop(&
          NameSub//': argument n should be non-negative')
 #endif
@@ -295,7 +295,7 @@ contains
     elseif(present(Kappa2In))then
        toroid_q = hyper_semi_semi_int(1, 1+n, n+1, OneMinusZIn = Kappa2In)
     else
-#ifndef _OPENACC      
+#ifndef _OPENACC
        call CON_stop(&
             NameSub//': Kappa2In or KappaPrime2InIn should be present')
 #endif
