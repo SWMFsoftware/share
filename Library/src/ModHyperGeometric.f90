@@ -23,6 +23,7 @@ module ModHyperGeometric
 contains
   !============================================================================
   real function psi_semi(n)
+    !$acc routine seq
     integer, intent(in) :: n
 
     ! Definition of psi function: psi(z) = d\log(\Gamma(z))/dz
@@ -38,6 +39,7 @@ contains
   end function psi_semi
   !============================================================================
   real function psi_int(n)
+    !$acc routine seq
     integer, intent(in) :: n
 
     ! Definition of psi function: psi(z) = d\log(\Gamma(z))/dz
@@ -53,6 +55,7 @@ contains
   end function psi_int
   !============================================================================
   real function factorial(n)
+    !$acc routine seq
     integer, intent(in) :: n
     ! n! = \Gamma(n+1)
     integer :: k
@@ -65,6 +68,7 @@ contains
   end function factorial
   !============================================================================
   real function gamma_semi(n)
+    !$acc routine seq
     integer, intent(in) :: n
     ! \Gamma(0.5 + n)
     integer :: k
@@ -79,6 +83,7 @@ contains
 
   ! Hypergeometric series
   real function hypergeom(A, B, C, Z)
+    !$acc routine seq
 
     ! Input parameters and argument
     real, intent(in) :: A, B, C, Z
@@ -106,9 +111,10 @@ contains
     end do
   end function hypergeom
   !============================================================================
-  recursive function hyper_semi_semi_int(nA, nB, nC, ZIn, OneMinusZIn) &
+  function hyper_semi_semi_int(nAIn, nBIn, nCIn, ZIn, OneMinusZIn) &
        RESULT(FuncVal)
-    integer,        intent(in) :: nA, nB, nC
+    !$acc routine seq
+    integer,        intent(in) :: nAIn, nBIn, nCIn
     real, optional, intent(in) :: ZIn, OneMinusZIn
     real    :: Z, OneMinusZ
     real    :: FuncVal
@@ -117,101 +123,117 @@ contains
     ! semiinteger b = 0.5 + nB, nB = 0, 1, 2
     ! integer     c = nC
     real :: A, B, C
+    integer :: nA, nB, nC
     integer :: n ! Discriminator= c - a -b
 
     ! Loop variable
-    integer :: i
+    integer :: i 
+
+    integer :: iTry
 
     ! Misc
     real :: aPlusI, bPlusI, cPlusI, rMember, LogFactor
 
     character(len=*), parameter:: NameSub = 'hyper_semi_semi_int'
     !--------------------------------------------------------------------------
-    if(present(ZIn))then
-       Z = ZIn; OneMinusZ = 1.0 - Z
-    elseif(present(OneMinusZIn))then
-       OneMinusZ = OneMinusZIn; Z = 1.0 - OneMinusZ
-    else
-       call CON_stop(&
-            NameSub//': ZIn or OneMinusZIn should be present')
-    end if
-    ! Real arguments of the hypergeometric function:
-    A =  0.50 + real(nA); B = 0.50 + real(nB); C = real(nC)
-    if (abs(z) < 0.50) then
 
-       ! Direct summation of the hypergeometric series, well withing the
-       ! convergence radius
-       FuncVal = hypergeom(&
-            A=A,        &
-            B=B,        &
-            C=C,        &
-            Z=Z)
-       RETURN
-    end if
+    ! If n = nC - (1 + nA + nB) is less than zero, change the values 
+    ! of nA, nB and try again
+    do iTry = 1, 2
+       if(iTry == 1)then
+          nA = nAIn; nB = nBIn; nC = nCIn
+       else 
+          nA = nAIn + n; nB = nBIn + n; nC = nCIn
+       end if
+       n = nC - (1 + nA + nB)
 
-    ! Use the analytic extension to the singular point z=1
-    ! OneMinusZ = 1.0 - z
-    ! The difference C - (A+B) is integer. Calculate this.
-    n = nC - (1 + nA + nB)
+       if(present(ZIn))then
+          Z = ZIn; OneMinusZ = 1.0 - Z
+       elseif(present(OneMinusZIn))then
+          OneMinusZ = OneMinusZIn; Z = 1.0 - OneMinusZ
+       else
+#ifndef _OPENACC      
+          call CON_stop(&
+               NameSub//': ZIn or OneMinusZIn should be present')
+#endif
+       end if
+       ! Real arguments of the hypergeometric function:
+       A =  0.50 + real(nA); B = 0.50 + real(nB); C = real(nC)
+       if (abs(z) < 0.50) then
 
-    ! The formulae for the "logarithmic case" (integer n)
-    ! https://dlmf.nist.gov
-    ! strongly depend on the sign of n. Consider case-by-case
-    if(n==0)then
-       ! Apply Eq. 15.8.10 in https://dlmf.nist.gov:
-       LogFactor    = -log(OneMinusZ) + 2.0*psi_int(1) - &
-            (psi_semi(nA) + psi_semi(nB))
-       rMember      = factorial(nA + nB)/(gamma_semi(nA)*gamma_semi(nB))
-       FuncVal = rMember*LogFactor
-       aPlusI       = A - 1.0
-       bPlusI       = B - 1.0
-       i = 0
-       do while(abs(rMember) >= cTolerance_I(iRealPrec))
-          i = i + 1
+          ! Direct summation of the hypergeometric series, well withing the
+          ! convergence radius
+          FuncVal = hypergeom(&
+               A=A,        &
+               B=B,        &
+               C=C,        &
+               Z=Z)
+          RETURN
+       end if
+
+       ! The formulae for the "logarithmic case" (integer n)
+       ! https://dlmf.nist.gov
+       ! strongly depend on the sign of n. Consider case-by-case
+       if(n==0)then
+          ! Apply Eq. 15.8.10 in https://dlmf.nist.gov:
+          LogFactor    = -log(OneMinusZ) + 2.0*psi_int(1) - &
+               (psi_semi(nA) + psi_semi(nB))
+          rMember      = factorial(nA + nB)/(gamma_semi(nA)*gamma_semi(nB))
+          FuncVal = rMember*LogFactor
+          aPlusI       = A - 1.0
+          bPlusI       = B - 1.0
+          i = 0
+          do while(abs(rMember) >= cTolerance_I(iRealPrec))
+             i = i + 1
+             aPlusI = aPlusI + 1.0
+             bPlusI = bPlusI + 1.0
+             rMember = rMember*aPlusI*bPlusI/i**2*OneMinusZ
+             LogFactor = LogFactor + 2.0/real(i) - 1.0/aPlusI - 1.0/bPlusI
+             FuncVal = FuncVal + rMember*LogFactor
+          end do
+       elseif(n<0)then
+          CYCLE
+          ! Apply Eq. 15.8.12 in https://dlmf.nist.gov:
+          !  n = -n
+          !  FuncVal = hyper_semi_semi_int(nA - n, nB - n, nC, ZIn, OneMinusZIn)/&
+          !       OneMinusZ**n
+       else
+          ! Apply Eq. 15.8.10 in https://dlmf.nist.gov:
+          rMember      = factorial(nC-1)*factorial(n-1)/(&
+               gamma_semi(nA + n)*gamma_semi(nB + n))
+          FuncVal = rMember
+          aPlusI       = A - 1.0
+          bPlusI       = B - 1.0
+          do i = 1, n-1
+             aPlusI = aPlusI + 1.0
+             bPlusI = bPlusI + 1.0
+             rMember = rMember*aPlusI*bPlusI/(real(i)*real(n - i))*(-OneMinusZ)
+             FuncVal = FuncVal + rMember
+          end do
           aPlusI = aPlusI + 1.0
           bPlusI = bPlusI + 1.0
-          rMember = rMember*aPlusI*bPlusI/i**2*OneMinusZ
-          LogFactor = LogFactor + 2.0/real(i) - 1.0/aPlusI - 1.0/bPlusI
+          cPlusI = real(n)
+          rMember = rMember*aPlusI*bPlusI/cPlusI*(-OneMinusZ)
+          LogFactor    = -log(OneMinusZ) + psi_int(1) + psi_int(1 + n) - &
+               (psi_semi(nA + n) + psi_semi(nB + n))
           FuncVal = FuncVal + rMember*LogFactor
-       end do
-    elseif(n<0)then
-       ! Apply Eq. 15.8.12 in https://dlmf.nist.gov:
-       n = -n
-       FuncVal = hyper_semi_semi_int(nA - n, nB - n, nC, ZIn, OneMinusZIn)/&
-            OneMinusZ**n
-    else
-       ! Apply Eq. 15.8.10 in https://dlmf.nist.gov:
-       rMember      = factorial(nC-1)*factorial(n-1)/(&
-            gamma_semi(nA + n)*gamma_semi(nB + n))
-       FuncVal = rMember
-       aPlusI       = A - 1.0
-       bPlusI       = B - 1.0
-       do i = 1, n-1
-          aPlusI = aPlusI + 1.0
-          bPlusI = bPlusI + 1.0
-          rMember = rMember*aPlusI*bPlusI/(real(i)*real(n - i))*(-OneMinusZ)
-          FuncVal = FuncVal + rMember
-       end do
-       aPlusI = aPlusI + 1.0
-       bPlusI = bPlusI + 1.0
-       cPlusI = real(n)
-       rMember = rMember*aPlusI*bPlusI/cPlusI*(-OneMinusZ)
-       LogFactor    = -log(OneMinusZ) + psi_int(1) + psi_int(1 + n) - &
-            (psi_semi(nA + n) + psi_semi(nB + n))
-       FuncVal = FuncVal + rMember*LogFactor
-       i = 0
-       do while(abs(rMember) >= cTolerance_I(iRealPrec))
-          i = i + 1
-          aPlusI = aPlusI + 1.0
-          bPlusI = bPlusI + 1.0
-          cPlusI = cPlusI + 1.0
-          rMember = rMember*aPlusI*bPlusI/(real(i)*cPlusI)*OneMinusZ
-          LogFactor = LogFactor + 1.0/real(i) + 1.0/cPlusI - &
-               1.0/aPlusI - 1.0/bPlusI
-          FuncVal = FuncVal + rMember*LogFactor
-       end do
+          i = 0
+          do while(abs(rMember) >= cTolerance_I(iRealPrec))
+             i = i + 1
+             aPlusI = aPlusI + 1.0
+             bPlusI = bPlusI + 1.0
+             cPlusI = cPlusI + 1.0
+             rMember = rMember*aPlusI*bPlusI/(real(i)*cPlusI)*OneMinusZ
+             LogFactor = LogFactor + 1.0/real(i) + 1.0/cPlusI - &
+                  1.0/aPlusI - 1.0/bPlusI
+             FuncVal = FuncVal + rMember*LogFactor
+          end do
 
-    end if
+       end if
+
+       if(iTry == 2) FuncVal = FuncVal/OneMinusZ**n
+       return 
+    end do
   end function hyper_semi_semi_int
   !============================================================================
   !=======================|Toroidal functions|=================================
@@ -233,43 +255,50 @@ contains
   ! k^\prime=sqrt(1 - k^2)=exp(-u)
   !
   real function toroid_p(n, Kappa2In, KappaPrime2In)
+    !$acc routine seq
     ! tilde{P} function, integer n > 0 or n=0, related to k**3 * (k^\prime)**n
     integer, intent(in):: n
     real, optional, intent(in) :: Kappa2In, KappaPrime2In
     real :: Kappa2, KappaPrime2
     character(len=*), parameter:: NameSub = 'toroid_p'
     !--------------------------------------------------------------------------
+#ifndef _OPENACC   
     if(n < 0)call CON_stop(&
          NameSub//': argument n should be non-negative')
+#endif
     if(present(Kappa2In))then
-       toroid_p = 0.250*hyper_semi_semi_int(nA=1, nB=1+n, nC=3, &
-            ZIn = Kappa2In)
+       toroid_p = 0.250*hyper_semi_semi_int(1, 1+n, 3, ZIn = Kappa2In)
     elseif(present(KappaPrime2In))then
-       toroid_p = 0.250*hyper_semi_semi_int(nA=1, nB=1+n, nC=3, &
+       toroid_p = 0.250*hyper_semi_semi_int(1, 1+n, 3, &
             OneMinusZIn = KappaPrime2In)
     else
+#ifndef _OPENACC
        call CON_stop(&
             NameSub//': Kappa2In or KappaPrime2InIn should be present')
+#endif
     end if
   end function toroid_p
   !============================================================================
   real function toroid_q(n, KappaPrime2In, Kappa2In)
+    !$acc routine seq
     ! tilde{Q}_n function, integer n > 0, related to k**3 * (k^\prime)**n
     integer, intent(in):: n
     real, optional, intent(in) :: KappaPrime2In, Kappa2In
     character(len=*), parameter:: NameSub = 'toroid_q'
     !--------------------------------------------------------------------------
+#ifndef _OPENACC 
     if(n < 0)call CON_stop(&
          NameSub//': argument n should be non-negative')
+#endif
     if(present(KappaPrime2In))then
-       toroid_q = hyper_semi_semi_int(nA=1, nB=1+n, nC=n+1, &
-            ZIn = KappaPrime2In)
+       toroid_q = hyper_semi_semi_int(1, 1+n, n+1, ZIn = KappaPrime2In)
     elseif(present(Kappa2In))then
-       toroid_q = hyper_semi_semi_int(nA=1, nB=1+n, nC=n+1, &
-            OneMinusZIn = Kappa2In)
+       toroid_q = hyper_semi_semi_int(1, 1+n, n+1, OneMinusZIn = Kappa2In)
     else
+#ifndef _OPENACC      
        call CON_stop(&
             NameSub//': Kappa2In or KappaPrime2InIn should be present')
+#endif
     end if
     toroid_q = -toroid_q*cSqrtPi*gamma_semi(n-1)/factorial(n)
   end function toroid_q
@@ -279,6 +308,7 @@ contains
   !==============================|Inductances|=================================
   !                              v           v
   real function scr_inductance(KappaPrime2)
+    !$acc routine seq
     real, intent(in):: KappaPrime2
 
     ! for a superconducting ring calculate the ratio of inductance
@@ -309,6 +339,7 @@ contains
   end function scr_inductance
   !============================================================================
   real function l0_ext_inductance(KappaPrime2)
+    !$acc routine seq
     real, intent(in):: KappaPrime2
 
     ! calculate the ratio of external inductance
@@ -319,6 +350,7 @@ contains
   end function l0_ext_inductance
   !============================================================================
   real function l0_int_inductance(KappaPrime2)
+    !$acc routine seq
     real, intent(in):: KappaPrime2
 
     ! calculate the ratio of self-inductance of a uniform ring current
@@ -338,6 +370,7 @@ contains
   end function l0_int_inductance
   !============================================================================
   real function l0_tor_inductance(KappaPrime2)
+    !$acc routine seq
     real, intent(in):: KappaPrime2
 
     ! calculate the ratio of self-inductance of a uniform ring current
@@ -360,21 +393,24 @@ contains
   end function l0_tor_inductance
   !============================================================================
   real function cothu(KappaPrime2In)
+    !$acc routine seq
     real, intent(in)     :: KappaPrime2In
     !--------------------------------------------------------------------------
     cothu = 1 + 2*KappaPrime2In/(1 - KappaPrime2In)
   end function cothu
   !============================================================================
   subroutine calc_elliptic_int_1kind(Z, KElliptic)
+    !$acc routine seq
     real, intent(in):: Z
     real, intent(out):: KElliptic
     character(len=*), parameter:: NameSub = 'calc_elliptic_int_1kind'
     !--------------------------------------------------------------------------
     ! Calculate 2F1(0.5 +0, 0.5 + 0; 1; Z)
-    KElliptic = 0.50*cPi*hyper_semi_semi_int(nA=0, nB=0, nC=1, ZIn=Z**2)
+    KElliptic = 0.50*cPi*hyper_semi_semi_int(0, 0, 1, ZIn=Z**2)
   end subroutine calc_elliptic_int_1kind
   !============================================================================
   subroutine calc_elliptic_int_2kind(ArgK,EElliptic)
+    !$acc routine seq
 
     real, intent(in):: ArgK
     real, intent(out):: EElliptic
@@ -387,7 +423,7 @@ contains
     real :: OneOver2n2nMinus1
     character(len=*), parameter:: NameSub = 'calc_elliptic_int_2kind'
     !--------------------------------------------------------------------------
-    EElliptic = 0.50*cPi*hyper_semi_semi_int(nA=-1, nB=0, nC=1, ZIn=ArgK**2)
+    EElliptic = 0.50*cPi*hyper_semi_semi_int(-1, 0, 1, ZIn=ArgK**2)
   end subroutine calc_elliptic_int_2kind
   !============================================================================
 end module ModHyperGeometric
