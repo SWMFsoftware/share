@@ -1697,13 +1697,21 @@ contains
   !============================================================================
   subroutine copy_lookup_table_to_gpu()
     integer :: iTable
+    logical, save :: IsOnGPU = .false.
+    !--------------------------------------------------------------------------
+
+    ! 1. If the following copies are called multiple times, simulations
+    !    on Pleiades A100 will crash. 
+    ! 2. The current implementation requires all the tables being added
+    !    in the first session.
+    if(IsOnGPU) return
+    IsOnGPU = .true.
+
+    ! Openacc does not support deep copy for user-defined type.
 
     !$acc update device(nTable)
     !$acc update device(Table_I)
-
-    ! Openacc does not support deep copy for user-defined type.
-    !--------------------------------------------------------------------------
-    do iTable = 1, nTable
+    do iTable = 1, nTable       
        !$acc enter data copyin(Table_I(iTable)%nIndex_I)
        !$acc enter data copyin(Table_I(iTable)%IndexMin_I)
        !$acc enter data copyin(Table_I(iTable)%IndexMax_I)
