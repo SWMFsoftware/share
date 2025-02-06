@@ -184,7 +184,7 @@ contains
     real :: coeff,Tol1,epsmac,gam,ro,ro0,t,tmp
     !$acc declare create(coeff, ro, t, tmp)
     !--------------------------------------------------------------------------
-    call timing_start('gmres')
+    !call timing_start('gmres')
 
     if(DoTest)write(*,*)'GMRES tol,iter:',Tol,Iter
 
@@ -403,9 +403,7 @@ contains
        info = -2
     endif
 
-    ! call cpu_time(finish)
-    ! print '("TimeEnd = ",f6.3," seconds.")',finish-start
-    call timing_stop('gmres')
+    !call timing_stop('gmres')
 
   end subroutine gmres
   !============================================================================
