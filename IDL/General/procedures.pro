@@ -307,7 +307,7 @@ pro set_default_values
   linestyle = 0       ; line style for plot
   colorbarsize = 0.04 ; size of the color bar
   lonshift = 0        ; shifting the longtiude in lonlatn/lonlats plots [deg]
-  
+
   ;; store plot function values from plotting and animations
   ;; calculate running max or mean of functions during animation
   common plot_store, $
