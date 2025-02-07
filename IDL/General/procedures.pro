@@ -265,7 +265,8 @@ pro set_default_values
      fixaspect, noerase, $ 
      cut, cut0, plotdim, rcut, rbody, $
      velvector, velpos, velpos0, velrandom, velspeed, velx, vely, veltri, $
-     viewanglex, viewanglez, colorlevel, contourlevel, linestyle, colorbarsize
+     viewanglex, viewanglez, colorlevel, contourlevel, $
+     linestyle, colorbarsize, lonshift
 
   multiplot = 0     ;  default subplot arrangement based on nfile,nfunc
   ;; multiplot=-1        - arrange subplots vertically
@@ -305,7 +306,8 @@ pro set_default_values
   contourlevel = 30   ; Number of contour levels for contour
   linestyle = 0       ; line style for plot
   colorbarsize = 0.04 ; size of the color bar
-
+  lonshift = 0        ; shifting the longtiude in lonlatn/lonlats plots [deg]
+  
   ;; store plot function values from plotting and animations
   ;; calculate running max or mean of functions during animation
   common plot_store, $
@@ -3939,12 +3941,12 @@ pro plot_func
 
      ;; Check if the angular unit of phi is given
      angleunit = -1.0
-     i=strpos(plotmod,'degree')
+     i = strpos(plotmod,'degree')
      if i ge 0 then begin
         angleunit = !dtor
         plotmod=strmid(plotmod,0,i)+strmid(plotmod,i+6)
      endif
-     i=strpos(plotmod,'hour')
+     i = strpos(plotmod,'hour')
      if i ge 0 then begin
         angleunit = !pi/12
         plotmod=strmid(plotmod,0,i)+strmid(plotmod,i+4)
@@ -4147,7 +4149,8 @@ pro plot_func
      endif
 
      ;; figure out the units of angle in 1st coordinate if not already set
-     if (plotmod eq 'lonlatn' or plotmod eq 'lonlats') and angleunit lt 0 then begin
+     if (plotmod eq 'lonlatn' or plotmod eq 'lonlats') $
+        and angleunit lt 0 then begin
         if max(xx)-min(xx) gt 300 then $
            angleunit = !dtor $  ; degrees
         else if max(xx)-min(xx) gt 20 then $
@@ -4237,53 +4240,52 @@ pro plot_func
                       XSTYLE=1,YSTYLE=+1,/NOERASE, nodata=1
               scatter_plot,xx,yy,f,f_min=f_min,xrange=xrange,yrange=yrange
            end
-           'polar'    :polar_contour,f>f_min,yy*angleunit,xx,$
-                                     FOLLOW=label, FILL=fill, LEVELS=levels,$
-                                     XSTYLE=noaxis+1,YSTYLE=noaxis+1,/dither, $
-                                     /NOERASE
-           'lonlatn' :polar_contour,f>f_min,xx*angleunit,max(yy)-yy,$
-                                     FOLLOW=label, FILL=fill, LEVELS=levels,$
-                                     XSTYLE=noaxis+1,YSTYLE=noaxis+1,/dither, $
-                                     /NOERASE
-           'lonlats' :polar_contour,f>f_min,xx*angleunit,yy-min(yy),$
-                                     FOLLOW=label, FILL=fill, LEVELS=levels,$
-                                     XSTYLE=noaxis+1,YSTYLE=noaxis+1,/dither, $
-                                     /NOERASE
+           'polar'    :polar_contour, $
+              f>f_min, yy*angleunit, xx, $
+              FOLLOW=label, FILL=fill, LEVELS=levels,$
+              XSTYLE=noaxis+1,YSTYLE=noaxis+1,/dither, /NOERASE
+           'lonlatn' :polar_contour, $
+              f>f_min, xx*angleunit+lonshift*!dtor, max(yy)-yy, $
+              FOLLOW=label, FILL=fill, LEVELS=levels, $
+              XSTYLE=noaxis+1, YSTYLE=noaxis+1, /dither, /NOERASE
+           'lonlats' :polar_contour, $
+              f>f_min, xx*angleunit+lonshift*!dtor, yy-min(yy),$
+              FOLLOW=label, FILL=fill, LEVELS=levels,$
+              XSTYLE=noaxis+1,YSTYLE=noaxis+1,/dither, /NOERASE
            'plot'     :plot,xx,f,YRANGE=[f_min,f_max],$
                             XSTYLE=noaxis+1,YSTYLE=noaxis+3,$
                             LINE=lstyle,/NOERASE
-           'oplot'    :oplot,xx,f,LINE=lstyle
-           'plot_io'  :plot_io,xx,f,YRANGE=[f_min,f_max],$
-                               XSTYLE=noaxis+1,YSTYLE=noaxis+3,$
-                               LINE=lstyle,/NOERASE
+           'oplot'    :oplot, xx, f, LINE=lstyle
+           'plot_io'  :plot_io, xx, f, YRANGE=[f_min,f_max],$
+                               XSTYLE=noaxis+1, YSTYLE=noaxis+3,$
+                               LINE=lstyle, /NOERASE
            'plot_oi'  :plot_oi,xx,f,YRANGE=[f_min,f_max],$
-                               XSTYLE=noaxis+1,YSTYLE=noaxis+3,$
-                               LINE=lstyle,/NOERASE
-           'plot_oo'  :plot_oo,xx,f,YRANGE=[f_min,f_max],$
-                               XSTYLE=noaxis+1,YSTYLE=noaxis+3,$
-                               LINE=lstyle,/NOERASE
+                               XSTYLE=noaxis+1, YSTYLE=noaxis+3,$
+                               LINE=lstyle, /NOERASE
+           'plot_oo'  :plot_oo, xx, f, YRANGE=[f_min,f_max],$
+                               XSTYLE=noaxis+1, YSTYLE=noaxis+3,$
+                               LINE=lstyle, /NOERASE
            'shade'    :if irr then begin
-              shade_surf_irr,f>f_min,xx,yy,AX=viewanglex,AZ=viewanglez
-              shade_surf,f>f_min,xx,yy,AX=viewanglex,AZ=viewanglez,/NODATA,/NOERASE
+              shade_surf_irr, f>f_min, xx, yy, AX=viewanglex, AZ=viewanglez
+              shade_surf, f>f_min, xx, yy, AX=viewanglex, AZ=viewanglez, $
+                          /NODATA, /NOERASE
            endif else begin
-              shade_surf,f>f_min,xx,yy,ZRANGE=[f_min,f_max],$
-                         XSTYLE=noaxis+1,YSTYLE=noaxis+1,$
-                         ZSTYLE=noaxis+18,AX=viewanglex,AZ=viewanglez,/NOERASE
+              shade_surf, f>f_min, xx, yy, ZRANGE=[f_min,f_max],$
+                          XSTYLE=noaxis+1, YSTYLE=noaxis+1, ZSTYLE=noaxis+18,$
+                          AX=viewanglex, AZ=viewanglez, /NOERASE
               if showgrid then $
-                 surface,f>f_min,xx,yy,ZRANGE=[f_min,f_max],$
-                         XSTYLE=noaxis+1,YSTYLE=noaxis+1,$
-                         ZSTYLE=noaxis+18,$
-                         AX=viewanglex,AZ=viewanglez,/NOERASE
+                 surface, f>f_min, xx, yy, ZRANGE=[f_min,f_max],$
+                         XSTYLE=noaxis+1, YSTYLE=noaxis+1, ZSTYLE=noaxis+18,$
+                         AX=viewanglex, AZ=viewanglez, /NOERASE
            endelse
-           'surface'  :surface,f>f_min,xx,yy,ZRANGE=[f_min,f_max],$
-                               XSTYLE=noaxis+1,YSTYLE=noaxis+1,$
-                               ZSTYLE=noaxis+18,$
-                               AX=viewanglex,AZ=viewanglez,/NOERASE
+           'surface'  :surface, f>f_min, xx, yy, ZRANGE=[f_min,f_max],$
+                                XSTYLE=noaxis+1, YSTYLE=noaxis+1,$
+                                ZSTYLE=noaxis+18,$
+                                AX=viewanglex, AZ=viewanglez, /NOERASE
            'tv'       :begin
-              tv,tvf,tvplotx,tvploty,XSIZE=tvsizex,YSIZE=tvsizey
-              contour,f,xx,yy,$
-                      XSTYLE=noaxis+1,YSTYLE=noaxis+1,$
-                      /NODATA,/NOERASE
+              tv, tvf, tvplotx, tvploty, XSIZE=tvsizex, YSIZE=tvsizey
+              contour, f, xx, yy,$
+                      XSTYLE=noaxis+1, YSTYLE=noaxis+1, /NODATA, /NOERASE
            end
            'vel'      :vector, f1, f2, xx, yy, XXOLD=velx, YYOLD=vely, $
                                TRIANGLES=veltri, NVECS=velvector,MAXVAL=f_max,$
@@ -4333,30 +4335,30 @@ pro plot_func
                   noclip=0
                                 ; redraw box in case the body is at the edge
         if(plotmod ne 'polar')then $
-           plot,xx,yy,XSTYLE=noaxis+1,YSTYLE=noaxis+1,/NODATA,/NOERASE
+           plot, xx, yy, XSTYLE=noaxis+1, YSTYLE=noaxis+1, /NODATA, /NOERASE
      endif
 
      if showmap or showusa then begin
         if plotmod eq 'lonlatn' then begin
            if !y.range(0) lt !y.range(1) then $
-              map_set, 90.0, 0.0, latdel=10, /azimuthal, /continent, $
+              map_set, 90, -90-lonshift, latdel=10, /azimuthal, /continent, $
                        usa=showusa, /noborder, /noerase, $
                        limit=[90+yrange(0),0,90,360] $
            else $
-              map_set, 90.0, 0.0, latdel=10, /azimuthal, /continent, $
+              map_set, 90, -90-lonshift, latdel=10, /azimuthal, /continent, $
                        usa=showusa, /noborder, /noerase, $
                        limit=[yrange(0),xrange(0),yrange(1),xrange(1)]
         end else if plotmod eq 'lonlats' then begin
            if !y.range(0) lt !y.range(1) then $
-              map_set, -90.0, 0.0, latdel=10, /azimuthal, /continent, $
+              map_set, -90, -90+lonshift, latdel=10, /azimuthal, /continent, $
                        usa=showusa, /noborder, /noerase, $
                        limit=[-90,0,-90+yrange(1),360] $
            else $
-              map_set, -90.0, 0.0, latdel=10, /azimuthal, /continent, $
+              map_set, -90, -90+lonshift, latdel=10, /azimuthal, /continent, $
                        usa=showusa, /noborder, /noerase, $
                        limit=[yrange(0),xrange(0),yrange(1),xrange(1)]
         end else $
-           map_set, 0.0, 180., $
+           map_set, 0.0, 180, $
                     /cylindrical, /continent, usa=showusa, /noborder, $
                     /noerase, limit=[yrange(0),xrange(0),yrange(1),xrange(1)]
      endif
