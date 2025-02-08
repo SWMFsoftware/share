@@ -307,7 +307,7 @@ pro set_default_values
   linestyle = 0       ; line style for plot
   colorbarsize = 0.04 ; size of the color bar
   lonshift = 0        ; shifting the longtiude in lonlatn/lonlats plots [deg]
-  
+
   ;; store plot function values from plotting and animations
   ;; calculate running max or mean of functions during animation
   common plot_store, $
@@ -4342,20 +4342,20 @@ pro plot_func
         if plotmod eq 'lonlatn' then begin
            if !y.range(0) lt !y.range(1) then $
               map_set, 90, -90-lonshift, latdel=10, /azimuthal, /continent, $
-                       usa=showusa, /noborder, /noerase, $
+                       usa=showusa,con_color=0, /noborder, /noerase, $
                        limit=[90+yrange(0),0,90,360] $
            else $
               map_set, 90, -90-lonshift, latdel=10, /azimuthal, /continent, $
-                       usa=showusa, /noborder, /noerase, $
+                       usa=showusa,con_color=0, /noborder, /noerase, $
                        limit=[yrange(0),xrange(0),yrange(1),xrange(1)]
         end else if plotmod eq 'lonlats' then begin
            if !y.range(0) lt !y.range(1) then $
-              map_set, -90, -90+lonshift, latdel=10, /azimuthal, /continent, $
-                       usa=showusa, /noborder, /noerase, $
+              map_set, -90, 90+lonshift, latdel=10, /azimuthal, /continent, $
+                       usa=showusa,con_color=0, /noborder, /noerase, $
                        limit=[-90,0,-90+yrange(1),360] $
            else $
-              map_set, -90, -90+lonshift, latdel=10, /azimuthal, /continent, $
-                       usa=showusa, /noborder, /noerase, $
+              map_set, -90, 90+lonshift, latdel=10, /azimuthal, /continent, $
+                       usa=showusa,con_color=0, /noborder, /noerase, $
                        limit=[yrange(0),xrange(0),yrange(1),xrange(1)]
         end else $
            map_set, 0.0, 180, $
