@@ -324,8 +324,8 @@ sub read_runlog{
 	# Read first timing for initialization
 	open(INPUT, $runlogfile) or die "Could not open $runlogfile: $!\n";
 	while(<INPUT>){
-	    if(/.*(BATSRUS|SWMF)\s+(\d+\.\d+).*/ or 
-	       /.*(BATSRUS|SWMF)\s*1\s*1\s+(.*?)\s+/){
+	    if(/^(BATSRUS|SWMF)[^\d]+(\d+\.\d+).*/ or 
+	       /^(BATSRUS|SWMF)\s*1\s*1\s+(.*?)\s+/){
 	       $timeinit = $2;
 	       last;
 	    }   
@@ -335,8 +335,8 @@ sub read_runlog{
 	# Read last timing for total runtime
 	open(INPUT, "tail -n 400 $runlogfile |");
 	while(<INPUT>){
-	    if(/.*(BATSRUS|SWMF)\s+(\d+\.\d+).*/ or 
-	       /.*(BATSRUS|SWMF)\s*1\s*1\s+(.*?)\s+/){
+	    if(/^(BATSRUS|SWMF)[^\d]+(\d+\.\d+).*/ or 
+	       /^(BATSRUS|SWMF)\s*1\s*1\s+(.*?)\s+/){
 		$timerun = $2;
 	    }
 	}
