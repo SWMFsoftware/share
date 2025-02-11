@@ -746,10 +746,12 @@ program post_idl
      call sort_quick(n1, Sort_I, iSort_I)
 
      Coord_DC(:,:,1,1) = Coord_DC(:,iSort_I,1,1)
-     do iVar =1, nPlotVar
+     do iVar = 1, nPlotVar
         PlotVar_VC(iVar,:,1,1) = PlotVar_VC(iVar,iSort_I,1,1)
      end do
-
+     ! For bx0 plot do the nPlotVar+1 element too
+     if(IsBx0) PlotVar_VC(iVar,:,1,1) = PlotVar_VC(iVar,iSort_I,1,1)
+     
      if(IsVerbose)write(*,*)'Sorting is done'
 
      ! Average out coinciding points
