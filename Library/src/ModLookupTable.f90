@@ -1697,36 +1697,54 @@ contains
   !============================================================================
   subroutine copy_lookup_table_to_gpu()
     integer :: iTable
-    logical, save :: IsOnGPU = .false.
-
-    ! 1. If the following copies are called multiple times, simulations
-    !    on Pleiades A100 will crash.
-    ! 2. The current implementation requires all the tables being added
-    !    in the first session.
+    integer, save:: nTableOnGPU = 0
     !--------------------------------------------------------------------------
-    if(IsOnGPU) RETURN
-    IsOnGPU = .true.
-
-    ! Openacc does not support deep copy for user-defined type.
-
     !$acc update device(nTable)
-    !$acc update device(Table_I)
-    do iTable = 1, nTable
-       !$acc enter data copyin(Table_I(iTable)%nIndex_I)
-       !$acc enter data copyin(Table_I(iTable)%IndexMin_I)
-       !$acc enter data copyin(Table_I(iTable)%IndexMax_I)
-       !$acc enter data copyin(Table_I(iTable)%dIndex_I)
-       !$acc enter data copyin(Table_I(iTable)%IsLogIndex_I)
-       !$acc enter data copyin(Table_I(iTable)%Value_VC)
-       !$acc enter data copyin(Table_I(iTable)%Value4_VC)
-       !$acc enter data copyin(Table_I(iTable)%Param_I)
-       !$acc enter data copyin(Table_I(iTable)%IsUniform_I)
-       !$acc enter data copyin(Table_I(iTable)%Index1_I)
-       !$acc enter data copyin(Table_I(iTable)%Index2_I)
-       !$acc enter data copyin(Table_I(iTable)%Index3_I)
-       !$acc enter data copyin(Table_I(iTable)%Index4_I)
-       !$acc enter data copyin(Table_I(iTable)%Index5_I)
+    !$acc update device(Table_I(nTableOnGPU+1:nTable))
+    do iTable = nTableOnGPU + 1, nTable    
+       !$acc enter data attach(Table_I(iTable)%nIndex_I) &
+       !$acc copyin(Table_I(iTable)%nIndex_I)
+
+       !$acc enter data attach(Table_I(iTable)%IndexMin_I) &
+       !$acc copyin(Table_I(iTable)%IndexMin_I)
+
+       !$acc enter data attach(Table_I(iTable)%IndexMax_I) &
+       !$acc copyin(Table_I(iTable)%IndexMax_I)
+
+       !$acc enter data attach(Table_I(iTable)%dIndex_I) &
+       !$acc copyin(Table_I(iTable)%dIndex_I)
+
+       !$acc enter data attach(Table_I(iTable)%IsLogIndex_I) &
+       !$acc copyin(Table_I(iTable)%IsLogIndex_I)
+
+       !$acc enter data attach(Table_I(iTable)%Value_VC) &
+       !$acc copyin(Table_I(iTable)%Value_VC)
+
+       !$acc enter data attach(Table_I(iTable)%Value4_VC) &
+       !$acc copyin(Table_I(iTable)%Value4_VC)
+
+       !$acc enter data attach(Table_I(iTable)%Param_I) &
+       !$acc copyin(Table_I(iTable)%Param_I)
+
+       !$acc enter data attach(Table_I(iTable)%IsUniform_I) &
+       !$acc copyin(Table_I(iTable)%IsUniform_I)
+
+       !$acc enter data attach(Table_I(iTable)%Index1_I) &
+       !$acc copyin(Table_I(iTable)%Index1_I)
+
+       !$acc enter data attach(Table_I(iTable)%Index2_I) &
+       !$acc copyin(Table_I(iTable)%Index2_I)
+
+       !$acc enter data attach(Table_I(iTable)%Index3_I) &
+       !$acc copyin(Table_I(iTable)%Index3_I)
+
+       !$acc enter data attach(Table_I(iTable)%Index4_I) &
+       !$acc copyin(Table_I(iTable)%Index4_I)
+
+       !$acc enter data attach(Table_I(iTable)%Index5_I) &
+       !$acc copyin(Table_I(iTable)%Index5_I)
     end do
+    nTableOnGPU = nTable
 
   end subroutine copy_lookup_table_to_gpu
   !============================================================================
