@@ -1698,10 +1698,10 @@ contains
   subroutine copy_lookup_table_to_gpu()
     integer :: iTable
     integer, save:: nTableOnGPU = 0
-    !--------------------------------------------------------------------------
     !$acc update device(nTable)
     !$acc update device(Table_I(nTableOnGPU+1:nTable))
-    do iTable = nTableOnGPU + 1, nTable    
+    !--------------------------------------------------------------------------
+    do iTable = nTableOnGPU + 1, nTable
        !$acc enter data attach(Table_I(iTable)%nIndex_I) &
        !$acc copyin(Table_I(iTable)%nIndex_I)
 
