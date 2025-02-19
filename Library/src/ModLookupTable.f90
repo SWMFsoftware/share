@@ -1695,13 +1695,17 @@ contains
 
   end subroutine get_lookup_table
   !============================================================================
-  subroutine copy_lookup_table_to_gpu()
+  subroutine copy_lookup_table_to_gpu
+
+    ! Copy new tables to the GPU
+
     integer :: iTable
-    integer, save:: nTableOnGPU = 0
+    integer, save:: nTableOnGpu = 0
+    !--------------------------------------------------------------------------
+    if(nTable == nTableOnGpu) RETURN
     !$acc update device(nTable)
     !$acc update device(Table_I(nTableOnGPU+1:nTable))
-    !--------------------------------------------------------------------------
-    do iTable = nTableOnGPU + 1, nTable
+    do iTable = nTableOnGpu + 1, nTable
        !$acc enter data attach(Table_I(iTable)%nIndex_I) &
        !$acc copyin(Table_I(iTable)%nIndex_I)
 
@@ -1744,7 +1748,7 @@ contains
        !$acc enter data attach(Table_I(iTable)%Index5_I) &
        !$acc copyin(Table_I(iTable)%Index5_I)
     end do
-    nTableOnGPU = nTable
+    nTableOnGpu = nTable
 
   end subroutine copy_lookup_table_to_gpu
   !============================================================================
