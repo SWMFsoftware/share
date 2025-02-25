@@ -1,15 +1,12 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-!
-!
-!
-! Contains various methods to solve linear system of equations.
-! There are both serial and parallel solvers, and direct and
-! iterative solvers.
-!
 
 module ModLinearSolver
+
+  ! Various methods to solve linear system of equations.
+  ! There are both serial and parallel solvers, and direct and
+  ! iterative solvers.
 
   use ModMpi
   use ModUtilities, ONLY: CON_stop, CON_stop_simple
@@ -208,7 +205,7 @@ contains
     endif
 
     its = 0
-    !-------------------------------------------------------------
+
     ! **  outer loop starts here..
     !-------------- compute initial residual vector --------------
 
@@ -229,7 +226,6 @@ contains
              Krylov_II(i,1) = Rhs(i)
           end do
        endif
-       !-------------------------------------------------------------
 
        ro = sqrt( dot_product_mpi(n, Krylov_II(:,1), Krylov_II(:,1), iComm ))
        !$acc update device(ro)
@@ -278,7 +274,7 @@ contains
 
        i = 0
        KRYLOVLOOP: do
-          i=i+1
+          i = i + 1
           its = its + 1
           i1 = i + 1
           !
@@ -289,7 +285,7 @@ contains
           !-----------------------------------------
           !  modified gram - schmidt...
           !-----------------------------------------
-          do j=1,i
+          do j = 1, i
 
              t = dot_product_mpi(n, Krylov_II(:,j), Krylov_II(:,i1), iComm)
              !$acc update device(t)
@@ -503,7 +499,6 @@ contains
 
     real :: rwork(2,7)
 
-    !--------------------------------------------------------------------------
     logical GoOn, rcmp, xpdt
     integer nmv
     real :: alpha, beta, omega, rho0, rho1, sigma
@@ -831,10 +826,8 @@ contains
 
     ! These arrays used to be automatic
     real, allocatable :: Vec_I(:), aDotVec_I(:), PrecRhs_I(:)
-
-    ! Assign the MPI communicator
     !--------------------------------------------------------------------------
-    iComm = MPI_COMM_SELF
+    iComm = MPI_COMM_SELF ! Assign the MPI communicator
     if(present(iCommIn)) iComm = iCommIn
 
     ! Allocate the vectors needed for CG
@@ -976,7 +969,6 @@ contains
     integer :: i, n, iError, nProc
     real :: Limit, Maximum, a
     real :: Part_I(nPart), SumPart_I(nPart), SumAllPart_I(nPart)
-
     !--------------------------------------------------------------------------
     n = size(a_I)
 
@@ -1069,7 +1061,6 @@ contains
 
   end function maxval_abs_mpi
   !============================================================================
-
   ! GENERAL PRECONDITIONER FOR BLOCK HEPTADIAGONAL AND PENTADIAGONAL MATRICES.
   ! DIRECT SOLVER FOR BLOCK TRIDIAGONAL MATRIX.
   !
@@ -1213,12 +1204,15 @@ contains
     ! info variable for lapack routines
     integer :: i, j, info, iPrecond
 #endif
-
     ! call timing_start('precond')
     !--------------------------------------------------------------------------
-    if( (n == 1) .and. (nint(PrecondParam) /= Dilu_) ) then
-       call prehepta_scalar(nBlock, m1, m2, PrecondParam, &
-            d, e, f, e1, f1, e2, f2)
+    if(n == 1 .and. nint(PrecondParam) /= Dilu_) then
+       if(nint(PrecondParam) == Bilu1_)then
+          call prehepta_scalar_fast(nBlock, m1, d, e, f)
+       else
+          call prehepta_scalar(nBlock, m1, m2, PrecondParam, &
+               d, e, f, e1, f1, e2, f2)
+       end if
        RETURN
     else
 #ifdef _OPENACC
@@ -1354,9 +1348,7 @@ contains
 
     ! info variable for lapack routines
     integer :: j, iPrecond
-
     !--------------------------------------------------------------------------
-
     iPrecond = nint(PrecondParam)
 
     !$acc loop seq
@@ -1364,7 +1356,7 @@ contains
 
        dd = d(j)
        if (iPrecond < GaussSeidel_)then
-          if (j > 1 ) dd = dd - e(j)*f(j- 1)
+          if (j > 1 ) dd = dd - e(j)*f(j-1)
           if (j > m1) dd = dd - e1(j)*f1(j-M1)
           if (j > m2) dd = dd - e2(j)*f2(j-M2)
        end if
@@ -1404,6 +1396,34 @@ contains
     end do
 
   end subroutine prehepta_scalar
+  !============================================================================
+  subroutine prehepta_scalar_fast(nBlock, m1, d, e, f)
+    !$acc routine vector
+
+    ! Purely 1D preconditioning. Can be parallelized with nBlock/m1 threads,
+    ! because every M1-s element of e and f are 0.
+
+    integer, intent(in):: nBlock, m1
+    real, intent(inout), dimension(nBlock):: d, e, f
+
+    integer :: j
+    !--------------------------------------------------------------------------
+    !$acc loop seq
+    do j = 1, nBlock
+
+       if (j > 1 )then
+          d(j) = 1/(d(j) - e(j)*f(j-1))
+       else
+          d(j) = 1/d(j)
+       endif
+
+       if (j < nBlock)then
+          f(j) = d(j)*f(j)
+       end if
+
+    end do
+
+  end subroutine prehepta_scalar_fast
   !============================================================================
   subroutine Uhepta(IsInverse, nBlock, n, M1, M2, x, f, f1, f2)
     !$acc routine vector
@@ -2458,7 +2478,6 @@ contains
     integer :: iVar, jVar, i, iStencil, iDiag, iX
 
     logical, parameter :: DoTest = .false.
-
     !--------------------------------------------------------------------------
     allocate(StateEps_GV(-1:nCell+2, nVar), &
          RightHand_CV(nCell, nVar), ResidOrig_CV(nCell, nVar),  &
@@ -2559,7 +2578,6 @@ contains
     real,    intent(in) :: State_GV(-1:nCell+2, nVar)
 
     integer :: i
-
     !--------------------------------------------------------------------------
     write(UNITTMP_,'(a79)') 'linear solver test_hd11'
     write(UNITTMP_,'(i7,1pe13.5,3i3)') iStep,Time,1,1,nVar
