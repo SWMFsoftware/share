@@ -112,31 +112,28 @@ module ModLinearSolver
   ! Size of Krylov subspace
   integer:: nKrylov0 = 0
   ! Krylov subspace vectors
-  real, dimension(:,:), allocatable :: Krylov_II
+  real, allocatable :: Krylov_II(:,:)
   !$acc declare create(Krylov_II)
 
   ! Hessenberg matrix and some vectors
-  real, dimension(:,:), allocatable :: hh
+  real, allocatable :: hh(:,:)
   !$acc declare create(hh)
-  real, dimension(:),   allocatable :: c,s,rs
+  real, allocatable :: c(:), s(:), rs(:)
   !$acc declare create(c, s, rs)
 contains
   !============================================================================
+  subroutine gmres(matvec, Rhs, Sol, IsInit, n, nKrylov, Tol, TypeStop, &
+       Iter, info, DoTest, iCommIn)
 
-  subroutine gmres(matvec,Rhs,Sol,IsInit,n,nKrylov,Tol,TypeStop,&
-       Iter,info,DoTest,iCommIn)
-
-    !*************************************************************
     ! This code was initially written by Youcef Saad (May 23, 1985)
     ! then revised by Henk A. van der Vorst and Mike Botchev (Oct. 1996)
     ! Rewritten into F90 and parallelized for the BATSRUS code (May 2002)
     ! by Gabor Toth
     ! Moved into ModLinearSolver.f90 for SWMF by Gabor Toth (December 2006)
-    !*************************************************************
 
     ! subroutine for matrix vector multiplication
     interface
-       subroutine matvec(a,b,n)
+       subroutine matvec(a, b, n)
          implicit none
          ! Calculate b = M.a where M is the matrix
          integer, intent(in) :: n
@@ -180,8 +177,8 @@ contains
 
     ! Local variables
     integer :: iComm                           ! MPI communicator
-    integer :: i,i1,its,j,k,k1
-    real :: coeff,Tol1,epsmac,gam,ro,ro0,t,tmp
+    integer :: i, i1, its, j, k, k1
+    real :: coeff, Tol1, epsmac, gam, ro, ro0, t, tmp
     !$acc declare create(coeff, ro, t, tmp)
     !--------------------------------------------------------------------------
     ! call timing_start('gmres')
@@ -326,7 +323,7 @@ contains
 
           !-------- perform previous transformations  on i-th column of h
           !$acc serial
-          do k=2,i
+          do k = 2, i
              k1 = k-1
              t = hh(k1,i)
              hh(k1,i) = c(k1)*t + s(k1)*hh(k,i)
@@ -364,7 +361,7 @@ contains
        ! rs := hh(1:i,1:i) ^-1 * rs
 
        !$acc serial
-       do j=i,1,-1
+       do j = i, 1, -1
           if (rs(j)/=0.0) then
              rs(j)=rs(j)/hh(j,j)
              tmp = rs(j)
@@ -378,7 +375,7 @@ contains
        ! done with back substitution..
        ! now form linear combination to get solution
        !$acc parallel
-       do j=1, i
+       do j = 1, i
           !$acc loop gang vector independent
           do k = 1, n
              Sol(k) = Sol(k) + rs(j)*Krylov_II(k,j)
@@ -393,8 +390,8 @@ contains
     !    call cpu_time(finish)
     !    print '("TimeEndMainLoop = ",f6.3," seconds.")',finish-start
 
-    Iter=its
-    Tol=Tol/Tol1*ro ! (relative) tolerance achieved
+    Iter = its
+    Tol = Tol/Tol1*ro ! (relative) tolerance achieved
     if(ro < Tol1)then
        info = 0
     elseif(ro < ro0)then
@@ -407,7 +404,7 @@ contains
 
   end subroutine gmres
   !============================================================================
-  subroutine bicgstab(matvec,rhs,qx,nonzero,n,tol,typestop,iter,info,&
+  subroutine bicgstab(matvec, rhs, qx, nonzero, n, tol, typestop, iter, info, &
        DoTest,iCommIn)
 
     ! Simple BiCGstab(\ell=1) iterative method
@@ -498,24 +495,20 @@ contains
     ! Local variables (only 4 big vectors are needed):
     integer :: iComm             ! actual MPI communicator
     ! used to be automatic arrays
-    real, dimension(:), allocatable :: bicg_r, bicg_u, bicg_r1, bicg_u1
+    real, allocatable :: bicg_r(:), bicg_u(:), bicg_r1(:), bicg_u1(:)
 
     ! allocatable array for initial guess
-    real, dimension(:), allocatable :: qx0
+    real, allocatable :: qx0(:)
 
     real :: rwork(2,7)
 
-    !--------------------------------------------------------------------------
     logical GoOn, rcmp, xpdt
     integer nmv
     real :: alpha, beta, omega, rho0, rho1, sigma
     real :: varrho, hatgamma
     real :: assumedzero, rnrm0, rnrm, rnrmMax0, rnrmMax
     real :: mxnrmx, mxnrmr, kappa0, kappal
-
     !--------------------------------------------------------------------------
-
-    ! Assign the MPI communicator
     iComm = MPI_COMM_SELF
     if(present(iCommIn)) iComm = iCommIn
 
@@ -779,7 +772,6 @@ contains
 
   end subroutine bicgstab
   !============================================================================
-
   subroutine cg(matvec, Rhs_I, Sol_I, IsInit, n, Tol, TypeStop, &
        nIter, iError, DoTest, iCommIn, JacobiPrec_I, preconditioner)
 
@@ -949,7 +941,6 @@ contains
 
   end subroutine cg
   !============================================================================
-
   real function accurate_dot_product(a_I, b_I, LimitIn, iComm)
 
     ! Algorithm and implementation by G. Toth 2009
@@ -1022,7 +1013,6 @@ contains
 
   end function accurate_dot_product
   !============================================================================
-
   real function dot_product_mpi(n, a_I, b_I, iComm)
     integer, intent(in) :: n
     real, intent(in)    :: a_I(n), b_I(n)
@@ -1057,7 +1047,6 @@ contains
     dot_product_mpi = DotProductMpi
   end function dot_product_mpi
   !============================================================================
-
   real function maxval_abs_mpi(a_I, iComm)
 
     real, intent(in)    :: a_I(:)
@@ -1066,7 +1055,6 @@ contains
     real :: MaxvalAbs, MaxvalAbsMpi
     integer :: iError
     !--------------------------------------------------------------------------
-
     MaxvalAbs = maxval(abs(a_I))
     if(iComm == MPI_COMM_SELF)then
        maxval_abs_mpi = MaxvalAbs
@@ -1122,8 +1110,6 @@ contains
   !        call Uhepta(.true.,y)   ! multiply y with U^{-1}
   !        call matvec(y)          ! multiply y with A
   !        call Lhepta(y)          ! multiply y with L^{-1}
-  !
-  !
 
   subroutine prehepta(nBlock, n, m1, m2, PrecondParam, d, e, f, e1, f1, e2, f2)
     !$acc routine vector
@@ -1147,11 +1133,10 @@ contains
     ! iterative methods. See page 22 of Phd thesis 'Preconditioning
     ! for sparse ..... ' for an illustration of this phenomenon.
 
-    integer, intent(in)                        :: N, M1, M2, nblock
-    real, intent(in)                           :: PrecondParam
-    real, intent(inout), dimension(n,n,nBlock) :: d
-    real, intent(inout), dimension(n,n,nBlock), optional :: &
-         e, f, e1, f1, e2, f2
+    integer, intent(in):: n, M1, M2, nBlock
+    real, intent(in)   :: PrecondParam
+    real, intent(inout):: d(n,n,nBlock)
+    real, intent(inout), dimension(n,n,nBlock), optional:: e, f, e1, f1, e2, f2
 
     !     Description of arguments:
     !
@@ -1354,14 +1339,14 @@ contains
 #endif
   end subroutine prehepta
   !============================================================================
-  subroutine prehepta_scalar(nBlock, m1, m2, PrecondParam, d, e, f, e1, f1, e2, f2)
+  subroutine prehepta_scalar(nBlock, m1, m2, PrecondParam, &
+       d, e, f, e1, f1, e2, f2)
     !$acc routine vector
 
-    integer, intent(in)                        :: M1, M2, nblock
-    real, intent(in)                           :: PrecondParam
-    real, intent(inout), dimension(nBlock) :: d
-    real, intent(inout), dimension(nBlock), optional :: &
-         e, f, e1, f1, e2, f2
+    integer, intent(in):: M1, M2, nblock
+    real, intent(in)   :: PrecondParam
+    real, intent(inout):: d(nBlock)
+    real, intent(inout), dimension(nBlock), optional:: e, f, e1, f1, e2, f2
 
     real :: dd
 
@@ -1373,10 +1358,9 @@ contains
     iPrecond = nint(PrecondParam)
 
     !$acc loop seq
-    do j=1, nBlock
+    do j = 1, nBlock
 
        dd = d(j)
-
        if (iPrecond < GaussSeidel_)then
           if (j > 1 ) dd = dd - e(j)*f(j- 1)
           if (j > m1) dd = dd - e1(j)*f1(j-M1)
@@ -1419,8 +1403,7 @@ contains
 
   end subroutine prehepta_scalar
   !============================================================================
-
-  subroutine Uhepta(inverse,nblock,N,M1,M2,x,f,f1,f2)
+  subroutine Uhepta(inverse, nBlock, n, M1, M2, x, f, f1, f2)
     !$acc routine vector
 
     ! G. Toth, 2001
@@ -1432,10 +1415,10 @@ contains
     ! For tri-diagonal matrix set M1=M2=nblock and f1,f2 can be omitted.
 
     logical, intent(in) :: inverse
-    integer, intent(in) :: N,M1,M2,nblock
+    integer, intent(in) :: N, M1, M2, nBlock
     real, intent(inout) :: x(N,nblock)
     real, intent(in)    :: f(N,N,nblock)
-    real, intent(in), optional :: f1(N,N,nblock), f2(N,N,nblock)
+    real, intent(in), optional :: f1(n,n,nBlock), f2(n,n,nBlock)
 
     !     Description of arguments:
     !
@@ -1476,7 +1459,11 @@ contains
     ! call timing_start('Uhepta')
 
     if(n == 1)then
-       call upper_hepta_scalar(inverse,nblock,M1,M2,x,f,f1,f2)
+       if(.not.present(f1))then
+          call upper_hepta_scalar_fast(inverse, nBlock, M1, x, f)
+       else
+          call upper_hepta_scalar(inverse, nBlock, M1, M2, x, f, f1, f2)
+       end if
        RETURN
     end if
 
@@ -1542,21 +1529,22 @@ contains
 
   end subroutine Uhepta
   !============================================================================
-  subroutine Lhepta(nblock,N,M1,M2,x,d,e,e1,e2)
+  subroutine Lhepta(nblock, N, M1, M2, x, d, e, e1, e2)
     !$acc routine vector
 
-    ! G. Toth, 2001
-    !
     ! This routine multiplies x with the lower triangular matrix L^{-1},
     ! which must have been constructed in subroutine prehepta.
     !
-    ! For penta-diagonal matrix, set M2=nblock and e2 can be omitted.
-    ! For tri-diagonal matrix set M1=M2=nblock and e1,e2 can be omitted.
+    ! For penta-diagonal matrix, set M2=nBlock and e2 can be omitted.
+    ! For tri-diagonal matrix set M1=M2=nBlock and e1,e2 can be omitted.
+    !
+    ! For penta- or hepta-diagonal matrix, a missing e1 means that only
+    ! the immediate diagonal is used in the preconditioner (optimal for GPU)
 
-    integer, intent(in) :: N,M1,M2,nblock
-    real, intent(inout) :: x(N,nblock)
-    real, intent(in), dimension(n,n,nBlock) :: d,e
-    real, intent(in), dimension(n,n,nBlock), optional :: e1,e2
+    integer, intent(in) :: n, M1, M2, nBlock
+    real, intent(inout) :: x(n,nBlock)
+    real, intent(in)    :: d(n,n,nBlock), e(n,n,nBlock)
+    real, intent(in), optional :: e1(n,n,nBlock), e2(n,n,nBlock)
 
     !     Description of arguments:
     !
@@ -1583,24 +1571,22 @@ contains
     !           e2(j): j=M2+1..nblock Blocks in the lower-triangular part with
     !                                 distance M2 from the main diagonal.
     !                                 Omit for block tri/penta-diagonal matrix!
-    ! this used to be an automatic array
-    real, dimension(:), allocatable :: work
+
+    real, allocatable :: work(:)
 
     integer :: j
 
-    ! External subroutine
-    !
-    ! DGEMV,   BLAS level two Matrix-Vector Product.
-    !          See 'man DGEMV' for description.
-    !
+    ! External subroutine: DGEMV, BLAS level two Matrix-Vector Product.
     !--------------------------------------------------------------------------
 
-    ! x' = L^{-1}.x = D^{-1}.(x - E2.x'(j-M2) - E1.x'(j-M1) - E.x'(j-1))
 
     ! call timing_start('Lhepta')
-
     if(n == 1)then
-       call lower_hepta_scalar(nblock,M1,M2,x,d,e,e1,e2)
+       if(.not.present(e1))then
+          call lower_hepta_scalar_fast(nblock, M1, x, d, e)
+       else
+          call lower_hepta_scalar(nblock, M1, M2, x, d, e, e1, e2)
+       end if
        RETURN
     end if
 
@@ -1647,7 +1633,6 @@ contains
 
   end subroutine Lhepta
   !============================================================================
-
   subroutine upper_hepta_scalar(IsInverse, nBlock, m1, m2, x, f, f1, f2)
     !$acc routine vector
 
@@ -1667,11 +1652,10 @@ contains
 
     integer :: j
     !--------------------------------------------------------------------------
-
     if(IsInverse)then
        !  x' := U^{-1}.x = x - F.x'(j+1) - F1.x'(j+M1) - F2.x'(j+M2)
        !$acc loop seq
-       do j=nblock-1,1,-1
+       do j = nblock-1, 1, -1
           !  x' := U^{-1}.x = x - F.x'(j+1) - F1.x'(j+M1) - F2.x'(j+M2)
           if (j+M2<=nblock) then
              x(j) = x(j) - f(j)*x(j+1) - f1(j)*x(j+M1) - f2(j)*x(j+M2)
@@ -1684,8 +1668,8 @@ contains
     else
        !  x := U.x = x + F.x(j+1) + F1.x(j+M1) + F2.x(j+M2)
        !$acc loop seq
-       do j=1,nblock-1
-          if (j+M2<=nblock) then
+       do j = 1, nblock-1
+          if (j + M2 <= nblock) then
              x(j) = x(j) + f(j)*x(j+1) + f1(j)*x(j+M1) + f2(j)*x(j+M2)
           else if (j+M1 <= nblock) then
              x(j) = x(j) + f(j)*x(j+1) + f1(j)*x(j+M1)
@@ -1697,21 +1681,50 @@ contains
 
   end subroutine upper_hepta_scalar
   !============================================================================
+  subroutine upper_hepta_scalar_fast(IsInverse, nBlock, m1, x, f)
+    !$acc routine vector
 
+    ! Multiply x with the upper triagonal U or U^{-1}
+    ! restricted to immediate upper diagonal "f". This allows parallelization
+    ! nBlock/M1 threads for the case when M1 < nBlock. 
+
+    logical, intent(in) :: IsInverse
+    integer, intent(in) :: m1, nBlock
+    real, intent(inout) :: x(nblock)
+    real, intent(in)    :: f(nblock)
+
+    integer :: j
+    !--------------------------------------------------------------------------
+    if(IsInverse)then
+       !  x' := U^{-1}.x = x - F.x'(j+1)
+       !$acc loop seq
+       do j = nblock-1, 1, -1
+          !  x' := U^{-1}.x = x - F.x'(j+1) - F1.x'(j+M1) - F2.x'(j+M2)
+          x(j) = x(j) - f(j)*x(j+1)
+       end do
+    else
+       !  x := U.x = x + F.x(j+1) + F1.x(j+M1) + F2.x(j+M2)
+       !$acc loop seq
+       do j = 1, nblock-1
+          x(j) = x(j) + f(j)*x(j+1)
+       end do
+    end if
+
+  end subroutine upper_hepta_scalar_fast
+  !============================================================================
   subroutine lower_hepta_scalar(nBlock, M1, M2, x, d, e, e1, e2)
     !$acc routine vector
-    ! G. Toth, 2009
-    !
-    ! This routine multiplies x with the lower triangular matrix L^{-1},
+
+    ! Multiply x with the lower triangular matrix L^{-1},
     ! which must have been constructed in subroutine prehepta.
     !
     ! For penta-diagonal matrix, set M2=nblock and e2 can be omitted.
     ! For tri-diagonal matrix set M1=M2=nblock and e1,e2 can be omitted.
 
-    integer, intent(in) :: m1, m2, nBlock
-    real, intent(inout) :: x(nBlock)
-    real, intent(in), dimension(nBlock) :: d,e
-    real, intent(in), dimension(nBlock), optional :: e1,e2
+    integer, intent(in):: m1, m2, nBlock
+    real, intent(inout):: x(nBlock)
+    real, intent(in)   :: d(nBlock), e(nBlock)
+    real, intent(in), optional :: e1(nBlock), e2(nBlock)
 
     real:: Work1
 
@@ -1719,7 +1732,6 @@ contains
     !--------------------------------------------------------------------------
     ! x' = L^{-1}.x = D^{-1}.(x - E2.x'(j-M2) - E1.x'(j-M1) - E.x'(j-1))
 
-    ! Warning: This seq loop could be bottleneck.
     !$acc loop seq
     do j=1, nblock
        work1 = x(j)
@@ -1735,7 +1747,33 @@ contains
 
   end subroutine lower_hepta_scalar
   !============================================================================
+  subroutine lower_hepta_scalar_fast(nBlock, M1, x, d, e)
+    !$acc routine vector
 
+    ! This routine multiplies x with the lower triangular matrix L^{-1},
+    ! restricted to immediate lower diagonal "e". This allows parallelization
+    ! nBlock/M1 threads for the case when M1 < nBlock. 
+
+    integer, intent(in):: nBlock, m1
+    real, intent(inout):: x(nBlock)
+    real, intent(in)   :: d(nBlock), e(nBlock)
+
+    integer :: i, j
+    !--------------------------------------------------------------------------
+    ! x' = L^{-1}.x = D^{-1}.(x - E.x'(j-1))
+    ! Prehepta calculated d = D^{-1} and e = D^{-1}*E
+
+    !$acc loop vector
+    do i = 1, nBlock, M1
+       x(i) = d(i)*x(i)
+       !$acc loop seq
+       do j = i+1, i+M1-1
+          x(j) = d(j)*(x(j) - e(j)*x(j-1))
+       end do
+    end do
+
+  end subroutine lower_hepta_scalar_fast
+  !============================================================================
   subroutine multiply_dilu(nBlock, n, m1, m2, x, d, e, f, e1, f1, e2, f2)
 
     ! G. Toth, 2009
@@ -1801,7 +1839,6 @@ contains
 
   end subroutine multiply_dilu
   !============================================================================
-
   subroutine multiply_block_jacobi(nBlock, nVar, x_VB, d_VVB)
 
     ! G. Toth, 2009
@@ -1889,7 +1926,7 @@ contains
 
 #ifndef _OPENACC
     select case(TypePrecondSide)
-    case('left', 'right', 'symmetric')
+    case('left', 'symmetric')
     case default
        call CON_stop(NameSub// &
             ': unknown value for TypePrecondSide='//TypePrecondSide)
@@ -1926,39 +1963,45 @@ contains
 #endif
     case('BILU', 'MBILU')
        ! Multiply with L^-1 from the LU decomposition
-       select case(nDim)
-       case(1)
-          ! Tridiagonal case
-          call Lhepta(nI, nVar, nI, nI, x_I, &
-               a_II(1,1), a_II(1,2))
-       case(2)
-          ! Pentadiagonal case
-          call Lhepta(nI*nJ, nVar, nI, nI*nJ, x_I, &
-               a_II(1,1), a_II(1,2), a_II(1,4))
-       case(3)
-          ! Heptadiagonal case
-          call Lhepta(nI*nJ*nK, nVar, nI, nI*nJ, x_I, &
-               a_II(1,1), a_II(1,2), a_II(1,4), a_II(1,6))
-       end select
-
-       if(TypePrecondSide == 'left')then
-          ! Multiply with U^-1 from the LU decomposition
           select case(nDim)
           case(1)
              ! Tridiagonal case
-             call Uhepta(.true., nI, nVar, nI, nI, x_I, &
-                  a_II(1,3))
+             call Lhepta(nI, nVar, nI, nI, x_I, &
+                  a_II(1,1), a_II(1,2))
           case(2)
              ! Pentadiagonal case
-             call Uhepta(.true., nI*nJ, nVar, nI, nI*nJ, x_I, &
-                  a_II(1,3), a_II(1,5))
+             call Lhepta(nI*nJ, nVar, nI, nI*nJ, x_I, &
+                  a_II(1,1), a_II(1,2), a_II(1,4))
           case(3)
              ! Heptadiagonal case
-             call Uhepta(.true., nI*nJ*nK, nVar, nI, nI*nJ, x_I, &
-                  a_II(1,3), a_II(1,5), a_II(1,7))
+             call Lhepta(nI*nJ*nK, nVar, nI, nI*nJ, x_I, &
+                  a_II(1,1), a_II(1,2), a_II(1,4), a_II(1,6))
           end select
 
-       end if
+          if(TypePrecondSide == 'left')then
+             ! Multiply with U^-1 from the LU decomposition
+             select case(nDim)
+             case(1)
+                ! Tridiagonal case
+                call Uhepta(.true., nI, nVar, nI, nI, x_I, &
+                     a_II(1,3))
+             case(2)
+                ! Pentadiagonal case
+                call Uhepta(.true., nI*nJ, nVar, nI, nI*nJ, x_I, &
+                     a_II(1,3), a_II(1,5))
+             case(3)
+                ! Heptadiagonal case
+                call Uhepta(.true., nI*nJ*nK, nVar, nI, nI*nJ, x_I, &
+                     a_II(1,3), a_II(1,5), a_II(1,7))
+             end select
+          end if
+    case('BILU1', 'MBILU1')
+       ! Multiply with L^-1 restricted to main + one lower diagonal
+       call lower_hepta_scalar_fast(nI*nJ*nK, nI, x_I, a_II(1,1), a_II(1,2))
+       ! Multiply with U^-1 restricted to one upper diagonal
+!!!          call upper_hepta_scalar_fast(.true., nI*nJ*nK, nI, x_I, a_II(1,3))
+       call Uhepta(.true., nI*nJ*nK, nVar, nI, nI*nJ, x_I, &
+            a_II(1,3), a_II(1,5), a_II(1,7))
     case default
 #ifndef _OPENACC
        call CON_stop(NameSub//': unknown value for TypePrecond='//TypePrecond)
@@ -1967,7 +2010,6 @@ contains
 
   end subroutine multiply_left_precond
   !============================================================================
-
   subroutine multiply_right_precond(TypePrecond, TypePrecondSide, &
        nVar, nDim, nI, nJ, nK, a_II, x_I)
     !$acc routine vector
@@ -1995,7 +2037,7 @@ contains
 
 #ifndef _OPENACC
     select case(TypePrecondSide)
-    case('left', 'right', 'symmetric')
+    case('right', 'symmetric')
     case default
        call CON_stop(NameSub// &
             ': unknown value for TypePrecondSide='//TypePrecondSide)
@@ -2052,7 +2094,6 @@ contains
 
   end subroutine multiply_right_precond
   !============================================================================
-
   subroutine precond_left_multiblock(Param, &
        nVar, nDim, nI, nJ, nK, nBlock, Jac_VVCIB, x_I)
 
@@ -2093,7 +2134,6 @@ contains
 
   end subroutine precond_left_multiblock
   !============================================================================
-
   subroutine precond_right_multiblock(Param, &
        nVar, nDim, nI, nJ, nK, nBlock, Jac_VVCIB, x_I)
 
@@ -2134,7 +2174,6 @@ contains
 
   end subroutine precond_right_multiblock
   !============================================================================
-
   subroutine multiply_initial_guess(nVar, nDim, nI, nJ, nK, a_II, x_I)
 
     ! Multiply x_I with the upper triangular part of
@@ -2175,7 +2214,6 @@ contains
 
   end subroutine multiply_initial_guess
   !============================================================================
-
   subroutine solve_linear_multiblock(Param, &
        nVar, nDim, nI, nJ, nK, nBlock, iComm, impl_matvec, Rhs_I, x_I, &
        DoTest, Jac_VVCIB, JacobiPrec_I, cg_precond, hypre_precond)
@@ -2374,7 +2412,6 @@ contains
 
   end subroutine solve_linear_multiblock
   !============================================================================
-
   subroutine implicit_solver(ImplPar, DtImpl, DtExpl, nCell, nVar, State_GV, &
        calc_residual, update_boundary)
 
@@ -2507,7 +2544,6 @@ contains
 
   end subroutine implicit_solver
   !============================================================================
-
   subroutine save_plot(iStep, Time, nCell, nVar, State_GV)
 
     integer, intent(in) :: iStep
@@ -2529,7 +2565,6 @@ contains
 
   end subroutine save_plot
   !============================================================================
-
   subroutine calc_resid_test(nOrder, Dt, nCell, nVar, State_GV, Resid_CV)
 
     integer, intent(in) :: nOrder, nCell, nVar
@@ -2555,7 +2590,6 @@ contains
     end do
   end subroutine calc_resid_test
   !============================================================================
-
   subroutine update_bound_test(nCell, nVar, State_GV)
 
     integer, intent(in)    :: nCell, nVar
@@ -2576,7 +2610,6 @@ contains
 
   end subroutine update_bound_test
   !============================================================================
-
   subroutine test_linear_solver
 
     integer, parameter :: nStep=20
@@ -2623,6 +2656,5 @@ contains
 
   end subroutine test_linear_solver
   !============================================================================
-
 end module ModLinearSolver
 !==============================================================================
