@@ -76,7 +76,8 @@ module ModLinearSolver
 
   ! Named indexes for various preconditioner options
   integer, public, parameter:: &
-       Jacobi_=5, BlockJacobi_=4, GaussSeidel_=3, Dilu_=2, Bilu_=1, Mbilu_=0
+       Jacobi_=6, BlockJacobi_=5, GaussSeidel_=4, Dilu_=3, &
+       Bilu1_=2, Bilu_=1, Mbilu_=0
 
   type LinearSolverParamType
      logical          :: DoPrecond        ! Do preconditioning
@@ -1120,8 +1121,8 @@ contains
     ! same blockstructure as A. For block tri-diagonal matrix the subroutine
     ! provides a full LU decompostion.
     !
-    ! For penta-diagonal matrix, set M2=nblock and e2,f2 can be omitted.
-    ! For tri-diagonal matrix set M1=M2=nblock and e1,f1,e2,f2 can be omitted.
+    ! For penta-diagonal matrix, set M2=nBlock and e2,f2 can be omitted.
+    ! For tri-diagonal matrix set M1=M2=nBlock and e1,f1,e2,f2 can be omitted.
     !
     !     Gustafsson modification
     !
@@ -1141,7 +1142,7 @@ contains
 
     !     Description of arguments:
     !
-    ! nblock:  Number of diagonal blocks.
+    ! nBlock:  Number of diagonal blocks.
     ! N:       The size of the blocks.
     ! M1:      Distance of outer blocks to the main diagonal blocks.
     ! M2:      Distance of outer-most blocks to main diagonal blocks.
@@ -1173,19 +1174,19 @@ contains
     !          on exit: L + U - I (the diagonal of U is I)
     !           The matrix A and L+U are block heptadiagonal.
     !           The blocks are stored as follows:
-    !           d(j): j=1..nblock        main diagonal
-    !           e(j): j=2..nblock        sub diagonal blocks.
-    !           f(j): j=1..nblock-1      super diagonal blocks.
-    !           e1(j): j=M1+1..nblock    blocks in the lower-triangular
+    !           d(j): j=1..nBlock        main diagonal
+    !           e(j): j=2..nBlock        sub diagonal blocks.
+    !           f(j): j=1..nBlock-1      super diagonal blocks.
+    !           e1(j): j=M1+1..nBlock    blocks in the lower-triangular
     !                                     part with distance M1 from
     !                                     the main diagonal.
-    !           f1(j): j=1..nblock-M1    blocks in the upper-triangular
+    !           f1(j): j=1..nBlock-M1    blocks in the upper-triangular
     !                                     part with distance M1 from
     !                                     the main diagonal.
-    !           e2(j): j=M2+1..nblock    blocks in the lower-triangular
+    !           e2(j): j=M2+1..nBlock    blocks in the lower-triangular
     !                                     part with distance M2 from
     !                                     the main diagonal.
-    !           f2(j): j=1..nblock-M2    blocks in the upper-triangular
+    !           f2(j): j=1..nBlock-M2    blocks in the upper-triangular
     !                                     part with distance M2 from
     !                                     the main diagonal.
     !          It is assumed that the
@@ -1214,10 +1215,10 @@ contains
 #endif
 
     ! call timing_start('precond')
-
     !--------------------------------------------------------------------------
     if( (n == 1) .and. (nint(PrecondParam) /= Dilu_) ) then
-       call prehepta_scalar(nBlock, m1, m2, PrecondParam, d, e, f, e1, f1, e2, f2)
+       call prehepta_scalar(nBlock, m1, m2, PrecondParam, &
+            d, e, f, e1, f1, e2, f2)
        RETURN
     else
 #ifdef _OPENACC
@@ -1244,7 +1245,7 @@ contains
        end if
     end if
 
-    do j=1, nBlock
+    do j = 1, nBlock
 
        dd = d(:,:,j)
 
@@ -1267,30 +1268,30 @@ contains
           !     + E.F1(j-1)  + E .F2(j-1) )
 
           if (j > M2) then
-             call BLAS_GEMM('n','n',N,N,N,PrecondParam, &
-                  e2(:,:,j),N, f(:,:,j-M2),N,1.0,dd,N)
-             call BLAS_GEMM('n','n',N,N,N,PrecondParam, &
-                  e2(:,:,j),N,f1(:,:,j-M2),N,1.0,dd,N)
+             call BLAS_GEMM('n', 'n', N, N, N, PrecondParam, &
+                  e2(:,:,j), N,  f(:,:,j-M2), N, 1.0, dd, N)
+             call BLAS_GEMM('n', 'n', N, N, N, PrecondParam, &
+                  e2(:,:,j), N, f1(:,:,j-M2), N, 1.0, dd, N)
           end if
           if (j > M1) call BLAS_GEMM('n','n',N,N,N,PrecondParam, &
-               e1(:,:,j),N, f(:,:,j-M1),N,1.0,dd,N)
+               e1(:,:,j), N, f(:,:,j-M1), N, 1.0, dd, N)
           if (j > M1 .and. j-M1 <= nBlock-M2) &
                call BLAS_GEMM('n','n',N,N,N,PrecondParam, &
-               e1(:,:,j),N,f2(:,:,j-M1),N,1.0,dd,N)
+               e1(:,:,j), N, f2(:,:,j-M1), N, 1.0, dd, N)
           if (j > 1 .and. j-1 <= nBlock-M2) &
-               call BLAS_GEMM('n','n',N,N,N,PrecondParam, &
-               e(:,:,j),N,f2(:,:,j-1 ),N,1.0,dd,N)
+               call BLAS_GEMM('n', 'n', N, N, N, PrecondParam, &
+               e(:,:,j), N, f2(:,:,j-1 ), N, 1.0, dd, N)
           if (j>1 .and. j-1 <= nBlock-M1) &
-               call BLAS_GEMM('n','n',N,N,N,PrecondParam, &
-               e(:,:,j),N,f1(:,:,j-1 ),N,1.0,dd,N)
+               call BLAS_GEMM('n', 'n', N, N, N, PrecondParam, &
+               e(:,:,j), N, f1(:,:,j-1 ), N, 1.0, dd, N)
        end if
 
        ! Invert the diagonal block by first factorizing then solving D.D'=I
-       call LAPACK_getrf( n, n, dd, n, pivot, info )
+       call LAPACK_getrf(n, n, dd, n, pivot, info)
        ! Set the right hand side as identity matrix
-       d(:,:,j)=0.0
-       do i=1,N
-          d(i,i,j)=1.0
+       d(:,:,j) = 0.0
+       do i = 1, N
+          d(i,i,j) = 1.0
        end do
        ! Solve the problem, returns D^-1 into d(j)
        call LAPACK_getrs('n', n, n, dd, n, pivot, d(:,:,j), n, info)
@@ -1302,17 +1303,17 @@ contains
        ! as well as multiplication with U^{-1} more efficient
        ! F2 = D^{-1}.F2, F1 = D^{-1}.F1, F = D^{-1}.F
        if (j   < nBlock)then
-          dd=f(:,:,j)
+          dd = f(:,:,j)
           call BLAS_gemm('n', 'n', n, n, n, 1.0, d(:,:,j), n, dd, n, 0.0, &
                f(:,:,j), n)
        end if
        if (j+M1 <= nBlock)then
-          dd=f1(:,:,j)
+          dd = f1(:,:,j)
           call BLAS_gemm('n', 'n', n, n, n, 1.0, d(:,:,j), n, dd, n, 0.0, &
                f1(:,:,j), n)
        end if
        if (j+M2 <= nBlock)then
-          dd=f2(:,:,j)
+          dd = f2(:,:,j)
           call BLAS_gemm('n', 'n', n, n, n, 1.0, d(:,:,j), n, dd, n, 0.0, &
                f2(:,:,j), n)
        end if
@@ -1344,7 +1345,7 @@ contains
        d, e, f, e1, f1, e2, f2)
     !$acc routine vector
 
-    integer, intent(in):: M1, M2, nblock
+    integer, intent(in):: M1, M2, nBlock
     real, intent(in)   :: PrecondParam
     real, intent(inout):: d(nBlock)
     real, intent(inout), dimension(nBlock), optional:: e, f, e1, f1, e2, f2
@@ -1404,7 +1405,7 @@ contains
 
   end subroutine prehepta_scalar
   !============================================================================
-  subroutine Uhepta(inverse, nBlock, n, M1, M2, x, f, f1, f2)
+  subroutine Uhepta(IsInverse, nBlock, n, M1, M2, x, f, f1, f2)
     !$acc routine vector
 
     ! G. Toth, 2001
@@ -1412,26 +1413,26 @@ contains
     ! This routine multiplies x with the upper triagonal U or U^{-1}
     ! which must have been constructed in subroutine prehepta.
     !
-    ! For penta-diagonal matrix, set M2=nblock and f2 can be omitted.
-    ! For tri-diagonal matrix set M1=M2=nblock and f1,f2 can be omitted.
+    ! For penta-diagonal matrix, set M2=nBlock and f2 can be omitted.
+    ! For tri-diagonal matrix set M1=M2=nBlock and f1,f2 can be omitted.
 
-    logical, intent(in) :: inverse
+    logical, intent(in) :: IsInverse
     integer, intent(in) :: N, M1, M2, nBlock
-    real, intent(inout) :: x(N,nblock)
-    real, intent(in)    :: f(N,N,nblock)
+    real, intent(inout) :: x(N,nBlock)
+    real, intent(in)    :: f(N,N,nBlock)
     real, intent(in), optional :: f1(n,n,nBlock), f2(n,n,nBlock)
 
     !     Description of arguments:
     !
-    ! inverse: logical switch
+    ! IsInverse: logical switch
     !          Multiply by U^{-1} if true, otherwise multiply by U
     !
     ! nBlock:  Number of diagonal blocks.
     ! N:       the size of the blocks.
     ! M1:      distance of blocks to the main diagonal blocks.
-    !          set M1=nblock for block tri-diagonal matrices!
+    !          set M1=nBlock for block tri-diagonal matrices!
     ! M2:      distance of outer-most blocks to main diagonal blocks.
-    !          set M2=nblock for block tri- and penta-diagonal matrices.
+    !          set M2=nBlock for block tri- and penta-diagonal matrices.
     !
     ! x:       On input, the vector to be multiplied with U or U^{-1}.
     !          On output, the result of U.x or U^{-1}.x
@@ -1440,13 +1441,13 @@ contains
     !           The matrix U is assumed to be in three block diagonals
     !
     !           The blocks are stored as follows:
-    !           f(j): j=1..nblock-1   super diagonal blocks.
+    !           f(j): j=1..nBlock-1   super diagonal blocks.
     !
-    !           f1(j): j=1..nblock-M1 blocks in the upper-triangular part with
+    !           f1(j): j=1..nBlock-M1 blocks in the upper-triangular part with
     !                                 distance M1 from the main diagonal.
     !                                 Omit for block tri-diagonal matrix!
     !
-    !           f2(j): j=1..nblock-M2 blocks in the upper-triangular part with
+    !           f2(j): j=1..nBlock-M2 blocks in the upper-triangular part with
     !                                 distance M2 from the main diagonal.
     !                                 Omit for block tri/penta-diagonal matrix!
     !
@@ -1461,9 +1462,9 @@ contains
 
     if(n == 1)then
        if(.not.present(f1))then
-          call upper_hepta_scalar_fast(inverse, nBlock, M1, x, f)
+          call upper_hepta_scalar_fast(IsInverse, nBlock, M1, x, f)
        else
-          call upper_hepta_scalar(inverse, nBlock, M1, M2, x, f, f1, f2)
+          call upper_hepta_scalar(IsInverse, nBlock, M1, M2, x, f, f1, f2)
        end if
        RETURN
     end if
@@ -1471,15 +1472,15 @@ contains
 #ifndef _OPENACC
     if(n <= 20)then
        ! F90 VERSION
-       if(inverse)then
+       if(IsInverse)then
           !  x' := U^{-1}.x = x - F.x'(j+1) - F1.x'(j+M1) - F2.x'(j+M2)
-          do j=nblock-1,1,-1
+          do j=nBlock-1,1,-1
              !  x' := U^{-1}.x = x - F.x'(j+1) - F1.x'(j+M1) - F2.x'(j+M2)
-             if (j+M2<=nblock) then
+             if (j+M2<=nBlock) then
                 x(:,j) = x(:,j) - matmul( f(:,:,j),x(:,j+1 )) &
                      - matmul(f1(:,:,j),x(:,j+M1)) &
                      - matmul(f2(:,:,j),x(:,j+M2))
-             else if(j+M1<=nblock) then
+             else if(j+M1<=nBlock) then
                 x(:,j) = x(:,j) - matmul( f(:,:,j),x(:,j+1 )) &
                      - matmul(f1(:,:,j),x(:,j+M1))
              else
@@ -1488,12 +1489,12 @@ contains
           end do
        else
           !  x := U.x = x + F.x(j+1) + F1.x(j+M1) + F2.x(j+M2)
-          do j=1,nblock-1
-             if (j+M2<=nblock) then
+          do j=1,nBlock-1
+             if (j+M2<=nBlock) then
                 x(:,j) = x(:,j) + matmul( f(:,:,j),x(:,j+1 )) &
                      + matmul(f1(:,:,j),x(:,j+M1)) &
                      + matmul(f2(:,:,j),x(:,j+M2))
-             else if (j+M1<=nblock) then
+             else if (j+M1<=nBlock) then
                 x(:,j) = x(:,j) + matmul( f(:,:,j),x(:,j+1 )) &
                      + matmul(f1(:,:,j),x(:,j+M1))
              else
@@ -1503,24 +1504,24 @@ contains
        end if
     else
        ! BLAS VERSION
-       if(inverse)then
+       if(IsInverse)then
           !  x' := U^{-1}.x = x - F.x'(j+1) - F1.x'(j+M1) - F2.x'(j+M2)
-          do j=nblock-1,1,-1
+          do j=nBlock-1,1,-1
              call BLAS_gemv('n', n, n, -1.0, &
                   f(:,:,j), n, x(:,j+1 ), 1, 1.0, x(:,j), 1)
-             if(j+M1<=nblock) call BLAS_gemv('n', n, n, -1.0, &
+             if(j+M1<=nBlock) call BLAS_gemv('n', n, n, -1.0, &
                   f1(:,:,j), n, x(:,j+M1), 1, 1.0, x(:,j), 1)
-             if(j+M2<=nblock) CALL BLAS_gemv('n', n, n, -1.0, &
+             if(j+M2<=nBlock) CALL BLAS_gemv('n', n, n, -1.0, &
                   f2(:,:,j), n, x(:,j+M2), 1, 1.0, x(:,j), 1)
           enddo
        else
           !  x := U.x = x + F.x(j+1) + F1.x(j+M1) + F2.x(j+M2)
-          do j=1,nblock-1
+          do j=1,nBlock-1
              call BLAS_gemv( &
                   'n', n, n, 1.0, f(:,:,j), n, x(:,j+1 ), 1, 1.0, x(:,j), 1)
-             if(j+M1<=nblock) call BLAS_gemv( &
+             if(j+M1<=nBlock) call BLAS_gemv( &
                   'n', n, n, 1.0, f1(:,:,j), n, x(:,j+M1), 1, 1.0, x(:,j), 1)
-             if(j+M2<=nblock) call BLAS_gemv( &
+             if(j+M2<=nBlock) call BLAS_gemv( &
                   'n', n, n, 1.0, f2(:,:,j),n, x(:,j+M2), 1, 1.0, x(:,j), 1)
           end do
        end if
@@ -1530,7 +1531,7 @@ contains
 
   end subroutine Uhepta
   !============================================================================
-  subroutine Lhepta(nblock, N, M1, M2, x, d, e, e1, e2)
+  subroutine Lhepta(nBlock, N, M1, M2, x, d, e, e1, e2)
     !$acc routine vector
 
     ! This routine multiplies x with the lower triangular matrix L^{-1},
@@ -1549,12 +1550,12 @@ contains
 
     !     Description of arguments:
     !
-    ! nblock:  Number of diagonal blocks.
+    ! nBlock:  Number of diagonal blocks.
     ! N:        the size of the blocks.
     ! M1:       distance of blocks to the main diagonal blocks.
-    !           Set M1=nblock for block tri-diagonal matrix!
+    !           Set M1=nBlock for block tri-diagonal matrix!
     ! M2:       distance of outer-most blocks to main diagonal blocks.
-    !           Set M2=nblock for block tri- and penta-diagonal matrices!
+    !           Set M2=nBlock for block tri- and penta-diagonal matrices!
     !
     ! x:        On input, the vector to be multiplied with L^{-1}.
     !           On output, the result of L^{-1}.x
@@ -1563,13 +1564,13 @@ contains
     !           The matrix L is in four block diagonals.
     !
     !           The blocks are stored as follows:
-    !           d(j): j=1..nblock     Contains inverse of diagonal of L
+    !           d(j): j=1..nBlock     Contains inverse of diagonal of L
     !                                 where L is from the incomplete LU
-    !           e(j): j=2..nblock     sub diagonal blocks.
-    !           e1(j): j=M1+1..nblock Blocks in the lower-triangular part with
+    !           e(j): j=2..nBlock     sub diagonal blocks.
+    !           e1(j): j=M1+1..nBlock Blocks in the lower-triangular part with
     !                                 distance M1 from the main diagonal.
     !                                 Omit for block tri-diagonal matrix!
-    !           e2(j): j=M2+1..nblock Blocks in the lower-triangular part with
+    !           e2(j): j=M2+1..nBlock Blocks in the lower-triangular part with
     !                                 distance M2 from the main diagonal.
     !                                 Omit for block tri/penta-diagonal matrix!
 
@@ -1583,9 +1584,9 @@ contains
     ! call timing_start('Lhepta')
     if(n == 1)then
        if(.not.present(e1))then
-          call lower_hepta_scalar_fast(nblock, M1, x, d, e)
+          call lower_hepta_scalar_fast(nBlock, M1, x, d, e)
        else
-          call lower_hepta_scalar(nblock, M1, M2, x, d, e, e1, e2)
+          call lower_hepta_scalar(nBlock, M1, M2, x, d, e, e1, e2)
        end if
        RETURN
     end if
@@ -1595,7 +1596,7 @@ contains
     allocate(work(N))
     if(n <= 20)then
        ! F90 version
-       do j=1,nblock
+       do j=1,nBlock
           work = x(:,j)
           if (j>M2) then
              work = work                        &
@@ -1614,7 +1615,7 @@ contains
        end do
     else
        ! BLAS VERSION
-       do j=1,nblock
+       do j=1,nBlock
 
           call BLAS_gemv('n', N, N, 1.0, d(:,:,j) ,N, x(:,j), 1, 0.0, work, 1)
           if(j > 1 ) call BLAS_gemv( &
@@ -1641,25 +1642,25 @@ contains
     ! This routine multiplies x with the upper triagonal U or U^{-1}
     ! which must have been constructed in subroutine prehepta.
     !
-    ! For penta-diagonal matrix, set M2=nblock and f2 can be omitted.
-    ! For tri-diagonal matrix set M1=M2=nblock and f1,f2 can be omitted.
+    ! For penta-diagonal matrix, set M2=nBlock and f2 can be omitted.
+    ! For tri-diagonal matrix set M1=M2=nBlock and f1,f2 can be omitted.
 
     logical, intent(in) :: IsInverse
     integer, intent(in) :: m1, m2, nBlock
-    real, intent(inout) :: x(nblock)
-    real, intent(in)    :: f(nblock)
-    real, intent(in), optional :: f1(nblock), f2(nblock)
+    real, intent(inout) :: x(nBlock)
+    real, intent(in)    :: f(nBlock)
+    real, intent(in), optional :: f1(nBlock), f2(nBlock)
 
     integer :: j
     !--------------------------------------------------------------------------
     if(IsInverse)then
        !  x' := U^{-1}.x = x - F.x'(j+1) - F1.x'(j+M1) - F2.x'(j+M2)
        !$acc loop seq
-       do j = nblock-1, 1, -1
+       do j = nBlock-1, 1, -1
           !  x' := U^{-1}.x = x - F.x'(j+1) - F1.x'(j+M1) - F2.x'(j+M2)
-          if (j+M2<=nblock) then
+          if (j+M2<=nBlock) then
              x(j) = x(j) - f(j)*x(j+1) - f1(j)*x(j+M1) - f2(j)*x(j+M2)
-          else if(j+M1 <= nblock) then
+          else if(j+M1 <= nBlock) then
              x(j) = x(j) - f(j)*x(j+1) - f1(j)*x(j+M1)
           else
              x(j) = x(j) - f(j)*x(j+1)
@@ -1668,10 +1669,10 @@ contains
     else
        !  x := U.x = x + F.x(j+1) + F1.x(j+M1) + F2.x(j+M2)
        !$acc loop seq
-       do j = 1, nblock-1
-          if (j + M2 <= nblock) then
+       do j = 1, nBlock-1
+          if (j + M2 <= nBlock) then
              x(j) = x(j) + f(j)*x(j+1) + f1(j)*x(j+M1) + f2(j)*x(j+M2)
-          else if (j+M1 <= nblock) then
+          else if (j+M1 <= nBlock) then
              x(j) = x(j) + f(j)*x(j+1) + f1(j)*x(j+M1)
           else
              x(j) = x(j) + f(j)*x(j+1)
@@ -1685,28 +1686,34 @@ contains
     !$acc routine vector
 
     ! Multiply x with the upper triagonal U or U^{-1}
-    ! restricted to immediate upper diagonal "f". This allows parallelization
-    ! nBlock/M1 threads for the case when M1 < nBlock.
+    ! restricted to immediate upper diagonal "f". This allows parallelizing
+    ! nBlock/M1 threads for the case when M1 < nBlock as every M1-th element
+    ! of f is 0 as there is no "lower neighbor" at the edge of the grid block.
 
     logical, intent(in) :: IsInverse
     integer, intent(in) :: m1, nBlock
-    real, intent(inout) :: x(nblock)
-    real, intent(in)    :: f(nblock)
+    real, intent(inout) :: x(nBlock)
+    real, intent(in)    :: f(nBlock)
 
-    integer :: j
+    integer:: i, j
     !--------------------------------------------------------------------------
     if(IsInverse)then
        !  x' := U^{-1}.x = x - F.x'(j+1)
-       !$acc loop seq
-       do j = nblock-1, 1, -1
-          !  x' := U^{-1}.x = x - F.x'(j+1) - F1.x'(j+M1) - F2.x'(j+M2)
-          x(j) = x(j) - f(j)*x(j+1)
+       !$acc loop vector
+       do i = nBlock, 1, -M1
+          !$acc loop seq
+          do j = i-1, i-M1+1, -1
+             x(j) = x(j) - f(j)*x(j+1)
+          end do
        end do
     else
-       !  x := U.x = x + F.x(j+1) + F1.x(j+M1) + F2.x(j+M2)
-       !$acc loop seq
-       do j = 1, nblock-1
-          x(j) = x(j) + f(j)*x(j+1)
+       !  x := U.x = x + F.x(j+1)
+       !$acc loop vector
+       do i = 1, nBlock, M1
+          !$acc loop seq
+          do j = i, i+M1-2
+             x(j) = x(j) + f(j)*x(j+1)
+          end do
        end do
     end if
 
@@ -1718,8 +1725,8 @@ contains
     ! Multiply x with the lower triangular matrix L^{-1},
     ! which must have been constructed in subroutine prehepta.
     !
-    ! For penta-diagonal matrix, set M2=nblock and e2 can be omitted.
-    ! For tri-diagonal matrix set M1=M2=nblock and e1,e2 can be omitted.
+    ! For penta-diagonal matrix, set M2=nBlock and e2 can be omitted.
+    ! For tri-diagonal matrix set M1=M2=nBlock and e1,e2 can be omitted.
 
     integer, intent(in):: m1, m2, nBlock
     real, intent(inout):: x(nBlock)
@@ -1733,7 +1740,7 @@ contains
     ! x' = L^{-1}.x = D^{-1}.(x - E2.x'(j-M2) - E1.x'(j-M1) - E.x'(j-1))
 
     !$acc loop seq
-    do j=1, nblock
+    do j=1, nBlock
        work1 = x(j)
        if (j > M2) then
           work1 = work1 - e(j)*x(j-1) - e1(j)*x(j-M1) - e2(j)*x(j-M2)
@@ -1752,7 +1759,8 @@ contains
 
     ! This routine multiplies x with the lower triangular matrix L^{-1},
     ! restricted to immediate lower diagonal "e". This allows parallelization
-    ! nBlock/M1 threads for the case when M1 < nBlock.
+    ! nBlock/M1 threads for the case when M1 < nBlock as every M1-th element
+    ! of e is 0 as there is no "lower neighbor" at the edge of the grid block.
 
     integer, intent(in):: nBlock, m1
     real, intent(inout):: x(nBlock)
@@ -1760,8 +1768,8 @@ contains
 
     integer :: i, j
     !--------------------------------------------------------------------------
-    ! x' = L^{-1}.x = D^{-1}.(x - E.x'(j-1))
-    ! Prehepta calculated d = D^{-1} and e = D^{-1}*E
+    ! x' = L^{-1}.x = D^{-1}.(x - E.x'(j-1)) = d.(x - e.x')
+    ! Prehepta calculated d = D^{-1}
 
     !$acc loop vector
     do i = 1, nBlock, M1
@@ -1961,47 +1969,46 @@ contains
                a_II(1,6), a_II(1,7))
        end select
 #endif
-    case('BILU', 'MBILU')
-       ! Multiply with L^-1 from the LU decomposition
-          select case(nDim)
-          case(1)
-             ! Tridiagonal case
-             call Lhepta(nI, nVar, nI, nI, x_I, &
-                  a_II(1,1), a_II(1,2))
-          case(2)
-             ! Pentadiagonal case
-             call Lhepta(nI*nJ, nVar, nI, nI*nJ, x_I, &
-                  a_II(1,1), a_II(1,2), a_II(1,4))
-          case(3)
-             ! Heptadiagonal case
-             call Lhepta(nI*nJ*nK, nVar, nI, nI*nJ, x_I, &
-                  a_II(1,1), a_II(1,2), a_II(1,4), a_II(1,6))
-          end select
-
-          if(TypePrecondSide == 'left')then
-             ! Multiply with U^-1 from the LU decomposition
-             select case(nDim)
-             case(1)
-                ! Tridiagonal case
-                call Uhepta(.true., nI, nVar, nI, nI, x_I, &
-                     a_II(1,3))
-             case(2)
-                ! Pentadiagonal case
-                call Uhepta(.true., nI*nJ, nVar, nI, nI*nJ, x_I, &
-                     a_II(1,3), a_II(1,5))
-             case(3)
-                ! Heptadiagonal case
-                call Uhepta(.true., nI*nJ*nK, nVar, nI, nI*nJ, x_I, &
-                     a_II(1,3), a_II(1,5), a_II(1,7))
-             end select
-          end if
-    case('BILU1', 'MBILU1')
+    case('BILU1')
        ! Multiply with L^-1 restricted to main + one lower diagonal
        call lower_hepta_scalar_fast(nI*nJ*nK, nI, x_I, a_II(1,1), a_II(1,2))
        ! Multiply with U^-1 restricted to one upper diagonal
-!!!          call upper_hepta_scalar_fast(.true., nI*nJ*nK, nI, x_I, a_II(1,3))
-       call Uhepta(.true., nI*nJ*nK, nVar, nI, nI*nJ, x_I, &
-            a_II(1,3), a_II(1,5), a_II(1,7))
+       if(TypePrecondSide == 'left')  &
+            call upper_hepta_scalar_fast(.true., nI*nJ*nK, nI, x_I, a_II(1,3))
+    case('BILU', 'MBILU')
+       ! Multiply with L^-1 from the LU decomposition
+       select case(nDim)
+       case(1)
+          ! Tridiagonal case
+          call Lhepta(nI, nVar, nI, nI, x_I, &
+               a_II(1,1), a_II(1,2))
+       case(2)
+          ! Pentadiagonal case
+          call Lhepta(nI*nJ, nVar, nI, nI*nJ, x_I, &
+               a_II(1,1), a_II(1,2), a_II(1,4))
+       case(3)
+          ! Heptadiagonal case
+          call Lhepta(nI*nJ*nK, nVar, nI, nI*nJ, x_I, &
+               a_II(1,1), a_II(1,2), a_II(1,4), a_II(1,6))
+       end select
+
+       if(TypePrecondSide == 'left')then
+          ! Multiply with U^-1 from the LU decomposition
+          select case(nDim)
+          case(1)
+             ! Tridiagonal case
+             call Uhepta(.true., nI, nVar, nI, nI, x_I, &
+                  a_II(1,3))
+          case(2)
+             ! Pentadiagonal case
+             call Uhepta(.true., nI*nJ, nVar, nI, nI*nJ, x_I, &
+                  a_II(1,3), a_II(1,5))
+          case(3)
+             ! Heptadiagonal case
+             call Uhepta(.true., nI*nJ*nK, nVar, nI, nI*nJ, x_I, &
+                  a_II(1,3), a_II(1,5), a_II(1,7))
+          end select
+       end if
     case default
 #ifndef _OPENACC
        call CON_stop(NameSub//': unknown value for TypePrecond='//TypePrecond)
