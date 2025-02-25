@@ -502,6 +502,7 @@ contains
 
     real :: rwork(2,7)
 
+    !--------------------------------------------------------------------------
     logical GoOn, rcmp, xpdt
     integer nmv
     real :: alpha, beta, omega, rho0, rho1, sigma
@@ -1211,10 +1212,10 @@ contains
     ! info variable for lapack routines
     integer :: i, j, info, iPrecond
 #endif
-    !--------------------------------------------------------------------------
 
     ! call timing_start('precond')
 
+    !--------------------------------------------------------------------------
     if( (n == 1) .and. (nint(PrecondParam) /= Dilu_) ) then
        call prehepta_scalar(nBlock, m1, m2, PrecondParam, d, e, f, e1, f1, e2, f2)
        RETURN
@@ -1579,7 +1580,6 @@ contains
     ! External subroutine: DGEMV, BLAS level two Matrix-Vector Product.
     !--------------------------------------------------------------------------
 
-
     ! call timing_start('Lhepta')
     if(n == 1)then
        if(.not.present(e1))then
@@ -1686,7 +1686,7 @@ contains
 
     ! Multiply x with the upper triagonal U or U^{-1}
     ! restricted to immediate upper diagonal "f". This allows parallelization
-    ! nBlock/M1 threads for the case when M1 < nBlock. 
+    ! nBlock/M1 threads for the case when M1 < nBlock.
 
     logical, intent(in) :: IsInverse
     integer, intent(in) :: m1, nBlock
@@ -1752,7 +1752,7 @@ contains
 
     ! This routine multiplies x with the lower triangular matrix L^{-1},
     ! restricted to immediate lower diagonal "e". This allows parallelization
-    ! nBlock/M1 threads for the case when M1 < nBlock. 
+    ! nBlock/M1 threads for the case when M1 < nBlock.
 
     integer, intent(in):: nBlock, m1
     real, intent(inout):: x(nBlock)
