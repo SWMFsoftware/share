@@ -1506,7 +1506,7 @@ contains
           end do
        else
           !  x := U.x = x + F.x(j+1) + F1.x(j+M1) + F2.x(j+M2)
-          do j=1,nBlock-1
+          do j = 1, nBlock-1
              if (j+M2<=nBlock) then
                 x(:,j) = x(:,j) + matmul( f(:,:,j),x(:,j+1 )) &
                      + matmul(f1(:,:,j),x(:,j+M1)) &
@@ -1533,7 +1533,7 @@ contains
           enddo
        else
           !  x := U.x = x + F.x(j+1) + F1.x(j+M1) + F2.x(j+M2)
-          do j=1,nBlock-1
+          do j = 1, nBlock-1
              call BLAS_gemv( &
                   'n', n, n, 1.0, f(:,:,j), n, x(:,j+1 ), 1, 1.0, x(:,j), 1)
              if(j+M1<=nBlock) call BLAS_gemv( &
@@ -1613,7 +1613,7 @@ contains
     allocate(work(N))
     if(n <= 20)then
        ! F90 version
-       do j=1,nBlock
+       do j = 1, nBlock
           work = x(:,j)
           if (j>M2) then
              work = work                        &
@@ -1632,7 +1632,7 @@ contains
        end do
     else
        ! BLAS VERSION
-       do j=1,nBlock
+       do j = 1, nBlock
 
           call BLAS_gemv('n', N, N, 1.0, d(:,:,j) ,N, x(:,j), 1, 0.0, work, 1)
           if(j > 1 ) call BLAS_gemv( &
@@ -1757,7 +1757,7 @@ contains
     ! x' = L^{-1}.x = D^{-1}.(x - E2.x'(j-M2) - E1.x'(j-M1) - E.x'(j-1))
 
     !$acc loop seq
-    do j=1, nBlock
+    do j = 1, nBlock
        work1 = x(j)
        if (j > M2) then
           work1 = work1 - e(j)*x(j-1) - e1(j)*x(j-M1) - e2(j)*x(j-M2)
@@ -1822,7 +1822,7 @@ contains
     ! x' = L^{-1}.x = D^{-1}.(x - E2.x'(j-M2) - E1.x'(j-M1) - E.x'(j-1))
     allocate(x_V(n))
 
-    do j=1, nBlock
+    do j = 1, nBlock
        x_V = x(:,j)
        if (j > M2) then
           do i = 1, n
@@ -2148,7 +2148,7 @@ contains
     nVarIJK = nVar*nI*nJ*nK
     !$omp parallel do
     !$acc parallel loop gang independent
-    do iBlock=1,nBlock
+    do iBlock = 1, nBlock
        call multiply_left_precond( &
             Param%TypePrecond, Param%TypePrecondSide,&
             nVar, nDim, nI, nJ, nK, Jac_VVCIB(1,1,1,1,1,1,iBlock), &
@@ -2188,7 +2188,7 @@ contains
     nVarIJK = nVar*nI*nJ*nK
     !$omp parallel do
     !$acc parallel loop gang independent
-    do iBlock=1,nBlock
+    do iBlock = 1, nBlock
        call multiply_right_precond( &
             Param%TypePrecond, Param%TypePrecondSide,&
             nVar, nDim, nI, nJ, nK, Jac_VVCIB(1,1,1,1,1,1,iBlock), &
@@ -2334,9 +2334,9 @@ contains
           if(present(Jac_VVCIB))then
              n = 0
              !$omp parallel do private( n )
-             do iBlock=1,nBlock; do k=1,nK; do j=1,nJ; do i=1,nI
+             do iBlock = 1, nBlock; do k = 1, nK; do j = 1, nJ; do i = 1, nI
                 n = (iBlock-1)*nI*nJ*nk*nVar
-                do iVar=1,nVar
+                do iVar = 1, nVar
                    n = n + 1
                    JacobiPrec_I(n) = 1.0 / Jac_VVCIB(iVar,iVar,i,j,k,1,iBlock)
                 end do
@@ -2348,7 +2348,7 @@ contains
        else
           !$omp parallel do private( n )
           !$acc parallel loop gang private(n)
-          do iBlock=1,nBlock
+          do iBlock = 1, nBlock
 
              ! Preconditioning Jac_VVCIB matrix
              call get_precond_matrix(                             &
@@ -2358,7 +2358,7 @@ contains
              if(Param%TypeKrylov == 'CG') CYCLE
 
              ! Starting index in the linear arrays
-             n = nVarIjk*(iBlock-1)+1
+             n = nVarIjk*(iBlock-1) + 1
 
              ! rhs --> P_L.rhs, where P_L=U^{-1}.L^{-1}, L^{-1}, or I
              ! for left, symmetric, and right preconditioning, respectively
@@ -2529,7 +2529,7 @@ contains
     end if
 
     ! Add the diagonal part J = I - delta t*dR/dU
-    do i=1, nCell
+    do i = 1, nCell
        do iVar = 1, nVar
           Matrix_VVCI(iVar,iVar,i,1) = Matrix_VVCI(iVar,iVar,i,1) + 1.0
        end do
@@ -2581,7 +2581,7 @@ contains
     write(UNITTMP_,'(3i4)')            nCell
     write(UNITTMP_,'(100es13.5)')      Gamma
     write(UNITTMP_,'(a79)') 'x rho rhou p gamma'
-    do i=1,nCell
+    do i = 1, nCell
        write(UNITTMP_,'(100es18.10)') float(i), State_GV(i, rho_:p_)
     end do
 
@@ -2597,7 +2597,7 @@ contains
     integer :: i
     real :: uLeft, uRight
     !--------------------------------------------------------------------------
-    do i=1, nCell
+    do i = 1, nCell
        uRight = State_GV(i+1,rhou_)/State_GV(i+1,rho_)
        uLeft  = State_GV(i-1,rhou_)/State_GV(i-1,rho_)
        Resid_CV(i,rho_) = -Dt * Inv2Dx * &
