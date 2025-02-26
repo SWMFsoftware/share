@@ -1407,21 +1407,17 @@ contains
     integer, intent(in):: nBlock, m1
     real, intent(inout), dimension(nBlock):: d, e, f
 
-    integer :: j
+    integer:: i, j
     !--------------------------------------------------------------------------
-    !$acc loop seq
-    do j = 1, nBlock
-
-       if (j > 1 )then
+    !$acc loop vector
+    do i = 1, nBlock, m1
+       d(i) = 1/d(i)
+       f(i) = d(i)*f(i)
+       !$acc loop seq
+       do j = i+1, i+m1-1
           d(j) = 1/(d(j) - e(j)*f(j-1))
-       else
-          d(j) = 1/d(j)
-       endif
-
-       if (j < nBlock)then
           f(j) = d(j)*f(j)
-       end if
-
+       end do
     end do
 
   end subroutine prehepta_scalar_fast
