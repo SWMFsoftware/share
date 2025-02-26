@@ -37,7 +37,6 @@ contains
 
     integer :: iStart
     !--------------------------------------------------------------------------
-
     call linear_wrapper_matvec_c(x_I, y_I, n)
 
     if(Param%DoPrecond) then
@@ -47,14 +46,13 @@ contains
           iStart = nVarIjk*(iBlock-1)+1
           call multiply_left_precond(&
                Param%TypePrecond, Param%TypePrecondSide, &
-               nVar, nDim, nI, nJ, nK, PrecondMatrix_II, &
+               nVar, nDim, nI, nJ, nK, 2*nDim+1, PrecondMatrix_II, &
                y_I(iStart))
        end do
     end if
 
   end subroutine linear_solver_matvec
   !============================================================================
-
 end module ModLinearSolverWrapper
 !==============================================================================
 subroutine linear_solver_wrapper(TypeSolver, Tolerance, nIteration, &
@@ -159,8 +157,9 @@ subroutine linear_solver_wrapper(TypeSolver, Tolerance, nIteration, &
   ! Precondition RHS and initial guess (for symmetric prec only)
   if(Param%DoPrecond)then
      ! Preconditioning  matrix
-     call get_precond_matrix(                         &
-          Param%PrecondParam, nVar, nDim, nI, nJ, nK, PrecondMatrix_II)
+     call get_precond_matrix( &
+          Param%PrecondParam, nVar, nDim, nI, nJ, nK, 2*nDim+1, &
+          PrecondMatrix_II)
 
      do iBlock = 1, nBlock
         ! Starting index in the linear arrays
@@ -170,7 +169,7 @@ subroutine linear_solver_wrapper(TypeSolver, Tolerance, nIteration, &
         ! for left, symmetric, and right preconditioning, respectively
         call multiply_left_precond(&
              Param%TypePrecond, Param%TypePrecondSide, &
-             nVar, nDim, nI, nJ, nK, PrecondMatrix_II, &
+             nVar, nDim, nI, nJ, nK, 2*nDim+1, PrecondMatrix_II, &
              Rhs_I(n))
      end do
   endif
