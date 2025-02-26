@@ -1963,7 +1963,7 @@ pro get_file_types
         pictsize=long64(1)
         ipict=0
         while pointer lt fsize do begin
-                                ; Obtain size of a single snapshot
+           ;; Obtain size of a single snapshot
            point_lun, 1, pointer
            get_file_head, 1, filenames(ifile), ftype, pictsize=pictsize
            ipict   = ipict+1
@@ -2016,15 +2016,15 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
   if ftype eq filetype then lenstr = 79 else lenstr = 500
 
   ;; Type definitions
-  headline=''
-  for i=1, lenstr do headline=headline+' '
-  it     = 1L
-  ndim   = 1L
-  neqpar = 0L
-  eqpar  = 0.0
-  nw     = 1L
-  varname=''
-  for i=1, lenstr do varname=varname+' '
+  headline = ''
+  for i=1, lenstr do headline = headline + ' '
+  it      = 1L
+  ndim    = 1L
+  neqpar  = 0L
+  eqpar   = 0.0
+  nw      = 1L
+  varname = ''
+  for i=1, lenstr do varname = varname + ' '
 
   ;; Remember pointer position at beginning of header
   point_lun, -unit, pointer0
@@ -2103,7 +2103,12 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
      ;; Snapshot size = header + data + recordmarks
      case ftype of
         'log'  : pictsize = 1
-        'ascii': pictsize = headlen + (18*(ndim+nw)+1)*nxs
+        'ascii': begin
+           ;; read one line and take its length (+1 for the newline)
+           line = ''
+           readf, unit, line
+           pictsize = headlen + (strlen(line)+1)*nxs
+        end
         'real8': pictsize = headlen + 8*(1+nw)+8*(ndim+nw)*nxs
         'real4': pictsize = headlen + 8*(1+nw)+4*(ndim+nw)*nxs
      endcase
