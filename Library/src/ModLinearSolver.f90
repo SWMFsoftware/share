@@ -499,6 +499,7 @@ contains
 
     real :: rwork(2,7)
 
+    !--------------------------------------------------------------------------
     logical GoOn, rcmp, xpdt
     integer nmv
     real :: alpha, beta, omega, rho0, rho1, sigma
