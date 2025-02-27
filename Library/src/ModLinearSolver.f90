@@ -8,6 +8,49 @@ module ModLinearSolver
   ! There are both serial and parallel solvers, and direct and
   ! iterative solvers.
 
+  ! GENERAL PRECONDITIONER FOR BLOCK HEPTADIAGONAL AND PENTADIAGONAL MATRICES.
+  ! DIRECT SOLVER FOR BLOCK TRIDIAGONAL MATRIX.
+  !
+  ! G. Toth 2001
+  ! (based on the original F77 block heptadiagonal preconditioner with
+  !  Eisenstat trick implemented by Auke van der Ploeg, 1997)
+  !
+  ! subroutines:
+  !          prehepta, Uhepta, Lhepta
+  !
+  ! Usage: call prehepta with the original matrix to obtain L and U.
+  !        call Uhepta(.false.) to multiply a vector with U
+  !        call Uhepta(.true.)  to multiply a vector with U^{-1}
+  !        call Lhepta          to multiply a vector with L^{-1}
+  !
+  ! To solve a tridiagonal system A.x=rhs use these steps
+  !
+  !        call prehepta(A)        ! A --> LU
+  !        x=rhs
+  !        call Lhepta(x)          ! x --> L^{-1}.rhs
+  !        call Uhepta(.true.,x)   ! x --> U^{-1}.L^{-1}.rhs = A^{-1}.rhs
+  !
+  ! To solve a penta- or hepta-diagonal problem with symmetric preconditioning
+  !
+  ! L^{-1}.A.U^{-1} U.x = L^{-1}.rhs
+  !
+  ! use the following steps:
+  !
+  !        call prehepta(A)                 ! A -> LU
+  !        call Lhepta(rhs)                 ! rhs'=L^{-1}.rhs
+  !        call Uhepta(.false.,x)           ! x'  = U.x (for initial guess)
+  !        call bicgstab(matvec_prec,x,rhs) ! solve A'.x'=rhs'
+  !        call Uhepta(.true.,x)            ! x = U^{-1}.x'
+  !
+  ! The preconditioned matrix vector multiplication is in
+  ! subroutine matvec_prec(x,y,n), and it should calculate
+  ! y = A'.x = L^{-1}.A.U^{-1}.x as
+  !
+  !        y=x
+  !        call Uhepta(.true.,y)   ! multiply y with U^{-1}
+  !        call matvec(y)          ! multiply y with A
+  !        call Lhepta(y)          ! multiply y with L^{-1}
+
   use ModMpi
   use ModUtilities, ONLY: CON_stop, CON_stop_simple
   use ModBlasLapack, ONLY: BLAS_gemm, BLAS_copy, BLAS_gemv, &
@@ -179,9 +222,8 @@ contains
     real :: coeff, Tol1, epsmac, gam, ro, ro0, t, tmp
     !$acc declare create(coeff, ro, t, tmp)
     !--------------------------------------------------------------------------
-    ! call timing_start('gmres')
-
     if(DoTest)write(*,*)'GMRES tol,iter:',Tol,Iter
+    ! call timing_start('gmres')
 
     ! Assign the MPI communicator
     iComm = MPI_COMM_SELF
@@ -499,7 +541,6 @@ contains
 
     real :: rwork(2,7)
 
-    !--------------------------------------------------------------------------
     logical GoOn, rcmp, xpdt
     integer nmv
     real :: alpha, beta, omega, rho0, rho1, sigma
@@ -1009,6 +1050,7 @@ contains
   end function accurate_dot_product
   !============================================================================
   real function dot_product_mpi(n, a_I, b_I, iComm)
+
     integer, intent(in) :: n
     real, intent(in)    :: a_I(n), b_I(n)
     integer, intent(in) :: iComm
@@ -1062,49 +1104,6 @@ contains
 
   end function maxval_abs_mpi
   !============================================================================
-  ! GENERAL PRECONDITIONER FOR BLOCK HEPTADIAGONAL AND PENTADIAGONAL MATRICES.
-  ! DIRECT SOLVER FOR BLOCK TRIDIAGONAL MATRIX.
-  !
-  ! G. Toth 2001
-  ! (based on the original F77 block heptadiagonal preconditioner with
-  !  Eisenstat trick implemented by Auke van der Ploeg, 1997)
-  !
-  ! subroutines:
-  !          prehepta, Uhepta, Lhepta
-  !
-  ! Usage: call prehepta with the original matrix to obtain L and U.
-  !        call Uhepta(.false.) to multiply a vector with U
-  !        call Uhepta(.true.)  to multiply a vector with U^{-1}
-  !        call Lhepta          to multiply a vector with L^{-1}
-  !
-  ! To solve a tridiagonal system A.x=rhs use these steps
-  !
-  !        call prehepta(A)        ! A --> LU
-  !        x=rhs
-  !        call Lhepta(x)          ! x --> L^{-1}.rhs
-  !        call Uhepta(.true.,x)   ! x --> U^{-1}.L^{-1}.rhs = A^{-1}.rhs
-  !
-  ! To solve a penta- or hepta-diagonal problem with symmetric preconditioning
-  !
-  ! L^{-1}.A.U^{-1} U.x = L^{-1}.rhs
-  !
-  ! use the following steps:
-  !
-  !        call prehepta(A)                 ! A -> LU
-  !        call Lhepta(rhs)                 ! rhs'=L^{-1}.rhs
-  !        call Uhepta(.false.,x)           ! x'  = U.x (for initial guess)
-  !        call bicgstab(matvec_prec,x,rhs) ! solve A'.x'=rhs'
-  !        call Uhepta(.true.,x)            ! x = U^{-1}.x'
-  !
-  ! The preconditioned matrix vector multiplication is in
-  ! subroutine matvec_prec(x,y,n), and it should calculate
-  ! y = A'.x = L^{-1}.A.U^{-1}.x as
-  !
-  !        y=x
-  !        call Uhepta(.true.,y)   ! multiply y with U^{-1}
-  !        call matvec(y)          ! multiply y with A
-  !        call Lhepta(y)          ! multiply y with L^{-1}
-
   subroutine prehepta(nBlock, n, m1, m2, PrecondParam, d, e, f, e1, f1, e2, f2)
     !$acc routine vector
 
@@ -1205,8 +1204,8 @@ contains
     ! info variable for lapack routines
     integer :: i, j, info, iPrecond
 #endif
-    ! call timing_start('precond')
     !--------------------------------------------------------------------------
+    ! call timing_start('precond')
     if(n == 1 .and. nint(PrecondParam) /= Dilu_) then
        if(nint(PrecondParam) == Bilu1_)then
           call prehepta_scalar_fast(nBlock, m1, d, e, f)
@@ -1552,7 +1551,9 @@ contains
     !$acc routine vector
 
     ! This routine multiplies x with the lower triangular matrix L^{-1},
-    ! which must have been constructed in subroutine prehepta.
+    ! which must have been constructed in subroutine prehepta:
+    !
+    ! x' = L^{-1}.x = D^{-1}.(x - E2.x'(j-M2) - E1.x'(j-M1) - E.x'(j-1))
     !
     ! For penta-diagonal matrix, set M2=nBlock and e2 can be omitted.
     ! For tri-diagonal matrix set M1=M2=nBlock and e1,e2 can be omitted.
@@ -1590,14 +1591,12 @@ contains
     !           e2(j): j=M2+1..nBlock Blocks in the lower-triangular part with
     !                                 distance M2 from the main diagonal.
     !                                 Omit for block tri/penta-diagonal matrix!
+    ! External subroutine: DGEMV, BLAS level two Matrix-Vector Product.
 
     real, allocatable :: work(:)
 
     integer :: j
-
-    ! External subroutine: DGEMV, BLAS level two Matrix-Vector Product.
     !--------------------------------------------------------------------------
-
     ! call timing_start('Lhepta')
     if(n == 1)then
        if(.not.present(e1))then
@@ -1892,7 +1891,6 @@ contains
     ! an nDim dimensional grid with nI*nJ*nK cells and nVar variables per cell.
 
     real, intent(in):: PrecondParam ! see description in subroutine prehepta
-
     integer, intent(in):: nVar   ! number of variables per cell
     integer, intent(in):: nDim   ! number of dimensions 1, 2 or 3
     integer, intent(in):: nI     ! number of cells in dim 1
@@ -2240,13 +2238,23 @@ contains
        call Uhepta(.false., nI, nVar, nI, nI, x_I, &
             a_II(1,3))
     case(2)
-       ! Pentadiagonal case
-       call Uhepta(.false., nI*nJ, nVar, nI, nI*nJ, x_I, &
-            a_II(1,3), a_II(1,5))
+       if(nDiag == 3)then
+          call Uhepta(.false., nI*nJ, nVar, nI, nI*nJ, x_I, &
+               a_II(1,3))
+       else
+          ! Pentadiagonal case
+          call Uhepta(.false., nI*nJ, nVar, nI, nI*nJ, x_I, &
+               a_II(1,3), a_II(1,5))
+       end if
     case(3)
-       ! Heptadiagonal case
-       call Uhepta(.false., nI*nJ*nK, nVar, nI, nI*nJ, x_I, &
-            a_II(1,3), a_II(1,5), a_II(1,7))
+       if(nDiag == 3)then
+          call Uhepta(.false., nI*nJ*nK, nVar, nI, nI*nJ, x_I, &
+               a_II(1,3))
+       else
+          ! Heptadiagonal case
+          call Uhepta(.false., nI*nJ*nK, nVar, nI, nI*nJ, x_I, &
+               a_II(1,3), a_II(1,5), a_II(1,7))
+       end if
     case default
        write(*,*)'ERROR in ', NameSub, ' nDim=', nDim
        call CON_stop(NameSub//': invalid value for nDim')
@@ -2312,10 +2320,9 @@ contains
     integer:: nVarIjk, nImpl
     !$acc declare create(nVarIjk, nImpl)
 
-    ! Number of variables per block
     character(len=*), parameter:: NameSub = 'solve_linear_multiblock'
     !--------------------------------------------------------------------------
-    nVarIjk = nVar*nI*nJ*nK
+    nVarIjk = nVar*nI*nJ*nK ! Number of variables per block
     !$acc update device(nVarIjk)
 
     ! Number of variables per processor
@@ -2442,7 +2449,7 @@ contains
     ! Postprocessing: x = P_R.x where P_R = I, U^{-1}, U^{-1}L^{-1} for
     ! left, symmetric and right preconditioning, respectively
     if(Param%DoPrecond) call precond_right_multiblock(Param, &
-         nVar, nDim, nI, nJ, nK, nBlock, nDiag, Jac_VVCIB, x_I)
+         nVar, nDim, nI, nJ, nK, nDiag, nBlock, Jac_VVCIB, x_I)
 
     if(DoTest)write(*,*)NameSub,&
          ': After nMatVec, Error, iError=',&

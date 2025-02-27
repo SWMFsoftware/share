@@ -37,6 +37,7 @@ contains
 
     integer :: iStart
     !--------------------------------------------------------------------------
+
     call linear_wrapper_matvec_c(x_I, y_I, n)
 
     if(Param%DoPrecond) then
@@ -53,6 +54,7 @@ contains
 
   end subroutine linear_solver_matvec
   !============================================================================
+
 end module ModLinearSolverWrapper
 !==============================================================================
 subroutine linear_solver_wrapper(TypeSolver, Tolerance, nIteration, &
