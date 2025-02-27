@@ -1922,7 +1922,7 @@ contains
        if(nDiag == 3)then
           call prehepta(nI*nJ*nK, nVar, nI, nI*nJ, PrecondParam, &
                a_II(1,1), a_II(1,2), a_II(1,3))
-       else          
+       else
           ! Heptadiagonal case
           call prehepta(nI*nJ*nK, nVar, nI, nI*nJ, PrecondParam, &
                a_II(1,1), a_II(1,2), a_II(1,3), a_II(1,4), a_II(1,5), &
@@ -2184,7 +2184,7 @@ contains
     integer, intent(in):: nI     ! number of cells in dim 1
     integer, intent(in):: nJ     ! number of cells in dim 2
     integer, intent(in):: nK     ! number of cells in dim 3
-    integer, intent(in):: nDiag  ! number of diagonals 
+    integer, intent(in):: nDiag  ! number of diagonals
     integer, intent(in):: nBlock ! number of blocks
 
     ! Preconditioner matrix
@@ -2312,9 +2312,9 @@ contains
     integer:: nVarIjk, nImpl
     !$acc declare create(nVarIjk, nImpl)
 
+    ! Number of variables per block
     character(len=*), parameter:: NameSub = 'solve_linear_multiblock'
     !--------------------------------------------------------------------------
-    ! Number of variables per block
     nVarIjk = nVar*nI*nJ*nK
     !$acc update device(nVarIjk)
 
