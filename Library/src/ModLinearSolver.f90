@@ -541,6 +541,7 @@ contains
 
     real :: rwork(2,7)
 
+    !--------------------------------------------------------------------------
     logical GoOn, rcmp, xpdt
     integer nmv
     real :: alpha, beta, omega, rho0, rho1, sigma
@@ -1204,8 +1205,8 @@ contains
     ! info variable for lapack routines
     integer :: i, j, info, iPrecond
 #endif
-    !--------------------------------------------------------------------------
     ! call timing_start('precond')
+    !--------------------------------------------------------------------------
     if(n == 1 .and. nint(PrecondParam) /= Dilu_) then
        if(nint(PrecondParam) == Bilu1_)then
           call prehepta_scalar_fast(nBlock, m1, d, e, f)
