@@ -8,6 +8,49 @@ module ModLinearSolver
   ! There are both serial and parallel solvers, and direct and
   ! iterative solvers.
 
+  ! GENERAL PRECONDITIONER FOR BLOCK HEPTADIAGONAL AND PENTADIAGONAL MATRICES.
+  ! DIRECT SOLVER FOR BLOCK TRIDIAGONAL MATRIX.
+  !
+  ! G. Toth 2001
+  ! (based on the original F77 block heptadiagonal preconditioner with
+  !  Eisenstat trick implemented by Auke van der Ploeg, 1997)
+  !
+  ! subroutines:
+  !          prehepta, Uhepta, Lhepta
+  !
+  ! Usage: call prehepta with the original matrix to obtain L and U.
+  !        call Uhepta(.false.) to multiply a vector with U
+  !        call Uhepta(.true.)  to multiply a vector with U^{-1}
+  !        call Lhepta          to multiply a vector with L^{-1}
+  !
+  ! To solve a tridiagonal system A.x=rhs use these steps
+  !
+  !        call prehepta(A)        ! A --> LU
+  !        x=rhs
+  !        call Lhepta(x)          ! x --> L^{-1}.rhs
+  !        call Uhepta(.true.,x)   ! x --> U^{-1}.L^{-1}.rhs = A^{-1}.rhs
+  !
+  ! To solve a penta- or hepta-diagonal problem with symmetric preconditioning
+  !
+  ! L^{-1}.A.U^{-1} U.x = L^{-1}.rhs
+  !
+  ! use the following steps:
+  !
+  !        call prehepta(A)                 ! A -> LU
+  !        call Lhepta(rhs)                 ! rhs'=L^{-1}.rhs
+  !        call Uhepta(.false.,x)           ! x'  = U.x (for initial guess)
+  !        call bicgstab(matvec_prec,x,rhs) ! solve A'.x'=rhs'
+  !        call Uhepta(.true.,x)            ! x = U^{-1}.x'
+  !
+  ! The preconditioned matrix vector multiplication is in
+  ! subroutine matvec_prec(x,y,n), and it should calculate
+  ! y = A'.x = L^{-1}.A.U^{-1}.x as
+  !
+  !        y=x
+  !        call Uhepta(.true.,y)   ! multiply y with U^{-1}
+  !        call matvec(y)          ! multiply y with A
+  !        call Lhepta(y)          ! multiply y with L^{-1}
+
   use ModMpi
   use ModUtilities, ONLY: CON_stop, CON_stop_simple
   use ModBlasLapack, ONLY: BLAS_gemm, BLAS_copy, BLAS_gemv, &
@@ -179,9 +222,8 @@ contains
     real :: coeff, Tol1, epsmac, gam, ro, ro0, t, tmp
     !$acc declare create(coeff, ro, t, tmp)
     !--------------------------------------------------------------------------
-    ! call timing_start('gmres')
-
     if(DoTest)write(*,*)'GMRES tol,iter:',Tol,Iter
+    ! call timing_start('gmres')
 
     ! Assign the MPI communicator
     iComm = MPI_COMM_SELF
@@ -499,7 +541,6 @@ contains
 
     real :: rwork(2,7)
 
-    !--------------------------------------------------------------------------
     logical GoOn, rcmp, xpdt
     integer nmv
     real :: alpha, beta, omega, rho0, rho1, sigma
@@ -1009,6 +1050,7 @@ contains
   end function accurate_dot_product
   !============================================================================
   real function dot_product_mpi(n, a_I, b_I, iComm)
+
     integer, intent(in) :: n
     real, intent(in)    :: a_I(n), b_I(n)
     integer, intent(in) :: iComm
@@ -1062,49 +1104,6 @@ contains
 
   end function maxval_abs_mpi
   !============================================================================
-  ! GENERAL PRECONDITIONER FOR BLOCK HEPTADIAGONAL AND PENTADIAGONAL MATRICES.
-  ! DIRECT SOLVER FOR BLOCK TRIDIAGONAL MATRIX.
-  !
-  ! G. Toth 2001
-  ! (based on the original F77 block heptadiagonal preconditioner with
-  !  Eisenstat trick implemented by Auke van der Ploeg, 1997)
-  !
-  ! subroutines:
-  !          prehepta, Uhepta, Lhepta
-  !
-  ! Usage: call prehepta with the original matrix to obtain L and U.
-  !        call Uhepta(.false.) to multiply a vector with U
-  !        call Uhepta(.true.)  to multiply a vector with U^{-1}
-  !        call Lhepta          to multiply a vector with L^{-1}
-  !
-  ! To solve a tridiagonal system A.x=rhs use these steps
-  !
-  !        call prehepta(A)        ! A --> LU
-  !        x=rhs
-  !        call Lhepta(x)          ! x --> L^{-1}.rhs
-  !        call Uhepta(.true.,x)   ! x --> U^{-1}.L^{-1}.rhs = A^{-1}.rhs
-  !
-  ! To solve a penta- or hepta-diagonal problem with symmetric preconditioning
-  !
-  ! L^{-1}.A.U^{-1} U.x = L^{-1}.rhs
-  !
-  ! use the following steps:
-  !
-  !        call prehepta(A)                 ! A -> LU
-  !        call Lhepta(rhs)                 ! rhs'=L^{-1}.rhs
-  !        call Uhepta(.false.,x)           ! x'  = U.x (for initial guess)
-  !        call bicgstab(matvec_prec,x,rhs) ! solve A'.x'=rhs'
-  !        call Uhepta(.true.,x)            ! x = U^{-1}.x'
-  !
-  ! The preconditioned matrix vector multiplication is in
-  ! subroutine matvec_prec(x,y,n), and it should calculate
-  ! y = A'.x = L^{-1}.A.U^{-1}.x as
-  !
-  !        y=x
-  !        call Uhepta(.true.,y)   ! multiply y with U^{-1}
-  !        call matvec(y)          ! multiply y with A
-  !        call Lhepta(y)          ! multiply y with L^{-1}
-
   subroutine prehepta(nBlock, n, m1, m2, PrecondParam, d, e, f, e1, f1, e2, f2)
     !$acc routine vector
 
@@ -1205,8 +1204,8 @@ contains
     ! info variable for lapack routines
     integer :: i, j, info, iPrecond
 #endif
-    ! call timing_start('precond')
     !--------------------------------------------------------------------------
+    ! call timing_start('precond')
     if(n == 1 .and. nint(PrecondParam) /= Dilu_) then
        if(nint(PrecondParam) == Bilu1_)then
           call prehepta_scalar_fast(nBlock, m1, d, e, f)
@@ -1407,21 +1406,17 @@ contains
     integer, intent(in):: nBlock, m1
     real, intent(inout), dimension(nBlock):: d, e, f
 
-    integer :: j
+    integer:: i, j
     !--------------------------------------------------------------------------
-    !$acc loop seq
-    do j = 1, nBlock
-
-       if (j > 1 )then
+    !$acc loop vector
+    do i = 1, nBlock, m1
+       d(i) = 1/d(i)
+       f(i) = d(i)*f(i)
+       !$acc loop seq
+       do j = i+1, i+m1-1
           d(j) = 1/(d(j) - e(j)*f(j-1))
-       else
-          d(j) = 1/d(j)
-       endif
-
-       if (j < nBlock)then
           f(j) = d(j)*f(j)
-       end if
-
+       end do
     end do
 
   end subroutine prehepta_scalar_fast
@@ -1510,7 +1505,7 @@ contains
           end do
        else
           !  x := U.x = x + F.x(j+1) + F1.x(j+M1) + F2.x(j+M2)
-          do j=1,nBlock-1
+          do j = 1, nBlock-1
              if (j+M2<=nBlock) then
                 x(:,j) = x(:,j) + matmul( f(:,:,j),x(:,j+1 )) &
                      + matmul(f1(:,:,j),x(:,j+M1)) &
@@ -1537,7 +1532,7 @@ contains
           enddo
        else
           !  x := U.x = x + F.x(j+1) + F1.x(j+M1) + F2.x(j+M2)
-          do j=1,nBlock-1
+          do j = 1, nBlock-1
              call BLAS_gemv( &
                   'n', n, n, 1.0, f(:,:,j), n, x(:,j+1 ), 1, 1.0, x(:,j), 1)
              if(j+M1<=nBlock) call BLAS_gemv( &
@@ -1556,7 +1551,9 @@ contains
     !$acc routine vector
 
     ! This routine multiplies x with the lower triangular matrix L^{-1},
-    ! which must have been constructed in subroutine prehepta.
+    ! which must have been constructed in subroutine prehepta:
+    !
+    ! x' = L^{-1}.x = D^{-1}.(x - E2.x'(j-M2) - E1.x'(j-M1) - E.x'(j-1))
     !
     ! For penta-diagonal matrix, set M2=nBlock and e2 can be omitted.
     ! For tri-diagonal matrix set M1=M2=nBlock and e1,e2 can be omitted.
@@ -1594,14 +1591,12 @@ contains
     !           e2(j): j=M2+1..nBlock Blocks in the lower-triangular part with
     !                                 distance M2 from the main diagonal.
     !                                 Omit for block tri/penta-diagonal matrix!
+    ! External subroutine: DGEMV, BLAS level two Matrix-Vector Product.
 
     real, allocatable :: work(:)
 
     integer :: j
-
-    ! External subroutine: DGEMV, BLAS level two Matrix-Vector Product.
     !--------------------------------------------------------------------------
-
     ! call timing_start('Lhepta')
     if(n == 1)then
        if(.not.present(e1))then
@@ -1617,7 +1612,7 @@ contains
     allocate(work(N))
     if(n <= 20)then
        ! F90 version
-       do j=1,nBlock
+       do j = 1, nBlock
           work = x(:,j)
           if (j>M2) then
              work = work                        &
@@ -1636,7 +1631,7 @@ contains
        end do
     else
        ! BLAS VERSION
-       do j=1,nBlock
+       do j = 1, nBlock
 
           call BLAS_gemv('n', N, N, 1.0, d(:,:,j) ,N, x(:,j), 1, 0.0, work, 1)
           if(j > 1 ) call BLAS_gemv( &
@@ -1761,7 +1756,7 @@ contains
     ! x' = L^{-1}.x = D^{-1}.(x - E2.x'(j-M2) - E1.x'(j-M1) - E.x'(j-1))
 
     !$acc loop seq
-    do j=1, nBlock
+    do j = 1, nBlock
        work1 = x(j)
        if (j > M2) then
           work1 = work1 - e(j)*x(j-1) - e1(j)*x(j-M1) - e2(j)*x(j-M2)
@@ -1826,7 +1821,7 @@ contains
     ! x' = L^{-1}.x = D^{-1}.(x - E2.x'(j-M2) - E1.x'(j-M1) - E.x'(j-1))
     allocate(x_V(n))
 
-    do j=1, nBlock
+    do j = 1, nBlock
        x_V = x(:,j)
        if (j > M2) then
           do i = 1, n
@@ -1888,21 +1883,21 @@ contains
 
   end subroutine multiply_block_jacobi
   !============================================================================
-  subroutine get_precond_matrix(PrecondParam, nVar, nDim, nI, nJ, nK, a_II)
+  subroutine get_precond_matrix(PrecondParam, nVar, nDim, nI, nJ, nK, nDiag, &
+       a_II)
     !$acc routine vector
 
     ! Create approximate L-U decomposition of a_II matrix that corresponds to
     ! an nDim dimensional grid with nI*nJ*nK cells and nVar variables per cell.
 
     real, intent(in):: PrecondParam ! see description in subroutine prehepta
-
     integer, intent(in):: nVar   ! number of variables per cell
     integer, intent(in):: nDim   ! number of dimensions 1, 2 or 3
     integer, intent(in):: nI     ! number of cells in dim 1
     integer, intent(in):: nJ     ! number of cells in dim 2
     integer, intent(in):: nK     ! number of cells in dim 3
-
-    real, intent(inout):: a_II(nVar*nVar*nI*nJ*nK,2*nDim+1) ! Precond matrix
+    integer, intent(in):: nDiag  ! number of diagonals
+    real, intent(inout):: a_II(nVar*nVar*nI*nJ*nK,nDiag) ! Precond matrix
 
     character(len=*), parameter:: NameSub = 'get_precond_matrix'
     !--------------------------------------------------------------------------
@@ -1912,14 +1907,25 @@ contains
        call prehepta(nI, nVar, nI, nI, PrecondParam, &
             a_II(1,1), a_II(1,2), a_II(1,3))
     case(2)
-       ! Pentadiagonal case
-       call prehepta(nI*nJ, nVar, nI, nI*nJ, PrecondParam, &
-            a_II(1,1), a_II(1,2), a_II(1,3), a_II(1,4), a_II(1,5))
+       if(nDiag == 3)then
+          ! BILU1 case
+          call prehepta(nI*nJ, nVar, nI, nI*nJ, PrecondParam, &
+               a_II(1,1), a_II(1,2), a_II(1,3))
+       else
+          ! Pentadiagonal case
+          call prehepta(nI*nJ, nVar, nI, nI*nJ, PrecondParam, &
+               a_II(1,1), a_II(1,2), a_II(1,3), a_II(1,4), a_II(1,5))
+       end if
     case(3)
-       ! Heptadiagonal case
-       call prehepta(nI*nJ*nK, nVar, nI, nI*nJ, PrecondParam, &
-            a_II(1,1), a_II(1,2), a_II(1,3), a_II(1,4), a_II(1,5), &
-            a_II(1,6), a_II(1,7))
+       if(nDiag == 3)then
+          call prehepta(nI*nJ*nK, nVar, nI, nI*nJ, PrecondParam, &
+               a_II(1,1), a_II(1,2), a_II(1,3))
+       else
+          ! Heptadiagonal case
+          call prehepta(nI*nJ*nK, nVar, nI, nI*nJ, PrecondParam, &
+               a_II(1,1), a_II(1,2), a_II(1,3), a_II(1,4), a_II(1,5), &
+               a_II(1,6), a_II(1,7))
+       end if
     case default
        write(*,*)'ERROR in ', NameSub, ' nDim=', nDim
 #ifndef _OPENACC
@@ -1930,7 +1936,7 @@ contains
   end subroutine get_precond_matrix
   !============================================================================
   subroutine multiply_left_precond(TypePrecond, TypePrecondSide, &
-       nVar, nDim, nI, nJ, nK, a_II, x_I)
+       nVar, nDim, nI, nJ, nK, nDiag, a_II, x_I)
     !$acc routine vector
 
     ! Multiply x_I with the left preconditioner matrix using the
@@ -1941,13 +1947,14 @@ contains
     character(len=*), intent(in):: TypePrecond     ! DILU, BILU, MBILU
     character(len=*), intent(in):: TypePrecondSide ! left, right, symm
 
-    integer, intent(in)   :: nVar   ! number of variables per cell
-    integer, intent(in)   :: nDim   ! number of dimensions 1, 2 or 3
-    integer, intent(in)   :: nI     ! number of cells in dim 1
-    integer, intent(in)   :: nJ     ! number of cells in dim 2
-    integer, intent(in)   :: nK     ! number of cells in dim 3
-    real,    intent(in)   :: a_II(nVar*nVar*nI*nJ*nK,2*nDim+1) ! Precond matrix
-    real,    intent(inout):: x_I(nVar*nI*nJ*nK)                ! Vector of vars
+    integer, intent(in):: nVar   ! number of variables per cell
+    integer, intent(in):: nDim   ! number of dimensions 1, 2 or 3
+    integer, intent(in):: nI     ! number of cells in dim 1
+    integer, intent(in):: nJ     ! number of cells in dim 2
+    integer, intent(in):: nK     ! number of cells in dim 3
+    integer, intent(in):: nDiag  ! number of diagonals
+    real,    intent(in):: a_II(nVar*nVar*nI*nJ*nK,nDiag) ! Precond matrix
+    real, intent(inout):: x_I(nVar*nI*nJ*nK)             ! Vector of vars
 
     character(len=*), parameter:: NameSub = 'multiply_left_precond'
     !--------------------------------------------------------------------------
@@ -2039,7 +2046,7 @@ contains
   end subroutine multiply_left_precond
   !============================================================================
   subroutine multiply_right_precond(TypePrecond, TypePrecondSide, &
-       nVar, nDim, nI, nJ, nK, a_II, x_I)
+       nVar, nDim, nI, nJ, nK, nDiag, a_II, x_I)
     !$acc routine vector
 
     ! Multiply x_I with the right preconditioner matrix using the
@@ -2050,14 +2057,14 @@ contains
     character(len=*), intent(in):: TypePrecond     ! DILU, BILU, MBILU
     character(len=*), intent(in):: TypePrecondSide ! left, right, symm
 
-    integer, intent(in)   :: nVar   ! number of variables per cell
-    integer, intent(in)   :: nDim   ! number of dimensions 1, 2 or 3
-    integer, intent(in)   :: nI     ! number of cells in dim 1
-    integer, intent(in)   :: nJ     ! number of cells in dim 2
-    integer, intent(in)   :: nK     ! number of cells in dim 3
-
-    real,    intent(in)   :: a_II(nVar*nVar*nI*nJ*nK,2*nDim+1) ! Precond matrix
-    real,    intent(inout):: x_I(nVar*nI*nJ*nK)                ! Vector of vars
+    integer, intent(in):: nVar   ! number of variables per cell
+    integer, intent(in):: nDim   ! number of dimensions 1, 2 or 3
+    integer, intent(in):: nI     ! number of cells in dim 1
+    integer, intent(in):: nJ     ! number of cells in dim 2
+    integer, intent(in):: nK     ! number of cells in dim 3
+    integer, intent(in):: nDiag  ! number of diagonals
+    real,    intent(in):: a_II(nVar*nVar*nI*nJ*nK,nDiag) ! Precond matrix
+    real, intent(inout):: x_I(nVar*nI*nJ*nK)             ! Vector of vars
 
     character(len=*), parameter:: NameSub = 'multiply_right_precond'
     !--------------------------------------------------------------------------
@@ -2123,21 +2130,22 @@ contains
   end subroutine multiply_right_precond
   !============================================================================
   subroutine precond_left_multiblock(Param, &
-       nVar, nDim, nI, nJ, nK, nBlock, Jac_VVCIB, x_I)
+       nVar, nDim, nI, nJ, nK, nDiag, nBlock, Jac_VVCIB, x_I)
 
     ! Multiply x_I with the left preconditioner matrix
 
     type(LinearSolverParamType), intent(in):: Param
 
-    integer, intent(in)   :: nVar   ! number of variables per cell
-    integer, intent(in)   :: nDim   ! number of dimensions 1, 2 or 3
-    integer, intent(in)   :: nI     ! number of cells in dim 1
-    integer, intent(in)   :: nJ     ! number of cells in dim 2
-    integer, intent(in)   :: nK     ! number of cells in dim 3
-    integer, intent(in)   :: nBlock ! number of blocks
+    integer, intent(in):: nVar   ! number of variables per cell
+    integer, intent(in):: nDim   ! number of dimensions 1, 2 or 3
+    integer, intent(in):: nI     ! number of cells in dim 1
+    integer, intent(in):: nJ     ! number of cells in dim 2
+    integer, intent(in):: nK     ! number of cells in dim 3
+    integer, intent(in):: nDiag  ! number of diagonals
+    integer, intent(in):: nBlock ! number of blocks
 
     ! Preconditioner matrix
-    real, intent(in)   :: Jac_VVCIB(nVar,nVar,nI,nJ,nK,2*nDim+1,nBlock)
+    real, intent(in):: Jac_VVCIB(nVar,nVar,nI,nJ,nK,nDiag,nBlock)
 
     ! Vector of variables
     real, intent(inout):: x_I(nVar*nI*nJ*nK*nBlock)
@@ -2152,10 +2160,10 @@ contains
     nVarIJK = nVar*nI*nJ*nK
     !$omp parallel do
     !$acc parallel loop gang independent
-    do iBlock=1,nBlock
+    do iBlock = 1, nBlock
        call multiply_left_precond( &
             Param%TypePrecond, Param%TypePrecondSide,&
-            nVar, nDim, nI, nJ, nK, Jac_VVCIB(1,1,1,1,1,1,iBlock), &
+            nVar, nDim, nI, nJ, nK, nDiag, Jac_VVCIB(1,1,1,1,1,1,iBlock), &
             x_I(nVarIJK*(iBlock-1) + 1))
     end do
     !$omp end parallel do
@@ -2163,21 +2171,22 @@ contains
   end subroutine precond_left_multiblock
   !============================================================================
   subroutine precond_right_multiblock(Param, &
-       nVar, nDim, nI, nJ, nK, nBlock, Jac_VVCIB, x_I)
+       nVar, nDim, nI, nJ, nK, nDiag, nBlock, Jac_VVCIB, x_I)
 
     ! Multiply x_I with the right preconditioner matrix using the
 
     type(LinearSolverParamType), intent(in):: Param
 
-    integer, intent(in)   :: nVar   ! number of variables per cell
-    integer, intent(in)   :: nDim   ! number of dimensions 1, 2 or 3
-    integer, intent(in)   :: nI     ! number of cells in dim 1
-    integer, intent(in)   :: nJ     ! number of cells in dim 2
-    integer, intent(in)   :: nK     ! number of cells in dim 3
-    integer, intent(in)   :: nBlock ! number of blocks
+    integer, intent(in):: nVar   ! number of variables per cell
+    integer, intent(in):: nDim   ! number of dimensions 1, 2 or 3
+    integer, intent(in):: nI     ! number of cells in dim 1
+    integer, intent(in):: nJ     ! number of cells in dim 2
+    integer, intent(in):: nK     ! number of cells in dim 3
+    integer, intent(in):: nDiag  ! number of diagonals
+    integer, intent(in):: nBlock ! number of blocks
 
     ! Preconditioner matrix
-    real, intent(in)   :: Jac_VVCIB(nVar,nVar,nI,nJ,nK,2*nDim+1,nBlock)
+    real, intent(in):: Jac_VVCIB(nVar,nVar,nI,nJ,nK,nDiag,nBlock)
 
     ! Vector of variables
     real, intent(inout):: x_I(nVar*nI*nJ*nK*nBlock)
@@ -2192,17 +2201,17 @@ contains
     nVarIJK = nVar*nI*nJ*nK
     !$omp parallel do
     !$acc parallel loop gang independent
-    do iBlock=1,nBlock
+    do iBlock = 1, nBlock
        call multiply_right_precond( &
             Param%TypePrecond, Param%TypePrecondSide,&
-            nVar, nDim, nI, nJ, nK, Jac_VVCIB(1,1,1,1,1,1,iBlock), &
+            nVar, nDim, nI, nJ, nK, nDiag, Jac_VVCIB(1,1,1,1,1,1,iBlock), &
             x_I(nVarIJK*(iBlock-1) + 1))
     end do
     !$omp end parallel do
 
   end subroutine precond_right_multiblock
   !============================================================================
-  subroutine multiply_initial_guess(nVar, nDim, nI, nJ, nK, a_II, x_I)
+  subroutine multiply_initial_guess(nVar, nDim, nI, nJ, nK, nDiag, a_II, x_I)
 
     ! Multiply x_I with the upper triangular part of
     ! a_II matrix which was obtained with "get_precond_matrix"
@@ -2216,8 +2225,9 @@ contains
     integer, intent(in):: nI     ! number of cells in dim 1
     integer, intent(in):: nJ     ! number of cells in dim 2
     integer, intent(in):: nK     ! number of cells in dim 3
-    real,    intent(in):: a_II(nVar*nVar*nI*nJ*nK,2*nDim+1) ! Precond matrix
-    real, intent(inout):: x_I(nVar*nI*nJ*nK)                ! Vector of vars
+    integer, intent(in):: nDiag  ! number of diagonals
+    real,    intent(in):: a_II(nVar*nVar*nI*nJ*nK,nDiag) ! Precond matrix
+    real, intent(inout):: x_I(nVar*nI*nJ*nK)             ! Vector of vars
 
     ! Multiply with U^-1 from the LU decomposition
     character(len=*), parameter:: NameSub = 'multiply_initial_guess'
@@ -2228,13 +2238,23 @@ contains
        call Uhepta(.false., nI, nVar, nI, nI, x_I, &
             a_II(1,3))
     case(2)
-       ! Pentadiagonal case
-       call Uhepta(.false., nI*nJ, nVar, nI, nI*nJ, x_I, &
-            a_II(1,3), a_II(1,5))
+       if(nDiag == 3)then
+          call Uhepta(.false., nI*nJ, nVar, nI, nI*nJ, x_I, &
+               a_II(1,3))
+       else
+          ! Pentadiagonal case
+          call Uhepta(.false., nI*nJ, nVar, nI, nI*nJ, x_I, &
+               a_II(1,3), a_II(1,5))
+       end if
     case(3)
-       ! Heptadiagonal case
-       call Uhepta(.false., nI*nJ*nK, nVar, nI, nI*nJ, x_I, &
-            a_II(1,3), a_II(1,5), a_II(1,7))
+       if(nDiag == 3)then
+          call Uhepta(.false., nI*nJ*nK, nVar, nI, nI*nJ, x_I, &
+               a_II(1,3))
+       else
+          ! Heptadiagonal case
+          call Uhepta(.false., nI*nJ*nK, nVar, nI, nI*nJ, x_I, &
+               a_II(1,3), a_II(1,5), a_II(1,7))
+       end if
     case default
        write(*,*)'ERROR in ', NameSub, ' nDim=', nDim
        call CON_stop(NameSub//': invalid value for nDim')
@@ -2243,13 +2263,14 @@ contains
   end subroutine multiply_initial_guess
   !============================================================================
   subroutine solve_linear_multiblock(Param, &
-       nVar, nDim, nI, nJ, nK, nBlock, iComm, impl_matvec, Rhs_I, x_I, &
+       nVar, nDim, nI, nJ, nK, nDiag, nBlock, iComm, impl_matvec, Rhs_I, x_I, &
        DoTest, Jac_VVCIB, JacobiPrec_I, cg_precond, hypre_precond)
 
     type(LinearSolverParamType), intent(inout):: Param
     integer, intent(in):: nVar       ! Number of impl. variables/cell
     integer, intent(in):: nDim       ! Number of spatial dimensions
     integer, intent(in):: nI, nJ, nK ! Number of cells in a block
+    integer, intent(in):: nDiag      ! Number of diagonals in Jac_VVCIB
     integer, intent(in):: nBlock     ! Number of impl. grid blocks
     integer, intent(in):: iComm      ! MPI communicator for processors
 
@@ -2269,7 +2290,7 @@ contains
     logical, optional:: DoTest    ! show Krylov iterations and convergence
 
     real, intent(inout), optional:: &  ! Jacobian matrix --> preconditioner
-         Jac_VVCIB(nVar,nVar,nI,nJ,nK,2*nDim+1,nBlock)
+         Jac_VVCIB(nVar,nVar,nI,nJ,nK,nDiag,nBlock)
 
     real, intent(inout), optional:: &  ! Point Jacobi preconditioner
          JacobiPrec_I(:)
@@ -2301,8 +2322,7 @@ contains
 
     character(len=*), parameter:: NameSub = 'solve_linear_multiblock'
     !--------------------------------------------------------------------------
-    ! Number of variables per block
-    nVarIjk = nVar*nI*nJ*nK
+    nVarIjk = nVar*nI*nJ*nK ! Number of variables per block
     !$acc update device(nVarIjk)
 
     ! Number of variables per processor
@@ -2338,9 +2358,9 @@ contains
           if(present(Jac_VVCIB))then
              n = 0
              !$omp parallel do private( n )
-             do iBlock=1,nBlock; do k=1,nK; do j=1,nJ; do i=1,nI
+             do iBlock = 1, nBlock; do k = 1, nK; do j = 1, nJ; do i = 1, nI
                 n = (iBlock-1)*nI*nJ*nk*nVar
-                do iVar=1,nVar
+                do iVar = 1, nVar
                    n = n + 1
                    JacobiPrec_I(n) = 1.0 / Jac_VVCIB(iVar,iVar,i,j,k,1,iBlock)
                 end do
@@ -2352,24 +2372,24 @@ contains
        else
           !$omp parallel do private( n )
           !$acc parallel loop gang private(n)
-          do iBlock=1,nBlock
+          do iBlock = 1, nBlock
 
              ! Preconditioning Jac_VVCIB matrix
-             call get_precond_matrix(                             &
-                  Param%PrecondParam, nVar, nDim, nI, nJ, nK, &
+             call get_precond_matrix( &
+                  Param%PrecondParam, nVar, nDim, nI, nJ, nK, nDiag, &
                   Jac_VVCIB(1,1,1,1,1,1,iBlock))
 
              if(Param%TypeKrylov == 'CG') CYCLE
 
              ! Starting index in the linear arrays
-             n = nVarIjk*(iBlock-1)+1
+             n = nVarIjk*(iBlock-1) + 1
 
              ! rhs --> P_L.rhs, where P_L=U^{-1}.L^{-1}, L^{-1}, or I
              ! for left, symmetric, and right preconditioning, respectively
              call multiply_left_precond(&
                   Param%TypePrecond, Param%TypePrecondSide, &
-                  nVar, nDim, nI, nJ, nK, Jac_VVCIB(1,1,1,1,1,1,iBlock), &
-                  Rhs_I(n))
+                  nVar, nDim, nI, nJ, nK, nDiag, &
+                  Jac_VVCIB(1,1,1,1,1,1,iBlock), Rhs_I(n))
 
 #ifndef _OPENACC
              ! Initial guess x --> P_R^{-1}.x where P_R^{-1} = I, U, LU for
@@ -2378,8 +2398,8 @@ contains
              if(  Param%UseInitialGuess .and. &
                   Param%TypePrecondSide == 'symmetric') &
                   call multiply_initial_guess( &
-                  nVar, nDim, nI, nJ, nK, Jac_VVCIB(1,1,1,1,1,1,iBlock), &
-                  x_I(n))
+                  nVar, nDim, nI, nJ, nK, nDiag, &
+                  Jac_VVCIB(1,1,1,1,1,1,iBlock), x_I(n))
 #endif
           end do
           !$omp end parallel do
@@ -2429,7 +2449,7 @@ contains
     ! Postprocessing: x = P_R.x where P_R = I, U^{-1}, U^{-1}L^{-1} for
     ! left, symmetric and right preconditioning, respectively
     if(Param%DoPrecond) call precond_right_multiblock(Param, &
-         nVar, nDim, nI, nJ, nK, nBlock, Jac_VVCIB, x_I)
+         nVar, nDim, nI, nJ, nK, nDiag, nBlock, Jac_VVCIB, x_I)
 
     if(DoTest)write(*,*)NameSub,&
          ': After nMatVec, Error, iError=',&
@@ -2480,10 +2500,13 @@ contains
 
     logical, parameter :: DoTest = .false.
     !--------------------------------------------------------------------------
-    allocate(StateEps_GV(-1:nCell+2, nVar), &
-         RightHand_CV(nCell, nVar), ResidOrig_CV(nCell, nVar),  &
-         ResidEps_CV(nCell, nVar), Norm_V(nVar), x_I(nCell*nVar), &
-         Matrix_VVCI(nVar, nVar, nCell, nDiag))
+    allocate(StateEps_GV(-1:nCell+2,nVar), &
+         RightHand_CV(nCell,nVar), &
+         ResidOrig_CV(nCell,nVar),  &
+         ResidEps_CV(nCell,nVar), &
+         Norm_V(nVar), &
+         x_I(nCell*nVar), &
+         Matrix_VVCI(nVar,nVar,nCell,nDiag))
 
     ! Make sure that ghost cells are up-to-date
     call update_boundary(nCell, nVar, State_GV)
@@ -2516,7 +2539,7 @@ contains
           ! Jacobian is multiplied with -ImplPar*DtImpl
           Coeff= -Implpar*DtImpl/(Eps*Norm_V(jVar)*DtExpl)
           do i = 1, nCell
-             iDiag = modulo(i-iStencil,3)+1
+             iDiag = modulo(i-iStencil,3) + 1
              do iVar = 1, nVar
                 Matrix_VVCI(iVar,jVar,i,iDiag) = &
                      Coeff*(ResidEps_CV(i,iVar) - ResidOrig_CV(i,iVar))
@@ -2533,14 +2556,14 @@ contains
     end if
 
     ! Add the diagonal part J = I - delta t*dR/dU
-    do i=1, nCell
+    do i = 1, nCell
        do iVar = 1, nVar
           Matrix_VVCI(iVar,iVar,i,1) = Matrix_VVCI(iVar,iVar,i,1) + 1.0
        end do
     end do
 
     ! L-U decomposition using block ILU (exact in 1D)
-    call get_precond_matrix(real(bilu_), nVar, 1, nCell, 1, 1, Matrix_VVCI)
+    call get_precond_matrix(real(bilu_), nVar, 1, nCell, 1, 1, 3, Matrix_VVCI)
 
     ! Put right hand side into a linear vector
     iX = 0
@@ -2553,7 +2576,7 @@ contains
 
     ! x --> U^{-1}.L^{-1}.rhs = A^{-1}.rhs
     call multiply_left_precond('BILU', 'left', nVar, 1, nCell, 1, 1, &
-         Matrix_VVCI, x_I)
+         nDiag, Matrix_VVCI, x_I)
 
     ! Update the solution: U^n+1 = U^n + x
     iX = 0
@@ -2585,7 +2608,7 @@ contains
     write(UNITTMP_,'(3i4)')            nCell
     write(UNITTMP_,'(100es13.5)')      Gamma
     write(UNITTMP_,'(a79)') 'x rho rhou p gamma'
-    do i=1,nCell
+    do i = 1, nCell
        write(UNITTMP_,'(100es18.10)') float(i), State_GV(i, rho_:p_)
     end do
 
@@ -2601,7 +2624,7 @@ contains
     integer :: i
     real :: uLeft, uRight
     !--------------------------------------------------------------------------
-    do i=1, nCell
+    do i = 1, nCell
        uRight = State_GV(i+1,rhou_)/State_GV(i+1,rho_)
        uLeft  = State_GV(i-1,rhou_)/State_GV(i-1,rho_)
        Resid_CV(i,rho_) = -Dt * Inv2Dx * &

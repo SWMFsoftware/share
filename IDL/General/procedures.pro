@@ -140,7 +140,7 @@ pro set_default_values
 
   ;; Animation parameters for the movie
   common animate_param, $
-     firstpict, dpict, npictmax, savemovie, showmovie, $
+     firstpict, dpict, npictmax, savemovie, showmovie, moviedir, $
      wsubtract, timediff, pictdiff, $
      videosave, videofile, videorate, videoobject, videostream, videotime
   firstpict=1        ; a scalar or array (per file) of the index of first frame
@@ -148,7 +148,8 @@ pro set_default_values
   npictmax=500       ; maximum number of frames in an animation
   showmovie='y'      ; show movie with Xinteranimate if possible
   savemovie='n'      ; save animation frames into ps/png/tiff/bmp/jpeg files
-                     ; or into a 'mov/mp4/avi' video file.
+                                ; or into a 'mov/mp4/avi' video file.
+  moviedir="Movie"   ; directory where individual movie frames are saved to
   wsubtract=0        ; Array subtracted from w during animation
   timediff=0         ; take time derivative of w during animation if timediff=1
   pictdiff=0         ; running difference in w (w-wprev) during animation
@@ -1115,11 +1116,12 @@ pro animate_data
      wshow
   endif
 
+  devicenameorig = !d.name
   if videosave then begin
      videoobject = IDLffVideoWrite(videofile+'.'+savemovie)
      videostream = videoobject.AddVideoStream(!d.x_size,!d.y_size,videorate)
   endif else begin
-     if savemovie ne 'n' then spawn,'/bin/mkdir -p Movie'
+     if savemovie ne 'n' then spawn,'/bin/mkdir -p '+moviedir
      if savemovie eq 'ps' then set_plot,'PS',/INTERPOLATE
   endelse
 
@@ -1140,8 +1142,9 @@ pro animate_data
         if not keyword_set(noerase) then erase
         !p.multi=[0,multix,multiy,0,multidir]
         if savemovie eq 'ps' then $
-           device,filename='Movie/'+string(FORMAT='(i4.4)',iplot+1)+'.ps',$
-                  XSIZE=24,YSIZE=18,/LANDSCAPE,/COLOR,BITS=8
+           device, $
+           filename=moviedir+'/'+string(FORMAT='(i4.4)',iplot+1)+'.ps', $
+           XSIZE=24, YSIZE=18, /LANDSCAPE, /COLOR, BITS=8
      endif
 
      if ipict eq 0 then print, FORMAT='("ipict:    ",$)'
@@ -1265,10 +1268,11 @@ pro animate_data
         if videosave then begin
            videotime = videoobject.put(videostream, tvrd(true=1))
         endif else if savemovie eq 'ps' then begin
-           print,FORMAT='(" (Movie/",i4.4,".ps)",$)',iplot+1
+           print,FORMAT='(" (",a,"/",i4.4,".ps)",$)',moviedir,iplot+1
            device,/close
         endif else if savemovie ne 'n' and !d.name eq 'X' then begin
-           imagefile=string(FORMAT='("Movie/",i4.4,".",a)',iplot+1,savemovie)
+           imagefile=string(FORMAT='(a,"/",i4.4,".",a)', $
+                            moviedir, iplot+1, savemovie)
            print,FORMAT='("(",a,")",$)',imagefile
            if savemovie eq 'png' then write_png, imagefile, tvrd(/true) $
            else write_image, imagefile, savemovie, $
@@ -1296,7 +1300,8 @@ pro animate_data
      videoobject = 0            ; close video file
      print,'Created ',videotime,' sec long video file ',videofile+'.'+savemovie
   endif
-  if savemovie eq 'ps' then set_plot,'X'
+  ;; restore X device
+  if savemovie eq 'ps' and devicenameorig eq 'X' then set_plot,'X'
   ;; Restore velpos array
   velpos=velpos0 & velpos0=0
   if doanimate then xinteranimate,5,/keep_pixmaps
@@ -1963,7 +1968,7 @@ pro get_file_types
         pictsize=long64(1)
         ipict=0
         while pointer lt fsize do begin
-                                ; Obtain size of a single snapshot
+           ;; Obtain size of a single snapshot
            point_lun, 1, pointer
            get_file_head, 1, filenames(ifile), ftype, pictsize=pictsize
            ipict   = ipict+1
@@ -2016,15 +2021,15 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
   if ftype eq filetype then lenstr = 79 else lenstr = 500
 
   ;; Type definitions
-  headline=''
-  for i=1, lenstr do headline=headline+' '
-  it     = 1L
-  ndim   = 1L
-  neqpar = 0L
-  eqpar  = 0.0
-  nw     = 1L
-  varname=''
-  for i=1, lenstr do varname=varname+' '
+  headline = ''
+  for i=1, lenstr do headline = headline + ' '
+  it      = 1L
+  ndim    = 1L
+  neqpar  = 0L
+  eqpar   = 0.0
+  nw      = 1L
+  varname = ''
+  for i=1, lenstr do varname = varname + ' '
 
   ;; Remember pointer position at beginning of header
   point_lun, -unit, pointer0
@@ -2103,7 +2108,12 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
      ;; Snapshot size = header + data + recordmarks
      case ftype of
         'log'  : pictsize = 1
-        'ascii': pictsize = headlen + (18*(ndim+nw)+1)*nxs
+        'ascii': begin
+           ;; read one line and take its length (+1 for the newline)
+           line = ''
+           readf, unit, line
+           pictsize = headlen + (strlen(line)+1)*nxs
+        end
         'real8': pictsize = headlen + 8*(1+nw)+8*(ndim+nw)*nxs
         'real4': pictsize = headlen + 8*(1+nw)+4*(ndim+nw)*nxs
      endcase
@@ -4350,11 +4360,11 @@ pro plot_func
                        limit=[yrange(0),xrange(0),yrange(1),xrange(1)]
         end else if plotmod eq 'lonlats' then begin
            if !y.range(0) lt !y.range(1) then $
-              map_set, -90, 90+lonshift, latdel=10, /azimuthal, /continent, $
+              map_set, -90, -90+lonshift, latdel=10, /azimuthal, /continent, $
                        usa=showusa,con_color=0, /noborder, /noerase, $
                        limit=[-90,0,-90+yrange(1),360] $
            else $
-              map_set, -90, 90+lonshift, latdel=10, /azimuthal, /continent, $
+              map_set, -90, -90+lonshift, latdel=10, /azimuthal, /continent, $
                        usa=showusa,con_color=0, /noborder, /noerase, $
                        limit=[yrange(0),xrange(0),yrange(1),xrange(1)]
         end else $
