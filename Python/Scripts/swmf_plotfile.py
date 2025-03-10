@@ -48,7 +48,7 @@ def read_plotfile(filename, fileformat='unknown'):
         fileformat = file_format(filename)
 
     if fileformat == "real4" or fileformat == "real8":
-        return read_binary(filename)
+        return read_binary(filename, fileformat)
     else:
         return read_ascii(filename)
 
@@ -111,8 +111,67 @@ def read_ascii(filename):
         data["pars"] = pars 
     return data
 ###############################################################################
-def read_binary(filename):
-    return
+def read_binary(filename, fileformat='unknown'):
+    # read binary SWMF file "filename" and return a dictionary with the content
+
+    if fileformat == "unknown":
+        fileformat = file_format(filename)
+
+    if fileformat == "real4":
+        nreal = 4
+        dtype = np.float32
+    else:
+        nreal = 8
+        dtype = np.float64
+
+    f = open(filename,'rb')
+    stringlength = int.from_bytes(f.read(4),'little')
+    head = f.read(stringlength).decode()
+    f.read(8) # skip markers
+    step = int.from_bytes(f.read(4),'little')
+    time = np.frombuffer(f.read(nreal), dtype=dtype)[0]
+    ndim = int.from_bytes(f.read(4),'little')
+    npar = int.from_bytes(f.read(4),'little')
+    nvar = int.from_bytes(f.read(4),'little')
+    f.read(8) # skip markers
+    dims = np.frombuffer(f.read(4*ndim), dtype=np.int32)
+    f.read(8) # skip markers
+    if npar > 0:
+        pars = np.frombuffer(f.read(nreal*npar), dtype=dtype)
+        f.read(8) # skip markers
+    name = f.read(stringlength).decode()
+    f.read(8) # skip markers
+    ngrid = np.prod(dims)
+    coord = np.frombuffer(f.read(nreal*ngrid*ndim), dtype=dtype).reshape(ndim, ngrid)
+    state = np.empty((nvar, ngrid), dtype=dtype)
+    for i in range(nvar):
+        f.read(8) # skip markers
+        state[i,:] = np.frombuffer(f.read(nreal*ngrid), dtype=dtype)
+    f.close
+
+    #print("step, time, ndim, npar, nvar=", step, time, ndim, npar, nvar)
+    #print("dims=", dims)
+    #if npar > 0:
+    #    print("pars=", pars)
+    #print("name=", name)
+    #print("coord=", coord)
+    #print("state=", state)
+
+    # Create dictionary
+    data ={"head"   : head,
+           "step"   : step,
+           "time"   : time,
+           "ndim"   : ndim,
+           "dims"   : dims,
+           "npar"   : npar,
+           "nvar"   : nvar,
+           "name"   : name,
+           "coord"  : coord,
+           "state"  : state}
+    if npar > 0:
+        data["pars"] = pars
+
+    return data
 ###############################################################################
 def fortran_string(string, l):
     # create bytestring of length l with spaces added at the end
@@ -269,12 +328,15 @@ def test_plotfile():
     print('wrote out ', fileout)
     print("Type of "+fileout+":", file_format(fileout))
 
+    print('reading  ', fileout)
+    data2 = read_plotfile(fileout)
+
     fileout = 'file_real8.out'
     write_plotfile(data, fileout, "real8")
     print("Type of "+fileout+":", file_format(fileout))
 
     fileout = 'file_ascii.out'
-    write_plotfile(data, fileout, '10.3f')
+    write_plotfile(data2, fileout, '10.3f')
     print("Type of "+fileout+":", file_format(fileout))
 
     return
