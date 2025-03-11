@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import swmf_plotfile as swmf
+import swmf_datafile as swmf
 
 # minimal data
 data = {
@@ -16,12 +16,12 @@ print("state.shape=", data["state"])
 
 # write ASCII file with 3 decimals
 fileout = 'file_ascii.out'
-swmf.write_plotfile(data, fileout, '10.3f')
+swmf.write_file(data, fileout, '10.3f')
 print("Type of "+fileout+":", swmf.file_format(fileout))
     
 # write single precision binary file
 fileout = 'file_real4.out'
-swmf.write_plotfile(data, fileout, "real8")
+swmf.write_file(data, fileout, "real8")
 print('wrote out ', fileout)
 print("Type of "+fileout+":", swmf.file_format(fileout))
 
@@ -31,14 +31,14 @@ data["dims"] = [12, 1]
 
 # write double precision binary file
 fileout = 'file_real8.out'
-swmf.write_plotfile(data, fileout, "real8")
+swmf.write_file(data, fileout, "real8")
 print('wrote out ', fileout)
 print("Type of "+fileout+":", swmf.file_format(fileout))
 
 # read back ascii file
 filein = 'file_ascii.out'
 print('reading  ', filein)
-data2 = swmf.read_plotfile(filein)
+data2 = swmf.read_file(filein)
 print("head=",data2["head"])
 print("dims=",data2["dims"])
 print("name=",data2["name"])
@@ -46,7 +46,7 @@ print("name=",data2["name"])
 # read back single precision binary file
 filein = 'file_real4.out'
 print('reading  ', filein)
-data2 = swmf.read_plotfile(filein)
+data2 = swmf.read_file(filein)
 print("head=",data2["head"])
 print("dims=",data2["dims"])
 print("name=",data2["name"])
@@ -54,7 +54,7 @@ print("name=",data2["name"])
 # read back double precision binary file
 filein = 'file_real8.out'
 print('reading  ', filein)
-data2 = swmf.read_plotfile(filein)
+data2 = swmf.read_file(filein)
 print("head=",data2["head"])
 print("dims=",data2["dims"])
 print("name=",data2["name"])

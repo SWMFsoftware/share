@@ -1,6 +1,6 @@
 import numpy as np
 
-# Read and write SWMF plotfiles in ascii, real4 and real8 formats
+# Read and write SWMF data files in ascii, real4 and real8 formats
 # After reading the data dictionary contains
 #   "head": headline string
 #   "step": time step (integer)
@@ -37,9 +37,9 @@ def file_format(filename):
         return "real8"
     else:
         return "ascii"
-    
+
 ###############################################################################
-def read_plotfile(filename, fileformat='unknown'):
+def read_file(filename, fileformat='unknown'):
     # read the file "filename" and return a dictionary with the content
     # use fileformat if set
     if fileformat == "unknown":
@@ -51,7 +51,7 @@ def read_plotfile(filename, fileformat='unknown'):
         return read_ascii(filename)
 
 ###############################################################################
-def write_plotfile(data, filename="plotfile.out", fileformat="18.10e"):
+def write_file(data, filename="swmffile.out", fileformat="18.10e"):
     # write data into the SWMF file filename with format fileformat
     if fileformat == 'real4' or fileformat == 'real8':
         write_binary(data, filename, fileformat)
@@ -203,7 +203,7 @@ def get_dims(coord):
     return dims
     
 ###############################################################################
-def write_ascii(data, filename="plotfile.out", fileformat="18.10e"):
+def write_ascii(data, filename="swmffile.out", fileformat="18.10e"):
     # Print data into ascii file filename using fileformat for real arrays.
 
     if not "name" in data or not "state" in data or not "coord" in data:
@@ -257,14 +257,14 @@ def write_ascii(data, filename="plotfile.out", fileformat="18.10e"):
 
     f.close()
 ###############################################################################
-def write_binary(data, filename="plotfile.out", fileformat="real4"):
+def write_binary(data, filename="swmffile.out", fileformat="real4"):
     # Print binary data in fileformat (real4 or real8) into file filename.
     # All arrays should be numpy arrays.
 
     print("starting write_binary: filename, fileformat=", filename, fileformat)
-    
+
     if not "name" in data or not "state" in data or not "coord" in data:
-        print("ERROR in write_plotfile: missing name, state or coord in data")
+        print("ERROR in write_binary: missing name, state or coord in data")
         print("Could not write file", filename)
         return 1
 
