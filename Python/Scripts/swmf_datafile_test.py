@@ -27,7 +27,11 @@ print("Type of "+fileout+":", swmf.file_format(fileout))
 
 # Add head line and dimensions
 data["head"] = "Proper header"
-data["dims"] = [12, 1]
+data["cart"] = False
+data["dims"] = [1, 12] # typical for AMR grid
+data["pars"] = [0.1, 0.2, 0.3, 0.4, 0.5] # add 5 scalar parameters
+# New data name is more than 79 characters
+data["name"] += " ParameterName1 ParameterName2 ParameterName3 ParameterName4 ParameterName5"
 
 # write double precision binary file
 fileout = 'file_real8.out'
@@ -40,7 +44,7 @@ filein = 'file_ascii.out'
 print('reading  ', filein)
 data2 = swmf.read_file(filein)
 print("head=",data2["head"])
-print("dims=",data2["dims"])
+print("dims=",data2["dims"], "cart=", data2["cart"])
 print("name=",data2["name"])
 
 # read back single precision binary file
@@ -48,7 +52,7 @@ filein = 'file_real4.out'
 print('reading  ', filein)
 data2 = swmf.read_file(filein)
 print("head=",data2["head"])
-print("dims=",data2["dims"])
+print("dims=",data2["dims"], "cart=", data2["cart"])
 print("name=",data2["name"])
     
 # read back double precision binary file
@@ -56,5 +60,5 @@ filein = 'file_real8.out'
 print('reading  ', filein)
 data2 = swmf.read_file(filein)
 print("head=",data2["head"])
-print("dims=",data2["dims"])
+print("dims=",data2["dims"], "cart=", data2["cart"])
 print("name=",data2["name"])

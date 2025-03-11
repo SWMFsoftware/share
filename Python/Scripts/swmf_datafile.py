@@ -6,17 +6,20 @@ import numpy as np
 #   "step": time step (integer)
 #   "time": time (real)
 #   "ndim": number of coordinates (1, 2, or 3)
+#   "cart": True for Cartesian, False for non-Cartesian grid (ndim<0 in file)
 #   "npar": number of scalar parameters (0, 1, ...)
 #   "nvar": number of variables in the state (1, 2, ...)
-#   "dims": array of ndim integers giving the grid dimension
+#   "dims": array of ndim integers giving the grid dimension (Python order)
 #   "pars": array of npar reals with scalar parameters (if npar > 0)
 #   "name": coordinate, variable and parameter names separated by spaces
 #   "coord": coordinate array (ndim,ngrid)
 #   "state": state array (nvar,ngrid)
 #
-# For writing the data dictionary must contain "name", "coord", "state",
-# while "pars" is optional. If "dims" is present it is used and checked
-# against the shape of "coord".
+# For writing, the data dictionary must contain "name", "coord", and "state".
+# It is recommended to always set "head".
+# The "pars" is optional. If "dims" is present it is used and checked
+# against the size of "coord" (but the shape can be changed).
+# The "cart" can be set to False to indicate non-Cartesian grid.
 
 ###############################################################################
 def file_format(filename):
@@ -69,6 +72,8 @@ def read_ascii(filename, verbose=False):
     step = np.int32(step)
     time = np.float64(time)
     ndim = np.int32(ndim)
+    cart = ndim > 0 # Negative ndim is for non-cartesian
+    ndim = abs(ndim)
     npar = np.int32(npar)
     nvar = np.int32(nvar)
     dims = np.flip(np.array(f.readline().split(), dtype=np.int32))
@@ -83,14 +88,13 @@ def read_ascii(filename, verbose=False):
     f.close()
     # extract coordinates and variables
     coord = griddata[:ndim,:].reshape([ndim]+list(dims))
-    shape = list(dims)
     state = griddata[ndim:,:].reshape([nvar]+list(dims))
 
     if verbose:
         print('filename=', filename)
         print('head=',head)
         print('step,time,ndim,npar,nvar=', step, time, ndim, npar, nvar)
-        print('dims=',dims, 'ngrid=', ngrid)
+        print('dims=',dims, 'ngrid=', ngrid, 'cart=', cart)
         if npar > 0:
             print('pars=', pars)
         print('name=', name)
@@ -103,6 +107,7 @@ def read_ascii(filename, verbose=False):
            "time"   : time,
            "ndim"   : ndim,
            "dims"   : dims,
+           "cart"   : cart,
            "npar"   : npar,
            "nvar"   : nvar,
            "name"   : name,
@@ -132,7 +137,9 @@ def read_binary(filename, verbose=False):
         
     step = int.from_bytes(f.read(4),'little')
     time = np.frombuffer(f.read(nreal), dtype=dtype)[0]
-    ndim = int.from_bytes(f.read(4),'little')
+    ndim = np.frombuffer(f.read(4), dtype=np.int32)[0]
+    cart = ndim > 0
+    ndim = abs(ndim)
     npar = int.from_bytes(f.read(4),'little')
     nvar = int.from_bytes(f.read(4),'little')
     f.read(8) # skip markers
@@ -150,15 +157,16 @@ def read_binary(filename, verbose=False):
     for i in range(nvar):
         f.read(8) # skip markers
         state[i,:] = np.frombuffer(f.read(nreal*ngrid), dtype=dtype)
-
-    state = state.reshape([nvar]+list(dims))
     f.close
+
+    # Reformat state based on dims
+    state = state.reshape([nvar]+list(dims))
 
     if verbose:
         print('filename=', filename)
         print('head=',head)
         print('step,time,ndim,npar,nvar=', step, time, ndim, npar, nvar)
-        print('dims=',dims, 'ngrid=', ngrid)
+        print('dims=',dims, 'ngrid=', ngrid, "cart=", cart)
         if npar > 0:
             print('pars=', pars)
         print('name=', name)
@@ -170,6 +178,7 @@ def read_binary(filename, verbose=False):
            "step"   : step,
            "time"   : time,
            "ndim"   : ndim,
+           "cart"   : cart,
            "dims"   : dims,
            "npar"   : npar,
            "nvar"   : nvar,
@@ -199,7 +208,6 @@ def get_dims(coord):
     dims = list(coord.shape)
     if coord.ndim > 1:
         dims = dims[1:] # remove the first index
-        dims.reverse()  # reverse the order (Fortran)
     return dims
     
 ###############################################################################
@@ -213,21 +221,25 @@ def write_ascii(data, filename="swmffile.out", fileformat="18.10e"):
 
     f = open(filename,'w')
 
+    # required information
     name = data["name"]
     coord = np.float64(data["coord"])
     state = np.float64(data["state"])
+
+    # optional information
     head = data["head"] if "head" in data else "Missing head"
     dims = np.int32(data["dims"] if "dims" in data else get_dims(coord))
     step = data["step"] if "step" in data else 0
     time = data["time"] if "time" in data else 0.0
     pars = np.float64(data["pars"]) if "pars" in data else []
 
+    # Derived information
     ndim = len(dims)
     npar = len(pars)
     nvar = len(name.split()) - ndim - npar
-
+    
     # Check consistency
-    ngrid = np.prod(dims)
+    ngrid = np.prod(dims) # number of grid points
     if coord.size != ngrid*ndim:
         print("ERROR in write_ascii: incorrect size of coord=", coord.size)
         print('dims=', dims, 'ndim=', ndim,' ngrid=',ngrid)
@@ -246,8 +258,10 @@ def write_ascii(data, filename="swmffile.out", fileformat="18.10e"):
     np.set_printoptions(formatter={'float_kind':float_formatter.format})
     f.writelines(head+"\n")
     template = "{0:d} {1:"+fileformat+"} {2:d} {3:d} {4:d}\n"
+    if "cart" in data and not data["cart"]:
+        ndim = -ndim # negative ndim for non-Cartesian grid
     f.write(template.format(step, time, ndim, npar, nvar))
-    f.write(str(dims)[1:-1]+"\n")
+    f.write(str(np.flip(dims))[1:-1]+"\n")
     template = "{:18.10e}"
     if npar > 0:
         f.write(str(pars)[1:-1]+"\n")
@@ -274,6 +288,8 @@ def write_binary(data, filename="swmffile.out", fileformat="real4"):
     name = data["name"]
     coord = data["coord"]
     state = data["state"]
+
+    # optional
     time = data["time"] if "time" in data else 0.0
     pars = data["pars"] if "pars" in data else []
     npar = np.int32(len(pars))
@@ -296,7 +312,7 @@ def write_binary(data, filename="swmffile.out", fileformat="real4"):
         time = np.float32(time)
         if npar > 0 and pars.dtype != "float32":
             pars = np.float32(pars)
-            
+
     head = data["head"] if "head" in data else "Missing head"
     dims = np.int32(data["dims"] if "dims" in data else get_dims(coord))
     step = np.int32(data["step"] if "step" in data else 0)
@@ -319,12 +335,15 @@ def write_binary(data, filename="swmffile.out", fileformat="real4"):
         
     stringlength = 79 if len(head) < 80 and len(name) < 80 else 500
     f.write(fortran_record(fortran_string(head, stringlength)))
+
+    if "cart" in data and not data["cart"]:
+        ndim = -ndim # negative ndim for non-Cartesian grid
     f.write(fortran_record(step.tobytes()
                            + time.tobytes()
                            + ndim.tobytes()
                            + npar.tobytes()
                            + nvar.tobytes()))
-    f.write(fortran_record(dims.tobytes()))
+    f.write(fortran_record(np.flip(dims).tobytes()))
     if npar > 0:
         f.write(fortran_record(pars.tobytes()))
     f.write(fortran_record(fortran_string(name, stringlength)))
