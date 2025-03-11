@@ -72,7 +72,7 @@ def read_ascii(filename, verbose=False):
     ndim = np.int32(ndim)
     npar = np.int32(npar)
     nvar = np.int32(nvar)
-    dims = np.array(f.readline().split(), dtype=np.int32)
+    dims = np.flip(np.array(f.readline().split(), dtype=np.int32))
     if npar > 0:
         pars = np.array(f.readline().split(), dtype=np.float64)
     name = f.readline()[:-1]
@@ -83,8 +83,9 @@ def read_ascii(filename, verbose=False):
     griddata = griddata.reshape(ngrid, ndim+nvar).T
     f.close()
     # extract coordinates and variables
-    coord = griddata[:ndim,:]
-    state = griddata[ndim:,:]
+    coord = griddata[:ndim,:].reshape([ndim]+list(dims))
+    shape = list(dims)
+    state = griddata[ndim:,:].reshape([nvar]+list(dims))
 
     if verbose:
         print('filename=', filename)
@@ -117,7 +118,8 @@ def read_binary(filename, verbose=False):
 
     f = open(filename,'rb')
     stringlength = int.from_bytes(f.read(4),'little')
-    head = f.read(stringlength).decode().rstrip()
+    head = f.read(stringlength).decode()
+    head = head.rstrip()
     f.read(4) # skip markers
     len2 = int.from_bytes(f.read(4),'little')
     if len2 == 20:
@@ -135,19 +137,22 @@ def read_binary(filename, verbose=False):
     npar = int.from_bytes(f.read(4),'little')
     nvar = int.from_bytes(f.read(4),'little')
     f.read(8) # skip markers
-    dims = np.frombuffer(f.read(4*ndim), dtype=np.int32)
+    dims = np.flip(np.frombuffer(f.read(4*ndim), dtype=np.int32))
     f.read(8) # skip markers
     if npar > 0:
         pars = np.frombuffer(f.read(nreal*npar), dtype=dtype)
         f.read(8) # skip markers
     name = f.read(stringlength).decode().rstrip()
     f.read(8) # skip markers
+    shape = [ndim]+list(dims)
     ngrid = np.prod(dims)
-    coord = np.frombuffer(f.read(nreal*ngrid*ndim), dtype=dtype).reshape(ndim, ngrid)
+    coord = np.frombuffer(f.read(nreal*ngrid*ndim), dtype=dtype).reshape([ndim]+list(dims))
     state = np.empty((nvar, ngrid), dtype=dtype)
     for i in range(nvar):
         f.read(8) # skip markers
         state[i,:] = np.frombuffer(f.read(nreal*ngrid), dtype=dtype)
+
+    state = state.reshape([nvar]+list(dims))
     f.close
 
     if verbose:
@@ -183,7 +188,7 @@ def fortran_string(string, l):
         print("ERROR in fortran_string:")
         print("Length of string=", len(string),"> l=",l)
         exit(1)
-    return string.encode()[:-1] + b' '*(l+1 - len(string))
+    return string.encode() + b' '*(l - len(string))
 ###############################################################################
 def fortran_record(bytearray):
     # write a Fortran record with 4-byte markers at both ends
@@ -393,4 +398,5 @@ def test_plotfile():
     
     return
 ###############################################################################
-test_plotfile()
+if __name__ == "__main__":
+    test_plotfile()
