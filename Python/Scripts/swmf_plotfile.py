@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import numpy as np
 
 # Read and write SWMF plotfiles in ascii, real4 and real8 formats
@@ -335,68 +334,3 @@ def write_binary(data, filename="plotfile.out", fileformat="real4"):
     f.close()
     return
 
-###############################################################################
-def test_plotfile():
-
-    # minimal data
-    data = {
-        "name": "longitude latitude dBN dBE",
-        "coord": [[[1.,2.,3.,4.],[1.,2.,3.,4.],[1.,2.,3.,4.]],
-                  [[1.,1.,1.,1.],[2.,2.,2.,2.],[3.,3.,3.,3.]]],
-        "state": [[[10.,11.,12.,13.],[100.,110.,120.,130.],[1000.,1100.,1200.,1300]],
-                  [[20.,21.,22.,23.],[200.,210.,220.,230.],[2000.,2100.,2200.,2300]]]
-        }
-
-    print("name=", data["name"])
-    print("coord.shape=", data["coord"])
-    print("state.shape=", data["state"])
-
-    # write ASCII file with 3 decimals
-    fileout = 'file_ascii.out'
-    write_plotfile(data, fileout, '10.3f')
-    print("Type of "+fileout+":", file_format(fileout))
-    
-    # write single precision binary file
-    fileout = 'file_real4.out'
-    write_plotfile(data, fileout, "real8")
-    print('wrote out ', fileout)
-    print("Type of "+fileout+":", file_format(fileout))
-
-    # Add head line and dimensions
-    data["head"] = "Proper header"
-    data["dims"] = [12, 1]
-
-    # write double precision binary file
-    fileout = 'file_real8.out'
-    write_plotfile(data, fileout, "real8")
-    print('wrote out ', fileout)
-    print("Type of "+fileout+":", file_format(fileout))
-
-    # read back ascii file
-    filein = 'file_ascii.out'
-    print('reading  ', filein)
-    data2 = read_plotfile(filein)
-    print("head=",data2["head"])
-    print("dims=",data2["dims"])
-    print("name=",data2["name"])
-
-    # read back single precision binary file
-    filein = 'file_real4.out'
-    print('reading  ', filein)
-    data2 = read_plotfile(filein)
-    print("head=",data2["head"])
-    print("dims=",data2["dims"])
-    print("name=",data2["name"])
-
-    # read back double precision binary file
-    filein = 'file_real8.out'
-    print('reading  ', filein)
-    data2 = read_plotfile(filein)
-    print("head=",data2["head"])
-    print("dims=",data2["dims"])
-    print("name=",data2["name"])
-    
-    return
-###############################################################################
-if __name__ == "__main__":
-    test_plotfile()
