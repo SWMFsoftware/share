@@ -9,10 +9,7 @@ data = {
     "state": [[[10.,11.,12.,13.],[100.,110.,120.,130.],[1000.,1100.,1200.,1300]],
               [[20.,21.,22.,23.],[200.,210.,220.,230.],[2000.,2100.,2200.,2300]]]
 }
-
-print("name=", data["name"])
-print("coord=", data["coord"])
-print("state=", data["state"])
+swmf.show_data(data)
 
 # write ASCII file with 3 decimals
 fileout = 'file_ascii.outs'
@@ -25,8 +22,8 @@ print("Type of "+fileout+":", swmf.file_format(fileout))
 
 # write single precision binary file
 fileout = 'file_real4.out'
-swmf.write_file(data, fileout, "real8")
-print('wrote out ', fileout)
+swmf.write_file(data, fileout, "real4")
+print("wrote out ", fileout)
 print("Type of "+fileout+":", swmf.file_format(fileout))
 
 # Add head line and dimensions
@@ -64,9 +61,7 @@ swmf.show_data(data2)
 filein = 'file_real8.outs'
 f = open(filein,'rb')
 print('reading  ', filein)
-data2 = swmf.read_file(f)
-swmf.show_data(data2)
+data2 = swmf.read_file(f, verbose=True)
 print('read next', filein)
-data3 = swmf.read_file(f)
-swmf.show_data(data3)
+data3 = swmf.read_file(f, verbose=True)
 f.close

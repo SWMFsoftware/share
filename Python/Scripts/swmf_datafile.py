@@ -42,15 +42,32 @@ def file_format(filename):
         return "ascii"
 ###############################################################################
 def show_data(data):
-    print('head=',data["head"])
-    print('step,time,ndim,npar,nvar=',
-          data["step"], data["time"], data["ndim"], data["npar"], data["nvar"])
-    print('dims=',data["dims"], "cart=", data["cart"])
+    if "head" in data:
+        print('head=',data["head"])
+    else:
+        print('WARNING in show_data: missing "head" string')
+    if "step" in data:
+        print('step=',data["step"])
+    if "time" in data:
+        print('time=', data["time"])
+    if "dims" in data:
+        print('dims=',data["dims"])
+    if "cart" in data:
+        print("cart=", data["cart"])
     if "pars" in data:
         print('pars=', data["pars"])
-    print('name=', data["name"])
-    print('coord.shape=',data["coord"].shape)
-    print('state.shape=',data["state"].shape)
+    if "name" in data:
+        print('name=', data["name"])
+    else:
+        print('ERROR in show_data: missing "name" string')
+    if "coord" in data:
+        print('coord.shape=', np.shape(data["coord"]))
+    else:
+        print('ERROR in show_data: missing "coord" array')
+    if "state" in data:
+        print('state.shape=', np.shape(data["state"]))
+    else:
+        print('ERROR in show_data: missing "state" array')
 ###############################################################################
 def read_file(fileid, fileformat='unknown', verbose=False):
     # fileid can be a filename string or a file object.
