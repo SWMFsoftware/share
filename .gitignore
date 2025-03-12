@@ -9,6 +9,7 @@ idl.log
 *.diff
 *.tmp
 *.out
+*.outs
 *.protex
 
 Library/src/Makefile.DEPEND
