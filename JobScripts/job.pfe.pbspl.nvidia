@@ -100,8 +100,8 @@ setenv MPICXX_CXX nvc++
 ### setenv MPI_DSM_VERBOSE
 ### setenv MPI_DSM_DISTRIBUTE
 
-# these can probably be removed but need further testing:
-#setenv CUDA_VISIBLE_DEVICES 0,1,2,3
+# Necessary for multiple nodes
+setenv CUDA_VISIBLE_DEVICES 0,1,2,3
 #setenv MP_BIND yes
 
 # cd into the run directory
