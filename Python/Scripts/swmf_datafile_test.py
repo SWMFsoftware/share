@@ -9,22 +9,23 @@ data = {
     "state": [[[10.,11.,12.,13.],[100.,110.,120.,130.],[1000.,1100.,1200.,1300]],
               [[20.,21.,22.,23.],[200.,210.,220.,230.],[2000.,2100.,2200.,2300]]]
 }
+print('=====================================================================')
 swmf.show_data(data)
 
 # write ASCII file with 3 decimals
+print('=====================================================================')
 fileout = 'file_ascii.outs'
 swmf.write_file(data, fileout, format='10.3f')
 # Add another snapshot
 data["time"] = 1.0
 swmf.write_file(data, fileout, format='10.3f', append=True)
 print('wrote 2 snapshots into ', fileout)
-print("Type of "+fileout+":", swmf.file_format(fileout))
 
 # write single precision binary file
+print('=====================================================================')
 fileout = 'file_real4.out'
 swmf.write_file(data, fileout, "real4")
 print("wrote out ", fileout)
-print("Type of "+fileout+":", swmf.file_format(fileout))
 
 # Add head line and dimensions
 data["head"] = "Proper header"
@@ -35,33 +36,41 @@ data["pars"] = [0.1, 0.2, 0.3, 0.4, 0.5] # add 5 scalar parameters
 data["name"] += " ParameterName1 ParameterName2 ParameterName3 ParameterName4 ParameterName5"
 
 # write double precision binary file
+print('=====================================================================')
 fileout = 'file_real8.outs'
 swmf.write_file(data, fileout, "real8")
 # add another snapshot
 data["time"] = 2.0
 swmf.write_file(data, fileout, "real8", append=True)
 print('wrote 2 snapshots into ', fileout)
-print("Type of "+fileout+":", swmf.file_format(fileout))
 
 # read back ascii file
+print('=====================================================================')
 filein = 'file_ascii.outs'
-print('reading  ', filein)
+print("Type of "+filein+":", swmf.file_format(filein))
+print("Number of snapshots in ",filein,":", swmf.read_file(filein, size=True))
 data2 = swmf.read_file(filein, verbose=True)
-print("head=",data2["head"])
-print("dims=",data2["dims"], "cart=", data2["cart"])
-print("name=",data2["name"])
 
 # read back single precision binary file
+print('=====================================================================')
 filein = 'file_real4.out'
+print("Type of "+filein+":", swmf.file_format(filein))
+print("number of snapshots in ",filein,":", swmf.read_file(filein, size=True))
 print('reading  ', filein)
 data2 = swmf.read_file(filein)
 swmf.show_data(data2)
     
-# read back double precision binary file
+# read back double precision binary file with a file object
+print('=====================================================================')
 filein = 'file_real8.outs'
+print("Type of "+filein+":", swmf.file_format(filein))
+print("Number of snapshots in ",filein,":", swmf.read_file(filein, size=True))
 f = open(filein,'rb')
 print('reading  ', filein)
 data2 = swmf.read_file(f, verbose=True)
-print('read next', filein)
+print('read next snapshot --------------------------------------------------')
 data3 = swmf.read_file(f, verbose=True)
 f.close
+print('Read the second snapshot only ---------------------------------------')
+data3 = swmf.read_file(filein, skip=1, verbose=True)
+print('=====================================================================')

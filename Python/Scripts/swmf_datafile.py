@@ -42,12 +42,16 @@ def file_format(filename):
         return "ascii"
 ###############################################################################
 def show_data(data):
+    # show information stored in "data"
+
+    if "last" in data:
+        print('last=', data["last"])
     if "head" in data:
-        print('head=',data["head"])
+        print('head=', data["head"])
     else:
         print('WARNING in show_data: missing "head" string')
     if "step" in data:
-        print('step=',data["step"])
+        print('step=', data["step"])
     if "time" in data:
         print('time=', data["time"])
     if "dims" in data:
@@ -69,34 +73,50 @@ def show_data(data):
     else:
         print('ERROR in show_data: missing "state" array')
 ###############################################################################
-def read_file(fileid, fileformat='unknown', verbose=False):
-    # fileid can be a filename string or a file object.
-    # Read the first snapshot from the filename.
-    # Read the next snapshot from the fileid.
-    # Return a dictionary with the content
-    # Use fileformat if set, otherwise figure it out
+def read_file(fileid, fileformat='unknown', skip=0, size=False, verbose=False):
+    # Read data from fileid and return data dictionary or size.
+    # The fileid can be a filename string or a file object.
+    # For a filename start from the beginning, for fielid start
+    # at the current position.
+    # If size is set to true, return the number of snapshots in the file.
+    # Otherwise skip "skip" snapshots (default is 0) and
+    # read the next snapshot and return a dictionary with the content.
 
+    # Use fileformat if set, otherwise figure it out
     if fileformat == 'unknown':
         if type(fileid) is str:
             fileformat = file_format(fileid)
         else:
             fileformat = "binary" if 'b' in fileid.mode else "ascii" 
 
-    if fileformat == "ascii":
-        if type(fileid) is str:
+    # Set file object
+    if type(fileid) is str:
+        if fileformat == "ascii":
             f = open(fileid, 'r') # add error handling here
         else:
-            f = fileid
-        data = read_ascii(f)
+            f = open(fileid, 'rb')
     else:
-        if type(fileid) is str:
-            f = open(fileid, 'rb') # add error handling here
-        else:
-            f = fileid
-        data = read_binary(f)
+        f = fileid
 
-    # Close file if it was opened above
-    if type(fileid) is str:
+    # Read snapshot(s) from f
+    i = 0
+    while i <= skip or size:
+        if fileformat == "ascii":
+            data = read_ascii(f)
+        else:
+            data = read_binary(f)
+        i = i+1
+        # check if we are at the end of the file
+        pos = f.tell()
+        if f.read(1):
+            # reset the position
+            f.seek(pos)
+        else:
+            data["last"] = i
+            break
+
+    # Close file if it was opened above or we reached the end for size
+    if size or type(fileid) is str:
         f.close()
 
     if verbose:
@@ -105,19 +125,22 @@ def read_file(fileid, fileformat='unknown', verbose=False):
         print('fileformat=', fileformat)
         show_data(data)
 
-    return data
+    if size:
+        return data["last"]
+    else:
+        return data
 ###############################################################################
 def write_file(data, filename="swmfdata.out", format="18.10e",
                append=False):
-
-    # write data into the SWMF file "filename" with format "format"
+    # Write data into the SWMF file "filename" with format "format"
     if format == 'real4' or format == 'real8':
         write_binary(data, filename, format, append)
     else:
         write_ascii(data, filename, format, append)
 ###############################################################################
 def read_ascii(f):
-    # read ASCII SWMF file f and return a dictionary with the content
+    # Read ASCII SWMF file f and return a dictionary with the content
+    # If end of file is reached set the "last" field in the dictionary True.
 
     head = f.readline()[:-1]
     step, time, ndim, npar, nvar = f.readline().split()
@@ -132,14 +155,17 @@ def read_ascii(f):
     if npar > 0:
         pars = np.array(f.readline().split(), dtype=np.float64)
     name = f.readline()[:-1]
-    # read ngrid lines into an array
+
+    # read ngrid lines into a string
     ngrid = np.prod(dims)
-    griddata = np.array([ line.split() for line in f.readlines()[:ngrid] ],
-                        dtype=np.float64)
+    line = ""
+    for i in range(ngrid):
+        line += f.readline()
+    griddata = np.array(line.split(), dtype=np.float64)
     # reshape and transpose array to match default Python ordering
     griddata = griddata.reshape(ngrid, ndim+nvar).T
 
-    # extract coordinates and variables and reshape with dims
+    # extract coordinates and state and reshape with dims
     coord = griddata[:ndim,:].reshape([ndim]+list(dims))
     state = griddata[ndim:,:].reshape([nvar]+list(dims))
 
@@ -161,7 +187,8 @@ def read_ascii(f):
     return data
 ###############################################################################
 def read_binary(f):
-    # read binary SWMF file "fileid" and return a dictionary with the content
+    # read binary SWMF file "fileid" and return a dictionary with the content.
+    # If end of file is reached set the "last" field in the dictionary True.
 
     stringlength = int.from_bytes(f.read(4),'little')
     head = f.read(stringlength).decode().rstrip()
