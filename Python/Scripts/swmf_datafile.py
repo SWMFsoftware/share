@@ -24,6 +24,7 @@ import numpy as np
 
 ###############################################################################
 def file_format(filename):
+
     # Return the file format
 
     f = open(filename, 'rb')
@@ -134,9 +135,10 @@ def read_file(fileid, fileformat='unknown', skip=0, size=False, verbose=False):
     else:
         return data
 ###############################################################################
-def write_file(data, filename="swmfdata.out", format="18.10e",
-               append=False):
+def write_file(data, filename="swmfdata.out", format="18.10e", append=False):
+
     # Write data into the SWMF file "filename" with format "format"
+
     if format == 'real4' or format == 'real8':
         write_binary(data, filename, format, append)
     else:
@@ -198,6 +200,7 @@ def read_binary(f):
 
     stringlength = int.from_bytes(f.read(4),'little')
     head = f.read(stringlength).decode().rstrip()
+
     f.read(4) # skip markers
     len2 = int.from_bytes(f.read(4),'little')
     if len2 == 20:
@@ -232,6 +235,7 @@ def read_binary(f):
     for i in range(nvar):
         f.read(8) # skip markers
         state[i,:] = np.frombuffer(f.read(nreal*ngrid), dtype=dtype)
+
     f.read(4) # skip last marker
 
     # Reformat state based on dims
@@ -257,10 +261,9 @@ def read_binary(f):
 def fortran_string(string, l):
     # Create bytestring of length l with spaces added at the end
     if len(string) > l:
-        print("ERROR in fortran_string:")
-        print("Length of string=", len(string),"> l=",l)
-        exit(1)
-    return string.encode() + b' '*(l - len(string))
+        return string.encode()[:l]
+    else:
+        return string.encode() + b' '*(l - len(string))
 ###############################################################################
 def fortran_record(bytearray):
     # Write a Fortran record with 4-byte markers at both ends
@@ -371,7 +374,6 @@ def write_binary(data, filename="swmfdata.out", format="real4", append=False):
         time = np.float64(time)
         if npar > 0:
             pars = np.float64(pars)
-            
     else:
         if not isinstance(coord, np.ndarray) or coord.dtype != "float32":
             coord = np.float32(coord)
@@ -400,7 +402,12 @@ def write_binary(data, filename="swmfdata.out", format="real4", append=False):
         print('dims=', dims, 'ndim=', ndim,' ngrid=', ngrid)
         print("name=", name," npar=", npar)
         exit(1)
-        
+
+    # Reshape state to make writing easy
+    state = state.reshape(nvar,ngrid)
+    coord = coord.reshape(ndim,ngrid)
+
+    # write data into the file
     stringlength = 79 if len(head) < 80 and len(name) < 80 else 500
     f.write(fortran_record(fortran_string(head, stringlength)))
 
