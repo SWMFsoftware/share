@@ -63,36 +63,36 @@ my $DateTime;                      # Date+Time string for restart tree
 # List of input and output restart directory name(s) for each component
 # Alternative names should be separated by commas without space.
 my %RestartOutDir = (
-		     EE => "EE/restartOUT",
-                     IE => "IE/restartOUT",
-		     GM => "GM/restartOUT",
-                     SC => "SC/restartOUT",
-		     IH => "IH/restartOUT",
-                     OH => "OH/restartOUT",
-		     IM => "IM/restartOUT",
-                     PC => "PC/restartOUT",
-                     PS => "PS/restartOUT",
-                     PT => "PT/restartOUT",
-		     PW => "PW/restartOUT",
-		     RB => "RB/restartOUT",
-		     UA => "UA/restartOUT,UA/RestartOUT",
-		     SP => "SP/restartOUT" );
+    EE => "EE/restartOUT",
+    IE => "IE/restartOUT",
+    GM => "GM/restartOUT",
+    SC => "SC/restartOUT",
+    IH => "IH/restartOUT",
+    OH => "OH/restartOUT",
+    IM => "IM/restartOUT",
+    PC => "PC/restartOUT",
+    PS => "PS/restartOUT",
+    PT => "PT/restartOUT",
+    PW => "PW/restartOUT",
+    RB => "RB/restartOUT",
+    UA => "UA/restartOUT",
+    SP => "SP/restartOUT" );
 
 my %RestartInDir =  (
-		     EE => "EE/restartIN",
-                     IE => "IE/restartIN",
-		     GM => "GM/restartIN",
-		     SC => "SC/restartIN",
-		     IH => "IH/restartIN",
-                     OH => "OH/restartIN",
-		     IM => "IM/restartIN",
-                     PC => "PC/restartIN",
-                     PS => "PS/restartIN",
-                     PT => "PT/restartIN",
-		     PW => "PW/restartIN",
-		     RB => "RB/restartIN",
-		     UA => "UA/restartIN,UA/RestartIN",
- 		     SP => "SP/restartIN" );
+    EE => "EE/restartIN",
+    IE => "IE/restartIN",
+    GM => "GM/restartIN",
+    SC => "SC/restartIN",
+    IH => "IH/restartIN",
+    OH => "OH/restartIN",
+    IM => "IM/restartIN",
+    PC => "PC/restartIN",
+    PS => "PS/restartIN",
+    PT => "PT/restartIN",
+    PW => "PW/restartIN",
+    RB => "RB/restartIN",
+    UA => "UA/restartIN",
+    SP => "SP/restartIN" );
 
 # Hashes for the actually found directories
 my %RestartOutDirFound;
@@ -100,25 +100,28 @@ my %RestartInDirFound;
 
 # The name of the restart header file (if any) for each component.
 my %HeaderFile   =  (
-		     EE => "restart.H",
-                     IE => "restart.H",
-		     GM => "restart.H",
-		     SC => "restart.H",
-		     SP => "restart.H",
-                     OH => "restart.H",
-		     IH => "restart.H" );
+    EE => "restart.H",
+    IE => "restart.H",
+    GM => "restart.H",
+    SC => "restart.H",
+    SP => "restart.H",
+    OH => "restart.H",
+    IH => "restart.H",
+    UA => "header.rst"
+    );
 
 # List possible time units and corresponding number of seconds
-my %UnitSecond = ("ns" => 1e-9,      # nano second
-                  "us" => 1e-6,      # micro second
-		  "ms" => 0.001,     # millisecond
-		  "s" => 1,          # second
-		  "m" => 60,         # minute
-		  "h" => 3600,       # hour
-		  "d" => 86400,      # day
-		  "y" => 31536000,   # year
-		  "date" => -1,      # date+time
-		  );
+my %UnitSecond = (
+    "ns" => 1e-9,      # nano second
+    "us" => 1e-6,      # micro second
+    "ms" => 0.001,     # millisecond
+    "s" => 1,          # second
+    "m" => 60,         # minute
+    "h" => 3600,       # hour
+    "d" => 86400,      # day
+    "y" => 31536000,   # year
+    "date" => -1,      # date+time
+    );
 
 # Check the time unit parameter if given
 die "$ERROR time unit $TimeUnit is unknown!\n" 
@@ -226,14 +229,14 @@ sub get_time_step{
 	    $iMinute= <FILE>; $iMinute =~ s/\s*(\d+).*\n/$1/;
 	    $iSecond= <FILE>; $iSecond =~ s/\s*(\d+).*\n/$1/;
 	}
-	if(/\#TIMESIMULATION/){
+	if(/\#TIMESIMULATION|\#TSIMULATION/){
 	    # Read in simulation time
 	    $Time = <FILE>; chop($Time);
 	    $Time =~ s/^\s+//; # Remove leading spaces
 	    $Time =~ s/\s.*//; # Remove anything after a space
 	    $Time += 0;        # Convert to a number
 	}
-	if(/\#NSTEP/){
+	if(/\#NSTEP|\#ISTEP/){
 	    # Read in number of steps
 	    $Step = <FILE>; chop($Step);
 	    $Step =~ s/^\s+//; # Remove leading spaces
