@@ -40,33 +40,85 @@ def file_format(filename):
         return "real8"
     else:
         return "ascii"
-
 ###############################################################################
-def read_file(filename, fileformat='unknown'):
-    # read the file "filename" and return a dictionary with the content
-    # use fileformat if set
-    if fileformat == "unknown":
-        fileformat = file_format(filename)
-
-    if fileformat == "real4" or fileformat == "real8":
-        return read_binary(filename)
+def show_data(data):
+    if "head" in data:
+        print('head=',data["head"])
     else:
-        return read_ascii(filename)
-
-###############################################################################
-def write_file(data, filename="swmffile.out", fileformat="18.10e"):
-    # write data into the SWMF file filename with format fileformat
-    if fileformat == 'real4' or fileformat == 'real8':
-        write_binary(data, filename, fileformat)
+        print('WARNING in show_data: missing "head" string')
+    if "step" in data:
+        print('step=',data["step"])
+    if "time" in data:
+        print('time=', data["time"])
+    if "dims" in data:
+        print('dims=',data["dims"])
+    if "cart" in data:
+        print("cart=", data["cart"])
+    if "pars" in data:
+        print('pars=', data["pars"])
+    if "name" in data:
+        print('name=', data["name"])
     else:
-        write_ascii(data, filename, fileformat)
-    return
-
+        print('ERROR in show_data: missing "name" string')
+    if "coord" in data:
+        print('coord.shape=', np.shape(data["coord"]))
+    else:
+        print('ERROR in show_data: missing "coord" array')
+    if "state" in data:
+        print('state.shape=', np.shape(data["state"]))
+    else:
+        print('ERROR in show_data: missing "state" array')
 ###############################################################################
-def read_ascii(filename, verbose=False):
-    # read ASCII SWMF file filename and return a dictionary with the content
+def read_file(fileid, fileformat='unknown', verbose=False):
+    # fileid can be a filename string or a file object.
+    # Read the first snapshot from the filename.
+    # Read the next snapshot from the fileid.
+    # Return a dictionary with the content
+    # Use fileformat if set, otherwise figure it out
 
-    f = open(filename,'r')
+    if fileformat == 'unknown':
+        if type(fileid) is str:
+            fileformat = file_format(fileid)
+        else:
+            fileformat = "binary" if 'b' in fileid.mode else "ascii" 
+
+    if fileformat == "ascii":
+        if type(fileid) is str:
+            f = open(fileid, 'r') # add error handling here
+        else:
+            f = fileid
+        data = read_ascii(f)
+    else:
+        if type(fileid) is str:
+            f = open(fileid, 'rb') # add error handling here
+        else:
+            f = fileid
+        data = read_binary(f)
+
+    # Close file if it was opened above
+    if type(fileid) is str:
+        f.close()
+
+    if verbose:
+        if type(fileid) is str:
+            print('filename=', fileid)
+        print('fileformat=', fileformat)
+        show_data(data)
+
+    return data
+###############################################################################
+def write_file(data, filename="swmfdata.out", format="18.10e",
+               append=False):
+
+    # write data into the SWMF file "filename" with format "format"
+    if format == 'real4' or format == 'real8':
+        write_binary(data, filename, format, append)
+    else:
+        write_ascii(data, filename, format, append)
+###############################################################################
+def read_ascii(f):
+    # read ASCII SWMF file f and return a dictionary with the content
+
     head = f.readline()[:-1]
     step, time, ndim, npar, nvar = f.readline().split()
     step = np.int32(step)
@@ -80,26 +132,16 @@ def read_ascii(filename, verbose=False):
     if npar > 0:
         pars = np.array(f.readline().split(), dtype=np.float64)
     name = f.readline()[:-1]
-    # read the remaining numbers (this will not work for .outs files)
+    # read ngrid lines into an array
     ngrid = np.prod(dims)
-    griddata = np.array(f.read().split(), dtype=np.float64)
+    griddata = np.array([ line.split() for line in f.readlines()[:ngrid] ],
+                        dtype=np.float64)
     # reshape and transpose array to match default Python ordering
     griddata = griddata.reshape(ngrid, ndim+nvar).T
-    f.close()
-    # extract coordinates and variables
+
+    # extract coordinates and variables and reshape with dims
     coord = griddata[:ndim,:].reshape([ndim]+list(dims))
     state = griddata[ndim:,:].reshape([nvar]+list(dims))
-
-    if verbose:
-        print('filename=', filename)
-        print('head=',head)
-        print('step,time,ndim,npar,nvar=', step, time, ndim, npar, nvar)
-        print('dims=',dims, 'ngrid=', ngrid, 'cart=', cart)
-        if npar > 0:
-            print('pars=', pars)
-        print('name=', name)
-        print('coord.shape=',coord.shape)
-        print('state.shape=',state.shape)
 
     # Create dictionary
     data ={"head"   : head,
@@ -115,15 +157,14 @@ def read_ascii(filename, verbose=False):
            "state"  : state}
     if npar > 0:
         data["pars"] = pars 
+
     return data
 ###############################################################################
-def read_binary(filename, verbose=False):
-    # read binary SWMF file "filename" and return a dictionary with the content
+def read_binary(f):
+    # read binary SWMF file "fileid" and return a dictionary with the content
 
-    f = open(filename,'rb')
     stringlength = int.from_bytes(f.read(4),'little')
-    head = f.read(stringlength).decode()
-    head = head.rstrip()
+    head = f.read(stringlength).decode().rstrip()
     f.read(4) # skip markers
     len2 = int.from_bytes(f.read(4),'little')
     if len2 == 20:
@@ -152,26 +193,16 @@ def read_binary(filename, verbose=False):
     f.read(8) # skip markers
     shape = [ndim]+list(dims)
     ngrid = np.prod(dims)
-    coord = np.frombuffer(f.read(nreal*ngrid*ndim), dtype=dtype).reshape([ndim]+list(dims))
+    coord = np.frombuffer(f.read(nreal*ngrid*ndim),
+                          dtype=dtype).reshape([ndim]+list(dims))
     state = np.empty((nvar, ngrid), dtype=dtype)
     for i in range(nvar):
         f.read(8) # skip markers
         state[i,:] = np.frombuffer(f.read(nreal*ngrid), dtype=dtype)
-    f.close
+    f.read(4) # skip last marker
 
     # Reformat state based on dims
     state = state.reshape([nvar]+list(dims))
-
-    if verbose:
-        print('filename=', filename)
-        print('head=',head)
-        print('step,time,ndim,npar,nvar=', step, time, ndim, npar, nvar)
-        print('dims=',dims, 'ngrid=', ngrid, "cart=", cart)
-        if npar > 0:
-            print('pars=', pars)
-        print('name=', name)
-        print('coord.shape=',coord.shape)
-        print('state.shape=',state.shape)
 
     # Create dictionary
     data ={"head"   : head,
@@ -209,17 +240,19 @@ def get_dims(coord):
     if coord.ndim > 1:
         dims = dims[1:] # remove the first index
     return dims
-    
 ###############################################################################
-def write_ascii(data, filename="swmffile.out", fileformat="18.10e"):
-    # Print data into ascii file filename using fileformat for real arrays.
+def write_ascii(data, filename="swmfdata.out", format="18.10e", append=False):
+    # Print data into ascii file filename using format for real numbers.
 
     if not "name" in data or not "state" in data or not "coord" in data:
         print("ERROR in write_ascii: missing name, state or coord in data")
         print("Could not write file", filename)
         return 1
 
-    f = open(filename,'w')
+    if append:
+        f = open(filename,'a')
+    else:
+        f = open(filename,'w')
 
     # required information
     name = data["name"]
@@ -254,10 +287,10 @@ def write_ascii(data, filename="swmffile.out", fileformat="18.10e"):
     coord = coord.reshape(ndim,ngrid)
     state = state.reshape(nvar,ngrid)
         
-    float_formatter = "{:"+fileformat+"}"
+    float_formatter = "{:"+format+"}"
     np.set_printoptions(formatter={'float_kind':float_formatter.format})
     f.writelines(head+"\n")
-    template = "{0:d} {1:"+fileformat+"} {2:d} {3:d} {4:d}\n"
+    template = "{0:d} {1:"+format+"} {2:d} {3:d} {4:d}\n"
     if "cart" in data and not data["cart"]:
         ndim = -ndim # negative ndim for non-Cartesian grid
     f.write(template.format(step, time, ndim, npar, nvar))
@@ -271,18 +304,18 @@ def write_ascii(data, filename="swmffile.out", fileformat="18.10e"):
 
     f.close()
 ###############################################################################
-def write_binary(data, filename="swmffile.out", fileformat="real4"):
-    # Print binary data in fileformat (real4 or real8) into file filename.
-    # All arrays should be numpy arrays.
-
-    print("starting write_binary: filename, fileformat=", filename, fileformat)
+def write_binary(data, filename="swmfdata.out", format="real4", append=False):
+    # Write data with binary format (real4 or real8) into file filename.
 
     if not "name" in data or not "state" in data or not "coord" in data:
         print("ERROR in write_binary: missing name, state or coord in data")
         print("Could not write file", filename)
         return 1
 
-    f = open(filename,'wb')
+    if append:
+        f = open(filename,'ab')
+    else:
+        f = open(filename,'wb')
 
     # required
     name = data["name"]
@@ -295,7 +328,7 @@ def write_binary(data, filename="swmffile.out", fileformat="real4"):
     npar = np.int32(len(pars))
 
     # convert to real4 / real8 as needed
-    if fileformat == "real8":
+    if format == "real8":
         if not isinstance(coord, np.ndarray) or coord.dtype != "float64":
             coord = np.float64(coord)
         if not isinstance(state, np.ndarray) or state.dtype != "float64":
@@ -351,5 +384,4 @@ def write_binary(data, filename="swmffile.out", fileformat="real4"):
     for i in range(nvar):
         f.write(fortran_record(state[i,:].tobytes()))
     f.close()
-    return
-
+###############################################################################
