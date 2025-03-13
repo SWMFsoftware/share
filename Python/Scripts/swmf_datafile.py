@@ -14,9 +14,10 @@ import numpy as np
 #   "name": coordinate, variable and parameter names separated by spaces
 #   "coord": coordinate array (ndim,ngrid)
 #   "state": state array (nvar,ngrid)
+#   "last": snapshot index (starting from 1) if this was the last snapshot
 #
 # For writing, the data dictionary must contain "name", "coord", and "state".
-# It is recommended to always set "head".
+# It is recommended to always set "head" (show_data gives a warning).
 # The "pars" is optional. If "dims" is present it is used and checked
 # against the size of "coord" (but the shape can be changed).
 # The "cart" can be set to False to indicate non-Cartesian grid.
@@ -24,6 +25,7 @@ import numpy as np
 ###############################################################################
 def file_format(filename):
     # Return the file format
+
     f = open(filename, 'rb')
     # check if first four characters look like a record length
     reclen = int.from_bytes(f.read(4),'little')
@@ -42,7 +44,8 @@ def file_format(filename):
         return "ascii"
 ###############################################################################
 def show_data(data):
-    # show information stored in "data"
+
+    # Show information stored in "data"
 
     if "last" in data:
         print('last=', data["last"])
@@ -74,6 +77,7 @@ def show_data(data):
         print('ERROR in show_data: missing "state" array')
 ###############################################################################
 def read_file(fileid, fileformat='unknown', skip=0, size=False, verbose=False):
+
     # Read data from fileid and return data dictionary or size.
     # The fileid can be a filename string or a file object.
     # For a filename start from the beginning, for fielid start
@@ -139,6 +143,7 @@ def write_file(data, filename="swmfdata.out", format="18.10e",
         write_ascii(data, filename, format, append)
 ###############################################################################
 def read_ascii(f):
+
     # Read ASCII SWMF file f and return a dictionary with the content
     # If end of file is reached set the "last" field in the dictionary True.
 
@@ -187,7 +192,8 @@ def read_ascii(f):
     return data
 ###############################################################################
 def read_binary(f):
-    # read binary SWMF file "fileid" and return a dictionary with the content.
+
+    # Read binary SWMF file "fileid" and return a dictionary with the content.
     # If end of file is reached set the "last" field in the dictionary True.
 
     stringlength = int.from_bytes(f.read(4),'little')
@@ -249,7 +255,7 @@ def read_binary(f):
     return data
 ###############################################################################
 def fortran_string(string, l):
-    # create bytestring of length l with spaces added at the end
+    # Create bytestring of length l with spaces added at the end
     if len(string) > l:
         print("ERROR in fortran_string:")
         print("Length of string=", len(string),"> l=",l)
@@ -257,19 +263,20 @@ def fortran_string(string, l):
     return string.encode() + b' '*(l - len(string))
 ###############################################################################
 def fortran_record(bytearray):
-    # write a Fortran record with 4-byte markers at both ends
+    # Write a Fortran record with 4-byte markers at both ends
     reclen = np.int32(len(bytearray)).tobytes()
     return reclen + bytearray + reclen
 ###############################################################################
 def get_dims(coord):
-    # get the grid dimensions from the coordinate array
+    # Get the grid dimensions from the coordinate array
     dims = list(coord.shape)
     if coord.ndim > 1:
         dims = dims[1:] # remove the first index
     return dims
 ###############################################################################
 def write_ascii(data, filename="swmfdata.out", format="18.10e", append=False):
-    # Print data into ascii file filename using format for real numbers.
+
+    # Write data into ascii file filename using format for real numbers.
 
     if not "name" in data or not "state" in data or not "coord" in data:
         print("ERROR in write_ascii: missing name, state or coord in data")
@@ -332,7 +339,8 @@ def write_ascii(data, filename="swmfdata.out", format="18.10e", append=False):
     f.close()
 ###############################################################################
 def write_binary(data, filename="swmfdata.out", format="real4", append=False):
-    # Write data with binary format (real4 or real8) into file filename.
+
+    # Write data in binary format (real4 or real8) into file filename.
 
     if not "name" in data or not "state" in data or not "coord" in data:
         print("ERROR in write_binary: missing name, state or coord in data")
@@ -345,7 +353,7 @@ def write_binary(data, filename="swmfdata.out", format="real4", append=False):
         f = open(filename,'wb')
 
     # required
-    name = data["name"]
+    name  = data["name"]
     coord = data["coord"]
     state = data["state"]
 
