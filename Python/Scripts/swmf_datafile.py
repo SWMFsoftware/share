@@ -14,16 +14,19 @@ import numpy as np
 #   "name": coordinate, variable and parameter names separated by spaces
 #   "coord": coordinate array (ndim,ngrid)
 #   "state": state array (nvar,ngrid)
+#   "last": snapshot index (starting from 1) if this was the last snapshot
 #
 # For writing, the data dictionary must contain "name", "coord", and "state".
-# It is recommended to always set "head".
+# It is recommended to always set "head" (show_data gives a warning).
 # The "pars" is optional. If "dims" is present it is used and checked
 # against the size of "coord" (but the shape can be changed).
 # The "cart" can be set to False to indicate non-Cartesian grid.
 
 ###############################################################################
 def file_format(filename):
+
     # Return the file format
+
     f = open(filename, 'rb')
     # check if first four characters look like a record length
     reclen = int.from_bytes(f.read(4),'little')
@@ -42,12 +45,17 @@ def file_format(filename):
         return "ascii"
 ###############################################################################
 def show_data(data):
+
+    # Show information stored in "data"
+
+    if "last" in data:
+        print('last=', data["last"])
     if "head" in data:
-        print('head=',data["head"])
+        print('head=', data["head"])
     else:
         print('WARNING in show_data: missing "head" string')
     if "step" in data:
-        print('step=',data["step"])
+        print('step=', data["step"])
     if "time" in data:
         print('time=', data["time"])
     if "dims" in data:
@@ -69,34 +77,51 @@ def show_data(data):
     else:
         print('ERROR in show_data: missing "state" array')
 ###############################################################################
-def read_file(fileid, fileformat='unknown', verbose=False):
-    # fileid can be a filename string or a file object.
-    # Read the first snapshot from the filename.
-    # Read the next snapshot from the fileid.
-    # Return a dictionary with the content
-    # Use fileformat if set, otherwise figure it out
+def read_file(fileid, fileformat='unknown', skip=0, size=False, verbose=False):
 
+    # Read data from fileid and return data dictionary or size.
+    # The fileid can be a filename string or a file object.
+    # For a filename start from the beginning, for fielid start
+    # at the current position.
+    # If size is set to true, return the number of snapshots in the file.
+    # Otherwise skip "skip" snapshots (default is 0) and
+    # read the next snapshot and return a dictionary with the content.
+
+    # Use fileformat if set, otherwise figure it out
     if fileformat == 'unknown':
         if type(fileid) is str:
             fileformat = file_format(fileid)
         else:
             fileformat = "binary" if 'b' in fileid.mode else "ascii" 
 
-    if fileformat == "ascii":
-        if type(fileid) is str:
+    # Set file object
+    if type(fileid) is str:
+        if fileformat == "ascii":
             f = open(fileid, 'r') # add error handling here
         else:
-            f = fileid
-        data = read_ascii(f)
+            f = open(fileid, 'rb')
     else:
-        if type(fileid) is str:
-            f = open(fileid, 'rb') # add error handling here
-        else:
-            f = fileid
-        data = read_binary(f)
+        f = fileid
 
-    # Close file if it was opened above
-    if type(fileid) is str:
+    # Read snapshot(s) from f
+    i = 0
+    while i <= skip or size:
+        if fileformat == "ascii":
+            data = read_ascii(f)
+        else:
+            data = read_binary(f)
+        i = i+1
+        # check if we are at the end of the file
+        pos = f.tell()
+        if f.read(1):
+            # reset the position
+            f.seek(pos)
+        else:
+            data["last"] = i
+            break
+
+    # Close file if it was opened above or we reached the end for size
+    if size or type(fileid) is str:
         f.close()
 
     if verbose:
@@ -105,19 +130,24 @@ def read_file(fileid, fileformat='unknown', verbose=False):
         print('fileformat=', fileformat)
         show_data(data)
 
-    return data
+    if size:
+        return data["last"]
+    else:
+        return data
 ###############################################################################
-def write_file(data, filename="swmfdata.out", format="18.10e",
-               append=False):
+def write_file(data, filename="swmfdata.out", format="18.10e", append=False):
 
-    # write data into the SWMF file "filename" with format "format"
+    # Write data into the SWMF file "filename" with format "format"
+
     if format == 'real4' or format == 'real8':
         write_binary(data, filename, format, append)
     else:
         write_ascii(data, filename, format, append)
 ###############################################################################
 def read_ascii(f):
-    # read ASCII SWMF file f and return a dictionary with the content
+
+    # Read ASCII SWMF file f and return a dictionary with the content
+    # If end of file is reached set the "last" field in the dictionary True.
 
     head = f.readline()[:-1]
     step, time, ndim, npar, nvar = f.readline().split()
@@ -132,14 +162,17 @@ def read_ascii(f):
     if npar > 0:
         pars = np.array(f.readline().split(), dtype=np.float64)
     name = f.readline()[:-1]
-    # read ngrid lines into an array
+
+    # read ngrid lines into a string
     ngrid = np.prod(dims)
-    griddata = np.array([ line.split() for line in f.readlines()[:ngrid] ],
-                        dtype=np.float64)
+    line = ""
+    for i in range(ngrid):
+        line += f.readline()
+    griddata = np.array(line.split(), dtype=np.float64)
     # reshape and transpose array to match default Python ordering
     griddata = griddata.reshape(ngrid, ndim+nvar).T
 
-    # extract coordinates and variables and reshape with dims
+    # extract coordinates and state and reshape with dims
     coord = griddata[:ndim,:].reshape([ndim]+list(dims))
     state = griddata[ndim:,:].reshape([nvar]+list(dims))
 
@@ -161,10 +194,13 @@ def read_ascii(f):
     return data
 ###############################################################################
 def read_binary(f):
-    # read binary SWMF file "fileid" and return a dictionary with the content
+
+    # Read binary SWMF file "fileid" and return a dictionary with the content.
+    # If end of file is reached set the "last" field in the dictionary True.
 
     stringlength = int.from_bytes(f.read(4),'little')
     head = f.read(stringlength).decode().rstrip()
+
     f.read(4) # skip markers
     len2 = int.from_bytes(f.read(4),'little')
     if len2 == 20:
@@ -199,6 +235,7 @@ def read_binary(f):
     for i in range(nvar):
         f.read(8) # skip markers
         state[i,:] = np.frombuffer(f.read(nreal*ngrid), dtype=dtype)
+
     f.read(4) # skip last marker
 
     # Reformat state based on dims
@@ -222,27 +259,27 @@ def read_binary(f):
     return data
 ###############################################################################
 def fortran_string(string, l):
-    # create bytestring of length l with spaces added at the end
+    # Create bytestring of length l with spaces added at the end
     if len(string) > l:
-        print("ERROR in fortran_string:")
-        print("Length of string=", len(string),"> l=",l)
-        exit(1)
-    return string.encode() + b' '*(l - len(string))
+        return string.encode()[:l]
+    else:
+        return string.encode() + b' '*(l - len(string))
 ###############################################################################
 def fortran_record(bytearray):
-    # write a Fortran record with 4-byte markers at both ends
+    # Write a Fortran record with 4-byte markers at both ends
     reclen = np.int32(len(bytearray)).tobytes()
     return reclen + bytearray + reclen
 ###############################################################################
 def get_dims(coord):
-    # get the grid dimensions from the coordinate array
+    # Get the grid dimensions from the coordinate array
     dims = list(coord.shape)
     if coord.ndim > 1:
         dims = dims[1:] # remove the first index
     return dims
 ###############################################################################
 def write_ascii(data, filename="swmfdata.out", format="18.10e", append=False):
-    # Print data into ascii file filename using format for real numbers.
+
+    # Write data into ascii file filename using format for real numbers.
 
     if not "name" in data or not "state" in data or not "coord" in data:
         print("ERROR in write_ascii: missing name, state or coord in data")
@@ -305,7 +342,8 @@ def write_ascii(data, filename="swmfdata.out", format="18.10e", append=False):
     f.close()
 ###############################################################################
 def write_binary(data, filename="swmfdata.out", format="real4", append=False):
-    # Write data with binary format (real4 or real8) into file filename.
+
+    # Write data in binary format (real4 or real8) into file filename.
 
     if not "name" in data or not "state" in data or not "coord" in data:
         print("ERROR in write_binary: missing name, state or coord in data")
@@ -318,7 +356,7 @@ def write_binary(data, filename="swmfdata.out", format="real4", append=False):
         f = open(filename,'wb')
 
     # required
-    name = data["name"]
+    name  = data["name"]
     coord = data["coord"]
     state = data["state"]
 
@@ -336,7 +374,6 @@ def write_binary(data, filename="swmfdata.out", format="real4", append=False):
         time = np.float64(time)
         if npar > 0:
             pars = np.float64(pars)
-            
     else:
         if not isinstance(coord, np.ndarray) or coord.dtype != "float32":
             coord = np.float32(coord)
@@ -365,7 +402,12 @@ def write_binary(data, filename="swmfdata.out", format="real4", append=False):
         print('dims=', dims, 'ndim=', ndim,' ngrid=', ngrid)
         print("name=", name," npar=", npar)
         exit(1)
-        
+
+    # Reshape state to make writing easy
+    state = state.reshape(nvar,ngrid)
+    coord = coord.reshape(ndim,ngrid)
+
+    # write data into the file
     stringlength = 79 if len(head) < 80 and len(name) < 80 else 500
     f.write(fortran_record(fortran_string(head, stringlength)))
 
