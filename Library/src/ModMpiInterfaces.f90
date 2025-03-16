@@ -220,7 +220,11 @@ module ModMPiInterfaces
   end interface
 
   interface
-1  end interface
+     subroutine mpi_comm_split_type(comm, commtype, rank, info, localcomm, ierror)
+       integer, intent(in):: comm, commtype, rank, info
+       integer, intent(out):: localcomm, ierror
+     end subroutine mpi_comm_split_type
+  end interface
 
   interface mpi_file_read
     module procedure &
