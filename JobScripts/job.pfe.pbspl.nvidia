@@ -67,8 +67,9 @@
 #   Both GPU   #
 ################
 
-# Use all nodes exclusively and distribute the CPUs and GPUs evenly among the nodes
-### PBS -l place=scatter:excl
+# Use all nodes exclusively and distribute CPUs and GPUs evenly among nodes.
+# This line is needed for the V100 queue to work. It is also useful for timing.
+#PBS -l place=scatter:excl
 
 # Set walltime
 #PBS -l walltime=00:10:00
