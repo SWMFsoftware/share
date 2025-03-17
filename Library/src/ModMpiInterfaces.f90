@@ -14,6 +14,7 @@ module ModMPiInterfaces
   public:: mpi_comm_group
   public:: mpi_comm_rank
   public:: mpi_comm_size
+  public:: mpi_comm_split_type
   public:: mpi_file_read
   public:: mpi_file_write
   public:: mpi_finalize
@@ -216,6 +217,13 @@ module ModMPiInterfaces
        integer, intent(out) :: size
        integer, intent(out) :: ierror
      end subroutine mpi_comm_size
+  end interface
+
+  interface
+     subroutine mpi_comm_split_type(comm, commtype, rank, info, localcomm, ierror)
+       integer, intent(in):: comm, commtype, rank, info
+       integer, intent(out):: localcomm, ierror
+     end subroutine mpi_comm_split_type
   end interface
 
   interface mpi_file_read

@@ -1112,6 +1112,11 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_file_write
 
+     subroutine mpi_comm_split_type(comm, commtype, rank, info, localcomm, ierror)
+       integer, intent(in):: comm, commtype, rank, info
+       integer, intent(out):: localcomm, ierror
+     end subroutine mpi_comm_split_type
+
   end interface            ! These two lines are here so that
 end module ModMpiTemplate  ! EMACS can indent the code properly
 !==============================================================================
