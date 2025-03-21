@@ -774,7 +774,7 @@ contains
 
   end subroutine get_axes
   !============================================================================
-  function transform_matrix(TimeSim,TypeCoordIn,TypeCoordOut) result(Rot_DD)
+  function transform_matrix(TimeSim, TypeCoordIn, TypeCoordOut) result(Rot_DD)
 
     real,             intent(in) :: TimeSim      ! Simulation time
     character(len=*), intent(in) :: TypeCoordIn  ! Type of input coord. system
@@ -956,12 +956,12 @@ contains
 
     Omega_D = [ Rot_DD(2,3), Rot_DD(3,1), Rot_DD(1,2) ]
 
-!    write(*,*)'NameCoord1,2=',NameCoord1,NameCoord2
-!    write(*,*)'RotPlus ='; call show_rot_matrix(RotPlus_DD)
-!    write(*,*)'RotMinus='; call show_rot_matrix(RotMinus_DD)
-!    write(*,*)'dRot    ='; call show_rot_matrix(dRot_DD)
-!    write(*,*)'Rot     ='; call show_rot_matrix(Rot_DD)
-!    write(*,*)'Omega_D =', Omega_D
+    !    write(*,*)'NameCoord1,2=',NameCoord1,NameCoord2
+    !    write(*,*)'RotPlus ='; call show_rot_matrix(RotPlus_DD)
+    !    write(*,*)'RotMinus='; call show_rot_matrix(RotMinus_DD)
+    !    write(*,*)'dRot    ='; call show_rot_matrix(dRot_DD)
+    !    write(*,*)'Rot     ='; call show_rot_matrix(Rot_DD)
+    !    write(*,*)'Omega_D =', Omega_D
 
     ! Change sign if called with one coordinate system
     if(.not.present(NameCoord2In)) Omega_D = - Omega_D
