@@ -94,6 +94,9 @@ SEARCH = -module ${INCLDIR} ${INCL_EXTRA}
 #
 # Flags used for debugging. 
 #
+# To debug on CPU, use ./Config.pl -noacc -debug with
+# DEBUGFLAG = -C -g -D_OPENACC -DNOACCMODULE -DTESTACC
+# To debug on the GPU, use ./Config.pl -acc -debug with
 DEBUGFLAG = -C -g -Minfo=all -DTESTACC #-Ktrap=fp
 DEBUG     = 
 
