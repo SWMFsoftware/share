@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import numpy as np
 
 # Read and write SWMF data files in ascii, real4 and real8 formats
@@ -280,12 +281,15 @@ def get_dims(coord):
 def write_ascii(data, filename="swmfdata.out", format="18.10e", append=False):
 
     # Write data into ascii file filename using format for real numbers.
-
     if not "name" in data or not "state" in data or not "coord" in data:
         print("ERROR in write_ascii: missing name, state or coord in data")
         print("Could not write file", filename)
         return 1
 
+    # Default ASCII format
+    if format == "ascii":
+        format = "18.10e"
+    
     if append:
         f = open(filename,'a')
     else:
@@ -427,3 +431,113 @@ def write_binary(data, filename="swmfdata.out", format="real4", append=False):
         f.write(fortran_record(state[i,:].tobytes()))
     f.close()
 ###############################################################################
+def convert_data():
+
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter, description="""
+    swmf_datafile.py can be imported into a python code to read and write
+    ascii and binary SWMF data files efficiently. See swmf_datafile_test.py.
+    Alternatively, it can be used to examine the content, select snapshots
+    and convert the format of SWMF data files.""",
+    epilog="""
+examples:
+  Check the content of file.outs:
+    swmf_datafile.py file.outs
+  Show the header info for the first snapshot:
+    swmf_datafile.py -v -s 0 file.outs
+  Extract the first snapshot and then every 10th from 30th to 200th:
+    swmf_datafile.py -s 0,30:200:10 file.outs selected.outs
+  Convert the file into an ascii file with 3 digit floats:
+    swmf_datafile.py -f 10.3f file.outs ascii.out
+  Convert the file into a single precision binary file:
+    swmf_datafile.py -f real4 file.outs singleprec.outs
+  Extract the last two snapshots (note = sign!) and convert to real8 binary:
+    swmf_datafile.py -f real8 -s=-2: file.outs doubleprec.out
+    """)
+    parser.add_argument('inputfile',
+                        help="Input SWMF data file, required")
+    parser.add_argument('outputfile', nargs="?",
+                        help="Output SWMF data file, optional")
+    parser.add_argument("-s", "--select",
+                        help="select snapshots (default is all)")
+    parser.add_argument("-f", "--format",
+                        help="format of output file (default is same as input file)")
+    parser.add_argument("-v", "--verbose", action='store_true',
+                        help="verbose output")
+    args = parser.parse_args()
+    filein  = args.inputfile
+    fileout = args.outputfile
+    selection = args.select
+    formatout = args.format
+    verbose = args.verbose
+    if fileout == None and formatout is not None:
+        parser.error("-f FORMAT option requires an output file")
+    if selection is None and formatout is None and fileout is not None:
+        parser.error("Provide -f FORMAT and/or -s=SELECT for output file")
+
+    npictin  = read_file(filein, size=True)
+    formatin = file_format(filein)
+
+    if selection is not None:
+        # process the selection string
+        savepict = np.full(npictin, False)
+        for part in selection.split(","):
+            parts = part.split(":")
+            start = int(parts[0]) if len(parts[0]) > 0 else 0
+            if start < 0:
+                start += npictin
+            end   = start+1 # default
+            step  = 1       # default
+            if len(parts) > 1:
+                end = int(parts[1]) if len(parts[1]) > 0 else npictin
+                if end < 0:
+                    end += npictin
+            if len(parts) > 2:
+                step = abs(int(parts[2])) if len(parts[2]) > 0 else 1
+            savepict[start:end:step] = True
+    else:
+        # Save all snapshots
+        savepict = np.full(npictin, True)
+
+    if formatout is None:
+        formatout = formatin
+
+    npictout = np.sum(savepict)
+    if npictout == 0:
+        print("No snapshot was selected from file", filein,
+              " containing", npictin, "snapshot(s)")
+    else:
+        if formatin == "ascii":
+            f = open(filein,"r")
+        else:
+            f = open(filein,"rb")
+        print("Begin reading    ", filein,"of format", formatin,
+              "with", npictin, "snapshot(s)")
+
+        append = False
+        skip = 0
+        for ipict in range(npictin):
+            if savepict[ipict]:
+                if verbose:
+                    print("------ Snaphot", ipict,"----------")
+                data = read_file(f, formatin, skip=skip, verbose=verbose)
+                if not verbose:
+                    print("------ Snapshot", ipict, "time=", data["time"])
+                if fileout is not None:
+                    write_file(data, fileout, format=formatout, append=append)
+                    append = True
+                skip = 0
+            else:
+                skip += 1
+        f.close
+        if fileout is None:
+            print("Finsihed reading", npictout, "snapshots from", filein)
+        else:
+            print("Finished writing ",fileout,"of format", formatout,
+                  "with", npictout, "snapshot(s)")
+
+###############################################################################
+if __name__ == "__main__":
+    convert_data()
