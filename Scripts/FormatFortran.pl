@@ -5,8 +5,7 @@
 
 my $defaultexception = 
     "set_parameters|correct_electronfluid_efield_cell|select_fluid|".
-    "set_yzr|user_get_b0|user_interface.f90|ModUserEmpty.f90|".
-    "ModFaceValueGpu.f90|ModFaceFluxGpu.f90|ModUpdateStateGpu.f90";
+    "set_yzr|user_get_b0|user_interface.f90|ModUserEmpty.f90";
 
 my $Help       = ($h or $help);
 my $Verbose    = ($v or $verbose);
@@ -318,10 +317,14 @@ foreach $source (@source){
 
 	    # check if there is a !---------- separator line
 	    $iseparator = $i if s/^\s+\!\-\-\-\-+\!?\n//;
+
+	    # Skip empty lines
+	    next if /^$/ or s/^\s*\n/\n/;
 	    
-	    # Skip empty lines and comments and FPP directives
-	    next if (/^$/ or s/^\s*\n/\n/ or /^\s*\!/ or /^#/) 
-		and not /^\s*\!\$acc\s+(loop|parallel)/;
+	    # Skip comments and FPP directives
+	    next if (/^\s*\!/ or /^#/)
+		and not /^\s*\!\$acc\s+(loop|parallel)/
+		and not $iseparator;
 
 	    # Skip external statements
 	    next if /^\s*external\b/;

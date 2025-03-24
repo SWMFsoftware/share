@@ -19,6 +19,7 @@ my %Compiler = (
     "slogin"              => "ifortftn,intelcc",
     "frontera"            => "ifortmpif90,iccmpicxx",
     "ascent"              => "pgf90,pgccmpicxx",
+    "mahti"               => "gfortran,gcc_mpicc",
     );
 
 my $WARNING_='share/Scripts/Config.pl WARNING:';
@@ -35,6 +36,7 @@ our $Machine = `hostname -f`; chop($Machine);
 $Machine =~ s/^login\d*\.//; # remove "login\d+." from beginning
 $Machine =~ s/\..*//;        # keep the first word
 $Machine =~ s/\d+$//;        # remove numbers from the machine name
+$Machine =~ s/-\z//;         # remove trailing "-"
 
 # This is obtained from the calling script and used here
 our $CloneOnly;
