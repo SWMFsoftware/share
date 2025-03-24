@@ -374,7 +374,7 @@ foreach $source (@source){
 	    next if $lines[$i-1] =~ /\&\s*(\!.*)?$/;
 
 	    # skip use statements
-	    next if s/(\s*)use\b/$1use/i;
+	    next if s/^(\s*)use\b/$1use/i;
 
 	    # Remove old declarations of DoTest and DoTestMe
 	    if(/^\s+logical\s*::\s*DoTest(Me)?\b/ and $TestLevel >= 0){
