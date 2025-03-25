@@ -329,7 +329,7 @@ def write_ascii(data, filename="swmfdata.out", format="18.10e", append=False):
     state = state.reshape(nvar,ngrid)
         
     float_formatter = "{:"+format+"}"
-    np.set_printoptions(formatter={'float_kind':float_formatter.format})
+    np.set_printoptions(formatter={'float_kind':float_formatter.format},linewidth=np.inf)
     f.writelines(head+"\n")
     template = "{0:d} {1:"+format+"} {2:d} {3:d} {4:d}\n"
     if "cart" in data and not data["cart"]:
