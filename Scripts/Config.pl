@@ -35,8 +35,9 @@ our $Machine = `hostname -f`; chop($Machine);
 
 $Machine =~ s/^login\d*\.//; # remove "login\d+." from beginning
 $Machine =~ s/\..*//;        # keep the first word
-$Machine =~ s/\d+$//;        # remove numbers from the machine name
-$Machine =~ s/-\z//;         # remove trailing "-"
+$Machine =~ s/[\-\d\.]+$//;  # remove numbers from the machine name
+$Machine =~ s/login$//;      # remove trailing login
+$Machine =~ s/\-//;          # remove trailing "-"
 
 # This is obtained from the calling script and used here
 our $CloneOnly;
