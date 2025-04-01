@@ -212,12 +212,29 @@ contains
     FracSecondEquinoxPlanet_I(Moon_)   =  0.0                    ! [ s]
 
     ! Mars (40)
+    ! See https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html
+    !     https://www.princeton.edu/~willman/planetary_systems/Sol/Mars
     NamePlanet_I(Mars_)                 = 'MARS'
 
     rPlanet_I(Mars_)                    = 3396.0e+3               ! [ m]
     mPlanet_I(Mars_)                    = 0.6436e+24              ! [kg]
     OrbitalPeriodPlanet_I(Mars_)        = 686.98* cDay            ! [ s]
     RotationPeriodPlanet_I(Mars_)       = 1.0275 * cDay            ! [ s]
+
+    Excentricity_I(Mars_)              = 0.0934                  ! dimless
+    RightAscension_I(Mars_)            = 49.57854                ! [Degs]
+    Inclination_I(Mars_)               = 1.85                    ! [Degs]
+    ArgPeriapsis_I(Mars_)              = 286.5                   ! [Degs]
+
+    ! Vernal Equinox at midnight (Ls = 0.0)
+    iYearEquinoxPlanet_I(Mars_)        = 1998                    ! [yr]
+    iMonthEquinoxPlanet_I(Mars_)       =    7                    ! [mo]
+    iDayEquinoxPlanet_I(Mars_)         =   14                    ! [dy]
+    iHourEquinoxPlanet_I(Mars_)        =   13                    ! [hr]
+    iMinuteEquinoxPlanet_I(Mars_)      =   40                    ! [mn]
+    iSecondEquinoxPlanet_I(Mars_)      =    0                    ! [ s]
+    FracSecondEquinoxPlanet_I(Mars_)   =  0.0                    ! [ s]
+    TiltPlanet_I(Mars_)                = 25.19 * cDegToRad       ! [rad]
 
     ! Jupiter (50)
     NamePlanet_I(Jupiter_)              = 'JUPITER'
