@@ -798,7 +798,8 @@ contains
     real :: InGse_DD(3,3), OutGse_DD(3,3)
     character(len=*), parameter:: NameSub = 'transform_matrix'
     !--------------------------------------------------------------------------
-    if(TypeCoordIn == TypeCoordOut)then
+    if(TypeCoordIn == TypeCoordOut .or. &
+         TypeCoordIn == 'SYS' .or. TypeCoordOut == 'SYS')then
        Rot_DD = cUnit_DD
        RETURN
     end if
