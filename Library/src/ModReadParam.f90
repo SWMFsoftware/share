@@ -26,7 +26,7 @@ module ModReadParam
   ! to the processors that belong to the MPI communicator iComm, which
   ! is an optional argument of subroutine read\_file.
   ! The text buffer contains at most MaxLine=1000 lines, which are at most
-  ! lStringLine=200 character long. Normally only the control component
+  ! lStringLine character long. Normally only the control component
   ! calls {\bf read\_file}.
   !
   ! {\bf Subroutine read\_init} can select a part of the text buffer
