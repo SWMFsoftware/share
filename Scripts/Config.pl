@@ -175,6 +175,11 @@ foreach (@Arguments){
 			       $CompilerC=$1 if $Compiler =~ s/,(.+)//;
 			       $IsCompilerSet=1;  next};
     if(/^-compiler$/i)        {$ShowCompiler=1;                 next};
+    if(/^-default$/i)         {$NewMpi="yes"; $NewOpenMp="no";
+			       $NewOpenACC="no"; $NewHdf5="no";
+			       $NewHypre="no"; $NewAmrex="no";
+			       $NewSpice="no"; $NewFishpak="no";
+			       $NewPrecision="double";          next};
     if(/^-mpi$/i)             {$NewMpi="yes";                   next};
     if(/^-nompi$/i)           {$NewMpi="no";                    next};
     if(/^-openmp$/i)          {$NewOpenMp="yes";                next};
@@ -186,8 +191,8 @@ foreach (@Arguments){
     if(/^-hdf5$/i)            {$NewHdf5="yes";                  next};
     if(/^-nohdf5$/i)          {$NewHdf5="no";                   next};
     if(/^-hypre$/i)           {$NewHypre="yes";                 next};
-    if(/^-fishpak$/i)         {$NewFishpak="yes";               next};
     if(/^-nohypre$/i)         {$NewHypre="no";                  next};
+    if(/^-fishpak$/i)         {$NewFishpak="yes";               next};
     if(/^-nofishpak$/i)       {$NewFishpak="no";                next};
     if(/^-amrex(.*)$/i)       {$NewAmrex="yes";
 			       $NewAmrexDim = (uc($1) eq "2D") ? 2:3;
@@ -1277,11 +1282,10 @@ shell commands. The script can also show the current settings.
 
 Usage: Config.pl [-help] [-verbose] [-dryrun] [-gitinfo] [-show] [-compiler] 
                  [[-install[=s|=c] [-compiler=FC[,CC] [-nompi]] | -uninstall]
-                 [-single|-double] [-debug|-nodebug] 
+		 [-default] [-single|-double] 
 		 [-mpi|-nompi] [-openmp|-noopenmp] [-openacc|-noopenacc]
-                 [-hdf5|-nohdf5] [-hypre|-nohypre] 
-		 [-spice=SPICELIB|-nospice]
-                 [-O0|-O1|-O2|-O3|-O4|-O5]
+                 [-hdf5|-nohdf5] [-hypre|-nohypre] [-spice=SPICELIB|-nospice]
+                 [-O0|-O1|-O2|-O3|-O4|-O5] [-debug|-nodebug]
 		 [-amrex|-amrex2d|-amrex3d|-noamrex]
 
 If called without arguments, the current settings are shown.
@@ -1317,10 +1321,9 @@ Information:
 
 Compilation:
 
+-default        set double precision with MPI and all other libraries off
 -single         set precision to single in Makefile.conf and make clean
 -double         set precision to double in Makefile.conf and make clean
--debug          select debug options for the compiler in Makefile.conf
--nodebug        do not use debug options for the compiler in Makefile.conf
 -mpi            compile and link with the MPI library for parallel execution
 -nompi          compile and link with the NOMPI library for serial execution
 -openacc        compile and link with OpenACC flag
@@ -1343,6 +1346,8 @@ Compilation:
 -O3             set optimization levels to at most -O3
 -O4             set optimization levels to at most -O4
 -O5             set optimization levels to at most -O5
+-debug          select debug options for the compiler in Makefile.conf
+-nodebug        do not use debug options for the compiler in Makefile.conf
 
 Examples of use:
 
@@ -1375,9 +1380,9 @@ Use the HDF5, HYPRE linear solver library, SPICE and compile with OpenMP flag:
 
     Config.pl -hdf5 -hypre -spice=/usr/local/lib/spicelib.a
 
-Do not link with the HDF5, HYPRE and SPICE libraries, and switch off OpenMP flag:
+Switch to default settings except for using single precision:
 
-    Config.pl -nohdf5 -nohypre -nospice -noopenmp
+    Config.pl -default -single
 
 Set optimization level to -O0, switch on debugging flags and link with NOMPI:
 
