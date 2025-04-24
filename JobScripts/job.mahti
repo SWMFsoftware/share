@@ -8,9 +8,16 @@
 
 # Each node has 128 cpus.
 # The ntasks-per-node and cpus-per-task should multiply to equal 128.
-# Set cpus-per-task to 8 to share memory.
-# This is based on Vlasiator institutional knowledge - may be
-# different for SWMF.
+# Set cpus-per-task to 2 to share memory.
+# cpus-per-task is 8 for standard Vlasiator simulation - can be
+# optimized differently for SWMF.
+
+# For standard configuration, the following modules are loaded:
+#   1) gcc/11.2.0
+#   2) openmpi/4.1.2
+#   3) openblas/0.3.18-omp
+#   4) csc-tools
+#   5) StdEnv
 
 # machine login name: mahti-login14.mahti.csc.fi
 
@@ -19,8 +26,8 @@
 #SBATCH --time=12:00:00            # run time (HH:MM:SS)
 #SBATCH --partition=medium         # queue name (small, medium, large)
 #SBATCH --nodes=5                  # number of nodes
-#SBATCH --ntasks-per-node=16       # 128 / cpus-per-task = ntasks-per-node
-#SBATCH --cpus-per-task=8          # required to share memory
+#SBATCH --ntasks-per-node=64       # 128 / cpus-per-task = ntasks-per-node
+#SBATCH --cpus-per-task=2          # required to share memory
 
 # Set the number of threads based on --cpus-per-task
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
