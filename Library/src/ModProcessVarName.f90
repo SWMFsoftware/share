@@ -23,13 +23,13 @@ module ModProcessVarName
   integer, parameter:: nSubstance = 34 ! number of distinct fluids/species
 
   ! Number of state variables associated with each substance to be standardized
-  integer, parameter:: nVarPerSubstance = 7
+  integer, parameter:: nVarPerSubstance = 9
 
   ! Number of allowed alternative names for each variable
   integer, parameter:: nSynonym = 3
 
   ! State variables not associated with a specific fluid/ specie
-  integer, parameter:: nVarExtra = 18
+  integer, parameter:: nVarExtra = 16
 
    ! Number of elements for charge state calculation
   integer, parameter:: nElementAll = 30
@@ -116,7 +116,9 @@ module ModProcessVarName
        RhoUz_ = 4, &
        p_     = 5, &
        Ppar_  = 6, &
-       Energy_= 7
+       Pe_    = 7, &
+       Pepar_ = 8, &
+       Energy_= 9
 
   ! string array containing basic state variables associated with a substance
   character(len = 6) :: NameSubstanceVar_I(nVarPerSubstance) = [ &
@@ -126,7 +128,9 @@ module ModProcessVarName
        'Mz    ', &
        'P     ', &
        'Ppar  ', &
-       'Energy' ]
+       'Pe    ', &
+       'Pepar ', &
+       'Energy'  ]
 
   ! string arrays containing variables not associated with any substance
   character(len=5) :: NameVarExtra_I(nVarExtra) = [ &
@@ -136,8 +140,6 @@ module ModProcessVarName
        'ex   ', &
        'ey   ', &
        'ez   ', &
-       'pe   ', &
-       'pepar', &
        'te0  ', &
        'ew   ', &
        'eint ', &
@@ -189,8 +191,6 @@ module ModProcessVarName
        'Ex   ', &
        'Ey   ', &
        'Ez   ', &
-       'Pe   ', &
-       'PePar', &
        'Te0  ', &
        'Ew   ', &
        'Eint ', &
@@ -211,12 +211,13 @@ module ModProcessVarName
 contains
   !============================================================================
   subroutine process_var_string(NameVar,  &
-       nDensity, nSpeed, nP, nPpar, nWave, nMaterial, nChargeStateAll)
+       nDensity, nSpeed, nP, nPpar, nWave, nMaterial, nChargeStateAll, &
+          nPe, nPepar)
 
     use ModUtilities,  ONLY: split_string, join_string
 
     character(len=*), intent(inout):: NameVar
-    integer, optional, intent(out):: nDensity, nSpeed, nP, nPpar
+    integer, optional, intent(out):: nDensity, nSpeed, nP, nPpar, nPe, nPepar
     integer, optional, intent(out):: nWave, nMaterial, nChargeStateAll
 
     integer            :: nVarName
@@ -226,20 +227,22 @@ contains
     call split_string(NameVar, MaxNameVar, NameVar_V, nVarName)
 
     call process_var_list(nVarName, NameVar_V,  &
-         nDensity, nSpeed, nP, nPpar, nWave, nMaterial, nChargeStateAll)
+         nDensity, nSpeed, nP, nPpar, nWave, nMaterial, nChargeStateAll, &
+         nPe, nPepar)
 
     call join_string(nVarName, NameVar_V(1:nVarName), NameVar)
 
   end subroutine process_var_string
   !============================================================================
   subroutine process_var_list(nVarName, NameVar_V,  &
-       nDensity, nSpeed, nP, nPpar, nWave, nMaterial, nChargeStateAll)
+       nDensity, nSpeed, nP, nPpar, nWave, nMaterial, nChargeStateAll, &
+          nPe, nPepar)
 
     use ModUtilities,  ONLY: lower_case
 
     integer,intent(in):: nVarName
     character(len=*), intent(inout):: NameVar_V(nVarName)
-    integer, optional, intent(out):: nDensity, nSpeed, nP, nPpar
+    integer, optional, intent(out):: nDensity, nSpeed, nP, nPpar, nPe, nPepar
     integer, optional, intent(out):: nWave, nMaterial, nChargeStateAll
 
     ! 1. Creates standard names and a dictionary for each standard name.
@@ -369,6 +372,8 @@ contains
     if(present(nSpeed))   nSpeed   = nDistinctSubstanceVar_I(RhoUx_)
     if(present(nP))       nP       = nDistinctSubstanceVar_I(P_)
     if(present(nPpar))    nPpar    = nDistinctSubstanceVar_I(Ppar_)
+    if(present(nPe))      nPe      = nDistinctSubstanceVar_I(Pe_)
+    if(present(nPepar))   nPepar   = nDistinctSubstanceVar_I(Pepar_)
 
     deallocate(Dictionary_III)
     deallocate(SubstanceStandardName_II)
