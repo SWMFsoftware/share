@@ -241,7 +241,7 @@ sub process_file{
 	unless -s $OutFile or -s "$BaseFile.dat";
     rename $OutFile, "$BaseFile.dat" if $Format eq "tec";
     unless($Keep){
-	if($BaseFile =~ /[23]d_/ or $BaseFile =~ /1d_/ and $Input){
+	if($BaseFile =~ /[23]d_/i or $BaseFile =~ /1d_/ and $Input){
 	    # Keep header file if file name is 2d_ or 3d_, or 1d_ and -i is set.
 	    # Rename header file to .info so it is not postprocessed again.
 	    # Unfortunately CCMC insists on using .h extension... 
