@@ -89,6 +89,8 @@ function funcdef, xx, w, func
      ['B0r'      , '(x*{B0x}+y*{B0y}+z*{B0z})/r'             ], $ ; radial B0
      ['B1'       , 'sqrt({b1x}^2+{b1y}^2+{b1z}^2)'           ], $ ; B1
      ['jr'       , '(x*{jx}+y*{jy}+z*{jz})/r'                ], $ ; radial current
+     ['jlat'     , 'cos(Lat)*{jz}-sin(Lat)*(cos(Lon)*{jx}+sin(Lon)*{jy})'], $ ; Jlat
+     ['jlon'     , '-sin(Lon)*{jx}+cos(Lon)*{jy}'            ], $ ; Jlon
      ['j'        , 'sqrt({jx}^2+{jy}^2+{jz}^2)'              ], $ ; current density
      ['jxBx'     , '{jy}*bz-{jz}*by'                         ], $ ; Lorentz force x
      ['jxBy'     , '{jz}*bx-{jx}*bz'                         ], $ ; Lorentz force y
