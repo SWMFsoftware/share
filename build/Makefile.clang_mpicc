@@ -1,7 +1,7 @@
 # C language related part of Makefile.conf: Makefile.clang_mpicc
 C_COMPILER_NAME=clang
 
-COMPILE.c     = gcc
+COMPILE.c     = clang
 COMPILE.mpicc = mpicc
 COMPILE.mpicxx= mpicxx
 
