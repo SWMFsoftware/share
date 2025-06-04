@@ -424,7 +424,7 @@ contains
   end subroutine fix_dir_name
   !============================================================================
   subroutine open_file(iUnitIn, File, Form, Status, Position, Access, Recl, &
-       iComm, NameCaller, iErrorOut)
+       iComm, NameCaller, iErrorOut, iUnitMpi)
 
     ! Interface for the Fortran open statement with error checking.
     ! If an error occurs, the code stops and writes out the unit number,
@@ -451,11 +451,12 @@ contains
     integer,          optional, intent(in):: iComm
     character(len=*), optional, intent(in):: NameCaller
     integer,          optional, intent(out):: iErrorOut
+    integer,          optional, intent(inout):: iUnitMpi
 
     character(len=20):: TypeForm, TypeStatus, TypePosition, TypeAccess
 
     integer:: iUnit
-    integer:: iError, iProc, nProc
+    integer:: iError, iProc, nProc    
 
     character(len=*), parameter:: NameSub = 'open_file'
     !--------------------------------------------------------------------------
@@ -504,6 +505,13 @@ contains
           open(iUnit, FILE=File, FORM=TypeForm, STATUS=TypeStatus, &
                ACCESS=TypeAccess, RECL=Recl, IOSTAT=iError)
        end if
+    else if(present(iUnitMpi)) then       
+      if(.not.present(iComm))then
+         call CON_stop(NameSub//' MPI IO requires iComm to be present')
+      end if      
+       ! Open file with MPI I/O
+      call MPI_file_open(iComm, File, MPI_MODE_WRONLY+MPI_MODE_CREATE, &
+            MPI_INFO_NULL, iUnitMpi, iError)                  
     else
        open(iUnit, FILE=File, FORM=TypeForm, STATUS=TypeStatus, &
             POSITION=TypePosition, ACCESS=TypeAccess, IOSTAT=iError)
