@@ -17,6 +17,7 @@ module ModMPiInterfaces
   public:: mpi_comm_split_type
   public:: mpi_file_read
   public:: mpi_file_write
+  public:: mpi_file_write_at
   public:: mpi_finalize
   public:: mpi_gather
   public:: mpi_gatherv
@@ -240,6 +241,14 @@ module ModMPiInterfaces
     mpi_file_write_i1, &
     mpi_file_write_r0, &
     mpi_file_write_r1
+  end interface
+
+  interface mpi_file_write_at
+    module procedure &
+    mpi_file_write_at_i0, &
+    mpi_file_write_at_i1, &
+    mpi_file_write_at_r0, &
+    mpi_file_write_at_r1
   end interface
 
   interface
@@ -2327,6 +2336,65 @@ contains
     !--------------------------------------------------------------------------
     call mpi_file_write(fh, buf, count, datatype, status, ierror)
   end subroutine mpi_file_write_r1
+  !============================================================================
+  subroutine mpi_file_write_at_i0(fh, offset, buf, count, datatype, status, ierror)
+    use ModMpiOrig, only: mpi_status_size, mpi_offset_kind
+    integer, intent(in) :: fh
+    integer(kind=mpi_offset_kind), intent(in) :: offset
+    integer,  intent(in) :: buf
+    integer, intent(in) :: count
+    integer, intent(in) :: datatype
+    integer, intent(in) :: status(mpi_status_size)
+    integer, intent(out) :: ierror
+    external mpi_file_write_at
+    !--------------------------------------------------------------------------
+    call mpi_file_write_at(fh, offset, buf, count, datatype, status, ierror)
+  end subroutine mpi_file_write_at_i0
+  !============================================================================
+
+  subroutine mpi_file_write_at_i1(fh, offset, buf, count, datatype, status, ierror)
+    use ModMpiOrig, only: mpi_status_size, mpi_offset_kind
+    integer, intent(in) :: fh
+    integer(kind=mpi_offset_kind), intent(in) :: offset
+    integer,  intent(in) :: buf(:)
+    integer, intent(in) :: count
+    integer, intent(in) :: datatype
+    integer, intent(in) :: status(mpi_status_size)
+    integer, intent(out) :: ierror
+    external mpi_file_write_at
+    !--------------------------------------------------------------------------
+    call mpi_file_write_at(fh, offset, buf, count, datatype, status, ierror)
+  end subroutine mpi_file_write_at_i1
+  !============================================================================
+
+  subroutine mpi_file_write_at_r0(fh, offset, buf, count, datatype, status, ierror)
+    use ModMpiOrig, only: mpi_status_size, mpi_offset_kind
+    integer, intent(in) :: fh
+    integer(kind=mpi_offset_kind), intent(in) :: offset
+    real,  intent(in) :: buf
+    integer, intent(in) :: count
+    integer, intent(in) :: datatype
+    integer, intent(in) :: status(mpi_status_size)
+    integer, intent(out) :: ierror
+    external mpi_file_write_at
+    !--------------------------------------------------------------------------
+    call mpi_file_write_at(fh, offset, buf, count, datatype, status, ierror)
+  end subroutine mpi_file_write_at_r0
+  !============================================================================
+
+  subroutine mpi_file_write_at_r1(fh, offset, buf, count, datatype, status, ierror)
+    use ModMpiOrig, only: mpi_status_size, mpi_offset_kind
+    integer, intent(in) :: fh
+    integer(kind=mpi_offset_kind), intent(in) :: offset
+    real,  intent(in) :: buf(:)
+    integer, intent(in) :: count
+    integer, intent(in) :: datatype
+    integer, intent(in) :: status(mpi_status_size)
+    integer, intent(out) :: ierror
+    external mpi_file_write_at
+    !--------------------------------------------------------------------------
+    call mpi_file_write_at(fh, offset, buf, count, datatype, status, ierror)
+  end subroutine mpi_file_write_at_r1
   !============================================================================
 
   subroutine mpi_gather_i2(sendbuf, sendcount, sendtype, recvbuf, &
