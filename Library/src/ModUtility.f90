@@ -456,7 +456,7 @@ contains
     character(len=20):: TypeForm, TypeStatus, TypePosition, TypeAccess
 
     integer:: iUnit
-    integer:: iError, iProc, nProc    
+    integer:: iError, iProc, nProc
 
     character(len=*), parameter:: NameSub = 'open_file'
     !--------------------------------------------------------------------------
@@ -505,13 +505,13 @@ contains
           open(iUnit, FILE=File, FORM=TypeForm, STATUS=TypeStatus, &
                ACCESS=TypeAccess, RECL=Recl, IOSTAT=iError)
        end if
-    else if(present(iUnitMpi)) then       
+    else if(present(iUnitMpi)) then
       if(.not.present(iComm))then
          call CON_stop(NameSub//' MPI IO requires iComm to be present')
-      end if      
+      end if
        ! Open file with MPI I/O
       call MPI_file_open(iComm, File, MPI_MODE_WRONLY+MPI_MODE_CREATE, &
-            MPI_INFO_NULL, iUnitMpi, iError)                  
+            MPI_INFO_NULL, iUnitMpi, iError)
     else
        open(iUnit, FILE=File, FORM=TypeForm, STATUS=TypeStatus, &
             POSITION=TypePosition, ACCESS=TypeAccess, IOSTAT=iError)
