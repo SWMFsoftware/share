@@ -1120,7 +1120,7 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(in) :: count
        integer, intent(in) :: datatype
        integer, intent(in) :: status(mpi_status_size)
-       integer, intent(out) :: ierror                     
+       integer, intent(out) :: ierror
      end subroutine mpi_file_write_at
 
      subroutine mpi_comm_split_type(comm, commtype, rank, info, localcomm, ierror)

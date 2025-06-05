@@ -2346,7 +2346,7 @@ contains
     integer, intent(in) :: count
     integer, intent(in) :: datatype
     integer, intent(in) :: status(mpi_status_size)
-    integer, intent(out) :: ierror                     
+    integer, intent(out) :: ierror
     external mpi_file_write_at
     !--------------------------------------------------------------------------
     call mpi_file_write_at(fh, offset, buf, count, datatype, status, ierror)
@@ -2361,7 +2361,7 @@ contains
     integer, intent(in) :: count
     integer, intent(in) :: datatype
     integer, intent(in) :: status(mpi_status_size)
-    integer, intent(out) :: ierror                     
+    integer, intent(out) :: ierror
     external mpi_file_write_at
     !--------------------------------------------------------------------------
     call mpi_file_write_at(fh, offset, buf, count, datatype, status, ierror)
@@ -2376,7 +2376,7 @@ contains
     integer, intent(in) :: count
     integer, intent(in) :: datatype
     integer, intent(in) :: status(mpi_status_size)
-    integer, intent(out) :: ierror                     
+    integer, intent(out) :: ierror
     external mpi_file_write_at
     !--------------------------------------------------------------------------
     call mpi_file_write_at(fh, offset, buf, count, datatype, status, ierror)
@@ -2391,7 +2391,7 @@ contains
     integer, intent(in) :: count
     integer, intent(in) :: datatype
     integer, intent(in) :: status(mpi_status_size)
-    integer, intent(out) :: ierror                     
+    integer, intent(out) :: ierror
     external mpi_file_write_at
     !--------------------------------------------------------------------------
     call mpi_file_write_at(fh, offset, buf, count, datatype, status, ierror)
