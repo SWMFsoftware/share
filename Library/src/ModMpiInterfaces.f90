@@ -2337,6 +2337,7 @@ contains
     call mpi_file_write(fh, buf, count, datatype, status, ierror)
   end subroutine mpi_file_write_r1
   !============================================================================
+
   subroutine mpi_file_write_at_i0(fh, offset, buf, count, datatype, status, ierror)
     use ModMpiOrig, only: mpi_status_size, mpi_offset_kind
     integer, intent(in) :: fh
@@ -2345,7 +2346,7 @@ contains
     integer, intent(in) :: count
     integer, intent(in) :: datatype
     integer, intent(in) :: status(mpi_status_size)
-    integer, intent(out) :: ierror
+    integer, intent(out) :: ierror                     
     external mpi_file_write_at
     !--------------------------------------------------------------------------
     call mpi_file_write_at(fh, offset, buf, count, datatype, status, ierror)
@@ -2360,7 +2361,7 @@ contains
     integer, intent(in) :: count
     integer, intent(in) :: datatype
     integer, intent(in) :: status(mpi_status_size)
-    integer, intent(out) :: ierror
+    integer, intent(out) :: ierror                     
     external mpi_file_write_at
     !--------------------------------------------------------------------------
     call mpi_file_write_at(fh, offset, buf, count, datatype, status, ierror)
@@ -2375,7 +2376,7 @@ contains
     integer, intent(in) :: count
     integer, intent(in) :: datatype
     integer, intent(in) :: status(mpi_status_size)
-    integer, intent(out) :: ierror
+    integer, intent(out) :: ierror                     
     external mpi_file_write_at
     !--------------------------------------------------------------------------
     call mpi_file_write_at(fh, offset, buf, count, datatype, status, ierror)
@@ -2390,7 +2391,7 @@ contains
     integer, intent(in) :: count
     integer, intent(in) :: datatype
     integer, intent(in) :: status(mpi_status_size)
-    integer, intent(out) :: ierror
+    integer, intent(out) :: ierror                     
     external mpi_file_write_at
     !--------------------------------------------------------------------------
     call mpi_file_write_at(fh, offset, buf, count, datatype, status, ierror)

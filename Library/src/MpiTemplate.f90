@@ -1116,14 +1116,11 @@ module ModMpiTemplate  ! These two lines are here so that
        use ModMpiOrig, only: mpi_status_size, mpi_offset_kind
        integer, intent(in) :: fh
        integer(kind=mpi_offset_kind), intent(in) :: offset
-       <type>,  intent(in) :: buf
+       <type>,  intent(in) :: buf(dim1)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
        integer, intent(in) :: status(mpi_status_size)
-       integer, intent(out) :: ierror
-       external mpi_file_write_at
-       !--------------------------------------------------------------------------
-       call mpi_file_write_at(fh, offset, buf, count, datatype, status, ierror)
+       integer, intent(out) :: ierror                     
      end subroutine mpi_file_write_at
 
      subroutine mpi_comm_split_type(comm, commtype, rank, info, localcomm, ierror)
