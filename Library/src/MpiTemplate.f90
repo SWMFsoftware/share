@@ -1112,6 +1112,20 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(out) :: ierror
      end subroutine mpi_file_write
 
+     subroutine mpi_file_write_at(fh, offset, buf, count, datatype, status, ierror)
+       use ModMpiOrig, only: mpi_status_size, mpi_offset_kind
+       integer, intent(in) :: fh
+       integer(kind=mpi_offset_kind), intent(in) :: offset
+       <type>,  intent(in) :: buf
+       integer, intent(in) :: count
+       integer, intent(in) :: datatype
+       integer, intent(in) :: status(mpi_status_size)
+       integer, intent(out) :: ierror
+       external mpi_file_write_at
+       !--------------------------------------------------------------------------
+       call mpi_file_write_at(fh, offset, buf, count, datatype, status, ierror)
+     end subroutine mpi_file_write_at
+
      subroutine mpi_comm_split_type(comm, commtype, rank, info, localcomm, ierror)
        integer, intent(in):: comm, commtype, rank, info
        integer, intent(out):: localcomm, ierror
