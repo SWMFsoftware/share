@@ -1,12 +1,12 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-# This file is based on the interfaces of the MPI_CHECK library, see
-#
-# http://andrew.ait.iastate.edu/HPC/MPI-CHECK.htm
-#
-# The interfaces are slightly modified and simplified. Dimensions for the
-# two variable routines are not independent any longer (DIM2 = DIM1 + 1).
+! This file is based on the interfaces of the MPI_CHECK library, see
+!
+! http://andrew.ait.iastate.edu/HPC/MPI-CHECK.htm
+!
+! The interfaces are slightly modified and simplified. Dimensions for the
+! two variable routines are not independent any longer (DIM2 = DIM1 + 1).
 
 module ModMpiTemplate  ! These two lines are here so that
   interface            ! EMACS can indent the code properly
