@@ -1,12 +1,12 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-# This file is based on the interfaces of the MPI_CHECK library, see
-#
-# http://andrew.ait.iastate.edu/HPC/MPI-CHECK.htm
-#
-# The interfaces are slightly modified and simplified. Dimensions for the
-# two variable routines are not independent any longer (DIM2 = DIM1 + 1).
+! This file is based on the interfaces of the MPI_CHECK library, see
+!
+! http://andrew.ait.iastate.edu/HPC/MPI-CHECK.htm
+!
+! The interfaces are slightly modified and simplified. Dimensions for the
+! two variable routines are not independent any longer (DIM2 = DIM1 + 1).
 
 module ModMpiTemplate  ! These two lines are here so that
   interface            ! EMACS can indent the code properly
@@ -1111,6 +1111,17 @@ module ModMpiTemplate  ! These two lines are here so that
        integer, intent(in) :: status(mpi_status_size)
        integer, intent(out) :: ierror
      end subroutine mpi_file_write
+
+     subroutine mpi_file_write_at(fh, offset, buf, count, datatype, status, ierror)
+       use ModMpiOrig, only: mpi_status_size, mpi_offset_kind
+       integer, intent(in) :: fh
+       integer(kind=mpi_offset_kind), intent(in) :: offset
+       <type>,  intent(in) :: buf(dim1)
+       integer, intent(in) :: count
+       integer, intent(in) :: datatype
+       integer, intent(in) :: status(mpi_status_size)
+       integer, intent(out) :: ierror
+     end subroutine mpi_file_write_at
 
      subroutine mpi_comm_split_type(comm, commtype, rank, info, localcomm, ierror)
        integer, intent(in):: comm, commtype, rank, info
