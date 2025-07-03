@@ -179,8 +179,8 @@ pro set_default_values
   ;; Transformation parameters for irregular grids 
   common transform_param, $
      usereg, dotransform, transform, nxreg, xreglimits, wregpad, $
-     nxreg_old, xreglimits_old, triangles, $
-     symmtri
+     nxreg_old, xreglimits_old, triangles, symmtri
+
   usereg=0         ; use wreg and xreg instead of w and x
   dotransform='n'  ; do transform with plot_data?
   transform='n'    ; values: none,regular,my,polar,unpolar,sphere
@@ -252,12 +252,15 @@ pro set_default_values
      grid, $
      x, w, xreg, wreg, $
      x0,w0, x1,w1, x2,w2, x3,w3, x4,w4, x5,w5, x6,w6, x7,w7, x8,w8, x9,w9, $
-     wreg0, wreg1, wreg2, wreg3, wreg4, wreg5, wreg6, wreg7, wreg8, wreg9
+     wreg0, wreg1, wreg2, wreg3, wreg4, wreg5, wreg6, wreg7, wreg8, wreg9, $
+     dosort
+
   grid = 0          ; index array to be used for cuts
   x = 0             ; coordinate array of the last read snapshot
   w = 0             ; data array of the last read snapshot
   xreg = 0          ; regular grid coordinates
   wreg = 0          ; regular grid data
+  dosort = 0        ; sort 2D unstructured grid with x+e*y if needed
 
   ;; parameters passed to plot_func through common blocks
   common plot_param, $
@@ -2285,6 +2288,14 @@ pro get_pict_bin, unit, npict
       readu, unit, wi
       w(*,*,iw) = wi
     endfor
+
+    if n2 eq 1 and dosort then begin
+       ;; sort x and w according to the x + e*y function
+       factor = exp(1.0d0)
+       isort = sort( x(*,*,0) + factor*x(*,*,1) )
+       x(*,0,*) = x(isort,0,*)
+       w(*,0,*) = w(isort,0,*)
+    endif
   end
   ;-------------- 3D ----------------------
   3: begin
@@ -2338,7 +2349,15 @@ pro get_pict_real, unit, npict
       readu, unit, wi
       w(*,*,iw) = wi
     endfor
+    if n2 eq 1 and dosort then begin
+       ;; sort x and w according to the x + e*y function
+       factor = exp(1.0d0)
+       isort = sort( x(*,*,0) + factor*x(*,*,1) )
+       x(*,0,*) = x(isort,0,*)
+       w(*,0,*) = w(isort,0,*)
+    endif
   end
+
   ;-------------- 3D ----------------------
   3: begin
     n1 = nx(0)
