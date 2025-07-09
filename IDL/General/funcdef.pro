@@ -92,10 +92,30 @@ function funcdef, xx, w, func
      ['jlat'     , 'cos(Lat)*{jz}-sin(Lat)*(cos(Lon)*{jx}+sin(Lon)*{jy})'], $ ; Jlat
      ['jlon'     , '-sin(Lon)*{jx}+cos(Lon)*{jy}'            ], $ ; Jlon
      ['j'        , 'sqrt({jx}^2+{jy}^2+{jz}^2)'              ], $ ; current density
+     ['j1x'      , 'jx-{j0x}'                                ], $ ; j1x
+     ['j1y'      , 'jy-{j0y}'                                ], $ ; j1y
+     ['j1z'      , 'jz-{j0z}'                                ], $ ; j1z
+     ['j1'       , 'sqrt({j1x}^2+{j1y}^2+{j1z}^2)'           ], $ ; j1
      ['jxBx'     , '{jy}*bz-{jz}*by'                         ], $ ; Lorentz force x
      ['jxBy'     , '{jz}*bx-{jx}*bz'                         ], $ ; Lorentz force y
      ['jxBz'     , '{jx}*by-{jy}*bx'                         ], $ ; Lorentz force z
      ['jxB'      , 'sqrt({jxBx}^2+{jxBy}^2+{jxBz}^2)'        ], $ ; JxB magnitude
+     ['j0xB0x'     , '{j0y}*b0z-{j0z}*b0y'                   ], $ ; j0xb0 x
+     ['j0xB0y'     , '{j0z}*b0x-{j0x}*b0z'                   ], $ ; j0xb0 y
+     ['j0xB0z'     , '{j0x}*b0y-{j0y}*b0x'                   ], $ ; j0xb0 z
+     ['j0xB0'      , 'sqrt({j0xB0x}^2+{j0xB0y}^2+{j0xB0z}^2)'], $ ; J0xB0 magnitude
+     ['j0xB1x'     , '{j0y}*b1z-{j0z}*b1y'                   ], $ ; j0xb1 x
+     ['j0xB1y'     , '{j0z}*b1x-{j0x}*b1z'                   ], $ ; j0xb1 y
+     ['j0xB1z'     , '{j0x}*b1y-{j0y}*b1x'                   ], $ ; j0xb1 z
+     ['j0xB1'      , 'sqrt({j0xB1x}^2+{j0xB1y}^2+{j0xB1z}^2)'], $ ; J0xB1 magnitude
+     ['j1xB0x'     , '{j1y}*b0z-{j1z}*b0y'                   ], $ ; j1xb0 x
+     ['j1xB0y'     , '{j1z}*b0x-{j1x}*b0z'                   ], $ ; j1xb0 y
+     ['j1xB0z'     , '{j1x}*b0y-{j1y}*b0x'                   ], $ ; j1xb0 z
+     ['j1xB0'      , 'sqrt({j1xB0x}^2+{j1xB0y}^2+{j1xB0z}^2)'], $ ; J1xB0 magnitude
+     ['j1xB1x'     , '{j1y}*b1z-{j1z}*b1y'                   ], $ ; j1xb1 x
+     ['j1xB1y'     , '{j1z}*b1x-{j1x}*b1z'                   ], $ ; j1xb1 y
+     ['j1xB1z'     , '{j1x}*b1y-{j1y}*b1x'                   ], $ ; j1xb1 z
+     ['j1xB1'      , 'sqrt({j1xB1x}^2+{j1xB1y}^2+{j1xB1z}^2)'], $ ; J1xB1 magnitude
      ['jxBr'     , '({jxBx}*x+{jxBy}*y+{jxBz}*z)/r'          ], $ ; JxB in r direction
      ['divbxy'   , 'div(bx,by,x,y)'                          ], $ ; div(B) in 2D
      ['divb1xy'  , 'div({b1x},{b1y},x,y)'                    ], $ ; div(B1) in 2D
