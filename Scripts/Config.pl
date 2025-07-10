@@ -15,7 +15,7 @@ my %Compiler = (
     "lfe"                 => "ifortmpif90,iccmpicxx",
     "pfe"                 => "ifortmpif90,iccmpicxx",
     "gl-login"            => "mpiifort",
-    "derecho"             => "ifortmpif90,iccmpicxx",
+    "derecho"             => "ifortmpif90,icxmpicxx",
     "slogin"              => "ifortftn,intelcc",
     "frontera"            => "ifortmpif90,iccmpicxx",
     "ascent"              => "pgf90,pgccmpicxx",
@@ -932,7 +932,7 @@ sub set_amrex_{
 	$AmrexCompiler="pgi" if $Compiler eq "pgf90" or $Compiler eq "nvfortran";       
 
 	&shell_command("cd util/AMREX;", 
-		       "./configure --prefix $InstallDir --comp $AmrexCompiler --enable-fortran-api no --debug $Debug --enable-tiny-profile yes --dim $NewAmrexDim;",
+		       "./configure --prefix $InstallDir --comp $AmrexCompiler --enable-fortran-api no --debug $Debug --enable-tiny-profile yes --dim $NewAmrexDim --allow-different-compiler yes;",
 		       "rm -rf util/AMREX/$InstallDir");
 	
 	$IsStrict = 0;
