@@ -295,7 +295,7 @@ pro set_default_values
   cut0 = 0            ; cut array without degenerate indices
   plotdim = 2         ; plot dimensionality after cut is applied
   rcut = -1.0         ; radius of cutting out inner part
-  rbody = -1.         ; radius of inner body shown as a black circle
+  rbody = 0.0         ; radius of inner body shown as a black circle
   velvector = 200     ; number of vectors/stream lines per plot
   velpos   = 0        ; 2 x velvector array with start positions 
   velpos0  = 0        ; previous velpos
