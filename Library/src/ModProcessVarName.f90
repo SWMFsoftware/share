@@ -28,8 +28,8 @@ module ModProcessVarName
   ! Number of allowed alternative names for each variable
   integer, parameter:: nSynonym = 3
 
-  ! State variables not associated with a specific fluid/ specie
-  integer, parameter:: nVarExtra = 16
+  ! State variables not associated with fluids/species
+  integer, parameter:: nVarExtra = 17
 
    ! Number of elements for charge state calculation
   integer, parameter:: nElementAll = 30
@@ -147,6 +147,7 @@ module ModProcessVarName
        'hyp  ', &
        'hype ', &
        'bperu', &
+       'signb', &
        'wd   ', &
        'lperp', &
        'hplim']
@@ -198,6 +199,7 @@ module ModProcessVarName
        'Hyp  ', &
        'HypE ', &
        'BperU', &
+       'SignB', &
        'wD   ', &
        'Lperp', &
        'HPLim']
