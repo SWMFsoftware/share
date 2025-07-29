@@ -67,8 +67,11 @@ close SCRIPT;
 my $machine;
 $script =~ s/.*\///; # remove path (save into local directory) 
 $script .= ".$name"; # add name
+my @jobscript;
+foreach $machine (@machine){
+    # Check if machine is in the job file
+    next unless $text =~ /^#+ *(PBS -l.*model=$machine)\s*$/im;
 
-foreach $machine (@machine){    
     my $fileout = "$script.$machine";
     print "creating $fileout\n";
 
@@ -90,15 +93,19 @@ foreach $machine (@machine){
     open(SCRIPT, ">$fileout") or die "Could not open $fileout\n";
     print SCRIPT $text;
     close SCRIPT;
+
+    push(@jobscript, $fileout);
 }
 
-# submit jobs;
-foreach $machine (@machine){
-    print "qsub $script.$machine\n";
-    `/PBS/bin/qsub $script.$machine`;
+# submit jobs
+my $jobscript;
+foreach $jobscript (@jobscript){
+
+    print "qsub $jobscript\n";
+    `/PBS/bin/qsub $jobscript`;
 }
 
-exit 0 if $NoWatch or @machine < 2;
+exit 0 if $NoWatch or @jobscript < 2;
 
 my $watch = "watch.$name.log";
 print "Start watching jobs. See $watch\n";
