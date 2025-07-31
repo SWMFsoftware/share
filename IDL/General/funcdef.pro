@@ -82,6 +82,7 @@ function funcdef, xx, w, func
      ['B1lon'    , '-sin(Lon)*{b1x}+cos(Lon)*{b1y}'          ], $ ; B1lon
      ['B1lat'    , 'cos(Lat)*{b1z}-sin(Lat)*(cos(Lon)*{b1x}+sin(Lon)*{b1y})'], $ ; B1lat
      ['Bphi'     , '(by*x-bx*y)/r'                           ], $ ; Bphi
+     ['SignB'    , '{br}/(abs({br})>1e-30)'                  ], $ ; sign(Br)
      ['B0x'      , 'bx-{b1x}'                                ], $ ; B0x
      ['B0y'      , 'by-{b1y}'                                ], $ ; B0y
      ['B0z'      , 'bz-{b1z}'                                ], $ ; B0z
