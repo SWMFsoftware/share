@@ -55,7 +55,7 @@
 
 # Select queue:
 # Max 32 nodes for 24 hours: prime time
-#PBS -q p_gpu_normal@pbspl4
+#PBS -q gpu_normal@pbspl4
 
 # Max 64 nodes for 12 hours: non-prime time
 ### PBS -q np_gpu_wide
