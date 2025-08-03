@@ -68,7 +68,9 @@ function funcdef, xx, w, func
      ['uez'      , 'uz-uH0*{jz}/rho'                         ], $ 
      ['ue'       , 'sqrt({uex}^2+{uey}^2+{uez}^2)'           ], $
      ['ur'       , '(x*ux+y*uy+z*uz)/r'                      ], $ ; radial u
-     ['uphi'     , '(uy*x-ux*y)/r'                           ], $ ; uphi
+     ['uxrot'    , 'ux+y*xSI*omegaSunSI/uSI'                 ], $ ; rotational velocity in HGR
+     ['uyrot'    , 'uy-x*xSI*omegaSunSI/uSI'                 ], $
+     ['uphi'     , '(uy*x-ux*y)/r'                           ], $                       ; uphi
      ['ulon'     , '-sin(Lon)*ux+cos(Lon)*uy'                ], $ ; ulon
      ['ulat'     , '-sin(Lat)*(cos(Lon)*ux+sin(Lon)*uy)+cos(Lat)*uz'], $ ; ulat
      ['ulonrot'  , '-sin(Lon)*{uxrot}+cos(Lon)*{uyrot}'      ], $ ; ulon witout rotation
