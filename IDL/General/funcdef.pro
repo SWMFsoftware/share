@@ -68,7 +68,9 @@ function funcdef, xx, w, func
      ['uez'      , 'uz-uH0*{jz}/rho'                         ], $ 
      ['ue'       , 'sqrt({uex}^2+{uey}^2+{uez}^2)'           ], $
      ['ur'       , '(x*ux+y*uy+z*uz)/r'                      ], $ ; radial u
-     ['uphi'     , '(uy*x-ux*y)/r'                           ], $ ; uphi
+     ['uxrot'    , 'ux+y*xSI*omegaSunSI/uSI'                 ], $ ; rotational velocity in HGR
+     ['uyrot'    , 'uy-x*xSI*omegaSunSI/uSI'                 ], $
+     ['uphi'     , '(uy*x-ux*y)/r'                           ], $                       ; uphi
      ['ulon'     , '-sin(Lon)*ux+cos(Lon)*uy'                ], $ ; ulon
      ['ulat'     , '-sin(Lat)*(cos(Lon)*ux+sin(Lon)*uy)+cos(Lat)*uz'], $ ; ulat
      ['ulonrot'  , '-sin(Lon)*{uxrot}+cos(Lon)*{uyrot}'      ], $ ; ulon witout rotation
@@ -82,6 +84,7 @@ function funcdef, xx, w, func
      ['B1lon'    , '-sin(Lon)*{b1x}+cos(Lon)*{b1y}'          ], $ ; B1lon
      ['B1lat'    , 'cos(Lat)*{b1z}-sin(Lat)*(cos(Lon)*{b1x}+sin(Lon)*{b1y})'], $ ; B1lat
      ['Bphi'     , '(by*x-bx*y)/r'                           ], $ ; Bphi
+     ['SignB'    , '{br}/(abs({br})>1e-30)'                  ], $ ; sign(Br)
      ['B0x'      , 'bx-{b1x}'                                ], $ ; B0x
      ['B0y'      , 'by-{b1y}'                                ], $ ; B0y
      ['B0z'      , 'bz-{b1z}'                                ], $ ; B0z

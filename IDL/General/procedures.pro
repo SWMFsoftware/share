@@ -328,7 +328,8 @@ pro set_default_values
   timestore  = 0       ; array of stored times
 
   ;; Some useful constants in SI units
-  common phys_const, kbSI, mpSI, mu0SI, eSI, ReSI, RsSI, AuSI, cSI, e0SI
+  common phys_const, kbSI, mpSI, mu0SI, eSI, ReSI, RsSI, AuSI, cSI, e0SI, $
+     omegaSunSI, omegaEarthSI
 
   kbSI   = 1.3807d-23           ; Boltzmann constant
   mpSI   = 1.6726d-27           ; proton mass
@@ -338,7 +339,9 @@ pro set_default_values
   RsSI   = 6.96d8               ; radius of Sun
   AuSI   = 1.4959787d11         ; astronomical unit
   cSI    = 2.9979d8             ; speed of light
-  e0SI   = 1/(mu0SI*cSI^2)      ; vacuum permettivity 
+  e0SI   = 1/(mu0SI*cSI^2)      ; vacuum permettivity
+  omegaSunSI = 2*!pi/(25.6*24*3600.) ; angular speed of Sun in HGI
+  omegaEarthSI = 2*!pi/(24*3600.)    ; angular speed of Earth in GSE
 
   ;; Physical unit names and values in SI units
   common phys_units, $
