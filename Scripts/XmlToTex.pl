@@ -77,6 +77,7 @@ while(<>){
 	    if $path[$#path-2] =~ /^[A-Z][A-Z]$/;
 
 	$comp =~ s/GM\/BATSRUS/EE,GM,SC,IH,OH\/BATSRUS/; # GM --> EE,GM,SC,IH,OH
+	$comp =~ s/PC\/FLEKS/PC,PT\/FLEKS/; # GM --> PC,PT
 
 	my $index = "$comp\!$command";           # Form the index term
 	$_="\\subsubsection\{$command command\}\\index\{$index\}\n\n";
