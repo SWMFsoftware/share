@@ -29,7 +29,7 @@ contains
     GammaHere = GammaIn
   end subroutine exact_rs_set_gamma
   !============================================================================
-  subroutine  exact_rs_pu_star(GammaLIn,GammaRIn)
+  subroutine  exact_rs_pu_star(GammaLIn,GammaRIn,UseAnotherRS)
     !     Programer: E. F. Toro                                            *
     !                                                                      *
     !     Last revision: 31st May 1999                                     *
@@ -55,7 +55,8 @@ contains
     !              velocity in the Star Region
     !
     !
-    real,optional,intent(in)::GammaLIn,GammaRIn
+    real,    optional, intent(in)  :: GammaLIn,GammaRIn
+    logical, optional, intent(out) :: UseAnotherRS
 
     real :: FL, FLD, FR, FRD ! Pressure (F)unctions and its (D)erivatives
     real :: POld             ! Iterative values for pressure
@@ -80,6 +81,7 @@ contains
     else
        GammaR = GammaHere
     end if
+    if(present(UseAnotherRS))UseAnotherRS = .false.
     CR = sqrt(GammaR*PR/RhoR)
     ! Speed of expansion to vacuum
     uExpansionL = 2.0*CL/(GammaL-1.0)
@@ -90,31 +92,38 @@ contains
 
     ! Prevents the formation of vacuum regions:
     if(UDiff > cSafetyFactor*UVac)then
-       ! Now UnL + uExpansionL < UnR - uExpansionR
-       ! Consider three cases:
-       if(UnL + uExpansionL > 0.0)then
-          ! 0 < UnL + uExpansionL < UnR - uExpansionR
-          ! Hence the entire vacuum cavity propagates to the right,
-          ! still allowing to calculate the state at the face:
-          UnStar = UnL + uExpansionL
-          WR     = UnL + uExpansionL
-          WL     = UnL - CL
-          pStar  = 0.0
-          RETURN
-       elseif(UnR - uExpansionR < 0.0)then
-          ! UnL + uExpansionL < UnR - uExpansionR < 0
-          ! Hence the entire vacuum cavity propagates to the right,
-          ! still allowing to calculate the state at the face:
-          UnStar = UnR - uExpansionR
-          WL     = UnR - uExpansionR
-          WR     = UnR + CR
-          pStar  = 0.0
+       if(present(UseAnotherRS))then
+          UseAnotherRS = .true.
           RETURN
        else
-          ! UnL + uExpansionL < 0 < UnR - uExpansionR
-          ! Vacuum region expands to both sides from face
-          ! The meaningfull state at the face cannot be found
-          call CON_stop('Vacuum in RS')
+          ! Now UnL + uExpansionL < UnR - uExpansionR
+          ! Consider three cases:
+          if(UnL + uExpansionL > 0.0)then
+             ! 0 < UnL + uExpansionL < UnR - uExpansionR
+             ! Hence the entire vacuum cavity propagates to the right,
+             ! still allowing to calculate the state at the face:
+             UnStar = UnL + uExpansionL
+             WR     = UnL + uExpansionL
+             WL     = UnL - CL
+             pStar  = 0.0
+             RETURN
+          elseif(UnR - uExpansionR < 0.0)then
+             ! UnL + uExpansionL < UnR - uExpansionR < 0
+             ! Hence the entire vacuum cavity propagates to the right,
+             ! still allowing to calculate the state at the face:
+             UnStar = UnR - uExpansionR
+             WL     = UnR - uExpansionR
+             WR     = UnR + CR
+             pStar  = 0.0
+             RETURN
+          else
+             ! UnL + uExpansionL < 0 < UnR - uExpansionR
+             ! Vacuum region expands to both sides from face
+             ! The meaningfull state at the face cannot be found
+             write(*,*)'RhoL, UnL, pL, uExpansionL=', RhoL, UnL, pL, uExpansionL
+             write(*,*)'RhoR, UnR, pR, uExpansionR=', RhoR, UnR, pR, uExpansionR
+             call CON_stop('Vacuum in RS')
+          end if
        end if
     end if
     !
@@ -128,7 +137,15 @@ contains
 
        call pressure_function(FL, FLD, POLD, RhoL, PL, CL,WL, GammaLIn)
        call pressure_function(FR, FRD, POLD, RhoR, PR, CR,WR, GammaRIn)
-       PStar  = max(POld - (FL + FR + UDiff)/(FLD + FRD), 0.10*pOld)
+       PStar  = POld - (FL + FR + UDiff)/(FLD + FRD)
+       if(PStar<=0.0)then
+          if(present(UseAnotherRS))then
+             UseAnotherRS = .true.
+             RETURN
+          else
+             PStar = 0.10*pOld
+          end if
+       end if
        Change = 2.0*abs((PStar - POld)/(PStar + POld))
        POLD   = PStar; iIter=iIter+1
     end do
@@ -139,7 +156,7 @@ contains
     WL = UnL - WL
   contains
     !==========================================================================
-    subroutine pressure_function(F,FD,P,RhoK,PK,CK,WK,GammaIn)
+    subroutine pressure_function(F, FD, P, RhoK, PK, CK, WK, GammaIn)
       !
       !     Purpose: to evaluate the pressure functions
       !              FL and FR in exact Riemann solver
