@@ -85,7 +85,6 @@ contains
     uExpansionL = 2.0*CL/(GammaL-1.0)
     uExpansionR = 2.0*CR/(GammaR-1.0)
     UVac = uExpansionL + uExpansionR
-    UVac = 2.0*(CL/(GammaL-1.0)+CR/(GammaR-1.0))
 
     UDiff = UnR - UnL
 
@@ -129,7 +128,7 @@ contains
 
        call pressure_function(FL, FLD, POLD, RhoL, PL, CL,WL, GammaLIn)
        call pressure_function(FR, FRD, POLD, RhoR, PR, CR,WR, GammaRIn)
-       PStar  = POld - (FL + FR + UDiff)/(FLD + FRD)
+       PStar  = max(POld - (FL + FR + UDiff)/(FLD + FRD), 0.10*pOld)
        Change = 2.0*abs((PStar - POld)/(PStar + POld))
        POLD   = PStar; iIter=iIter+1
     end do
