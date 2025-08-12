@@ -94,6 +94,8 @@ contains
     if(UDiff > cSafetyFactor*UVac)then
        if(present(UseAnotherRS))then
           UseAnotherRS = .true.
+          WL = min(0.0, UnL - CL, UnR - CR)
+          WR = max(0.0, UnL + CL, UnR + CR)
           RETURN
        else
           ! Now UnL + uExpansionL < UnR - uExpansionR
@@ -141,6 +143,8 @@ contains
        if(PStar<=0.0)then
           if(present(UseAnotherRS))then
              UseAnotherRS = .true.
+             WL = min(0.0, UnL - CL, UnR - CR)
+             WR = max(0.0, UnL + CL, UnR + CR)
              RETURN
           else
              PStar = 0.10*pOld
