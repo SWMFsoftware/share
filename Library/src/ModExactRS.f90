@@ -64,6 +64,8 @@ contains
     integer::iIter
     real,parameter::TolP=0.0010,ChangeStart=2.0*TolP
     real::Change,UVac,GammaL,GammaR
+    ! Speed of expansion to vacuum
+    real :: uExpansionL, uExpansionR
     real,parameter::cSafetyFactor=0.999 ! Limits the speed of expansion
     !--------------------------------------------------------------------------
     if(present(GammaLIn))then
@@ -79,14 +81,42 @@ contains
        GammaR = GammaHere
     end if
     CR = sqrt(GammaR*PR/RhoR)
-
-    UVac = 2.0*(CL/(GammaL-1.0)+CR/(GammaR-1.0))
+    ! Speed of expansion to vacuum
+    uExpansionL = 2.0*CL/(GammaL-1.0)
+    uExpansionR = 2.0*CR/(GammaR-1.0)
+    UVac = uExpansionL + uExpansionR
 
     UDiff = UnR - UnL
 
     ! Prevents the formation of vacuum regions:
-    if(UDiff > cSafetyFactor*UVac)call CON_stop('Vacuum in RS')
-
+    if(UDiff > cSafetyFactor*UVac)then
+       ! Now UnL + uExpansionL < UnR - uExpansionR
+       ! Consider three cases:
+       if(UnL + uExpansionL > 0.0)then
+          ! 0 < UnL + uExpansionL < UnR - uExpansionR
+          ! Hence the entire vacuum cavity propagates to the right,
+          ! still allowing to calculate the state at the face:
+          UnStar = UnL + uExpansionL
+          WR     = UnL + uExpansionL
+          WL     = UnL - CL
+          pStar  = 0.0
+          RETURN
+       elseif(UnR - uExpansionR < 0.0)then
+          ! UnL + uExpansionL < UnR - uExpansionR < 0
+          ! Hence the entire vacuum cavity propagates to the right,
+          ! still allowing to calculate the state at the face:
+          UnStar = UnR - uExpansionR
+          WL     = UnR - uExpansionR
+          WR     = UnR + CR
+          pStar  = 0.0
+          RETURN
+       else
+          ! UnL + uExpansionL < 0 < UnR - uExpansionR
+          ! Vacuum region expands to both sides from face
+          ! The meaningfull state at the face cannot be found
+          call CON_stop('Vacuum in RS')
+       end if
+    end if
     !
     !     Guessed value for PStar  is computed
     !
@@ -98,7 +128,7 @@ contains
 
        call pressure_function(FL, FLD, POLD, RhoL, PL, CL,WL, GammaLIn)
        call pressure_function(FR, FRD, POLD, RhoR, PR, CR,WR, GammaRIn)
-       PStar  = POld - (FL + FR + UDiff)/(FLD + FRD)
+       PStar  = max(POld - (FL + FR + UDiff)/(FLD + FRD), 0.10*pOld)
        Change = 2.0*abs((PStar - POld)/(PStar + POld))
        POLD   = PStar; iIter=iIter+1
     end do
