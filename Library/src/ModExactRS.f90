@@ -98,34 +98,9 @@ contains
           WR = max(0.0, UnL + CL, UnR + CR)
           RETURN
        else
-          ! Now UnL + uExpansionL < UnR - uExpansionR
-          ! Consider three cases:
-          if(UnL + uExpansionL > 0.0)then
-             ! 0 < UnL + uExpansionL < UnR - uExpansionR
-             ! Hence the entire vacuum cavity propagates to the right,
-             ! still allowing to calculate the state at the face:
-             UnStar = UnL + uExpansionL
-             WR     = UnL + uExpansionL
-             WL     = UnL - CL
-             pStar  = 0.0
-             RETURN
-          elseif(UnR - uExpansionR < 0.0)then
-             ! UnL + uExpansionL < UnR - uExpansionR < 0
-             ! Hence the entire vacuum cavity propagates to the right,
-             ! still allowing to calculate the state at the face:
-             UnStar = UnR - uExpansionR
-             WL     = UnR - uExpansionR
-             WR     = UnR + CR
-             pStar  = 0.0
-             RETURN
-          else
-             ! UnL + uExpansionL < 0 < UnR - uExpansionR
-             ! Vacuum region expands to both sides from face
-             ! The meaningfull state at the face cannot be found
-             write(*,*)'RhoL, UnL, pL, uExpansionL=', RhoL, UnL, pL, uExpansionL
-             write(*,*)'RhoR, UnR, pR, uExpansionR=', RhoR, UnR, pR, uExpansionR
-             call CON_stop('Vacuum in RS')
-          end if
+          write(*,*)'RhoL, UnL, pL, uExpansionL=', RhoL, UnL, pL, uExpansionL
+          write(*,*)'RhoR, UnR, pR, uExpansionR=', RhoR, UnR, pR, uExpansionR
+          call CON_stop('Vacuum in RS')
        end if
     end if
     !
