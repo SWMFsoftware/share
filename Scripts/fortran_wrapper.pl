@@ -15,8 +15,8 @@ foreach (@ARGV){
     $verbose = 1 if s/\-\-wrapper//; # remove --wrapper from ARGV
 }
 
-# Print help information if no Fortran files were found
-if(not scalar @file){
+# Print help information if called without arguments
+if(not scalar @ARGV){
     print "
 fortran_wrapper.pl by Gabor Toth (c) University of Michigan 2025.
 
@@ -33,20 +33,17 @@ Installation:
    actual compilers, so \'which $Script\' returns the link.
 
 Examples of usage:
+  # show this help message:
+  gfortran
   # check files without compilation:
   fortran_wrapper.pl file1.f90 file2.f90 
-  # show this help message:
-  fortran_wrapper.pl
-  # show this help message and the version of gfortran:
-  gfortran --version
   # check and compile file1.f90 with ifort:
   ifort -O3 file1.f90
   # check with verbose output and compile files with ifx
   ifx --wrapper -c -O2 file1.f90 file2.f90 
 
 ";
-    # If script was called directly, there is nothing more to do.
-    exit 0 if $Script eq $RealScript;
+    exit 0;
 }
 
 my $compiler;
