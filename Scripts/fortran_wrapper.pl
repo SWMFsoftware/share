@@ -105,11 +105,13 @@ foreach $file (@file){
 	    # replace (..) with X in $after
 	    $after =~ s/(\(.*?\))/sprintf("%s", "X" x length($1))/eg;
 	    # check for VAR * or VAR /
-	    if($after =~ /^(\s*\w+\s*)(\*|\/)/){
+	    if($after =~ /^(\s*[\.\w]+\s*)(\*|\/)/){
 		my $beforeop = $1;
 		my $operator = $2;
 		$nerror++;
-		warn "\nERROR $nerror: using signed exponent followed by $operator at line $nline in $file:\n";
+		warn "\nERROR $nerror: "
+		    ."using signed exponent followed by $operator at line "
+		    ."$nline in $file:\n";
 		# put back quoted strings
 		s/(\#\d)(s*)/$quote{$1}/ge;
 		print $_;
@@ -130,7 +132,7 @@ foreach $file (@file){
 ifort and ifx evaluate the * and / operators BEFORE the exponentiation!
 gfortan and nvfortran evaluate the * and / operators AFTER the exponentiation!
 Add parentheses to clarify the expression and make your code portable!
-Replace **+... with **... and **=... with **(-...) to conform with Fortran standard!
+Replace **+ with ** and **- with **(- ) to conform with Fortran standard!
 ";
 	if($nerror > 1){
 	    die "\n$file contains $nerror errors, so it cannot be compiled\n";
