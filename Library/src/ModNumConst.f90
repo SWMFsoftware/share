@@ -2,10 +2,14 @@
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 module ModNumConst
+
+  ! Numerical constants that are often used
+  
   use ModKind
+
   implicit none
 
-  real, parameter:: &
+  real, parameter::                &
        cTiny      =  1.0E-6,       &
        cHuge      =  1.0E18,       &
        cSqrtTwo   =  sqrt(2.0),    &
@@ -15,11 +19,11 @@ module ModNumConst
        cHalfPi    =  0.5*cPi,      &
        cRadToDeg  =  180.0/cPi,    &
        cDegToRad  =  cPi/180.0,    &
-       cTolerance =  1e-10
+       cTolerance =  1E-10
 
-  real(Real8_), parameter::             &
-       cTiny8     =  1D-10,             &
-       cPi8       =  acos(-1.0_Real8_), &
+  real(Real8_), parameter::        &
+       cTiny8     =  1D-10,        &
+       cPi8       =  acos(-1D0),   &
        cTwoPi8    =  2*cPi8
 
   ! integer unit matrix
