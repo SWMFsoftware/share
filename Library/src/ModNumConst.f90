@@ -6,23 +6,20 @@ module ModNumConst
   implicit none
 
   real, parameter:: &
-       cZero      =  0.0, &
-       cOne       =  1.0, &
-       cHalf      =  0.5, &
-       cTiny      =  1.0E-6,                                &
-       cHuge      =  1.0E18,                                &
-       cSqrtTwo   =  1.4142135623730951,                    &
-       cSqrtHalf  =  0.5*cSqrtTwo,                          &
-       cPi        =  3.1415926535897932384626433832795,     &
-       cTwoPi     =  2*cPi,                                 &
-       cHalfPi    =  0.5*cPi,                               &
-       cRadToDeg  =  180.0/cPi,                             &
-       cDegToRad  =  cPi/180.0,                             &
+       cTiny      =  1.0E-6,       &
+       cHuge      =  1.0E18,       &
+       cSqrtTwo   =  sqrt(2.0),    &
+       cSqrtHalf  =  0.5*cSqrtTwo, &
+       cPi        =  acos(-1.0),   &
+       cTwoPi     =  2*cPi,        &
+       cHalfPi    =  0.5*cPi,      &
+       cRadToDeg  =  180.0/cPi,    &
+       cDegToRad  =  cPi/180.0,    &
        cTolerance =  1e-10
 
-  real(Real8_), parameter:: &
-       cTiny8     =  1e-10,                              &
-       cPi8       =  3.1415926535897932384626433832795,  &
+  real(Real8_), parameter::             &
+       cTiny8     =  1D-10,             &
+       cPi8       =  acos(-1.0_Real8_), &
        cTwoPi8    =  2*cPi8
 
   ! integer unit matrix
