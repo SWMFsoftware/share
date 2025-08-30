@@ -4,7 +4,7 @@
 module ModNumConst
 
   ! Numerical constants that are often used
-  
+
   use ModKind
 
   implicit none
