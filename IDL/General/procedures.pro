@@ -183,7 +183,7 @@ pro set_default_values
 
   usereg=0         ; use wreg and xreg instead of w and x
   dotransform='n'  ; do transform with plot_data?
-  transform='n'    ; values: none,regular,my,polar,unpolar,sphere
+  transform='n'    ; values: none,regular,my,polar,unpolar,sphere,angle
   nxreg=[0,0]      ; size of transformed grid
   xreglimits=0     ; transformed grid limits [xmin, ymin, xmax, ymax]
   wregpad=0        ; array of values used in "padding" the regular arrays
@@ -2596,98 +2596,74 @@ pro read_transform_param
   common vector_param
   common plot_data
 
-  ;; help,ndim,transform,gencoord
-  
-  if (gencoord or transform eq 'unpolar') and ndim eq 2 then begin
-      if transform eq '' then begin
-        transform='none'
-        askstr,"transform (r=regular/p=polar/u=unpolar/m=my/n=none)",$
-          transform,1
-      endif else $
-        askstr,"transform (r=regular/p=polar/u=unpolar/m=my/n=none)",$
-        transform,doask
+  ;; Ask transformation if gencoord is true
+  if gencoord then begin
+     if transform eq '' then begin
+        transform = "none"
+        askstr, "transform (p=polar/s=sphere/u=unpolar/m=my/n=none/a=angle)", $
+                transform, 1
+     endif else $
+        askstr,"transform (p=polar/s=sphere/u=unpolar/m=my/n=none/a=angle)", $
+               transform, doask
+  endif
 
-      ; Complete name
-      case transform of
-          'r': transform='regular'
-          'p': transform='polar'
-          'u': transform='unpolar'
-          'm': transform='my'
-          'n': transform='none'
-         else:
-      endcase
-      ; Get transformation parameters and calculate grid
-      case 1 of
-        transform eq 'regular':begin
-           print, 'Generalized coordinates, dimensions for regular grid'
-           if n_elements(nxreg) ne 2 then nxreg = [0,0]
-           if n_elements(xreglimits) ne 4 then xreglimits = dblarr(4) $
-           else xreglimits = double(xreglimits)
-           nxreg0 = nxreg(0)
-           nxreg1 = nxreg(1)
-           asknum, 'nxreg(0) (use negative sign to limit x)', nxreg0, doask
-           if nxreg0 lt 0 then begin
-               nxreg0=abs(nxreg0)
-               xmin=0 & xmax=0
-               asknum,'xreglimits(0) (xmin)', xmin, doask
-               asknum,'xreglimits(2) (xmax)', xmax, doask
-               xreglimits(0) = xmin
-               xreglimits(2) = xmax
-           endif
-           asknum, 'nxreg(1) (use negative sign to limit y)', nxreg1, doask
-           if nxreg1 lt 0 then begin
-               nxreg1=abs(nxreg1)
-               ymin=0 & ymax=0
-               asknum,'xreglimits(1) (ymin)', ymin, doask
-               asknum,'xreglimits(3) (ymax)', ymax, doask
-               xreglimits(1) = ymin
-               xreglimits(3) = ymax
-           endif
-           grid = lindgen(nxreg0,nxreg1)
-           nxreg = [nxreg0,nxreg1]
-           wregpad=0
-        end
-        transform eq 'polar' or transform eq 'unpolar':begin
-            asknum, 'Number of vector variables', nvector, doask
-            getvectors, nvector, vectors
-            grid = lindgen(nx(0),nx(1))
-        end
-        transform eq 'none':grid=lindgen(nx(0),nx(1))
-        else: print, 'Unknown value for transform:', transform
-      endcase
-   endif else if (gencoord or transform eq 'unpolar') and ndim eq 3 then begin
-       if transform eq '' then begin
-           transform="none"
-           askstr, "transform (p=polar/s=sphere/u=unpolar/m=my/n=none)", $
-             transform, 1
-       endif else $
-         askstr,"transform (p=polar/s=sphere/u=unpolar/m=my/n=none)", $
-         transform, doask
-       case transform of
-           'p': transform = 'polar'
-           's': transform = 'sphere'
-           'u': transform = 'unpolar'
-           'm': transform = 'my'
-           'n': transform = 'none'
-           else:
-       endcase
-       case 1 of
-           transform eq 'polar' or transform eq 'unpolar' or $
-             transform eq 'sphere' :begin
-               getvectors, nvector, vectors
-               grid = lindgen(nx(0),nx(1),nx(2))
-           end
-           transform eq 'none': grid = lindgen(nx(0),nx(1),nx(2))
-           else: print,'Unknown value for transform:', transform
-       endcase
-   endif else case ndim of
-       1: grid = lindgen(nx(0))
-       2: grid = lindgen(nx(0),nx(1))
-       3: grid = lindgen(nx(0),nx(1),nx(2))
-   endcase
+  ;; Complete name
+  case transform of
+     'a': transform = 'angle'
+     'r': transform = 'regular'
+     'p': transform = 'polar'
+     'u': transform = 'unpolar'
+     'm': transform = 'my'
+     'n': transform = 'none'
+     else:
+  endcase
 
-   ;; grid helps to create a cut, e.g.: cut=grid(*,4)
-   help, grid
+  ;; default grid (overwritten for "regular" transform)
+  case ndim of
+     1: grid = lindgen(nx(0))
+     2: grid = lindgen(nx(0),nx(1))
+     3: grid = lindgen(nx(0),nx(1),nx(2))
+  endcase
+
+  if transform eq 'polar' or transform eq 'unpolar' or $
+     transform eq 'sphere' then begin
+     asknum, 'Number of vector variables', nvector, doask
+     getvectors, nvector, vectors
+  endif
+     
+  ;; Get transformation parameters and calculate grid
+  if gencoord and ndim eq 2 and transform eq 'regular' then begin
+     print, 'Generalized coordinates, dimensions for regular grid'
+     if n_elements(nxreg) ne 2 then nxreg = [0,0]
+     if n_elements(xreglimits) ne 4 then xreglimits = dblarr(4) $
+     else xreglimits = double(xreglimits)
+     nxreg0 = nxreg(0)
+     nxreg1 = nxreg(1)
+     asknum, 'nxreg(0) (use negative sign to limit x)', nxreg0, doask
+     if nxreg0 lt 0 then begin
+        nxreg0=abs(nxreg0)
+        xmin=0 & xmax=0
+        asknum,'xreglimits(0) (xmin)', xmin, doask
+        asknum,'xreglimits(2) (xmax)', xmax, doask
+        xreglimits(0) = xmin
+        xreglimits(2) = xmax
+     endif
+     asknum, 'nxreg(1) (use negative sign to limit y)', nxreg1, doask
+     if nxreg1 lt 0 then begin
+        nxreg1=abs(nxreg1)
+        ymin=0 & ymax=0
+        asknum,'xreglimits(1) (ymin)', ymin, doask
+        asknum,'xreglimits(3) (ymax)', ymax, doask
+        xreglimits(1) = ymin
+        xreglimits(3) = ymax
+     endif
+     grid = lindgen(nxreg0,nxreg1)
+     nxreg = [nxreg0,nxreg1]
+     wregpad = 0
+  endif
+
+  ;; grid helps to create a cut, e.g.: cut=grid(*,4)
+  help, grid
 end
 ;==============================================================================
 pro getvectors, nvector, vectors
@@ -2747,11 +2723,13 @@ pro do_transform, ifile
   ;; no transformation is done for a single file if dotransform=='n'
   ;; and wreg has elements if usereg is true.
 
-  if dotransform eq 'n' and n_elements(ifile) eq 0 and (not usereg or keyword_set(wreg))$
-  then return
+  if dotransform eq 'n' and n_elements(ifile) eq 0 $
+     and (not usereg or keyword_set(wreg)) then return
 
-  if transform eq 'my' or transform eq 'm' then $
+  if transform eq 'my' then $
      do_my_transform, ifile, variables, x, w, xreg, wreg, usereg $
+  else if transform eq 'angle' then $
+     make_angle_grid $
   else if usereg then case transform of
      'regular': make_regular_grid
      'polar'  : make_polar_grid
@@ -3306,7 +3284,33 @@ pro make_sphere_grid
   variables(0:2)=['r','theta','phi']
 
 end
-  
+
+;==============================================================================
+pro make_angle_grid
+
+; Convert angle variables from degrees to radians so r-angle cuts look good
+
+  common debug_param & on_error, onerror
+
+  common file_head ; ndim, variables
+  common plot_data ; x
+
+  case ndim of
+     2: for idim = 0, 1 do begin
+        if variables(idim) eq 'lon' or variables(idim) eq 'lat' $
+           and max(abs(x(*,*,idim))) gt 7 then x(*,*,idim) *= !dtor
+     endfor
+     3: for idim = 0, 2 do begin
+        if variables(idim) eq 'lon' or variables(idim) eq 'lat' $
+           and max(abs(x(*,*,*,idim))) gt 7 then x(*,*,*,idim) *= !dtor
+     endfor
+     else: begin
+        print,'unpolargid works for 2D and 3D arrays only'
+        retall
+     end
+  endcase
+end
+
 ;==============================================================================
 pro make_unpolar_grid
 
