@@ -147,6 +147,8 @@ REPEAT:{
             &concat_sat_log if $Concat;
 	}elsif( $Dir =~ /^PC|PT$/ ){
 	    &shell($pIDL);
+	}elsif( $Dir =~ "UA"){
+	    &shell("./pGITM");
 	}elsif( $Dir =~ /^SC|IH|OH|GM|EE$/ ){
 	    &shell($pIDL);
 	    unless($NoPtec){
