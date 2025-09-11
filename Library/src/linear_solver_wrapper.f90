@@ -5,7 +5,7 @@
 
 module ModLinearSolverWrapper
 
-  use ModLinearSolver, only: LinearSolverParamType
+  use ModLinearSolver, ONLY: LinearSolverParamType
   implicit none
   type(LinearSolverParamType), public :: Param
   integer, public :: iBlock, nVarIjk

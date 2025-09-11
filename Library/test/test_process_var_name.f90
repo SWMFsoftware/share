@@ -11,9 +11,9 @@ program process_var_name_test
   ! The test converts the string array NameVar_V, defined in a specific
   ! ModEquation, to the same format it will take in a full SWMF run.
 
-  use ModProcessVarName,  ONLY: process_var_name
-  use ModVarIndexes,      ONLY: NameVar_V
-  use ModUtilities,       ONLY: lower_case
+  use ModProcessVarName, ONLY: process_var_name
+  use ModVarIndexes, ONLY: NameVar_V
+  use ModUtilities, ONLY: lower_case
   implicit none
 
   integer  :: nDensity, nSpeed, nP, nPpar, nVar, iVar

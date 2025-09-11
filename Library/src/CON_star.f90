@@ -55,7 +55,7 @@ contains
 
     use ModUtilities, ONLY: upper_case
     use ModReadParam, ONLY: read_var, lStringLine
-    use ModIoUnit,    ONLY: UnitTmp_
+    use ModIoUnit, ONLY: UnitTmp_
 
     character (len=*), intent(in) :: NameCommand
     integer :: iYear, iMonth, iDay, iHour, iMinute

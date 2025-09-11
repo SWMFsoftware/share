@@ -216,7 +216,7 @@ contains
        nDensity, nSpeed, nP, nPpar, nWave, nMaterial, nChargeStateAll, &
           nPe, nPepar)
 
-    use ModUtilities,  ONLY: split_string, join_string
+    use ModUtilities, ONLY: split_string, join_string
 
     character(len=*), intent(inout):: NameVar
     integer, optional, intent(out):: nDensity, nSpeed, nP, nPpar, nPe, nPepar
@@ -240,7 +240,7 @@ contains
        nDensity, nSpeed, nP, nPpar, nWave, nMaterial, nChargeStateAll, &
           nPe, nPepar)
 
-    use ModUtilities,  ONLY: lower_case
+    use ModUtilities, ONLY: lower_case
 
     integer,intent(in):: nVarName
     character(len=*), intent(inout):: NameVar_V(nVarName)
@@ -386,7 +386,7 @@ contains
 
       ! lookup var name in dictionary, replace with standard name
 
-      use ModUtilities,  ONLY: lower_case
+      use ModUtilities, ONLY: lower_case
 
       integer             :: iSubstance, iSynonym
       character(len=15)   :: DictionaryItem

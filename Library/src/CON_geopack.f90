@@ -4,7 +4,7 @@
 module CON_geopack
 
   use ModNumConst, ONLY: cDegToRad, cHalfPi, cTwoPi
-  use ModKind,     ONLY: Real8_
+  use ModKind, ONLY: Real8_
 #ifdef _OPENACC
   use ModUtilities, ONLY: norm2
 #endif
@@ -250,10 +250,10 @@ contains
   subroutine geopack_recalc(iYear, iMonth, iDay, iHour, iMin, iSec)
 
     use ModCoordTransform, ONLY: rot_matrix_z, rot_matrix_x
-    use ModConst,          ONLY: cAU
-    use CON_planet,        ONLY: RightAscension, TimeEquinox, Inclination, &
+    use ModConst, ONLY: cAU
+    use CON_planet, ONLY: RightAscension, TimeEquinox, Inclination, &
          OmegaOrbit, UseOrbitElements, orbit_in_hgi
-    use ModTimeConvert,    ONLY: time_int_to_real
+    use ModTimeConvert, ONLY: time_int_to_real
 
     ! Updates matrices for the coordinate transformations
     ! Computations for GeiGse_DD and GeiGsm_DD are from the subroutine

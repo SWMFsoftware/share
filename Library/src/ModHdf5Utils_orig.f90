@@ -163,7 +163,7 @@ contains
             nStep, NumberOfBlocksUsed, Time, nDimOut, nParam, nVar,&
             n_D, NameVar, NameUnits, MinimumBlockIjk, XYZMinMax, PlotVarBlk,&
             iComm, CoordMin, CoordMax)
-    use ModUtilities, only: split_string
+    use ModUtilities, ONLY: split_string
 
     integer, intent(in) :: nDimOut, nParam, nVar, n_D(3)
     integer, intent(in) :: nStep, NumberOfBlocksUsed

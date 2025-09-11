@@ -98,7 +98,7 @@ contains
   !============================================================================
   subroutine init_planet_const
 
-    use ModUtilities,     ONLY: upper_case
+    use ModUtilities, ONLY: upper_case
 
     !--------------------------------------------------------------------------
     save
