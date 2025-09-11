@@ -337,9 +337,7 @@ foreach $source (@source){
             }
 
             # Fix ModSomething  ,only : --> ModSomething, ONLY:
-            s/\bonly\s*:\b/ONLY:/i;
-	    s/,ONLY/, ONLY/;
-	    s/\s+(,\s+ONLY)/$1/;
+	    s/\s*,\s*ONLY\s*:/, ONLY:/i;
 
             # remove iTest ... iVarTest from use ModMain
 	    $usemodmain=1 if /^\s+use ModMain/i;
