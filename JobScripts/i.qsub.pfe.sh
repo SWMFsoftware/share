@@ -1,5 +1,8 @@
 #!/bin/bash
 
+orig_dir=$(pwd)
+cd "$HOME" || exit 1
+
 if [ -n "$1" ]; then
     group_arg="-W group_list=s$1"
 else
