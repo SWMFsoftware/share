@@ -249,7 +249,7 @@ contains
   subroutine calculate_multipole_field(XyzIn_D, b_D)
     ! Calculate the (Bx, By, Bz) components of the magnetic field based
     ! on Schimdt coefficients declared in CON_planet.f90
-    use ModNumConst,    ONLY: cTwoPi
+    use ModNumConst, ONLY: cTwoPi
 
     real, intent(in) :: XyzIn_D(3)
     real, intent(out) :: b_D(3)

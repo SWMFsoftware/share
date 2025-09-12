@@ -11,17 +11,17 @@ program post_idl
   ! Average out points that have the same coordinates.
   ! Save the results into an output file.
 
-  use ModPlotFile,       ONLY: save_plot_file
-  use ModNumConst,       ONLY: cHalfPi
-  use ModInterpolate,    ONLY: linear
-  use ModNumConst,       ONLY: cTwoPi, cRadToDeg
+  use ModPlotFile, ONLY: save_plot_file
+  use ModNumConst, ONLY: cHalfPi
+  use ModInterpolate, ONLY: linear
+  use ModNumConst, ONLY: cTwoPi, cRadToDeg
   use ModCoordTransform, ONLY: rot_matrix_z
-  use ModUtilities,      ONLY: lower_case, split_string, join_string
-  use ModSort,           ONLY: sort_quick
-  use ModReadParam,      ONLY: read_file, read_init, read_echo_set, &
+  use ModUtilities, ONLY: lower_case, split_string, join_string
+  use ModSort, ONLY: sort_quick
+  use ModReadParam, ONLY: read_file, read_init, read_echo_set, &
        read_line, read_command, read_var, lStringLine
-  use ModIoUnit,         ONLY: UnitTmp_
-  use ModMpi,            ONLY: MPI_COMM_SELF
+  use ModIoUnit, ONLY: UnitTmp_
+  use ModMpi, ONLY: MPI_COMM_SELF
 
   implicit none
 

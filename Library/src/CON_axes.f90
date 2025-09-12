@@ -156,7 +156,7 @@ module CON_axes
   use ModNumConst, ONLY: cHalfPi, cRadToDeg, cTwoPi, cTwoPi8, cUnit_DD, cTiny
   use ModConst, ONLY: rSun
   use ModUtilities, ONLY: CON_stop, CON_set_do_test
-  use CON_star,     ONLY:OmegaCarrington=>OmegaStar, &
+  use CON_star, ONLY:OmegaCarrington=>OmegaStar, &
        tStartCarringtonCoord=>tAlignmentHgrHgi
   ! revision history:
   ! 01Aug03 - Gabor Toth and Aaron Ridley  - initial version

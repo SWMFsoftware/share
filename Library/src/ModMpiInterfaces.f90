@@ -2229,7 +2229,7 @@ contains
   !============================================================================
 
   subroutine mpi_file_read_i0(fh, buf, count, datatype, status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     integer, intent(in) :: fh
     integer,  intent(out):: buf
     integer, intent(in) :: count
@@ -2243,7 +2243,7 @@ contains
   !============================================================================
 
   subroutine mpi_file_read_i1(fh, buf, count, datatype, status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     integer, intent(in) :: fh
     integer,  intent(out):: buf(:)
     integer, intent(in) :: count
@@ -2257,7 +2257,7 @@ contains
   !============================================================================
 
   subroutine mpi_file_read_r0(fh, buf, count, datatype, status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     integer, intent(in) :: fh
     real,  intent(out):: buf
     integer, intent(in) :: count
@@ -2271,7 +2271,7 @@ contains
   !============================================================================
 
   subroutine mpi_file_read_r1(fh, buf, count, datatype, status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     integer, intent(in) :: fh
     real,  intent(out):: buf(:)
     integer, intent(in) :: count
@@ -2285,7 +2285,7 @@ contains
   !============================================================================
 
   subroutine mpi_file_write_i0(fh, buf, count, datatype, status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     integer, intent(in) :: fh
     integer,  intent(in) :: buf
     integer, intent(in) :: count
@@ -2299,7 +2299,7 @@ contains
   !============================================================================
 
   subroutine mpi_file_write_i1(fh, buf, count, datatype, status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     integer, intent(in) :: fh
     integer,  intent(in) :: buf(:)
     integer, intent(in) :: count
@@ -2313,7 +2313,7 @@ contains
   !============================================================================
 
   subroutine mpi_file_write_r0(fh, buf, count, datatype, status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     integer, intent(in) :: fh
     real,  intent(in) :: buf
     integer, intent(in) :: count
@@ -2327,7 +2327,7 @@ contains
   !============================================================================
 
   subroutine mpi_file_write_r1(fh, buf, count, datatype, status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     integer, intent(in) :: fh
     real,  intent(in) :: buf(:)
     integer, intent(in) :: count
@@ -2341,7 +2341,7 @@ contains
   !============================================================================
 
   subroutine mpi_file_write_at_i0(fh, offset, buf, count, datatype, status, ierror)
-    use ModMpiOrig, only: mpi_status_size, mpi_offset_kind
+    use ModMpiOrig, ONLY: mpi_status_size, mpi_offset_kind
     integer, intent(in) :: fh
     integer(kind=mpi_offset_kind), intent(in) :: offset
     integer,  intent(in) :: buf
@@ -2356,7 +2356,7 @@ contains
   !============================================================================
 
   subroutine mpi_file_write_at_i1(fh, offset, buf, count, datatype, status, ierror)
-    use ModMpiOrig, only: mpi_status_size, mpi_offset_kind
+    use ModMpiOrig, ONLY: mpi_status_size, mpi_offset_kind
     integer, intent(in) :: fh
     integer(kind=mpi_offset_kind), intent(in) :: offset
     integer,  intent(in) :: buf(:)
@@ -2371,7 +2371,7 @@ contains
   !============================================================================
 
   subroutine mpi_file_write_at_r0(fh, offset, buf, count, datatype, status, ierror)
-    use ModMpiOrig, only: mpi_status_size, mpi_offset_kind
+    use ModMpiOrig, ONLY: mpi_status_size, mpi_offset_kind
     integer, intent(in) :: fh
     integer(kind=mpi_offset_kind), intent(in) :: offset
     real,  intent(in) :: buf
@@ -2386,7 +2386,7 @@ contains
   !============================================================================
 
   subroutine mpi_file_write_at_r1(fh, offset, buf, count, datatype, status, ierror)
-    use ModMpiOrig, only: mpi_status_size, mpi_offset_kind
+    use ModMpiOrig, ONLY: mpi_status_size, mpi_offset_kind
     integer, intent(in) :: fh
     integer(kind=mpi_offset_kind), intent(in) :: offset
     real,  intent(in) :: buf(:)
@@ -2401,7 +2401,7 @@ contains
   !============================================================================
 
   subroutine mpi_file_write_at_s0(fh, offset, buf, count, datatype, status, ierror)
-    use ModMpiOrig, only: mpi_status_size, mpi_offset_kind
+    use ModMpiOrig, ONLY: mpi_status_size, mpi_offset_kind
     integer, intent(in) :: fh
     integer(kind=mpi_offset_kind), intent(in) :: offset
     character(len=*),  intent(in) :: buf
@@ -2416,7 +2416,7 @@ contains
   !============================================================================
 
   subroutine mpi_file_write_at_s1(fh, offset, buf, count, datatype, status, ierror)
-    use ModMpiOrig, only: mpi_status_size, mpi_offset_kind
+    use ModMpiOrig, ONLY: mpi_status_size, mpi_offset_kind
     integer, intent(in) :: fh
     integer(kind=mpi_offset_kind), intent(in) :: offset
     character(len=*),  intent(in) :: buf(:)
@@ -4001,7 +4001,7 @@ contains
 
   subroutine mpi_recv_i0(buf, count, datatype, source, tag, comm, &
        status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     integer, intent(out) :: buf
     integer, intent(in) :: count
     integer, intent(in) :: datatype
@@ -4019,7 +4019,7 @@ contains
 
   subroutine mpi_recv_i1(buf, count, datatype, source, tag, comm, &
        status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     integer, intent(out) :: buf(:)
     integer, intent(in) :: count
     integer, intent(in) :: datatype
@@ -4037,7 +4037,7 @@ contains
 
   subroutine mpi_recv_i2(buf, count, datatype, source, tag, comm, &
        status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     integer, intent(out) :: buf(:,:)
     integer, intent(in) :: count
     integer, intent(in) :: datatype
@@ -4055,7 +4055,7 @@ contains
 
   subroutine mpi_recv_r0(buf, count, datatype, source, tag, comm, &
        status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     real, intent(out) :: buf
     integer, intent(in) :: count
     integer, intent(in) :: datatype
@@ -4073,7 +4073,7 @@ contains
 
   subroutine mpi_recv_r1(buf, count, datatype, source, tag, comm, &
        status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     real, intent(out) :: buf(:)
     integer, intent(in) :: count
     integer, intent(in) :: datatype
@@ -4091,7 +4091,7 @@ contains
 
   subroutine mpi_recv_r2(buf, count, datatype, source, tag, comm, &
        status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     real, intent(out) :: buf(:,:)
     integer, intent(in) :: count
     integer, intent(in) :: datatype
@@ -4109,7 +4109,7 @@ contains
 
   subroutine mpi_recv_r3(buf, count, datatype, source, tag, comm, &
        status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     real, intent(out) :: buf(:,:,:)
     integer, intent(in) :: count
     integer, intent(in) :: datatype
@@ -4127,7 +4127,7 @@ contains
 
   subroutine mpi_recv_r4(buf, count, datatype, source, tag, comm, &
        status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     real, intent(out) :: buf(:,:,:,:)
     integer, intent(in) :: count
     integer, intent(in) :: datatype
@@ -4145,7 +4145,7 @@ contains
 
   subroutine mpi_recv_l0(buf, count, datatype, source, tag, comm, &
        status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     logical, intent(out) :: buf
     integer, intent(in) :: count
     integer, intent(in) :: datatype
@@ -4163,7 +4163,7 @@ contains
 
   subroutine mpi_recv_l1(buf, count, datatype, source, tag, comm, &
        status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     logical, intent(out) :: buf(:)
     integer, intent(in) :: count
     integer, intent(in) :: datatype
@@ -4181,7 +4181,7 @@ contains
 
   subroutine mpi_recv_s0(buf, count, datatype, source, tag, comm, &
        status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     character(len=*), intent(out) :: buf
     integer, intent(in) :: count
     integer, intent(in) :: datatype
@@ -4199,7 +4199,7 @@ contains
 
   subroutine mpi_recv_s1(buf, count, datatype, source, tag, comm, &
        status, ierror)
-    use ModMpiOrig, only: mpi_status_size
+    use ModMpiOrig, ONLY: mpi_status_size
     character(len=*), intent(out) :: buf(:)
     integer, intent(in) :: count
     integer, intent(in) :: datatype

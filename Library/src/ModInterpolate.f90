@@ -43,7 +43,7 @@ module ModInterpolate
   !
 
   use ModUtilities, ONLY: CON_stop, find_cell
-  use ModKind,      ONLY: Real4_, Real8_
+  use ModKind, ONLY: Real4_, Real8_
 
   implicit none
 
