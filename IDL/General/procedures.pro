@@ -266,7 +266,7 @@ pro set_default_values
   common plot_param, $
      multiplot, multix, multiy, multidir, plotix, plotiy, $
      plot_spacex, plot_spacey, showxaxis, showyaxis, showxtitle, showytitle, $
-     fixaspect, noerase, $ 
+     fixaspect, blackbackground, noerase, $
      cut, cut0, plotdim, rcut, rbody, $
      velvector, velpos, velpos0, velrandom, velspeed, velx, vely, veltri, $
      viewanglex, viewanglez, colorlevel, contourlevel, $
@@ -290,6 +290,7 @@ pro set_default_values
   showxaxis = 0       ; show x axis in all subplots
   showyaxis = 0       ; show y axis in all subplots
   fixaspect = 1       ; fix aspect ratio according to coordinates
+  blackbackground = 0 ; force black background
   noerase = 0         ; Do not erase before new plot
   cut = 0             ; index array for the cut
   cut0 = 0            ; cut array without degenerate indices
@@ -1128,7 +1129,10 @@ pro animate_data
      videostream = videoobject.AddVideoStream(!d.x_size,!d.y_size,videorate)
   endif else begin
      if savemovie ne 'n' then spawn,'/bin/mkdir -p '+moviedir
-     if savemovie eq 'ps' then set_plot,'PS',/INTERPOLATE
+     if savemovie eq 'ps' then begin
+        set_plot,'PS',/INTERPOLATE
+        if blackbackground then black_background
+     endif
   endelse
 
   doanimate= npict gt npict1 and !d.name eq 'X' and showmovie eq 'y'
@@ -1147,10 +1151,12 @@ pro animate_data
      if ipict1 eq 0 then begin
         if not keyword_set(noerase) then erase
         !p.multi=[0,multix,multiy,0,multidir]
-        if savemovie eq 'ps' then $
+        if savemovie eq 'ps' then begin
            device, $
-           filename=moviedir+'/'+string(FORMAT='(i4.4)',iplot+1)+'.ps', $
-           XSIZE=24, YSIZE=18, /LANDSCAPE, /COLOR, BITS=8
+              filename=moviedir+'/'+string(FORMAT='(i4.4)',iplot+1)+'.ps', $
+              XSIZE=24, YSIZE=18, /LANDSCAPE, /COLOR, BITS=8
+           if blackbackground then black_background
+        endif
      endif
 
      if ipict eq 0 then print, FORMAT='("ipict:    ",$)'
@@ -1884,11 +1890,12 @@ end
 pro black_background
 
   common debug_param & on_error, onerror
+  common plot_param
 
   !p.background =   0
   !p.color      = 255
   POLYFILL, [1,1,0,0,1], [1,0,0,1,1], /NORMAL, COLOR=0 ; draw black box
-
+  noerase = 1
 end
 ;==============================================================================
 pro white_background
