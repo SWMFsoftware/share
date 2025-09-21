@@ -7139,3 +7139,22 @@ pro scatter_plot, xx, yy, f, f_min=f_min, f_max=f_max, $
        xrange=xrange, yrange=yrange, /noerase
 end
 ;==============================================================================
+pro plot_map, f, limit, lon=lon, lat=lat, levels=levels
+
+  common plot_param ; blackbackgroun, noerase
+
+  if n_elements(barlimit) eq 0 then barlimit=[0.87, 0.1, 0.89, 0.5]
+  if not keyword_set(noearase) then erase
+  if keyword_set(blackbackground) then black_background
+  if n_elements(lon) eq 0 then lon = findgen(361)
+  if n_elements(lat) eq 0 then lat = findgen(181)-90
+  if n_elements(levels) eq 0 then levels = findgen(203)/2
+
+  map_set, 0.5*(limit(0)+limit(2)), 0.5*(limit(1)+limit(3)), /stereo, $
+           /horizon, /isotropic, limit=limit, color=0, /noerase
+  contour, f, lon, lat, /cell_fill, levels=levels, /overplot
+;  contour, f, lon, lat, /fill, levels=levels, /overplot
+  map_continents, /countries, /continents, /usa, color=255
+  map_grid, londel=10, latdel=10, color=255
+
+end
