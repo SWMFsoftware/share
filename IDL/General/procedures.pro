@@ -6719,36 +6719,76 @@ pro set_position, sizes, xipos, yipos, pos, rect = rect, $
 
 end
 ;==============================================================================
-pro plot_color_bar, pos, maxmin
+pro plot_color_bar, position, a, format=format, title=title
 
 ; plot color bar based on the current color table
+; pos is a four element position array: x0, y0, x1, y1
+; if |x1-x0| > |y1-y0| a horizontal colorbar is drawn
+; otherwise vertical.
+; For horizontal: if y1 > y0 the labels are at the top otherwise bottom
+; For vertical: if x1 > x0 the labels are on the right otherwise left
+; "a" is an array of at least 2 elements determining the range
+; format is optional argument to control the axis label format
+; for example to show percents, use format='(i3,"%")'
+; title can be set to a string to show a title at the top/bottom
 
   common debug_param & on_error, onerror
 
-  xrange=!x.range & yrange=!y.range & !x.range=0 & !y.range=0
+  ;; Store settings
+  x_range = !x.range & y_range = !y.range
+  p_title=!p.title & x_title = !x.title & y_title = !y.title
+  ;; Set defailts
+  !x.range = 0 & !y.range = 0 & !p.title = '' & !x.title = '' & !y.title = ''
+  
+  x0 = position(0) & y0 = position(1) & x1 = position(2) & y1 = position(3)
+  pos = [ x0<x1, y0<y1, x1>x0, y1>y0]
+  
+  horizontal = abs(x1 - x0) gt abs(y1 - y0)
+  xaxis = y1 gt y0
+  yaxis = x1 gt x0
 
-  maxi = max(maxmin)
-  mini = min(maxmin)
+  xtitle = '' &  ptitle = ''
+  if n_elements(title) ne 0 then begin
+     ;; put title into xtitle or ptitle
+     if horizontal and xaxis then xtitle = title else ptitle = title
+  endif
+
+  maxa = max(a)
+  mina = min(a)
+  values = findgen(256)/255*(maxa-mina) + mina
 
   array = findgen(10,256)
-  for i=0,9 do array(i,*) = findgen(256)/(256-1)*(maxi-mini) + mini
-
-  levels=(findgen(60)-1)/(58-1)*(maxi-mini)+mini
+  for i = 0, 9 do array(i,*) = values
+  if horizontal then array = transpose(array)
+  
+  levels = (findgen(60)-1)/57*(maxa-mina) + mina
 
 ;; The !5 in the title makes sure that the fonts produced later
 ;; will look the same every time when saved into eps/ps file.
 
-  contour, array, /noerase, /cell_fill, xstyle = 5, ystyle = 5, $
-           levels = levels, pos=pos, title='!5 '
+  contour, array, /noerase, /cell_fill, xstyle=5, ystyle=5, $
+           levels=levels, pos=pos, title='!5 '+ptitle
+  ;; show the title at the bottom if the axis labels are on the top
+  if xtitle ne '' then xyouts, 0.5, 0.05, xtitle, /NORMAL, ALIGNMENT=0.5
 
-  plot, maxmin, /noerase, pos = pos, xstyle=1, ystyle=1, /nodata,$
-        xtickname = [' ',' '], xticks = 1, xminor=1  , $
-        ytickname = strarr(60) + ' ', yticklen = 0.25, $
-        title=' ', xtitle=' ',ytitle=' '
-  axis, 1, ystyle=1, /nodata, yax=1, charsize=0.9*(!p.charsize > 1.), $
-        ytitle=' ', ytickname = strarr(60)
-
-  !x.range=xrange & !y.range=yrange
+  if horizontal then begin
+     plot, [mina,maxa], [0,1], /noerase, pos=pos, xstyle=1, ystyle=1, /nodata,$
+           ytickname = [' ',' '], yticks = 1, yminor=1, $
+           xtickname = strarr(60) + ' ', xticklen = 0.25
+     axis, 0, xaxis, xaxis=xaxis, xstyle=1, charsize=0.9*(!p.charsize > 1.), $
+           xtickname=strarr(60), xtickformat=format
+  endif else begin
+     ;; put the labels to the right
+     plot, [0,1], [mina,maxa], /noerase, pos=pos, xstyle=1, ystyle=1, /nodata,$
+           xtickname = [' ',' '], xticks = 1, xminor=1, $
+           ytickname = strarr(60) + ' ', yticklen = 0.25
+     axis, yaxis, yaxis=yaxis, ystyle=1, /nodata, $
+           charsize=0.9*(!p.charsize > 1.), $
+           ytickname=strarr(60), ytickformat=format
+  endelse
+  ;; restore values
+  !x.range=x_range & !y.range=y_range
+  !p.title=p_title & !x.title=x_title & !y.title=y_title
 
 end
 ;==============================================================================
@@ -6812,70 +6852,69 @@ pro makect, color
 
   case color of
      'red' : begin
-        r(*) = 1.
-        g(*) = 1. - findgen(n)/(n-1)
-        b(*) = 1. - findgen(n)/(n-1)
+        r[*] = 1.
+        g[*] = 1. - findgen(n)/(n-1)
+        b[*] = 1. - findgen(n)/(n-1)
      end
 
      'blue' : begin
-        r(*) = 1. - findgen(n)/(n-1)
-        b(*) = 1.
-        g(*) = 1. - findgen(n)/(n-1)
+        r[*] = 1. - findgen(n)/(n-1)
+        b[*] = 1.
+        g[*] = 1. - findgen(n)/(n-1)
      end
 
      'rwb' : begin
         half=n/2
-        r(0:half-1) = 1.
-        g(0:half-1) = findgen(half)/(half-1)
-        b(0:half-1) = findgen(half)/(half-1)
+        r[0:half-1] = 1.
+        g[0:half-1] = findgen(half)/(half-1)
+        b[0:half-1] = findgen(half)/(half-1)
 
-        r(half:n-1) = 1. - findgen(n-half)/(n-half-1)
-        g(half:n-1) = 1. - findgen(n-half)/(n-half-1)
-        b(half:n-1) = 1.
+        r[half:n-1] = 1. - findgen(n-half)/(n-half-1)
+        g[half:n-1] = 1. - findgen(n-half)/(n-half-1)
+        b[half:n-1] = 1.
      end
 
      'bwr' : begin
         half=n/2
-        b(0:half-1) = 1.
-        g(0:half-1) = findgen(half)/(half-1)
-        r(0:half-1) = findgen(half)/(half-1)
-        
-        b(half:n-1) = 1. - findgen(n-half)/(n-half-1)
-        g(half:n-1) = 1. - findgen(n-half)/(n-half-1)
-        r(half:n-1) = 1.
+        b[0:half-1] = 1.
+        g[0:half-1] = findgen(half)/(half-1)
+        r[0:half-1] = findgen(half)/(half-1)
+
+        b[half:n-1] = 1. - findgen(n-half)/(n-half-1)
+        g[half:n-1] = 1. - findgen(n-half)/(n-half-1)
+        r[half:n-1] = 1.
      end
 
      'mid' : begin
-        r(0:n/3-1)     = 0.0
-        r(n/3:n/2-1)   = findgen(n/2-n/3)/(n/2-n/3-1)
-        r(n/2:n-1)     = 1.0
-        
-        b(0:n/2-1)      = 1.
-        b(n/2:2*n/3-1)  = 1. - findgen(2*n/3-n/2)/(2*n/3-n/2-1)
-        b(2*n/3-1:n-1)  = 0.
-        
-        g(0:n/3-1)      = findgen(n/3)/(n/3-1)
-        g(n/3:2*n/3-1)  = 1.
-        g(2*n/3:n-1)    = 1. - findgen(n-2*n/3)/(n-2*n/3-1)
-        
+        r[0:n/3-1]     = 0.0
+        r[n/3:n/2-1]   = findgen(n/2-n/3)/(n/2-n/3-1)
+        r[n/2:n-1]     = 1.0
+
+        b[0:n/2-1]      = 1.
+        b[n/2:2*n/3-1]  = 1. - findgen(2*n/3-n/2)/(2*n/3-n/2-1)
+        b[2*n/3-1:n-1]  = 0.
+
+        g[0:n/3-1]      = findgen(n/3)/(n/3-1)
+        g[n/3:2*n/3-1]  = 1.
+        g[2*n/3:n-1]    = 1. - findgen(n-2*n/3)/(n-2*n/3-1)
      end
 
      else : begin
         print, "Unknown value for color=",color
-        r(*) = findgen(n)
-        g(*) = findgen(n)
-        b(*) = findgen(n)
+        r[*] = findgen(n)
+        g[*] = findgen(n)
+        b[*] = findgen(n)
      end
 
   endcase
 
-  r(0) = 0.0
-  g(0) = 0.0
-  b(0) = 0.0
+  r[0] = 0.0
+  g[0] = 0.0
+  b[0] = 0.0
 
-  r(n-1) = 1.0
-  g(n-1) = 1.0
-  b(n-1) = 1.0
+  r[n-1] = 1.0
+  g[n-1] = 1.0
+  b[n-1] = 1.0
 
   r=255*r
   g=255*g
