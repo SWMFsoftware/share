@@ -35,6 +35,7 @@ table=$(node_stats.sh | awk '
         free=$NF
         data[nodename, "cores"]=cores[nodename]
         data[nodename, "free"]=free
+        data[nodename, "total"]=cores[nodename]*free   # <-- new fourth column
         nodes[++count]=nodename
     }
 
@@ -42,20 +43,22 @@ table=$(node_stats.sh | awk '
         max_node_len=length("NODETYPE")
         max_cpu_len=length("CPUs / NODE")
         max_free_len=length("FREE NODES")
+        max_total_len=length("TOTAL CPUs")  # <-- header for fourth column
 
         for (i=1; i<=count; i++) {
             n = nodes[i]
             if (length(n) > max_node_len) max_node_len=length(n)
             if (length(data[n,"cores"]) > max_cpu_len) max_cpu_len=length(data[n,"cores"])
             if (length(data[n,"free"]) > max_free_len) max_free_len=length(data[n,"free"])
+            if (length(data[n,"total"]) > max_total_len) max_total_len=length(data[n,"total"])
         }
 
-        printf "%-*s | %-*s | %-*s\n", max_node_len, "NODETYPE", max_cpu_len, "CPUs / NODE", max_free_len, "FREE NODES"
-        printf "%s\n", gensub(/./,"-","g",sprintf("%*s", max_node_len+max_cpu_len+max_free_len+6,""))
+        printf "%-*s | %-*s | %-*s | %-*s\n", max_node_len, "NODETYPE", max_cpu_len, "CPUs / NODE", max_free_len, "FREE NODES", max_total_len, "TOTAL CPUs"
+        printf "%s\n", gensub(/./,"-","g",sprintf("%*s", max_node_len+max_cpu_len+max_free_len+max_total_len+9,""))
 
         for (i=1; i<=count; i++) {
             n = nodes[i]
-            printf "%-*s | %-*d | %-*s\n", max_node_len, n, max_cpu_len, data[n,"cores"], max_free_len, data[n,"free"]
+            printf "%-*s | %-*d | %-*s | %-*d\n", max_node_len, n, max_cpu_len, data[n,"cores"], max_free_len, data[n,"free"], max_total_len, data[n,"total"]
         }
     }')
 
