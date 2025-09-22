@@ -53,7 +53,7 @@ table=$(node_stats.sh | awk '
             if (length(data[n,"total"]) > max_total_len) max_total_len=length(data[n,"total"])
         }
 
-        printf "%-*s | %-*s | %-*s | %-*s\n", max_node_len, "NODETYPE", max_cpu_len, "CPUs / NODE", max_free_len, "FREE NODES", max_total_len, "TOTAL CPUs"
+        printf "%-*s | %-*s | %-*s | %-*s\n", max_node_len, "NODETYPE", max_cpu_len, "CPUs / NODE", max_free_len, "FREE NODES", max_total_len, "FREE CPUs"
         printf "%s\n", gensub(/./,"-","g",sprintf("%*s", max_node_len+max_cpu_len+max_free_len+max_total_len+9,""))
 
         for (i=1; i<=count; i++) {
