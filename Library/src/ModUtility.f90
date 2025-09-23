@@ -1683,10 +1683,41 @@ contains
        nn = nn / 10
     end do
     if (nn /= 0) then
-       write(*,*) "Warning: Number too large to fit in array"
+       write(*,*) "Error: Number too large to fit in array"
     end if
   end subroutine int_to_ascii_code
   !============================================================================
+  subroutine real_coef_to_ascii_code(r, nFrac, iAscii_I)
+      !$acc routine seq
+      ! Assume |r| < 1
+      ! Example: r = -1.23456789 with nFrac = 6.
+      ! Output Ascii_I = '-1.234568  ' (Note: the last digit is rounded)
+      real, intent(in) :: r
+      integer, intent(in) :: nFrac
+      integer(Int1_), intent(out) :: iAscii_I(1:nFrac+3)
+      integer :: i, nn, d
+      logical :: IsNegative
+      real:: rr, r0
+      !--------------------------------------------------------------------------
+      iAscii_I = ichar(' ')  ! Initialize all to ' '
+      rr = abs(r)
+
+      IsNegative = (r < 0.0)      
+
+      rr = rr + 0.5*10.0**(-nFrac)  ! rounding
+
+      if(IsNegative) iAscii_I(1) = ichar('-')
+
+      d = floor(rr)
+      iAscii_I(2) = d + ichar('0')
+      iAscii_I(3) = ichar('.')
+      do i = 4, nFrac+3
+         rr = (rr - d)*10.0
+         d = floor(rr)
+         iAscii_I(i) = d + ichar('0')
+      end do
+end subroutine real_coef_to_ascii_code
+  !===========================================================================
   subroutine scientific_notation(Val, Coefficient, nExp)
     !$acc routine seq
 
@@ -1713,10 +1744,6 @@ contains
     if(Coefficient < 1.0 .and. Coefficient > 0.0) then
        Coefficient = Coefficient * 10.0
        nExp = nExp - 1
-    else if(Coefficient >= 10.0) then
-       ! It seems this will never happen. Just in case.
-       Coefficient = Coefficient * 0.1
-       nExp = nExp + 1
     end if
 
     if(IsNegative) Coefficient = -Coefficient
@@ -1737,11 +1764,12 @@ contains
     Ascii_I = ichar(' ')
 
     ii = nLen - (nFrac + 4 + 3) + 1  ! Position to start writing coefficient
-    if( coefficient < 0.0 ) Ascii_I(ii) = ichar('-')
+    call real_coef_to_ascii_code(coefficient, nFrac, Ascii_I(ii:ii+nFrac+3))
+    !if( coefficient < 0.0 ) Ascii_I(ii) = ichar('-')
 
-    call int_to_ascii_code(int(coefficient * 10**nFrac), nFrac+2, Ascii_I(ii+1:ii+nFrac+2))
-    Ascii_I(ii+1) = Ascii_I(ii+2)
-    Ascii_I(ii+2) = ichar('.') ! Decimal point
+    !call int_to_ascii_code(int(coefficient * 10**nFrac), nFrac+2, Ascii_I(ii+1:ii+nFrac+2))
+    !Ascii_I(ii+1) = Ascii_I(ii+2)
+    !Ascii_I(ii+2) = ichar('.') ! Decimal point
 
     Ascii_I(nLen-3) = ichar('E')
     call int_to_ascii_code(nExp, 3, Ascii_I(nLen-2:nLen))
