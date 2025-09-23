@@ -69,6 +69,10 @@ module ModUtilities
 
   character, public:: cTab = char(9)
 
+  integer(Int1_), parameter:: iChar0 = ichar('0'), iCharE = ichar('E')
+  integer(Int1_), parameter:: iCharMinus = ichar('-'), iCharPlus = ichar('+')
+  integer(Int1_), parameter:: iCharDot = ichar('.'), iCharSpace = ichar(' ')
+
   interface split_string
      module procedure split_string, split_string_simple
   end interface split_string
@@ -1661,63 +1665,66 @@ contains
   !============================================================================
 #endif
 #endif
-  subroutine int_to_ascii_code(num, nLen, Ascii_I)
+  subroutine int_to_ascii_code(n, nLen, iAscii_I)
     !$acc routine seq
     ! Example: num = -12345 with nLen = 9.
     ! Output Ascii_I = '-00012345'
-    integer, intent(in) :: num, nLen
-    integer(Int1_), intent(out) :: Ascii_I(1:nLen)
-    integer :: i, nn
+    integer, intent(in) :: n, nLen
+    integer(Int1_), intent(out) :: iAscii_I(1:nLen)
+    integer :: i, n0
 
     !--------------------------------------------------------------------------
-    Ascii_I = ichar('0')  ! Initialize all to '0'
+    iAscii_I = iChar0  ! Initialize all to '0'
 
-    nn = abs(num)
-    if (num < 0) then
-       Ascii_I(1) = ichar('-')
+    n0 = abs(n)
+    if (n < 0) then
+       iAscii_I(1) = iCharMinus
     else
-       Ascii_I(1) = ichar('+')
+       iAscii_I(1) = iCharPlus
     end if
     do i = nLen, 2, -1
-       Ascii_I(i) = mod(nn, 10) + ichar('0')
-       nn = nn / 10
+       iAscii_I(i) = mod(n0, 10) + iChar0
+       n0 = n0 / 10
     end do
-    if (nn /= 0) then
+    if (n0 /= 0) then
        write(*,*) "Error: Number too large to fit in array"
     end if
   end subroutine int_to_ascii_code
   !============================================================================
-  subroutine real_coef_to_ascii_code(r, nFrac, iAscii_I)
-      !$acc routine seq
-      ! Assume |r| < 1
-      ! Example: r = -1.23456789 with nFrac = 6.
-      ! Output Ascii_I = '-1.234568  ' (Note: the last digit is rounded)
-      real, intent(in) :: r
-      integer, intent(in) :: nFrac
-      integer(Int1_), intent(out) :: iAscii_I(1:nFrac+3)
-      integer :: i, nn, d
-      logical :: IsNegative
-      real:: rr, r0
-      !--------------------------------------------------------------------------
-      iAscii_I = ichar(' ')  ! Initialize all to ' '
-      rr = abs(r)
+  subroutine real_coef_to_ascii_code(Val, nFrac, iAscii_I)
+    !$acc routine seq
 
-      IsNegative = (r < 0.0)      
+    ! |r| < 1 is assumed!
 
-      rr = rr + 0.5*10.0**(-nFrac)  ! rounding
+    ! Example: r = -1.23456789 with nFrac = 6.
+    ! Output Ascii_I = '-1.234568  ' (Note: the last digit is rounded)
+    real, intent(in) :: Val
+    integer, intent(in) :: nFrac
+    integer(Int1_), intent(out) :: iAscii_I(1:nFrac+3)
 
-      if(IsNegative) iAscii_I(1) = ichar('-')
+    integer :: i, m
+    logical :: IsNegative
+    real:: V0
+    !--------------------------------------------------------------------------
+    iAscii_I = iCharSpace  ! Initialize all to ' '
+    V0 = abs(Val)
 
-      d = floor(rr)
-      iAscii_I(2) = d + ichar('0')
-      iAscii_I(3) = ichar('.')
-      do i = 4, nFrac+3
-         rr = (rr - d)*10.0
-         d = floor(rr)
-         iAscii_I(i) = d + ichar('0')
-      end do
-end subroutine real_coef_to_ascii_code
-  !===========================================================================
+    IsNegative = (Val < 0.0)
+
+    V0 = V0 + 0.5*10.0**(-nFrac)  ! rounding
+
+    if(IsNegative) iAscii_I(1) = iCharMinus
+
+    m = floor(V0)
+    iAscii_I(2) = m + iChar0
+    iAscii_I(3) = iCharDot
+    do i = 4, nFrac+3
+       V0 = (V0 - m)*10.0
+       m = floor(V0)
+       iAscii_I(i) = m + iChar0
+    end do
+  end subroutine real_coef_to_ascii_code
+  !============================================================================
   subroutine scientific_notation(Val, Coefficient, nExp)
     !$acc routine seq
 
@@ -1749,30 +1756,26 @@ end subroutine real_coef_to_ascii_code
     if(IsNegative) Coefficient = -Coefficient
   end subroutine scientific_notation
   !============================================================================
-  subroutine real_to_ascii_code(Val, nFrac, nLen, Ascii_I)
+  subroutine real_to_ascii_code(Val, nFrac, nLen, iAscii_I)
     !$acc routine seq
     ! Example: Val =    -1.234567E+03, where nFrac=6
     real, intent(in) :: Val
     integer, intent(in) :: nFrac, nLen
-    integer(Int1_), intent(out) :: Ascii_I(nLen)
+    integer(Int1_), intent(out) :: iAscii_I(nLen)
 
-    integer :: ii, nExp
-    real :: coefficient
+    integer :: i, nExp
+    real :: Coefficient
     !--------------------------------------------------------------------------
-    call scientific_notation(Val, coefficient, nExp)
+    call scientific_notation(Val, Coefficient, nExp)
 
-    Ascii_I = ichar(' ')
+    iAscii_I = iCharSpace
 
-    ii = nLen - (nFrac + 4 + 3) + 1  ! Position to start writing coefficient
-    call real_coef_to_ascii_code(coefficient, nFrac, Ascii_I(ii:ii+nFrac+3))
-    !if( coefficient < 0.0 ) Ascii_I(ii) = ichar('-')
+    ! Position to start writing coefficient
+    i = nLen - (nFrac + 7) + 1
+    call real_coef_to_ascii_code(Coefficient, nFrac, iAscii_I(i:i+nFrac+3))
 
-    !call int_to_ascii_code(int(coefficient * 10**nFrac), nFrac+2, Ascii_I(ii+1:ii+nFrac+2))
-    !Ascii_I(ii+1) = Ascii_I(ii+2)
-    !Ascii_I(ii+2) = ichar('.') ! Decimal point
-
-    Ascii_I(nLen-3) = ichar('E')
-    call int_to_ascii_code(nExp, 3, Ascii_I(nLen-2:nLen))
+    iAscii_I(nLen-3) = iCharE
+    call int_to_ascii_code(nExp, 3, iAscii_I(nLen-2:nLen))
   end subroutine real_to_ascii_code
   !============================================================================
 end module ModUtilities
