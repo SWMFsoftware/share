@@ -46,6 +46,9 @@ module ModUtilities
   public:: test_mod_utility
   public:: norm2
   public:: find_cell
+  public:: int_to_ascii_code
+  public:: real_to_ascii_code
+  public:: scientific_notation
   interface find_cell
      ! Single and double precision coordinates
      module procedure find_cell4, find_cell8
@@ -68,11 +71,11 @@ module ModUtilities
 
   interface split_string
      module procedure split_string, split_string_simple
-  end interface
+  end interface split_string
 
   interface join_string
      module procedure join_string, join_string_simple
-  end interface
+  end interface join_string
 
 contains
   !============================================================================
@@ -261,8 +264,8 @@ contains
        if(DoAdvance)then
           write(*,'(a)') Value
        else
-           write(*,'(a)',ADVANCE="NO") Value
-        end if
+          write(*,'(a)',ADVANCE="NO") Value
+       end if
     end select
 
   end subroutine write_value
@@ -506,11 +509,11 @@ contains
                ACCESS=TypeAccess, RECL=Recl, IOSTAT=iError)
        end if
     else if(present(iUnitMpi)) then
-      if(.not.present(iComm))then
-         call CON_stop(NameSub//' MPI IO requires iComm to be present')
-      end if
+       if(.not.present(iComm))then
+          call CON_stop(NameSub//' MPI IO requires iComm to be present')
+       end if
        ! Open file with MPI I/O
-      call MPI_file_open(iComm, File, MPI_MODE_WRONLY+MPI_MODE_CREATE, &
+       call MPI_file_open(iComm, File, MPI_MODE_WRONLY+MPI_MODE_CREATE, &
             MPI_INFO_NULL, iUnitMpi, iError)
     else
        open(iUnit, FILE=File, FORM=TypeForm, STATUS=TypeStatus, &
@@ -812,7 +815,7 @@ contains
     String = String_I(1)
 
     do i = 2, nString
-      String = trim(String) // StringSep(1:l) // String_I(i)
+       String = trim(String) // StringSep(1:l) // String_I(i)
     end do
 
   end subroutine join_string
@@ -1658,7 +1661,92 @@ contains
   !============================================================================
 #endif
 #endif
+  subroutine int_to_ascii_code(num, nLen, Ascii_I)
+    !$acc routine seq
+    ! Example: num = -12345 with nLen = 9.
+    ! Output Ascii_I = '-00012345'
+    integer, intent(in) :: num, nLen
+    integer(Int1_), intent(out) :: Ascii_I(1:nLen)
+    integer :: i, nn
 
+    !--------------------------------------------------------------------------
+    Ascii_I = ichar('0')  ! Initialize all to '0'
+
+    nn = abs(num)
+    if (num < 0) then
+       Ascii_I(1) = ichar('-')
+    else
+       Ascii_I(1) = ichar('+')
+    end if
+    do i = nLen, 2, -1
+       Ascii_I(i) = mod(nn, 10) + ichar('0')
+       nn = nn / 10
+    end do
+    if (nn /= 0) then
+       write(*,*) "Warning: Number too large to fit in array"
+    end if
+  end subroutine int_to_ascii_code
+  !============================================================================
+  subroutine scientific_notation(Val, Coefficient, nExp)
+    !$acc routine seq
+
+    ! Convert a real number Val to scientific notation:
+    ! Val = Coefficient * 10**Exponent,
+    ! where 1.0 <= abs(Coefficient) < 10.0 unless Val is 0.0
+
+    real, intent(in) :: Val
+    real, intent(out) :: Coefficient
+    integer, intent(out) :: nExp
+    real, parameter :: Fractor = log(2.0)/log(10.0)
+
+    logical :: IsNegative
+
+    !--------------------------------------------------------------------------
+    IsNegative = (Val < 0.0)
+
+    Coefficient = abs(Val)
+
+    nExp = floor(exponent(Coefficient)*Fractor)
+
+    Coefficient = Coefficient * (0.1**nExp)
+
+    if(Coefficient < 1.0 .and. Coefficient > 0.0) then
+       Coefficient = Coefficient * 10.0
+       nExp = nExp - 1
+    else if(Coefficient >= 10.0) then
+       ! It seems this will never happen. Just in case.
+       Coefficient = Coefficient * 0.1
+       nExp = nExp + 1
+    end if
+
+    if(IsNegative) Coefficient = -Coefficient
+  end subroutine scientific_notation
+  !============================================================================
+  subroutine real_to_ascii_code(Val, nFrac, nLen, Ascii_I)
+    !$acc routine seq
+    ! Example: Val =    -1.234567E+03, where nFrac=6
+    real, intent(in) :: Val
+    integer, intent(in) :: nFrac, nLen
+    integer(Int1_), intent(out) :: Ascii_I(nLen)
+
+    integer :: ii, nExp
+    real :: coefficient
+    !--------------------------------------------------------------------------
+    call scientific_notation(Val, coefficient, nExp)
+
+    Ascii_I = ichar(' ')
+
+    ii = nLen - (nFrac + 4 + 3) + 1  ! Position to start writing coefficient
+    if( coefficient < 0.0 ) Ascii_I(ii) = ichar('-')
+
+    call int_to_ascii_code(int(coefficient * 10**nFrac), nFrac+2, Ascii_I(ii+1:ii+nFrac+2))
+    Ascii_I(ii+1) = Ascii_I(ii+2)
+    Ascii_I(ii+2) = ichar('.') ! Decimal point
+
+    Ascii_I(nLen-3) = ichar('E')
+    call int_to_ascii_code(nExp, 3, Ascii_I(nLen-2:nLen))
+  end subroutine real_to_ascii_code
+  !============================================================================
 end module ModUtilities
 !==============================================================================
 subroutine CON_set_do_test_ext(String,DoTest,DoTestMe)
