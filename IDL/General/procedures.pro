@@ -6793,26 +6793,28 @@ pro plot_color_bar, position, a, format=format, title=title
 
 end
 ;==============================================================================
-pro loadct_bw, color, reverse=reverse
+pro loadct_bw, color, reverse=reverse, b=b, w=w
 
-  ;; load color table and set the first and last elements to black-and-white
-  ;; reverse the order if reverse is set
+  ;; Load color table and set the first and last elements to black-and-white
+  ;; or the RGB colors passed by the optional b and w 3-element arrays.
+  ;; Reverse the order if reverse is set.
 
   common colors
 
-  if not keyword_set(reverse) then reverse=0
   loadct, color
-  if reverse then begin
+  if keyword_set(reverse) then begin
      r_orig = reverse(r_orig)
      g_orig = reverse(g_orig)
      b_orig = reverse(b_orig)
   endif
-  r_orig(0) = 0
-  g_orig(0) = 0
-  b_orig(0) = 0
-  r_orig(255) = 255
-  g_orig(255) = 255
-  b_orig(255) = 255
+  if n_elements(b) ne 3 then b = [0,0,0]
+  r_orig(0) = b[0]
+  g_orig(0) = b[1]
+  b_orig(0) = b[2]
+  if n_elements(w) ne 3 then w = [255,255,255]
+  r_orig(255) = w[0]
+  g_orig(255) = w[1]
+  b_orig(255) = w[2]
   r_curr = r_orig
   g_curr = g_orig
   b_curr = b_orig
