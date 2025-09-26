@@ -4387,12 +4387,12 @@ pro plot_func
         if plotmod eq 'lonlatn' then begin
            if !y.range(0) lt !y.range(1) then limit=[90+yrange(0), 0, 90, 360]
            map_set, 90, -90-lonshift, latdel=10, /azimuthal, /continent, $
-                    usa=showusa, con_color=0, color=color, $
+                    usa=showusa, con_color=color, color=color, $
                     /noborder, /noerase, limit=limit
         end else if plotmod eq 'lonlats' then begin
            if !y.range(0) lt !y.range(1) then limit=[-90, 0,-90+yrange(1),360]
            map_set, -90, -90+lonshift, latdel=10, /azimuthal, /continent, $
-                    usa=showusa, con_color=0, color=color, $
+                    con_color=color, color=color, $
                     /noborder, /noerase, limit=limit
         end else $
            map_set, 0.0, 180, $
