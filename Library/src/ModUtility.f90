@@ -1713,6 +1713,9 @@ contains
 
     V0 = V0 + 0.5*10.0**(-nFrac)  ! rounding
 
+    ! Avoid 
+    if(V0 >= 10.0) V0 = V0 - 0.5*10.0**(-nFrac)
+
     if(IsNegative) iAscii_I(1) = iCharMinus
 
     m = floor(V0)
