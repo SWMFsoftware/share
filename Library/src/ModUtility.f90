@@ -69,9 +69,12 @@ module ModUtilities
 
   character, public:: cTab = char(9)
 
-  integer(Int1_), parameter:: iChar0 = ichar('0'), iCharE = ichar('E')
-  integer(Int1_), parameter:: iCharMinus = ichar('-'), iCharPlus = ichar('+')
-  integer(Int1_), parameter:: iCharDot = ichar('.'), iCharSpace = ichar(' ')
+  integer(Int1_), public, parameter:: iChar0 = ichar('0')
+  integer(Int1_), public, parameter:: iCharE = ichar('E')
+  integer(Int1_), public, parameter:: iCharMinus = ichar('-')
+  integer(Int1_), public, parameter:: iCharPlus = ichar('+')
+  integer(Int1_), public, parameter:: iCharDot = ichar('.')
+  integer(Int1_), public, parameter:: iCharSpace = ichar(' ')
 
   interface split_string
      module procedure split_string, split_string_simple
@@ -1665,24 +1668,32 @@ contains
   !============================================================================
 #endif
 #endif
-  subroutine int_to_ascii_code(n, nLen, iAscii_I)
+  subroutine int_to_ascii_code(n, nLen, iAscii_I, DoOmitSign, DoFillZero)
     !$acc routine seq
     ! Example: num = -12345 with nLen = 9.
     ! Output Ascii_I = '-00012345'
     integer, intent(in) :: n, nLen
     integer(Int1_), intent(out) :: iAscii_I(1:nLen)
+    logical, optional, intent(in) :: DoOmitSign
+    logical, optional, intent(in) :: DoFillZero
     integer :: i, n0
-
     !--------------------------------------------------------------------------
-    iAscii_I = iChar0  ! Initialize all to '0'
+    if(present(DoFillZero)) then
+          iAscii_I = iChar0
+    else
+       iAscii_I = iCharSpace
+    end if
 
     n0 = abs(n)
     if (n < 0) then
        iAscii_I(1) = iCharMinus
     else
-       iAscii_I(1) = iCharPlus
+      if(.not. present(DoOmitSign)) then
+         iAscii_I(1) = iCharPlus
+      end if
     end if
     do i = nLen, 2, -1
+      if(n0==0) exit
        iAscii_I(i) = mod(n0, 10) + iChar0
        n0 = n0 / 10
     end do
@@ -1777,8 +1788,14 @@ contains
     i = nLen - (nFrac + 7) + 1
     call real_coef_to_ascii_code(Coefficient, nFrac, iAscii_I(i:i+nFrac+3))
 
+    if(any(iAscii_I(i:i+nFrac+3)==ichar(':'))) then
+      write(*,*)'val=', Val, Coefficient, nExp
+         write(*,*)'Coefficient=', Coefficient, iAscii_I(i:i+nFrac+3)
+      end if
+
     iAscii_I(nLen-3) = iCharE
-    call int_to_ascii_code(nExp, 3, iAscii_I(nLen-2:nLen))
+    iAscii_I(nLen-2:nLen) = iChar0
+    call int_to_ascii_code(nExp, 3, iAscii_I(nLen-2:nLen), DoFillZero=.true.)
   end subroutine real_to_ascii_code
   !============================================================================
 end module ModUtilities
