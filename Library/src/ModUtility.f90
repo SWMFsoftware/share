@@ -1788,11 +1788,6 @@ contains
     i = nLen - (nFrac + 7) + 1
     call real_coef_to_ascii_code(Coefficient, nFrac, iAscii_I(i:i+nFrac+3))
 
-    if(any(iAscii_I(i:i+nFrac+3)==ichar(':'))) then
-      write(*,*)'val=', Val, Coefficient, nExp
-         write(*,*)'Coefficient=', Coefficient, iAscii_I(i:i+nFrac+3)
-      end if
-
     iAscii_I(nLen-3) = iCharE
     iAscii_I(nLen-2:nLen) = iChar0
     call int_to_ascii_code(nExp, 3, iAscii_I(nLen-2:nLen), DoFillZero=.true.)
