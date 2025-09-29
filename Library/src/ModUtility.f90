@@ -1693,7 +1693,7 @@ contains
       end if
     end if
     do i = nLen, 2, -1
-      if(n0==0) exit
+      if(n0==0) EXIT
        iAscii_I(i) = mod(n0, 10) + iChar0
        n0 = n0 / 10
     end do
@@ -1724,7 +1724,7 @@ contains
 
     V0 = V0 + 0.5*10.0**(-nFrac)  ! rounding
 
-    ! Avoid 
+    ! Avoid
     if(V0 >= 10.0) V0 = V0 - 0.5*10.0**(-nFrac)
 
     if(IsNegative) iAscii_I(1) = iCharMinus
