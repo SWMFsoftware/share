@@ -18,6 +18,7 @@ my $SubSep = (" "x2)."!".("=" x 76);
 my $DecSep = (" "x4)."!".("-" x 74);
 
 my %TypeName = (i => "integer", 
+        b => "integer(Int1_)",
 		r => "real", 
 		l => "logical", 
 		s => "character(len=*)"
@@ -188,6 +189,7 @@ foreach $Routine ( sort keys %Sub ) {
 open(OUT, ">$OutFile") or die "Could not open $OutFile\n";
 print OUT
     "module ModMPiInterfaces
+  use ModKind
   implicit none
   private
 
