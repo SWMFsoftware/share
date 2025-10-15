@@ -1,5 +1,5 @@
 #!/bin/bash
-
+rm -rf job.pfe
 # This script generates a PBS job file 'tmp.pfe', then submits it using a custom command.
 #
 # Usage:
@@ -48,8 +48,28 @@ done
 
 # --- Machine Configuration ---
 declare -A models
-models=( ["ivy"]=20 ["has"]=24 ["bro"]=28 ["bro_ele"]=28 ["sky_ele"]=40 ["cas_ait"]=40 ["rom_ait"]=128 )
-MODEL_ORDER=("ivy" "has" "bro" "bro_ele" "sky_ele" "cas_ait" "rom_ait")
+models=(
+################
+["ivy"]=20 
+["has"]=24 
+["bro"]=28 
+["bro_ele"]=28 
+["sky_ele"]=40 
+["cas_ait"]=40 
+["rom_ait"]=128
+################
+)
+MODEL_ORDER=(
+################
+"ivy" 
+"has" 
+"bro" 
+"bro_ele" 
+"sky_ele" 
+"cas_ait" 
+"rom_ait"
+################
+)
 
 # --- Dynamically Build PBS Select Lines (Corrected Logic) ---
 declare -a pbs_lines_array
@@ -77,7 +97,7 @@ done
 PBS_SELECT_LINES=$(printf "%s\n" "${pbs_lines_array[@]}")
 
 # --- File Generation ---
-cat << EOF > tmp.pfe
+cat << EOF > job.pfe
 #!/bin/csh
 ########################################################
 #PBS -S /bin/csh
@@ -97,8 +117,7 @@ exit
 if(! -f SWMF.SUCCESS) exit
 if(-f SWMF.DONE) exit
 ./Restart.pl
-qsub tmp.pfe
+qsub job.pfe
 EOF
-./qsub.pfe.pbspl.pl tmp.pfe "${JOB_NAME}"
-rm -rf tmp.pfe
+./qsub.pfe.pbspl.pl job.pfe "${JOB_NAME}"
 echo "✅ Requested ${TARGET_CPUS} CPUs on all queues"
