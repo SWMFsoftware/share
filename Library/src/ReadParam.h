@@ -16,14 +16,21 @@ inline double analyze_string(std::string &s) {
   char operation = 'A';
 
   std::stringstream ss(s);
-  ss >> v1;
+  if (!(ss >> v1)) {
+    std::cout << "Error: cannot parse the string to a number!" << std::endl;
+    std::abort();
+  }
   res = v1;
 
   if (ss.good())
     ss >> operation;
 
-  if (ss.good())
-    ss >> v2;
+  if (ss.good()) {
+    if (!(ss >> v2)) {
+      std::cout << "Error: cannot parse the string to a number!" << std::endl;
+      std::abort();
+    }
+  }
 
   if (operation == '+') {
     res = v1 + v2;
