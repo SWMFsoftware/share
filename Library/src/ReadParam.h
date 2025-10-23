@@ -26,20 +26,17 @@ inline double analyze_string(std::string &s) {
     ss >> operation;
 
   if (ss.good()) {
-    if (!(ss >> v2)) {
-      std::cout << "Error: cannot parse the string to a number!" << std::endl;
-      std::abort();
+    if (ss >> v2) {
+      if (operation == '+') {
+        res = v1 + v2;
+      } else if (operation == '-') {
+        res = v1 - v2;
+      } else if (operation == '*') {
+        res = v1 * v2;
+      } else if (operation == '/') {
+        res = v1 / v2;
+      }
     }
-  }
-
-  if (operation == '+') {
-    res = v1 + v2;
-  } else if (operation == '-') {
-    res = v1 - v2;
-  } else if (operation == '*') {
-    res = v1 * v2;
-  } else if (operation == '/') {
-    res = v1 / v2;
   }
 
   // Assume res is time.
