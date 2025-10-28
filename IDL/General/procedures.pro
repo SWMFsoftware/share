@@ -4183,7 +4183,7 @@ pro plot_func
 
      ;; figure out the units of angle in 2nd coordinate if not already set
      if plotmod eq 'polar' and angleunit lt 0 then begin
-        if max(yy)-min(yy) gt 300 then $
+        if max(yy)-min(yy) gt 30 then $
            angleunit = !dtor $  ; degrees
         else if max(yy)-min(yy) gt 20 then $
            angleunit = !pi/12 $ ; local time
