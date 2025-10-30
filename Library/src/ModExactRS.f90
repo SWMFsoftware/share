@@ -133,68 +133,66 @@ contains
     UnStar = 0.50*(UnL + UnR + FR - FL)
     WR = UnR + WR
     WL = UnL - WL
-  contains
-    !==========================================================================
-    subroutine pressure_function(F, FD, P, RhoK, PK, CK, WK, GammaIn)
-      !
-      !     Purpose: to evaluate the pressure functions
-      !              FL and FR in exact Riemann solver
-      !              and their first derivatives
-      !
-      real,intent(in):: P,RhoK,PK,CK
-      real,intent(out):: F,FD,WK
-      real,optional,intent(in):: GammaIn
-      real:: Gamma
-      ! Misc:
-      REAL:: BK, PRatio,PRatioPowG1, QRT
-
-      !------------------------------------------------------------------------
-      if(present(GammaIn))then
-         Gamma=GammaIn
-      else
-         Gamma=GammaHere
-      end if
-      IF(P <= PK)THEN
-         !
-         !        Rarefaction wave
-         !
-         PRatio = P/PK
-         PRatioPowG1= PRatio**((GAMMA - 1.0)/(2.0*GAMMA))
-         F    = CK*(PRatioPowG1 - 1.0)*2.0/(GAMMA - 1.0)
-         FD   = PRatioPowG1/(PRatio*RhoK*CK)
-         WK = CK
-      ELSE
-         !
-         !        Shock wave
-         !
-         BK = PK*(GAMMA - 1.0)/(GAMMA + 1.0)+P
-         QRT = SQRT(2.0/((GAMMA + 1.0)*RhoK*BK))
-         F   = (P - PK)*QRT
-         FD  = (1.0 - 0.5*(P - PK)/BK)*QRT
-         WK=0.50*(GAMMA + 1.0)*BK*QRT
-      ENDIF
-    end subroutine pressure_function
-    !==========================================================================
-    subroutine guess_p(PGuess)
-
-      !     Purpose: to provide a guessed value for pressure
-      !              PM in the Star Region.
-      !     Author of the version : P.Voinovich, 1992
-      real,intent(out)::PGuess
-      real::ImpedanceL,ImpedanceR,PAvr,ImpedanceTotalInv
-      real,parameter::cTinyFractionOf=1.0e-8
-      !------------------------------------------------------------------------
-      ImpedanceL = RhoL*CL; ImpedanceR = RhoR*CR
-
-      ImpedanceTotalInv=1.0/(ImpedanceL+ImpedanceR)
-
-      PAvr=ImpedanceTotalInv*(PL*ImpedanceR+PR*ImpedanceL)
-
-      PGuess=max(cTinyFractionOf*PAvr,&
-           PAvr+(UnL-UnR)*ImpedanceTotalInv*ImpedanceL*ImpedanceR)
-    end subroutine guess_p
-    !==========================================================================
   end subroutine exact_rs_pu_star
+  !============================================================================
+  subroutine pressure_function(F, FD, P, RhoK, PK, CK, WK, GammaIn)
+    !
+    !     Purpose: to evaluate the pressure functions
+    !              FL and FR in exact Riemann solver
+    !              and their first derivatives
+    !
+    real,intent(in):: P,RhoK,PK,CK
+    real,intent(out):: F,FD,WK
+    real,optional,intent(in):: GammaIn
+    real:: Gamma
+    ! Misc:
+    REAL:: BK, PRatio,PRatioPowG1, QRT
+
+    !--------------------------------------------------------------------------
+    if(present(GammaIn))then
+       Gamma=GammaIn
+    else
+       Gamma=GammaHere
+    end if
+    IF(P <= PK)THEN
+       !
+       !        Rarefaction wave
+       !
+       PRatio = P/PK
+       PRatioPowG1= PRatio**((GAMMA - 1.0)/(2.0*GAMMA))
+       F    = CK*(PRatioPowG1 - 1.0)*2.0/(GAMMA - 1.0)
+       FD   = PRatioPowG1/(PRatio*RhoK*CK)
+       WK = CK
+    ELSE
+       !
+       !        Shock wave
+       !
+       BK = PK*(GAMMA - 1.0)/(GAMMA + 1.0)+P
+       QRT = SQRT(2.0/((GAMMA + 1.0)*RhoK*BK))
+       F   = (P - PK)*QRT
+       FD  = (1.0 - 0.5*(P - PK)/BK)*QRT
+       WK=0.50*(GAMMA + 1.0)*BK*QRT
+    ENDIF
+  end subroutine pressure_function
+  !============================================================================
+  subroutine guess_p(PGuess)
+
+    !     Purpose: to provide a guessed value for pressure
+    !              PM in the Star Region.
+    !     Author of the version : P.Voinovich, 1992
+    real,intent(out)::PGuess
+    real::ImpedanceL,ImpedanceR,PAvr,ImpedanceTotalInv
+    real,parameter::cTinyFractionOf=1.0e-8
+    !--------------------------------------------------------------------------
+    ImpedanceL = RhoL*CL; ImpedanceR = RhoR*CR
+
+    ImpedanceTotalInv=1.0/(ImpedanceL+ImpedanceR)
+
+    PAvr=ImpedanceTotalInv*(PL*ImpedanceR+PR*ImpedanceL)
+
+    PGuess=max(cTinyFractionOf*PAvr,&
+         PAvr+(UnL-UnR)*ImpedanceTotalInv*ImpedanceL*ImpedanceR)
+  end subroutine guess_p
   !============================================================================
   subroutine exact_rs_sample(S, Rho, Un, P, GammaLIn,GammaRIn)
     !
