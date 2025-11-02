@@ -1503,6 +1503,11 @@ contains
           end if
           if(present(IsInside)) IsInside = .false.
           RETURN
+       elseif(Coord <= Coord_I(MaxCoord))then
+          ! Very near the edge
+          iCoord = MaxCoord - 1
+          dCoord = 1.0
+          RETURN
        end if
 
        if(Coord > Coord_I(MinCoord) + Tolerance)then
@@ -1521,6 +1526,11 @@ contains
              dCoord = 0.0
           end if
           if(present(IsInside)) IsInside = .false.
+          RETURN
+       elseif(Coord >= Coord_I(MinCoord))then
+          ! Very near the edge
+          iCoord = MinCoord
+          dCoord = 0.0
           RETURN
        end if
 
