@@ -7149,7 +7149,7 @@ pro plot_map, f, limit, lon=lon, lat=lat, levels=levels
 
   common plot_param ; blackbackgroun, noerase
 
-  if n_elements(barlimit) eq 0 then barlimit=[0.87, 0.1, 0.89, 0.5]
+  if n_elements(limit) eq 0 then limit=[20, 225, 90, 295]
   if not keyword_set(noearase) then erase
   if keyword_set(blackbackground) then black_background
   if n_elements(lon) eq 0 then lon = findgen(361)
