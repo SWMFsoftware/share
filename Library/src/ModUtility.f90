@@ -1358,6 +1358,9 @@ contains
        IsUniform = .true.
     endif
 
+    ! Assume that Coord is inside the range. Set false later if not.
+    if(present(IsInside)) IsInside = .true.
+    
     if(IsUniform)then
        ! Uniform grid case with normalized coordinate
 
@@ -1389,16 +1392,12 @@ contains
              dCoord = 1.0
           endif
           if(present(IsInside)) IsInside = .false.
-       else
-          if(present(IsInside)) IsInside = .true.
        end if
 
     elseif(Coord_I(MinCoord) < Coord_I(MaxCoord))then
 
        ! Monotone increasing coordinates
        Tolerance = (Coord_I(MaxCoord) - Coord_I(MinCoord))*1d-12
-
-       if(present(IsInside)) IsInside = .true.
 
        if(Coord < Coord_I(MinCoord) - Tolerance)then
           if(.not. (present(DoExtrapolate))) then
@@ -1533,8 +1532,6 @@ contains
           dCoord = 0.0
           RETURN
        end if
-
-       if(present(IsInside)) IsInside = .true.
 
        ! binary search
        i  = (MinCoord + MaxCoord)/2
