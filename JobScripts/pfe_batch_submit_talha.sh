@@ -1,33 +1,181 @@
 #!/bin/bash
-rm -rf job.pfe
-# This script generates a PBS job file 'tmp.pfe', then submits it using a custom command.
-#
-# Usage:
-#   ./generate_job.sh <NAME> <CPUs> [options]
-#
-# Options:
-#   -long           : Adds a directive for the 'long' queue.
-#   -t=<hours>      : Sets the walltime in hours (e.g., -t=24). Default is 8.
-#   -no<model>      : Skips generating a line for a specific model (e.g., -noivy).
+rm -f job.pfe.new
 
-# --- Validation for Positional Arguments ---
+# ============================================================
+# Helper: abort on cancel
+# ============================================================
+cancel_check() {
+    if [ $? -ne 0 ]; then
+        echo "❌ Cancelled by user."
+        exit 1
+    fi
+}
+
+# ============================================================
+# Interactive version function
+# ============================================================
+interactive_job() {
+    # --- Machine Configuration ---
+    declare -A models=(
+      ["ivy"]=20
+      ["has"]=24
+      ["bro"]=28
+      ["bro_ele"]=28
+      ["sky_ele"]=40
+      ["cas_ait"]=40
+      ["rom_ait"]=128
+    )
+    MODEL_ORDER=("ivy" "has" "bro" "bro_ele" "sky_ele" "cas_ait" "rom_ait")
+
+    # --- Detect previously selected models from old job.pfe ---
+    declare -A previous_selected
+    if [ -f job.pfe ]; then
+        while read -r line; do
+            if [[ "$line" =~ select=.*:model= ]]; then
+                model=$(echo "$line" | sed -E 's/.*model=([^ :]+).*/\1/')
+                previous_selected[$model]=1
+            fi
+        done < job.pfe
+    fi
+
+    # --- Job Name ---
+    JOB_NAME=$(whiptail --inputbox "Enter job name (leave empty for SWMF):" 8 60 "" 3>&1 1>&2 2>&3)
+    cancel_check
+    [ -z "$JOB_NAME" ] && JOB_NAME="SWMF"
+
+    # --- CPUs ---
+    while true; do
+        TARGET_CPUS=$(whiptail --inputbox "Enter total number of CPUs to request:" 8 60 "" 3>&1 1>&2 2>&3)
+        cancel_check
+        if [[ "$TARGET_CPUS" =~ ^[0-9]+$ ]] && [ "$TARGET_CPUS" -gt 0 ]; then
+            break
+        fi
+        whiptail --msgbox "Please enter a valid positive integer for CPUs." 8 50
+    done
+
+    # --- Walltime ---
+    WALLTIME_HOURS=$(whiptail --inputbox "Enter walltime (hours, default 8):" 8 60 "" 3>&1 1>&2 2>&3)
+    cancel_check
+    if ! [[ "$WALLTIME_HOURS" =~ ^[0-9]+$ ]] || [ -z "$WALLTIME_HOURS" ]; then
+        WALLTIME_HOURS=8
+    fi
+    if [ "$WALLTIME_HOURS" -gt 8 ]; then
+        QUEUE_LINE="#PBS -q long"
+    else
+        QUEUE_LINE=""
+    fi
+
+    # --- Build checklist items ---
+    checklist_items=()
+    for model in "${MODEL_ORDER[@]}"; do
+        desc="${models[$model]} CPUs/node"
+        if [ ${#previous_selected[@]} -eq 0 ]; then
+            checklist_items+=("$model" "$desc" "ON")
+        else
+            if [ -n "${previous_selected[$model]}" ]; then
+                checklist_items+=("$model" "$desc" "ON")
+            else
+                checklist_items+=("$model" "$desc" "OFF")
+            fi
+        fi
+    done
+
+    # --- Dynamic width and height ---
+    max_len=0
+    for model in "${MODEL_ORDER[@]}"; do
+        desc="${model} ${models[$model]} CPUs/node"
+        len=${#desc}
+        (( len > max_len )) && max_len=$len
+    done
+    whiptail_width=$((max_len + 10))
+    [ $whiptail_width -lt 40 ] && whiptail_width=40
+    [ $whiptail_width -gt 100 ] && whiptail_width=100
+
+    num_models=${#MODEL_ORDER[@]}
+    whiptail_height=$((num_models + 5))
+
+    # --- Show checklist dialog ---
+    MODEL_SELECTION=$(whiptail --title "Select Models" --checklist \
+    "Select which models to include (Space = toggle, Enter = confirm):" \
+    $whiptail_height $whiptail_width $num_models \
+    "${checklist_items[@]}" \
+    3>&1 1>&2 2>&3)
+    cancel_check
+    MODEL_SELECTION=$(echo "$MODEL_SELECTION" | tr -d '"')
+
+    # --- Generate PBS select lines ---
+    declare -a pbs_lines_array
+    is_first_active_line=true
+    for model in ${MODEL_SELECTION}; do
+        ncpus=${models[$model]}
+        select_val=$(( (TARGET_CPUS + ncpus - 1) / ncpus ))
+        line="-l select=${select_val}:ncpus=${ncpus}:model=${model}"
+        if $is_first_active_line; then
+            pbs_lines_array+=("#PBS ${line}")
+            is_first_active_line=false
+        else
+            pbs_lines_array+=("### PBS ${line}")
+        fi
+    done
+    PBS_SELECT_LINES=$(printf "%s\n" "${pbs_lines_array[@]}")
+
+    # --- Write job.pfe ---
+    cat << EOF > job.pfe
+#!/bin/csh
+########################################################
+#PBS -S /bin/csh
+#PBS -N ${JOB_NAME}
+########################################################
+${PBS_SELECT_LINES}
+########################################################
+${QUEUE_LINE}
+#PBS -l walltime=${WALLTIME_HOURS}:00:00
+#PBS -j oe
+#PBS -m e
+########################################################
+cd \$PBS_O_WORKDIR
+setenv MPI_TYPE_DEPTH 20
+mpiexec ./SWMF.exe > runlog_\`date +%y%m%d%H%M\`
+exit
+if(! -f SWMF.SUCCESS) exit
+if(-f SWMF.DONE) exit
+./Restart.pl
+qsub job.pfe
+EOF
+
+    # --- Submit job ---
+    if [ -x ./qsub.pfe.pbspl.pl ]; then
+        ./qsub.pfe.pbspl.pl job.pfe "${JOB_NAME}"
+    fi
+
+    whiptail --msgbox "✅ Job '${JOB_NAME}' submitted requesting ${TARGET_CPUS} CPUs (Walltime: ${WALLTIME_HOURS}h)" 8 70
+}
+
+# ============================================================
+# Main script logic
+# ============================================================
+
+if [ "$#" -eq 0 ]; then
+    # Run interactive GUI version
+    interactive_job
+    exit 0
+fi
+
+# --- Classic positional-argument version ---
 if [ "$#" -lt 2 ] || ! [[ "$2" =~ ^[0-9]+$ ]]; then
     echo "❌ Error: Invalid arguments."
     echo "Usage: $0 <NAME> <CPUs> [options]"
     exit 1
 fi
 
-# --- Positional Argument Assignment ---
 JOB_NAME=$1
 TARGET_CPUS=$2
-shift 2 # Removes the first two arguments, so only flags remain.
+shift 2
 
-# --- Default values & Initialization ---
 WALLTIME_HOURS=8
 QUEUE_LINE=""
 declare -A EXCLUDE_MODELS
 
-# --- Argument Parsing Loop for Optional Flags ---
 for arg in "$@"; do
   case $arg in
     -long)
@@ -46,32 +194,17 @@ for arg in "$@"; do
   esac
 done
 
-# --- Machine Configuration ---
-declare -A models
-models=(
-################
-["ivy"]=20 
-["has"]=24 
-["bro"]=28 
-["bro_ele"]=28 
-["sky_ele"]=40 
-["cas_ait"]=40 
-["rom_ait"]=128
-################
+declare -A models=(
+  ["ivy"]=20 
+  ["has"]=24 
+  ["bro"]=28 
+  ["bro_ele"]=28 
+  ["sky_ele"]=40 
+  ["cas_ait"]=40 
+  ["rom_ait"]=128
 )
-MODEL_ORDER=(
-################
-"ivy" 
-"has" 
-"bro" 
-"bro_ele" 
-"sky_ele" 
-"cas_ait" 
-"rom_ait"
-################
-)
+MODEL_ORDER=("ivy" "has" "bro" "bro_ele" "sky_ele" "cas_ait" "rom_ait")
 
-# --- Dynamically Build PBS Select Lines (Corrected Logic) ---
 declare -a pbs_lines_array
 is_first_active_line=true
 
@@ -79,29 +212,23 @@ for model in "${MODEL_ORDER[@]}"; do
   if [[ -v EXCLUDE_MODELS[$model] ]]; then
     continue
   fi
-
   ncpus=${models[$model]}
   select_val=$(( (TARGET_CPUS + ncpus - 1) / ncpus ))
-  # CORRECTED: 'line' now only contains the directive itself, not the #PBS prefix.
   line="-l select=${select_val}:ncpus=${ncpus}:model=${model}"
-
   if $is_first_active_line; then
-    # CORRECTED: Add the #PBS prefix here.
     pbs_lines_array+=("#PBS ${line}")
     is_first_active_line=false
   else
-    # CORRECTED: Add the correct '### PBS' prefix here.
     pbs_lines_array+=("### PBS ${line}")
   fi
 done
 PBS_SELECT_LINES=$(printf "%s\n" "${pbs_lines_array[@]}")
 
-# --- File Generation ---
 cat << EOF > job.pfe
 #!/bin/csh
 ########################################################
 #PBS -S /bin/csh
-#PBS -N SWMF
+#PBS -N ${JOB_NAME}
 ########################################################
 ${PBS_SELECT_LINES}
 ########################################################
@@ -119,5 +246,6 @@ if(-f SWMF.DONE) exit
 ./Restart.pl
 qsub job.pfe
 EOF
+
 ./qsub.pfe.pbspl.pl job.pfe "${JOB_NAME}"
 echo "✅ Requested ${TARGET_CPUS} CPUs on all queues"
