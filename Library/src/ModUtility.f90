@@ -1360,7 +1360,7 @@ contains
 
     ! Assume that Coord is inside the range. Set false later if not.
     if(present(IsInside)) IsInside = .true.
-    
+
     if(IsUniform)then
        ! Uniform grid case with normalized coordinate
 
