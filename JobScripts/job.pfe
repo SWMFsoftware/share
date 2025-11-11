@@ -125,6 +125,13 @@ cd $PBS_O_WORKDIR
 # Seems to be needed for HDF5 plots
 setenv MPI_TYPE_DEPTH 20
 
+# Set initial MPI launch timeout - Default is 60(s)
+# CPUs < 500         - Default 60 is enough
+# 500 < CPUs < 2000  - 300  is suggested
+# 2000 < CPUs < 5000 - 600  is suggested
+# 5000 < CPUs        - 1200 is suggested
+#setenv MPI_LAUNCH_TIMEOUT 1200
+
 # Start PostProc.pl in the background
 #./PostProc.pl -n=16 -g -r=60 >& PostProc.log &
 
