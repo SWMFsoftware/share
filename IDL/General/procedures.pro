@@ -6842,11 +6842,12 @@ pro makect, color
 
   if not keyword_set(color) then begin
 
-     print,'red   - white to red'
-     print,'blue  - white to blue'
-     print,'rwb   - red white blue'
-     print,'bwr   - blue white red'
-     print,'mid   - blue green white yellow red'
+     print,'red    - white to red'
+     print,'blue   - white to blue'
+     print,'rwb    - red white blue'
+     print,'bwr    - blue white red'
+     print,'mid    - blue green white yellow red'
+     print,'yellow - black to yellow'
 
      color = ''
      read,'Enter color table from list above : ', color
@@ -6858,6 +6859,12 @@ pro makect, color
   ;; Set read, green, blue to values normalized to the 0.0 -- 1.0 range.
 
   case color of
+     'yellow' : begin
+        r[*] = findgen(n)/(n-1)
+        g[*] = findgen(n)/(n-1)
+        b[n/2:n-1] = findgen(n/2)/(n/2-1)
+     end
+
      'red' : begin
         r[*] = 1.
         g[*] = 1. - findgen(n)/(n-1)
@@ -6908,9 +6915,9 @@ pro makect, color
 
      else : begin
         print, "Unknown value for color=",color
-        r[*] = findgen(n)
-        g[*] = findgen(n)
-        b[*] = findgen(n)
+        r[*] = findgen(n)/(n-1)
+        g[*] = findgen(n)/(n-1)
+        b[*] = findgen(n)/(n-1)
      end
 
   endcase
