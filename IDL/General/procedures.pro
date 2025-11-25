@@ -6848,6 +6848,7 @@ pro makect, color
      print,'bwr    - blue white red'
      print,'mid    - blue green white yellow red'
      print,'yellow - black to yellow'
+     print,'gold   - black to gold'
 
      color = ''
      read,'Enter color table from list above : ', color
@@ -6859,6 +6860,12 @@ pro makect, color
   ;; Set read, green, blue to values normalized to the 0.0 -- 1.0 range.
 
   case color of
+     'gold' : begin
+        r[*] = (findgen(n)/(n-1))^0.95
+        g[*] = 185./255.*r
+        b[*] =  10./255.*r
+     end
+
      'yellow' : begin
         r[*] = findgen(n)/(n-1)
         g[*] = findgen(n)/(n-1)
