@@ -14,6 +14,7 @@ my %Compiler = (
     "Darwin"              => "nagfor,clang_mpicc",
     "lfe"                 => "ifortmpif90,iccmpicxx",
     "pfe"                 => "ifortmpif90,iccmpicxx",
+    "athfe"               => "ifortmpif90,iccmpicxx",
     "gl-login"            => "mpiifort",
     "derecho"             => "ifortmpif90,icxmpicxx",
     "slogin"              => "ifortftn,intelcc",
