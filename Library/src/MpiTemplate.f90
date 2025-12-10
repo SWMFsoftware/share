@@ -17,7 +17,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_cancel
 
      subroutine mpi_get_count(status, datatype, count, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        integer, intent(in) :: status(mpi_status_size)
        integer, intent(in) :: datatype
        integer, intent(out) :: count
@@ -25,7 +25,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_get_count
 
      subroutine mpi_get_elements(status, datatype, count, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        integer, intent(in) :: status(mpi_status_size)
        integer, intent(in) :: datatype
        integer, intent(out) :: count
@@ -33,7 +33,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_get_elements
 
      subroutine mpi_iprobe(source, tag, comm, flag, status, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        logical, intent(out) :: flag
        integer, intent(in) :: source
        integer, intent(in) :: tag
@@ -51,7 +51,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_pack_size
 
      subroutine mpi_probe(source, tag, comm, status, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        integer, intent(in) :: source
        integer, intent(in) :: tag
        integer, intent(in) :: comm
@@ -76,7 +76,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_startall
 
      subroutine mpi_test(request, flag, status, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        logical, intent(out) :: flag
        integer, intent(inout) :: request
        integer, intent(out) :: status(mpi_status_size)
@@ -85,7 +85,7 @@ module ModMpiTemplate  ! These two lines are here so that
 
      subroutine mpi_testall(count, array_of_requests, flag, &
           array_of_statuses, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        logical, intent(out) :: flag
        integer, intent(in) :: count
        integer, intent(inout) :: array_of_requests(*)
@@ -95,7 +95,7 @@ module ModMpiTemplate  ! These two lines are here so that
 
      subroutine mpi_testany(count, array_of_requests, index, flag, &
           status, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        logical flag
        integer, intent(in) :: count
        integer, intent(inout) :: array_of_requests(*)
@@ -106,7 +106,7 @@ module ModMpiTemplate  ! These two lines are here so that
 
      subroutine mpi_testsome(incount, array_of_requests, outcount, &
           array_of_indices, array_of_statuses, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        integer, intent(in) :: incount
        integer, intent(inout) :: array_of_requests(*)
        integer, intent(out) :: outcount
@@ -116,7 +116,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_testsome
 
      subroutine mpi_test_cancelled(status, flag, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        logical, intent(out) :: flag
        integer, intent(in) :: status(mpi_status_size)
        integer, intent(out) :: ierror
@@ -214,7 +214,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_type_vector
 
      subroutine mpi_wait(request, status, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        integer, intent(inout) :: request
        integer, intent(out) :: status(mpi_status_size)
        integer, intent(out) :: ierror
@@ -222,7 +222,7 @@ module ModMpiTemplate  ! These two lines are here so that
 
      subroutine mpi_waitall(count, array_of_requests, &
           array_of_statuses, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        integer, intent(in) :: count
        integer, intent(inout) :: array_of_requests(*)
        integer, intent(out) :: array_of_statuses(mpi_status_size,*)
@@ -230,7 +230,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_waitall
 
      subroutine mpi_waitany(count, array_of_requests, index, status, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        integer, intent(in) :: count
        integer, intent(inout) :: array_of_requests(*)
        integer, intent(out) :: index
@@ -240,7 +240,7 @@ module ModMpiTemplate  ! These two lines are here so that
 
      subroutine mpi_waitsome(incount, array_of_requests, outcount, &
           array_of_indices, array_of_statuses, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        integer, intent(in) :: incount
        integer, intent(inout) :: array_of_requests(*)
        integer, intent(out) :: outcount
@@ -785,7 +785,7 @@ module ModMpiTemplate  ! These two lines are here so that
 
      subroutine mpi_recv(buf, count, datatype, source, tag, comm, &
           status, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        <type>, intent(out) :: buf(dim1)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -842,7 +842,7 @@ module ModMpiTemplate  ! These two lines are here so that
 
      subroutine mpi_sendrecv_replace(buf, count, datatype, dest, &
           sendtag, source, recvtag, comm, status, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        <type>, intent(inout) :: buf(dim1)
        integer, intent(in) :: count
        integer, intent(in) :: datatype
@@ -901,7 +901,7 @@ module ModMpiTemplate  ! These two lines are here so that
      subroutine mpi_sendrecv(sendbuf, sendcount, sendtype, dest, &
           sendtag, recvbuf, recvcount, recvtype, source, recvtag, &
           comm, status, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        <type>, intent(in) :: sendbuf(dim1)
        <type>, intent(out) :: recvbuf(dim1)
        integer, intent(in) :: sendcount
@@ -1093,7 +1093,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_unpack
 
      subroutine mpi_file_read(fh, buf, count, datatype, status, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        integer, intent(in) :: fh
        <type>,  intent(out):: buf(dim1)
        integer, intent(in) :: count
@@ -1103,7 +1103,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_file_read
 
      subroutine mpi_file_write(fh, buf, count, datatype, status, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        integer, intent(in) :: fh
        <type>,  intent(in) :: buf(dim1)
        integer, intent(in) :: count
@@ -1113,7 +1113,7 @@ module ModMpiTemplate  ! These two lines are here so that
      end subroutine mpi_file_write
 
      subroutine mpi_file_write_at(fh, offset, buf, count, datatype, status, ierror)
-       use ModMpiOrig, only: mpi_status_size, mpi_offset_kind
+       use ModMpiOrig, ONLY: mpi_status_size, mpi_offset_kind
        integer, intent(in) :: fh
        integer(kind=mpi_offset_kind), intent(in) :: offset
        <type>,  intent(in) :: buf(dim1)
