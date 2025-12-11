@@ -1,0 +1,112 @@
+#!/bin/csh
+
+# Job script for Pleiades computer at NASA Ames.
+#
+# This file must be customized and run from the run directory! For example
+#
+#   cd run
+#   qsub job.athfe
+#
+# To check the status of submitted jobs, use
+#
+# qstat -u YOUR_USER_NAME
+#
+# Note that the run directory should be moved to the /nobackup filesystem,
+# otherwise the quota on the home directory will fill up before the run ends.
+# Even on the /nobackup system there is a limit on the number of files.
+# To see the disk quota limits and usage use
+#
+# lfs quota -u USERNAME /nobackupp1
+#
+# To avoid having too many output files post-processes every minut using
+#
+#    ./PostProc.pl -m -v -g -r=60 &> PostProc.log &
+#
+# either on the head node or in this job script by 
+# commenting out the two PostProc related lines below.
+#
+# Also use (in the BATSRUS section of the PARAM.in file) the command
+#
+# #RESTARTOUTFILE
+# one                             TypeRestartOutFile
+#
+# to reduce the number of files in the restart directory.
+#
+# To see the CPU allocation and usage on your accounts use
+#
+# acct_ytd
+#
+# For detailed information for a period of time, project and user(s):
+#
+# acct_query -b 10/31/15 -p s1359 -u all
+#
+
+#PBS -S /bin/csh
+#PBS -N BATSRUS
+
+
+# To run with 2 MPI procs and 8 OpenMp threads use this (and see below)
+# (Note: the ompthreads=8 is the same as "setenv OMP_NUM_THREADS 8")
+#!! PBS -l select=16:ncpus=16:mpiprocs=2:ompthreads=8:model=san
+
+# To run on the 256-core Turin nodes
+#PBS -l select=1:ncpus=3:mpiprocs=3:model=tur_ath
+
+# Load programming environment (if not cray)
+module swap PrgEnv-cray PrgEnv-intel
+
+# Load cray-pals (if not loaded already)
+module use /opt/cray/pals/modulefiles
+module load cray-pals
+
+# To reduce MPI startup time
+setenv FI_PROVIDER cxi
+
+# During testing period
+#PBS -q testing_free
+
+#PBS -l walltime=1:00:00
+#PBS -j oe
+#PBS -m e
+
+# Specify group (account charged) if necessary
+### PBS -W group_list=...
+
+# cd into the run directory
+cd $PBS_O_WORKDIR
+
+# Start PostProc.pl in the background
+#./PostProc.pl -n=16 -g -r=60 >& PostProc.log &
+
+# run SWMF (the number of processors has to be set here!)
+# the date/time stamp for runlog is only necessary for automated resubmission
+mpiexec -n 3 --ppn 3 ./BATSRUS.exe > runlog_`date +%y%m%d%H%M`
+
+# Request PostProc.pl to stop and wait for it to finish
+
+#sleep 60
+#touch PostProc.STOP; wait;
+
+exit
+
+# To use automated resubmission remove the 'exit' command above
+# and adapt the script below!
+#
+# Use the #CPUTIMEMAX and #CHECKSTOP commands in PARAM.in
+# so the code stops before the wall clock time is exceeded.
+
+# Do not continue unless the job finished successfully
+if(! -f SWMF.SUCCESS) exit
+
+# Do not continue if the whole run is done
+if(-f SWMF.DONE) exit
+
+# Link latest restart files
+./Restart.pl
+
+# Provide a PARAM.in.restart file if you wish and uncomment these lines:
+# if(! -f PARAM.in.start) cp PARAM.in PARAM.in.start
+# if(-f PARAM.in.restart) cp PARAM.in.restart PARAM.in
+
+# Resubmit job
+qsub job.pfe

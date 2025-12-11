@@ -546,7 +546,7 @@ module ModMPiInterfaces
 
   interface
      subroutine mpi_wait(request, status, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        integer, intent(inout) :: request
        integer, intent(out) :: status(mpi_status_size)
        integer, intent(out) :: ierror
@@ -556,7 +556,7 @@ module ModMPiInterfaces
   interface
      subroutine mpi_waitall(count, array_of_requests, &
           array_of_statuses, ierror)
-       use ModMpiOrig, only: mpi_status_size
+       use ModMpiOrig, ONLY: mpi_status_size
        integer, intent(in) :: count
        integer, intent(inout) :: array_of_requests(*)
        integer, intent(out) :: array_of_statuses(mpi_status_size,*)
