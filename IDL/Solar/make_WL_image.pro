@@ -386,12 +386,12 @@ end
 pro make_WL_image,CommonDir=CommonDir
   DoC2 = 1
   DoC3 = 1
-  DoCOR1A = 0
-  DoCOR2A = 0
-  DoCOR1B = 0
-  DoCOR2B = 0
+  DoCOR1A = 1
+  DoCOR2A = 1
+  DoCOR1B = 1
+  DoCOR2B = 1
   DoRatio = 1
-  DoRD = 1
+  DoRD = 0
 
   if (not keyword_set(CommonDir)) then CommonDir = 'Results/'
 ;; CommonDir = '/Users/nishthas/Desktop/Results/run_test/'
@@ -476,7 +476,7 @@ pro make_WL_image,CommonDir=CommonDir
            tmp = size(xx)
            los_size = sqrt(tmp[1])
            print,'Size is =',los_size
-           save_image_dat,filename,outdir,nlos,los_size,DoRatio,DoRD
+           save_image_dat,filename,outdir,nlos,los_size,DoRatio,DoRD,FileType
         endif else begin
            filename = file_search(simdir+'los_sta_cor1_*.out',count=nlos)
            FileType = 2 ;; for out fils
@@ -496,7 +496,7 @@ pro make_WL_image,CommonDir=CommonDir
 ; check size : 512 (newer data) or 300  
            tmp = size(xx)
            los_size = sqrt(tmp[1])
-           save_image,filename,outdir,nlos,los_size,DoRatio,DoRD
+           save_image_dat,filename,outdir,nlos,los_size,DoRatio,DoRD,FileType
         endif else begin
            filename = file_search(simdir+'los_sta_cor2_*.out',count=nlos)
            FileType = 2 ;; for out fils
@@ -516,7 +516,7 @@ pro make_WL_image,CommonDir=CommonDir
 ; check size : 512 (newer data) or 300  
            tmp = size(xx)
            los_size = sqrt(tmp[1])
-           save_image,filename,outdir,nlos,los_size,DoRatio,DoRD
+           save_image_dat,filename,outdir,nlos,los_size,DoRatio,DoRD,FileType
         endif else begin
            filename = file_search(simdir+'los_stb_cor1_*.out',count=nlos)
            FileType = 2 ;; for out fils
@@ -536,7 +536,7 @@ pro make_WL_image,CommonDir=CommonDir
 ; check size : 512 (newer data) or 300  
            tmp = size(xx)
            los_size = sqrt(tmp[1])
-           save_image,filename,outdir,nlos,los_size,DoRatio,DoRD
+           save_image_dat,filename,outdir,nlos,los_size,DoRatio,DoRD
         endif else begin
            filename = file_search(simdir+'los_stb_cor2_*.out',count=nlos)
            FileType = 2 ;; for out fils
