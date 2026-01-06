@@ -3,7 +3,7 @@
 # Job script for Athena computer at NASA Ames. Make sure you have a conditional
 # in your .cshrc of equivalent startup file:
 #
-# if ( $HOSTNAME =~ ath* || $HOSTNAME =~ x1000* ) then
+# if ( $HOSTNAME =~ ath* || $HOSTNAME =~ x10* ) then
 #    # On Athena front-end and compute nodes:
 #    source /opt/cray/pe/modules/3.2.11.7/init/tcsh
 #    # Load Intel compiler with Cray MPI (this is tested, cray compilers not yet)
@@ -74,6 +74,9 @@
 
 # Specify group (account charged) if necessary
 ### PBS -W group_list=...
+
+# show hostname (should start with x10)
+hostname
 
 # Load programming environment
 module purge
