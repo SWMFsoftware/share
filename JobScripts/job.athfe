@@ -1,6 +1,19 @@
 #!/bin/csh
 
-# Job script for Pleiades computer at NASA Ames.
+# Job script for Athena computer at NASA Ames. Make sure you have a conditional
+# in your .cshrc of equivalent startup file:
+#
+# if ( $HOSTNAME =~ ath* || $HOSTNAME =~ x1000* ) then
+#    # On Athena front-end and compute nodes:
+#    source /opt/cray/pe/modules/3.2.11.7/init/tcsh
+#    # Load Intel compiler with Cray MPI (this is tested, cray compilers not yet)
+#    module load PrgEnv-intel
+#else
+#    source /usr/share/modules/init/tcsh
+#    # Load Intel/gfortran ... compilers with MPT on other machine(s)
+#    ...
+#endif
+
 #
 # This file must be customized and run from the run directory! For example
 #
@@ -52,16 +65,6 @@
 # To run on the 256-core Turin nodes
 #PBS -l select=1:ncpus=3:mpiprocs=3:model=tur_ath
 
-# Load programming environment (if not cray)
-module swap PrgEnv-cray PrgEnv-intel
-
-# Load cray-pals (if not loaded already)
-module use /opt/cray/pals/modulefiles
-module load cray-pals
-
-# To reduce MPI startup time
-setenv FI_PROVIDER cxi
-
 # During testing period
 #PBS -q testing_free
 
@@ -71,6 +74,14 @@ setenv FI_PROVIDER cxi
 
 # Specify group (account charged) if necessary
 ### PBS -W group_list=...
+
+# Load programming environment
+module purge
+module load PrgEnv-intel cray-pals idl
+module list
+
+# To reduce MPI startup time
+setenv FI_PROVIDER cxi
 
 # cd into the run directory
 cd $PBS_O_WORKDIR
@@ -109,4 +120,4 @@ if(-f SWMF.DONE) exit
 # if(-f PARAM.in.restart) cp PARAM.in.restart PARAM.in
 
 # Resubmit job
-qsub job.pfe
+qsub job.athfe
