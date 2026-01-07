@@ -1176,25 +1176,26 @@ pro read_swmf_sat, filename, time, ndens, ux, uy, uz, bx, by, bz, ti, te, $
   DoContainData = 1
   TypeData = 'none'
 
-  if (strpos(strlowcase(filename), 'earth') ge 0) then begin
+  file_tmp = file_basename(filename)
+  if (strpos(strlowcase(file_tmp), 'earth') ge 0) then begin
      TypeData      = 'OMNI'
      TypePlot  = '_omni'
-  endif else if (strpos(strlowcase(filename), 'sta')     ge 0 or $
-                 strpos(strlowcase(filename), 'stereoa') ge 0) then begin
+  endif else if (strpos(strlowcase(file_tmp), 'sta')     ge 0 or $
+                 strpos(strlowcase(file_tmp), 'stereoa') ge 0) then begin
      TypeData      = 'Stereo A'
      TypePlot  = '_sta'
-  endif else if (strpos(strlowcase(filename), 'stb')     ge 0 or $
-                 strpos(strlowcase(filename), 'stereob') ge 0) then begin
+  endif else if (strpos(strlowcase(file_tmp), 'stb')     ge 0 or $
+                 strpos(strlowcase(file_tmp), 'stereob') ge 0) then begin
      TypeData      = 'Stereo B'
      TypePlot  = '_stb'
-  endif else if (strpos(strlowcase(filename), 'solo')    ge 0) then begin
+  endif else if (strpos(strlowcase(file_tmp), 'solo')    ge 0) then begin
      TypeData      = 'solo'
      TypePlot  = '_solo'
-  endif else if (strpos(strlowcase(filename), 'psp')    ge 0) then begin
+  endif else if (strpos(strlowcase(file_tmp), 'psp')    ge 0) then begin
      TypeData      = 'psp'
      TypePlot  = '_psp'
   endif
-
+  
   itype = size(filename,/type)
 
   if itype eq 7 then begin
