@@ -2546,13 +2546,13 @@ pro read_plot_param, quiet=quiet
      if plotdim eq 1 then begin
         if strmid(plotmode,0,4) ne 'plot' then plotmode='default'
         print,'1D plotmode: plot/plot_io/plot_oi/plot_oo'
-        print,'1D +options: max,mean,log,noaxis,over,dot,dash,time,zero,#c999,#ct999'
+        print,'1D +options: dot,dash,extra,max,mean,log,noaxis,over,time,zero,#c999,#ct999'
         askstr,'plotmode(s)                ',plotmode,doask
      endif else begin
         if strmid(plotmode,0,4) eq 'plot' then plotmode='default'
         print,'2D plotmode: shade/surface/cont/tv/polar/lonlatn/lonlats/velovect/vector/stream/scatter'
         print,'2D +options: degree/radian/hour'
-        print,'2D +options: bar,body,fill,grid,irr,label,max,mean,log,lgx,lgy'
+        print,'2D +options: bar,body,extra,fill,grid,irr,label,max,mean,log,lgx,lgy'
         print,'2D +options: map,mesh,noaxis,over,usa,white,#c999,#ct999'
         askstr,'plotmode(s)                ',plotmode,doask
      endelse
@@ -3954,6 +3954,13 @@ pro plot_func
         !p.color = color
      endif
 
+     ;; check if there are some extra things to add
+     i = strpos(plotmod, 'extra')
+     if i ge 0 then begin
+        plotmod = strmid(plotmod,0,i)+strmid(plotmod,i+5)
+        showextra = 1
+     endif else showextra = 0
+
      title = plottitles(ifunc)
      if title eq 'default' then title = funcs(ifunc)
      title = "!5"+title
@@ -4240,7 +4247,8 @@ pro plot_func
            end
            'surface'  :surface,f>f_min,ZRANGE=[f_min,f_max],$
                                XSTYLE=noaxis+1,YSTYLE=noaxis+1,$
-                               ZSTYLE=noaxis+18,AX=viewanglex,AZ=viewanglez,/NOERASE
+                               ZSTYLE=noaxis+18,AX=viewanglex,AZ=viewanglez, $
+                               /NOERASE
            'tv'       :begin
               tv,tvf,tvplotx,tvploty,XSIZE=tvsizex,YSIZE=tvsizey
               contour,f,XSTYLE=noaxis+1,YSTYLE=noaxis+1,$
@@ -4421,6 +4429,9 @@ pro plot_func
         if white then tvlct, r_curr, g_curr, b_curr
 
      endif
+
+     ;; call user defined procedure
+     if showextra then show_extra, ifunc
 
      !p.multi(0) = multi0
      !p.position = 0
