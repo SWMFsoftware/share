@@ -64,10 +64,10 @@
 # To run on the 256-core Turin nodes
 #PBS -l select=1:ncpus=3:mpiprocs=3:model=tur_ath
 
-# During testing period
-#PBS -q testing_free
+# There are normal, devel, long, wide queues
+#PBS -q normal
 
-#PBS -l walltime=1:00:00
+#PBS -l walltime=8:00:00
 #PBS -j oe
 #PBS -m e
 
