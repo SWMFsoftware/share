@@ -192,16 +192,14 @@ for arg in "$@"; do
   esac
 done
 
-declare -A models=(
-  ["ivy"]=20 
-  ["has"]=24 
-  ["bro"]=28 
-  ["bro_ele"]=28 
-  ["sky_ele"]=40 
-  ["cas_ait"]=40 
-  ["rom_ait"]=128
-)
-MODEL_ORDER=("ivy" "has" "bro" "bro_ele" "sky_ele" "cas_ait" "rom_ait")
+ declare -A models=(
+      ["bro_ele"]=28
+      ["cas_ait"]=40
+      ["mil_ait"]=128
+      ["rom_ait"]=128
+      ["sky_ele"]=40
+    )
+    MODEL_ORDER=("bro_ele" "cas_ait" "mil_ait" "rom_ait" "sky_ele")
 
 declare -a pbs_lines_array
 is_first_active_line=true
