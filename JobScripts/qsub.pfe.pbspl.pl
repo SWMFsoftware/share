@@ -14,7 +14,7 @@ if(not @machine){
     if($script =~ /nvidia/){
 	@machine = ('sky_gpu', 'cas_gpu');
     }else{
-	@machine = ('Ivy', 'San', 'Has', 'Bro', 'Sky_ele', 'Bro_ele', 'Cas_ait', 'Rom_ait');
+	@machine = ('Bro_ele', 'Cas_ait','Mil_ait', 'Rom_ait','Sky_ele');
     }
 }
 
