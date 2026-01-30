@@ -1667,6 +1667,8 @@ pro plot_log_data
 end
 ;==============================================================================
 pro show_log_data
+  common debug_param & on_error, onerror
+  ;; read log data and plot it
   read_log_data
   plot_log_data
 end
@@ -6453,11 +6455,11 @@ pro interpol_logfiles, logfilename, var0, var1, varname, time, $
 
   get_log, logfilenames(0), wlog0, varnames0, verbose=verbose
   get_log, logfilenames(1), wlog1, varnames1, verbose=verbose
-  if not keyword_set(varname) then varname = varnames0
+  if not keyword_set(varname) then varname = strjoin(varnames0,' ')
   interpol_log, wlog0, wlog1, var0, var1, varname, varnames0, varnames1,$
                time, tmin=tmin, tmax=tmax
 
-end
+  end
 ;==============================================================================
 pro interpol_log, wlog0, wlog1, var0, var1, varname, varnames0, varnames1, $
                   time, tmin=tmin, tmax=tmax, timeunit=timeunit
