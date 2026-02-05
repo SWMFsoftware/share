@@ -1859,33 +1859,32 @@ function log_func, wlog, varnames, varname, error
   ivar  = min(where(strlowcase(varnames) eq strlowcase(varname)))
                                 ; Variable is found, return with array
 
-  ;; dst and dst_sm are considered equivalent
-  if ivar lt 0 and strlowcase(varname) eq 'dst_sm' then $
-     ivar  = min(where(strlowcase(varnames) eq 'dst'))
-
-  if ivar lt 0 and strlowcase(varname) eq 'dst' then $
-     ivar  = min(where(strlowcase(varnames) eq 'dst_sm'))
+  ;; dst* and smr are considered equivalent
+  if ivar lt 0 and strmid(strlowcase(varname),0,3) eq 'dst' then $
+     ivar  = min(where(strlowcase(varnames) eq 'dst' or $
+                       strlowcase(varnames) eq 'dst_sm' or $
+                       strlowcase(varnames) eq 'smr'))
   
   if ivar ge 0 then return, wlog(*,ivar)
 
-                                ; Try calculating temperature or pressure
+  ;; Try calculating temperature or pressure
   if varname eq 'T' then begin
-                                ; Convert p[nPa]/n[/cc] to T[eV]
+     ;; Convert p[nPa]/n[/cc] to T[K]: 1e-9/(1e6*1.38e-23) = 72.4e6
      ivar = min(where( varnames eq 'p'))
      jvar = min(where( varnames eq 'rho'))
      if ivar ge 0 and jvar ge 0 then $
-        return,6241.5*wlog(*,ivar)/wlog(*,jvar)
+        return, 72.4e6*wlog(*,ivar)/wlog(*,jvar)
 
   endif else if varname eq 'p' then begin
-                                ; Convert T[eV]*n[/cc] to p[nPa] to T[eV]
+     ;; Convert T[K]*n[/cc] to p[nPa]
      ivar = min(where( varnames eq 'T'))
      jvar = min(where( varnames eq 'rho'))
      if ivar ge 0 and jvar ge 0 then $
-        return, wlog(*,ivar)*wlog(*,jvar)/6241.5
+        return, wlog(*,ivar)*wlog(*,jvar)/72.4e6
   endif
 
   error = 1
-  return,0*wlog(*,0)
+  return, 0*wlog(*,0)
   
 end
 ;==============================================================================
