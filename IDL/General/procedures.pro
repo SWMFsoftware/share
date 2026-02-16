@@ -6423,7 +6423,8 @@ pro plot_log
 
 end
 ;==============================================================================
-pro rms_logfiles, logfilename, varname, tmin=tmin, tmax=tmax, verbose=verbose
+pro rms_logfiles, logfilename, varname, tmin=tmin, tmax=tmax, $
+                  nsmooth = nsmooth, verbose=verbose
 
 ; Print the rms deviation between two logfiles for variables in varname.
 ; If varname is not present, show rms for all variables.
@@ -6435,6 +6436,14 @@ pro rms_logfiles, logfilename, varname, tmin=tmin, tmax=tmax, verbose=verbose
   string_to_array, varname, varnames, nvar
   ntime = n_elements(time)
 
+  ;; Apply smoothing if required
+  if keyword_set(nsmooth) then begin
+     for ivar=0,nvar-1 do begin
+        var0[*,ivar] = smooth(var0[*,ivar], nsmooth)
+        var1[*,ivar] = smooth(var1[*,ivar], nsmooth)
+     endfor
+  end
+  
   print,'var rms(A-B) rsm(A) rms(B)'
   for ivar=0,nvar-1 do $
      print, varnames(ivar), $
