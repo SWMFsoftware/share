@@ -6256,8 +6256,8 @@ pro plot_log
 
   if not keyword_set(noerase) then erase
 
-; The first iteration is used to get the X and Y ranges from the
-; data. This can be skipped if both ranges are given explicitly.
+  ;; The first iteration is used to get the X and Y ranges from the
+  ;; data. This can be skipped if both ranges are given explicitly.
   if DoXrange or DoYrange then iter0 = 1 else iter0 = 2
 
   for iter = iter0, 2 do begin
@@ -6350,30 +6350,37 @@ pro plot_log
                  xtitle1 = ''
                  xtickname1 = strarr(60) + ' '
                  xtickformat1 = strarr(10)
-                 xstyle=5
-                 ystyle=5
                  if ilog eq 0 then begin
-                    xstyle=1
-                    ystyle=1
-                    if ifunc eq 0       then title1  = title0
+                    if ifunc eq 0 then title1  = title0
                     if ifunc eq nlogfunc-1 then begin
                        xtitle1    = xtitle0
                        xtickname1 = !x.tickname
                        if timeunit eq 'date' then xtickformat1 = ['LABEL_DATE']
                     endif
+                    ;; plot the axes and titles with default color
+                    plot, xcoord, field, pos = posm, $
+                          xrange = xrange, $
+                          yrange = yranges(*,ifunc), $
+                          xlog = dofft, $
+                          ylog = dofft, $
+                          xstyle = 1, $
+                          ystyle = 1, $
+                          title  = title1, $
+                          xtitle = xtitle1, $
+                          xtickname = xtickname1, $
+                          xtickformat = xtickformat1, $
+                          ytitle = ytitles0(ifunc), $
+                          thick = thick, $
+                          /noerase, /nodata
                  endif
+                 ;; plot the lines/symbols
                  plot, xcoord, field, pos = posm, $
                        xrange = xrange, $
                        yrange = yranges(*,ifunc), $
                        xlog = dofft, $
                        ylog = dofft, $
-                       xstyle = xstyle, $
-                       ystyle = ystyle, $
-                       title  = title1, $
-                       xtitle = xtitle1, $
-                       xtickname = xtickname1, $
-                       xtickformat = xtickformat1, $
-                       ytitle = ytitles0(ifunc), $
+                       xstyle = 5, $
+                       ystyle = 5, $
                        color = colors(ilog), $
                        psym  = symbols(ilog), $
                        linestyle = linestyles(ilog), $
