@@ -6424,21 +6424,24 @@ pro plot_log
 end
 ;==============================================================================
 pro rms_logfiles, logfilename, varname, tmin=tmin, tmax=tmax, $
-                  nsmooth = nsmooth, verbose=verbose
+                  smooth0=smooth0, smooth1=smooth1, nsmooth=nsmooth, $
+                  verbose=verbose
 
-; Print the rms deviation between two logfiles for variables in varname.
-; If varname is not present, show rms for all variables.
+  ;; Print the rms deviation between two logfiles for variables in varname.
+  ;; If varname is not present, show rms for all variables.
 
   common debug_param & on_error, onerror
 
   interpol_logfiles, logfilename, var0, var1, varname, time, $
-                     tmin=tmin, tmax=tmax, verbose=verbose
+                     tmin=tmin, tmax=tmax, smooth0=smooth0, smooth1=smooth1, $
+                     verbose=verbose
+
   string_to_array, varname, varnames, nvar
   ntime = n_elements(time)
 
-  ;; Apply smoothing if required
+  ;; Apply smoothing after the interpolation if required
   if keyword_set(nsmooth) then begin
-     for ivar=0,nvar-1 do begin
+     for ivar = 0, nvar-1 do begin
         var0[*,ivar] = smooth(var0[*,ivar], nsmooth)
         var1[*,ivar] = smooth(var1[*,ivar], nsmooth)
      endfor
@@ -6459,8 +6462,8 @@ pro rms_logfiles, logfilename, varname, tmin=tmin, tmax=tmax, $
 end
 ;==============================================================================
 pro interpol_logfiles, logfilename, var0, var1, varname, time, $
-                       tmin=tmin, tmax=tmax, verbose=verbose
-
+                       tmin=tmin, tmax=tmax, smooth0=smooth0, smooth1=smooth1,$
+                       verbose=verbose
 ; Interpolate variables between two logfiles for variables in varname.
 ; If varname is not present, interpolate all variables.
 
@@ -6472,15 +6475,16 @@ pro interpol_logfiles, logfilename, var0, var1, varname, time, $
   get_log, logfilenames(1), wlog1, varnames1, verbose=verbose
   if not keyword_set(varname) then varname = strjoin(varnames0,' ')
   interpol_log, wlog0, wlog1, var0, var1, varname, varnames0, varnames1,$
-               time, tmin=tmin, tmax=tmax
+               time, tmin=tmin, tmax=tmax, smooth0=smooth0, smooth1=smooth1
 
-  end
+end
 ;==============================================================================
 pro interpol_log, wlog0, wlog1, var0, var1, varname, varnames0, varnames1, $
-                  time, tmin=tmin, tmax=tmax, timeunit=timeunit
+                  time, tmin=tmin, tmax=tmax, timeunit=timeunit, $
+                  smooth0=smooth0, smooth1=smooth1
 
 ; Interpolate the variables listed in varname to the time of wlog0
-; between tmin and tmax. 
+; between tmin and tmax. Apply optional smoothing.
 
   common debug_param & on_error, onerror
 
@@ -6541,8 +6545,11 @@ pro interpol_log, wlog0, wlog1, var0, var1, varname, varnames0, varnames1, $
 
      if not error0 and not error1 then begin
 
+        if keyword_set(smooth0) then field0 = smooth(field0, smooth0)
+        if keyword_set(smooth1) then field1 = smooth(field1, smooth1)
+
         var0(*,ivar) = field0(index0)
-        var1(*,ivar) = interpol(field1,time1,time)
+        var1(*,ivar) = interpol(field1, time1, time)
 
      endif
   endfor
