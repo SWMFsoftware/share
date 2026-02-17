@@ -6256,8 +6256,8 @@ pro plot_log
 
   if not keyword_set(noerase) then erase
 
-; The first iteration is used to get the X and Y ranges from the
-; data. This can be skipped if both ranges are given explicitly.
+  ;; The first iteration is used to get the X and Y ranges from the
+  ;; data. This can be skipped if both ranges are given explicitly.
   if DoXrange or DoYrange then iter0 = 1 else iter0 = 2
 
   for iter = iter0, 2 do begin
@@ -6350,30 +6350,37 @@ pro plot_log
                  xtitle1 = ''
                  xtickname1 = strarr(60) + ' '
                  xtickformat1 = strarr(10)
-                 xstyle=5
-                 ystyle=5
                  if ilog eq 0 then begin
-                    xstyle=1
-                    ystyle=1
-                    if ifunc eq 0       then title1  = title0
+                    if ifunc eq 0 then title1  = title0
                     if ifunc eq nlogfunc-1 then begin
                        xtitle1    = xtitle0
                        xtickname1 = !x.tickname
                        if timeunit eq 'date' then xtickformat1 = ['LABEL_DATE']
                     endif
+                    ;; plot the axes and titles with default color
+                    plot, xcoord, field, pos = posm, $
+                          xrange = xrange, $
+                          yrange = yranges(*,ifunc), $
+                          xlog = dofft, $
+                          ylog = dofft, $
+                          xstyle = 1, $
+                          ystyle = 1, $
+                          title  = title1, $
+                          xtitle = xtitle1, $
+                          xtickname = xtickname1, $
+                          xtickformat = xtickformat1, $
+                          ytitle = ytitles0(ifunc), $
+                          thick = thick, $
+                          /noerase, /nodata
                  endif
+                 ;; plot the lines/symbols
                  plot, xcoord, field, pos = posm, $
                        xrange = xrange, $
                        yrange = yranges(*,ifunc), $
                        xlog = dofft, $
                        ylog = dofft, $
-                       xstyle = xstyle, $
-                       ystyle = ystyle, $
-                       title  = title1, $
-                       xtitle = xtitle1, $
-                       xtickname = xtickname1, $
-                       xtickformat = xtickformat1, $
-                       ytitle = ytitles0(ifunc), $
+                       xstyle = 5, $
+                       ystyle = 5, $
                        color = colors(ilog), $
                        psym  = symbols(ilog), $
                        linestyle = linestyles(ilog), $
@@ -6416,18 +6423,30 @@ pro plot_log
 
 end
 ;==============================================================================
-pro rms_logfiles, logfilename, varname, tmin=tmin, tmax=tmax, verbose=verbose
+pro rms_logfiles, logfilename, varname, tmin=tmin, tmax=tmax, $
+                  smooth0=smooth0, smooth1=smooth1, nsmooth=nsmooth, $
+                  verbose=verbose
 
-; Print the rms deviation between two logfiles for variables in varname.
-; If varname is not present, show rms for all variables.
+  ;; Print the rms deviation between two logfiles for variables in varname.
+  ;; If varname is not present, show rms for all variables.
 
   common debug_param & on_error, onerror
 
   interpol_logfiles, logfilename, var0, var1, varname, time, $
-                     tmin=tmin, tmax=tmax, verbose=verbose
+                     tmin=tmin, tmax=tmax, smooth0=smooth0, smooth1=smooth1, $
+                     verbose=verbose
+
   string_to_array, varname, varnames, nvar
   ntime = n_elements(time)
 
+  ;; Apply smoothing after the interpolation if required
+  if keyword_set(nsmooth) then begin
+     for ivar = 0, nvar-1 do begin
+        var0[*,ivar] = smooth(var0[*,ivar], nsmooth)
+        var1[*,ivar] = smooth(var1[*,ivar], nsmooth)
+     endfor
+  end
+  
   print,'var rms(A-B) rsm(A) rms(B)'
   for ivar=0,nvar-1 do $
      print, varnames(ivar), $
@@ -6443,8 +6462,8 @@ pro rms_logfiles, logfilename, varname, tmin=tmin, tmax=tmax, verbose=verbose
 end
 ;==============================================================================
 pro interpol_logfiles, logfilename, var0, var1, varname, time, $
-                       tmin=tmin, tmax=tmax, verbose=verbose
-
+                       tmin=tmin, tmax=tmax, smooth0=smooth0, smooth1=smooth1,$
+                       verbose=verbose
 ; Interpolate variables between two logfiles for variables in varname.
 ; If varname is not present, interpolate all variables.
 
@@ -6456,15 +6475,16 @@ pro interpol_logfiles, logfilename, var0, var1, varname, time, $
   get_log, logfilenames(1), wlog1, varnames1, verbose=verbose
   if not keyword_set(varname) then varname = strjoin(varnames0,' ')
   interpol_log, wlog0, wlog1, var0, var1, varname, varnames0, varnames1,$
-               time, tmin=tmin, tmax=tmax
+               time, tmin=tmin, tmax=tmax, smooth0=smooth0, smooth1=smooth1
 
-  end
+end
 ;==============================================================================
 pro interpol_log, wlog0, wlog1, var0, var1, varname, varnames0, varnames1, $
-                  time, tmin=tmin, tmax=tmax, timeunit=timeunit
+                  time, tmin=tmin, tmax=tmax, timeunit=timeunit, $
+                  smooth0=smooth0, smooth1=smooth1
 
 ; Interpolate the variables listed in varname to the time of wlog0
-; between tmin and tmax. 
+; between tmin and tmax. Apply optional smoothing.
 
   common debug_param & on_error, onerror
 
@@ -6525,8 +6545,11 @@ pro interpol_log, wlog0, wlog1, var0, var1, varname, varnames0, varnames1, $
 
      if not error0 and not error1 then begin
 
+        if keyword_set(smooth0) then field0 = smooth(field0, smooth0)
+        if keyword_set(smooth1) then field1 = smooth(field1, smooth1)
+
         var0(*,ivar) = field0(index0)
-        var1(*,ivar) = interpol(field1,time1,time)
+        var1(*,ivar) = interpol(field1, time1, time)
 
      endif
   endfor
