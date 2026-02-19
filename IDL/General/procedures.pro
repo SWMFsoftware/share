@@ -6229,7 +6229,7 @@ pro plot_log
 
 ; If none of colors, linestyles or symbols are defined, make colors different
   if max(linestyles) eq 0 and max(symbols) eq 0 and min(colors) eq 255 then $
-     colors = [255,100,250,150,200,50,25,220,125]
+     colors = [255,100,250,150,200,50,25,220,125,75]
 
 ; Define default title
   if n_elements(title) eq 1 and size(title,/type) eq 7 then title0=title $
