@@ -24,19 +24,18 @@ if(not $script or $script =~ /\-+h/i){
     print "
 Usage: $qsub [-n] SCRIPT [NAME [MACHINE1 [MACHINE2 [MACHINE3]]]] ...
 
-Submit generic job script to multiple machine types.
-Use a unique NAME argument to identify the jobs.
-Only the first four characters of the NAME are used. Default NAME is the 
-last 4 characters of the directory name where the job is submitted from.
+Submit generic job script to multiple machine types.  Use a unique
+NAME argument to identify the jobs.  Only the first four characters of
+the NAME are used. Default NAME is the last 4 characters of the
+directory name where the job is submitted from.
 
-If no machine is specified, then typically 8 jobs will be submitted for
-8 machine types: 'Ivy, San, Has, Bro, Bro_ele, Sky_ele, Cas_Ait, Rom_ait'. 
+If no machines are specified, then typically 5 jobs will be submitted
+for machine types: 'Bro_ele, Sky_ele, Cas_Ait, Rom_ait, Mil_ait'.  
 If the name of the script contains 'nvidia', then two jobs are submitted
-for 'sky_gpu' and 'cas_gpu'. The abbreviations stand for Ivybridge,
-Sandybridge, Haswell, Broadwell, Skylake, Cascadelake CPU names and
-Aitken and Electra machine names.
-Otherwise, the job will be submitted for the listed machines that
-can be chosen from the 9 names above.
+for 'sky_gpu' and 'cas_gpu'. The abbreviations stand for Broadwell,
+Skylake, Cascadelake, Rome and Milan CPU names and Aitken and Electra
+machine names. Otherwise, the job will be submitted for the listed
+machines that can be chosen from the names above.
 
 Unless the -n (or -nowatch) flag is used and more than one job scripts
 were submitted, the code starts watching qstat for all jobs matching
