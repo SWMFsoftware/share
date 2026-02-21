@@ -1775,7 +1775,7 @@ function log_time, wlog, wlognames
 
   if idate gt -1 then begin
      hours = wlog(*,idate)*24.0  ; number of hours since Jan 1 4713 BC.
-  endif else if itime gt -1 then begin
+  endif else if itime gt -1 and iyear lt 0 and ihour lt 0 then begin
      hours = wlog(*,itime)/3600.0 ; convert seconds to hours
   endif else begin
      if iyear gt -1 and idoy gt -1 then $ ; Year and Day-of-year
@@ -1789,7 +1789,7 @@ function log_time, wlog, wlognames
         hours = 24*(julday(wlog(*,imon), wlog(*,iday), wlog(*,iyear)) - $
                     julday(start_month, start_day, start_year))
 
-     ;; Add time columns   
+     ;; Add time columns
      if ihour gt -1 then hours += wlog(*,ihour)
      if imin  eq ihour + 1 then hours += wlog(*,imin)/60.0
      if isec  eq imin  + 1 then hours += wlog(*,isec)/3600.0
@@ -1857,7 +1857,6 @@ function log_func, wlog, varnames, varname, error
 
   error = 0
   ivar  = min(where(strlowcase(varnames) eq strlowcase(varname)))
-                                ; Variable is found, return with array
 
   ;; dst* and smr are considered equivalent
   if ivar lt 0 and strmid(strlowcase(varname),0,3) eq 'dst' then $
@@ -1865,8 +1864,17 @@ function log_func, wlog, varnames, varname, error
                        strlowcase(varnames) eq 'dst_sm' or $
                        strlowcase(varnames) eq 'smr'))
   
+  ;; Variable is found, return with array
   if ivar ge 0 then return, wlog(*,ivar)
 
+  ;; Calculate dbH
+  if ivar lt 0 and strlowcase(varname) eq 'dbh' then begin
+     ivar = min(where( strlowcase(varnames) eq 'b_northgeomag'))
+     jvar = min(where( strlowcase(varnames) eq 'b_eastgeomag'))
+     if ivar ge 0 and jvar ge 0 then $
+        return, sqrt(wlog[*,ivar]^2 + wlog[*,jvar]^2)
+  endif
+     
   ;; Try calculating temperature or pressure
   if varname eq 'T' then begin
      ;; Convert p[nPa]/n[/cc] to T[K]: 1e-9/(1e6*1.38e-23) = 72.4e6
@@ -5945,7 +5953,7 @@ pro get_log, file, wlog, wlognames, logtime, timeunit, rownames, $
         wlognames = strarr(nwlog+5)
         wlognames = ['year', 'mo', 'dy', 'hr', 'mn', 'sc', wlognamesRead(1:*)]
 
-        print,wlognames
+        if verbose then print, wlognames
         
         for i = 0, nt-1 do begin
            wlog(i,0) = fix(strmid(value.(0)[i],0, 4))
@@ -5966,7 +5974,7 @@ pro get_log, file, wlog, wlognames, logtime, timeunit, rownames, $
      if i gt 0 then wlognames[i] = 'B_NorthGeomag'
      i = where(wlognames eq 'dbe_nez')
      if i gt 0 then wlognames[i] = 'B_EastGeomag'
-     i = where(wlognames eq 'bz_nez')
+     i = where(wlognames eq 'dbz_nez')
      if i gt 0 then wlognames[i] = 'B_DownGeomag'
 
      if verbose then print,'wlognames=', wlognames
@@ -6221,7 +6229,7 @@ pro plot_log
 
 ; If none of colors, linestyles or symbols are defined, make colors different
   if max(linestyles) eq 0 and max(symbols) eq 0 and min(colors) eq 255 then $
-     colors = [255,100,250,150,200,50,25,220,125]
+     colors = [255,100,250,150,200,50,25,220,125,75]
 
 ; Define default title
   if n_elements(title) eq 1 and size(title,/type) eq 7 then title0=title $
@@ -6425,10 +6433,11 @@ end
 ;==============================================================================
 pro rms_logfiles, logfilename, varname, tmin=tmin, tmax=tmax, $
                   smooth0=smooth0, smooth1=smooth1, nsmooth=nsmooth, $
-                  verbose=verbose
+                  verbose=verbose, rms=rms, mae=mae
 
   ;; Print the rms deviation between two logfiles for variables in varname.
   ;; If varname is not present, show rms for all variables.
+  ;; Return results in rms and mae (scalars or arrays) if present
 
   common debug_param & on_error, onerror
 
@@ -6446,19 +6455,32 @@ pro rms_logfiles, logfilename, varname, tmin=tmin, tmax=tmax, $
         var1[*,ivar] = smooth(var1[*,ivar], nsmooth)
      endfor
   end
-  
-  print,'var rms(A-B) rsm(A) rms(B)'
-  for ivar=0,nvar-1 do $
-     print, varnames(ivar), $
-            sqrt(total((var0(*,ivar) - var1(*,ivar))^2)/ntime), $
-            sqrt(total(var0(*,ivar)^2)/ntime), $
-            sqrt(total(var1(*,ivar)^2)/ntime)
 
-  print,'var |A-B| |A| |B|'
-  for ivar=0,nvar-1 do $
-     print,varnames(ivar), total(abs(var0(*,ivar) - var1(*,ivar)))/ntime, $
-           total(abs(var0(*,ivar)))/ntime, total(abs(var1(*,ivar)))/ntime
+  show = not(keyword_set(rms) or keyword_set(mae))
+  rmsvar = fltarr(nvar)
+  maevar = fltarr(nvar)
+  for ivar = 0, nvar-1 do begin
+     rmsvar[ivar] = sqrt(total((var0(*,ivar) - var1(*,ivar))^2)/ntime)
+     maevar[ivar] = total(abs(var0(*,ivar) - var1(*,ivar)))/ntime
+  endfor
+  if arg_present(rms) then begin
+     if nvar eq 1 then rms = rmsvar[0] else rms = rmsvar
+  endif
+  if arg_present(mae) then begin
+     if nvar eq 1 then mae = maevar[0] else mae = maevar
+  endif
+  if verbose or (n_elements(rms) eq 0 and n_elements(mae) eq 0) then begin
+     print,'var rms(A-B) rsm(A) rms(B)'
+     for ivar = 0, nvar-1 do $
+        print, varnames(ivar), rmsvar[ivar], $
+               sqrt(total(var0(*,ivar)^2)/ntime), $
+               sqrt(total(var1(*,ivar)^2)/ntime)
 
+     print,'var |A-B| |A| |B|'
+     for ivar = 0, nvar-1 do $
+        print, varnames(ivar), maevar[ivar], $
+               total(abs(var0(*,ivar)))/ntime, total(abs(var1(*,ivar)))/ntime
+  end
 end
 ;==============================================================================
 pro interpol_logfiles, logfilename, var0, var1, varname, time, $
