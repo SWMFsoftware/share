@@ -41,7 +41,8 @@ OPT2 = -O2
 OPT3 = -O3
 OPT4 = -O4
 
-CFLAG = ${SEARCH} -c -w -ideclient -Wc=`which gcc` -fpp -kind=byte ${OPENMPFLAG} ${ACCFLAG} -DTESTACC ${DEBUG}
+# -std=gnu89 is needed to compile nag 7.1 code with gcc15
+CFLAG = ${SEARCH} -c -w -ideclient -Wc=`which gcc` -Wc,-std=gnu89 -fpp -kind=byte ${OPENMPFLAG} ${ACCFLAG} -DTESTACC ${DEBUG}
 
 Cflag0  = ${CFLAG} ${PRECISION} ${OPT0}
 Cflag1  = ${CFLAG} ${PRECISION} ${OPT1}
