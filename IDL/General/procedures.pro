@@ -6405,13 +6405,13 @@ pro plot_log
            ;; get vertical position of legend
            ypos=legendpos(3) - (ilog+0.5)/nlog*(legendpos(3)-legendpos(2))
            ;; draw a line (or point) with the appropriate color/linetype/symbol
-           plot,legendpos(0:1),[ypos,ypos],    $
-                color     = colors(ilog),         $
-                psym      = symbols(ilog),        $
-                linestyle = linestyles(ilog),     $
+           plot, legendpos(0:1), [ypos,ypos],     $
+                color     = colors[ilog],         $
+                psym      = symbols[ilog],        $
+                linestyle = linestyles[ilog],     $
                 thick     = thick,                $
                 /normal, xrange=[0,1], yrange=[0,1], $
-                /noerase, xstyle=-1, ystyle=-1
+                /noerase, xstyle=-1, ystyle=-1, xtickv=fltarr(60)
            
                                 ; print out legend or logfile name
            if n_elements(legends) eq nlog and $
