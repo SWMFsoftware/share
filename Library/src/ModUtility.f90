@@ -441,12 +441,13 @@ contains
     ! the error code and the name of the file.
     ! If NameCaller is present, it is also shown.
     ! If no unit number is passed, open UnitTmp_.
-    ! Default format is 'formatted' as in the open statement.
-    ! Default status is 'replace' (not unknown) as it is well defined.
-    ! Default position is 'rewind' (not asis) as it is well defined.
-    ! Default access is 'sequential' as in the open statement.
-    ! Default action is 'read' if status is 'old', otherwise 'readwrite'
-    ! There is no default record length Recl.
+    ! Default FORM is 'formatted' as in the open statement.
+    ! Default STATUS is 'replace' (not unknown) as it is well defined.
+    ! Default POSITION is 'rewind' (not asis) as it is well defined.
+    ! Default ACCESS is 'sequential' as in the open statement.
+    ! Default ACTION is 'read' if status is 'old' and position is not 'append'
+    ! otherwise the default is 'readwrite'.
+    ! There is no default for record length RECL.
     ! If the MPI communicator iComm is present together with Recl,
     ! the file will be opened with status='replace' on processor 0,
     ! and with status='old' on other processors with an MPI_barrier
@@ -477,22 +478,37 @@ contains
     if(present(iUnitIn)) iUnit = iUnitIn
 
     TypeForm = 'formatted'
-    if(present(Form)) TypeForm = Form
+    if(present(Form))then
+       TypeForm = Form
+       call lower_case(TypeForm)
+    end if
 
     TypeStatus = 'replace'
-    if(present(Status)) TypeStatus = Status
-
-    TypeAction = 'readwrite'
-    if(TypeStatus == 'old' .or. TypeStatus == 'OLD') TypeAction = 'read'
-    if(present(Action)) TypeAction = Action
+    if(present(Status))then
+       TypeStatus = Status
+       call lower_case(TypeStatus)
+    end if
 
     TypePosition = 'rewind'
-    if(present(Position)) TypePosition = Position
+    if(present(Position))then
+       TypePosition = Position
+       call lower_case(TypePosition)
+    end if
+
+    TypeAction = 'readwrite'
+    if(TypeStatus == 'old' .and. TypePosition /= 'append') TypeAction = 'read'
+    if(present(Action))then
+       TypeAction = Action
+       call lower_case(TypeAction)
+    end if
 
     TypeAccess = 'sequential'
-    if(present(Access)) TypeAccess = Access
+    if(present(Access))then
+       TypeAccess = Access
+       call lower_case(TypeAccess)
+    end if
 
-    if(present(iErrorOut))iErrorOut = 0
+    if(present(iErrorOut)) iErrorOut = 0
 
     if(present(Recl))then
        if(present(iComm))then
@@ -525,6 +541,7 @@ contains
        end if
     else if(present(iUnitMpi)) then
        if(.not.present(iComm))then
+          if(present(NameCaller)) write(*,*) 'NameCaller=', NameCaller
           call CON_stop(NameSub//' MPI IO requires iComm to be present')
        end if
        ! Open file with MPI I/O
@@ -987,7 +1004,7 @@ contains
     ! Create an error message by passing incorrect filename
     ! Since the error code varies by compiler, this is commented out
     ! call open_file(FILE='xxx/testfile.bad', STATUS='old', &
-    !     NameCaller=NameSub)
+    !     iErrorOut=iError, NameCaller=NameSub)
 
     ! Use all arguments
     call open_file(UnitTmp_, FILE='xxx/testfile.dat', FORM='formatted', &
