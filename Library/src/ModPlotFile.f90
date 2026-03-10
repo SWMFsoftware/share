@@ -555,7 +555,8 @@ contains
 
        deallocate(VarHdf5_CBV, XyzMinMax_IDB, MinIjk_DB)
     case('tec')
-       call open_file(FILE=NameFile, POSITION=TypePosition, STATUS=TypeStatus)
+       call open_file(FILE=NameFile, POSITION=TypePosition, &
+            STATUS=TypeStatus, NameCaller=NameSub)
        if(StringHeader(1:11)=="VARIABLES =")then
           write(UnitTmp_, "(a)", ADVANCE="NO") 'VARIABLES='
           if(n3 > 1) write(UnitTmp_, "(a)", ADVANCE="NO") '"K", '
@@ -599,9 +600,10 @@ contains
           end if
        end do; end do; end do
 
-       call close_file
+       call close_file(NameCaller=NameSub//':tec')
     case('formatted', 'ascii')
-       call open_file(FILE=NameFile, POSITION=TypePosition, STATUS=TypeStatus)
+       call open_file(FILE=NameFile, POSITION=TypePosition, &
+            STATUS=TypeStatus, NameCaller=NameSub)
 
        write(UnitTmp_, "(a)")             trim(StringHeader)
        write(UnitTmp_, "(i10,es18.10,3i3)") nStep, Time, nDimOut, nParam, nVar
@@ -622,10 +624,10 @@ contains
              write(UnitTmp_, StringFormat) Coord_ID(n,:), Var_IV(n,:)
           end if
        end do; end do; end do
-       call close_file
+       call close_file(NameCaller=NameSub//':ascii')
     case('real8')
        call open_file(FILE=NameFile, FORM='unformatted', &
-            POSITION=TypePosition, STATUS=TypeStatus)
+            POSITION=TypePosition, STATUS=TypeStatus, NameCaller=NameSub)
        write(UnitTmp_) StringHeader
        write(UnitTmp_) nStep, Time, nDimOut, nParam, nVar
        write(UnitTmp_) n_D(1:nDim)
@@ -646,10 +648,10 @@ contains
              write(UnitTmp_) Var_IV(:,iVar)
           end do
        end if
-       call close_file
+       call close_file(NameCaller=NameSub//':real8')
     case('real4')
        call open_file(FILE=NameFile, FORM='unformatted', &
-            POSITION=TypePosition, STATUS=TypeStatus)
+            POSITION=TypePosition, STATUS=TypeStatus, NameCaller=NameSub)
 
        write(UnitTmp_) StringHeader
        write(UnitTmp_) nStep, real(Time, Real4_), nDimOut, nParam, nVar
@@ -678,7 +680,7 @@ contains
           end do
           deallocate(Var4_I)
        end if
-       call close_file
+       call close_file(NameCaller=NameSub//':real4')
     case default
        call CON_stop(NameSub // ' unknown TypeFile =' // trim(TypeFile))
     end select
