@@ -433,8 +433,8 @@ contains
 
   end subroutine fix_dir_name
   !============================================================================
-  subroutine open_file(iUnitIn, File, Form, Status, Position, Access, Recl, &
-       iComm, NameCaller, iErrorOut, iUnitMpi)
+  subroutine open_file(iUnitIn, File, Form, Status, Position, Access, Action, &
+       Recl, iComm, NameCaller, iErrorOut, iUnitMpi)
 
     ! Interface for the Fortran open statement with error checking.
     ! If an error occurs, the code stops and writes out the unit number,
@@ -445,6 +445,7 @@ contains
     ! Default status is 'replace' (not unknown) as it is well defined.
     ! Default position is 'rewind' (not asis) as it is well defined.
     ! Default access is 'sequential' as in the open statement.
+    ! Default action is 'read' if status is 'old', otherwise 'readwrite'
     ! There is no default record length Recl.
     ! If the MPI communicator iComm is present together with Recl,
     ! the file will be opened with status='replace' on processor 0,
@@ -457,13 +458,15 @@ contains
     character(len=*), optional, intent(in):: Status
     character(len=*), optional, intent(in):: Position
     character(len=*), optional, intent(in):: Access
+    character(len=*), optional, intent(in):: Action
     integer,          optional, intent(in):: Recl
     integer,          optional, intent(in):: iComm
     character(len=*), optional, intent(in):: NameCaller
     integer,          optional, intent(out):: iErrorOut
     integer,          optional, intent(inout):: iUnitMpi
 
-    character(len=20):: TypeForm, TypeStatus, TypePosition, TypeAccess
+    character(len=20):: &
+         TypeForm, TypeStatus, TypePosition, TypeAccess, TypeAction
 
     integer:: iUnit
     integer:: iError, iProc, nProc
@@ -478,6 +481,10 @@ contains
 
     TypeStatus = 'replace'
     if(present(Status)) TypeStatus = Status
+
+    TypeAction = 'readwrite'
+    if(TypeStatus == 'old' .or. TypeStatus == 'OLD') TypeAction = 'read'
+    if(present(Action)) TypeAction = Action
 
     TypePosition = 'rewind'
     if(present(Position)) TypePosition = Position
@@ -495,7 +502,7 @@ contains
           ! Open file with status "replace" on processor 0
           if(iProc == 0) &
                open(iUnit, FILE=File, FORM=TypeForm, STATUS='replace', &
-               ACCESS=TypeAccess, RECL=Recl, IOSTAT=iError)
+               ACCESS=TypeAccess, ACTION=TypeAction, RECL=Recl, IOSTAT=iError)
           if(nProc > 1)then
              ! Check if open worked on processor 0
              if(iProc == 0 .and. iError /= 0)then
@@ -509,11 +516,12 @@ contains
              ! Other processors open with status "old"
              if(iProc > 0) &
                   open(iUnit, FILE=File, FORM=TypeForm, STATUS='old', &
-                  ACCESS=TypeAccess, RECL=Recl, IOSTAT=iError)
+                  ACCESS=TypeAccess, ACTION=TypeAction, RECL=Recl, &
+                  IOSTAT=iError)
           end if
        else
           open(iUnit, FILE=File, FORM=TypeForm, STATUS=TypeStatus, &
-               ACCESS=TypeAccess, RECL=Recl, IOSTAT=iError)
+               ACCESS=TypeAccess, ACTION=TypeAction, RECL=Recl, IOSTAT=iError)
        end if
     else if(present(iUnitMpi)) then
        if(.not.present(iComm))then
@@ -524,7 +532,8 @@ contains
             MPI_INFO_NULL, iUnitMpi, iError)
     else
        open(iUnit, FILE=File, FORM=TypeForm, STATUS=TypeStatus, &
-            POSITION=TypePosition, ACCESS=TypeAccess, IOSTAT=iError)
+            POSITION=TypePosition, ACCESS=TypeAccess, ACTION=TypeAction, &
+            IOSTAT=iError)
     end if
 
     if(iError /= 0)then
