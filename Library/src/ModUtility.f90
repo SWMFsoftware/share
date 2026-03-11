@@ -433,19 +433,21 @@ contains
 
   end subroutine fix_dir_name
   !============================================================================
-  subroutine open_file(iUnitIn, File, Form, Status, Position, Access, Recl, &
-       iComm, NameCaller, iErrorOut, iUnitMpi)
+  subroutine open_file(iUnitIn, File, Form, Status, Position, Access, Action, &
+       Recl, iComm, NameCaller, iErrorOut, iUnitMpi)
 
     ! Interface for the Fortran open statement with error checking.
     ! If an error occurs, the code stops and writes out the unit number,
     ! the error code and the name of the file.
     ! If NameCaller is present, it is also shown.
     ! If no unit number is passed, open UnitTmp_.
-    ! Default format is 'formatted' as in the open statement.
-    ! Default status is 'replace' (not unknown) as it is well defined.
-    ! Default position is 'rewind' (not asis) as it is well defined.
-    ! Default access is 'sequential' as in the open statement.
-    ! There is no default record length Recl.
+    ! Default FORM is 'formatted' as in the open statement.
+    ! Default STATUS is 'replace' (not unknown) as it is well defined.
+    ! Default POSITION is 'rewind' (not asis) as it is well defined.
+    ! Default ACCESS is 'sequential' as in the open statement.
+    ! Default ACTION is 'read' if status is 'old' and position is not 'append'
+    ! otherwise the default is 'readwrite'.
+    ! There is no default for record length RECL.
     ! If the MPI communicator iComm is present together with Recl,
     ! the file will be opened with status='replace' on processor 0,
     ! and with status='old' on other processors with an MPI_barrier
@@ -457,13 +459,15 @@ contains
     character(len=*), optional, intent(in):: Status
     character(len=*), optional, intent(in):: Position
     character(len=*), optional, intent(in):: Access
+    character(len=*), optional, intent(in):: Action
     integer,          optional, intent(in):: Recl
     integer,          optional, intent(in):: iComm
     character(len=*), optional, intent(in):: NameCaller
     integer,          optional, intent(out):: iErrorOut
     integer,          optional, intent(inout):: iUnitMpi
 
-    character(len=20):: TypeForm, TypeStatus, TypePosition, TypeAccess
+    character(len=20):: &
+         TypeForm, TypeStatus, TypePosition, TypeAccess, TypeAction
 
     integer:: iUnit
     integer:: iError, iProc, nProc
@@ -474,18 +478,37 @@ contains
     if(present(iUnitIn)) iUnit = iUnitIn
 
     TypeForm = 'formatted'
-    if(present(Form)) TypeForm = Form
+    if(present(Form))then
+       TypeForm = Form
+       call lower_case(TypeForm)
+    end if
 
     TypeStatus = 'replace'
-    if(present(Status)) TypeStatus = Status
+    if(present(Status))then
+       TypeStatus = Status
+       call lower_case(TypeStatus)
+    end if
 
     TypePosition = 'rewind'
-    if(present(Position)) TypePosition = Position
+    if(present(Position))then
+       TypePosition = Position
+       call lower_case(TypePosition)
+    end if
+
+    TypeAction = 'readwrite'
+    if(TypeStatus == 'old' .and. TypePosition /= 'append') TypeAction = 'read'
+    if(present(Action))then
+       TypeAction = Action
+       call lower_case(TypeAction)
+    end if
 
     TypeAccess = 'sequential'
-    if(present(Access)) TypeAccess = Access
+    if(present(Access))then
+       TypeAccess = Access
+       call lower_case(TypeAccess)
+    end if
 
-    if(present(iErrorOut))iErrorOut = 0
+    if(present(iErrorOut)) iErrorOut = 0
 
     if(present(Recl))then
        if(present(iComm))then
@@ -495,7 +518,7 @@ contains
           ! Open file with status "replace" on processor 0
           if(iProc == 0) &
                open(iUnit, FILE=File, FORM=TypeForm, STATUS='replace', &
-               ACCESS=TypeAccess, RECL=Recl, IOSTAT=iError)
+               ACCESS=TypeAccess, ACTION=TypeAction, RECL=Recl, IOSTAT=iError)
           if(nProc > 1)then
              ! Check if open worked on processor 0
              if(iProc == 0 .and. iError /= 0)then
@@ -509,14 +532,16 @@ contains
              ! Other processors open with status "old"
              if(iProc > 0) &
                   open(iUnit, FILE=File, FORM=TypeForm, STATUS='old', &
-                  ACCESS=TypeAccess, RECL=Recl, IOSTAT=iError)
+                  ACCESS=TypeAccess, ACTION=TypeAction, RECL=Recl, &
+                  IOSTAT=iError)
           end if
        else
           open(iUnit, FILE=File, FORM=TypeForm, STATUS=TypeStatus, &
-               ACCESS=TypeAccess, RECL=Recl, IOSTAT=iError)
+               ACCESS=TypeAccess, ACTION=TypeAction, RECL=Recl, IOSTAT=iError)
        end if
     else if(present(iUnitMpi)) then
        if(.not.present(iComm))then
+          if(present(NameCaller)) write(*,*) 'NameCaller=', NameCaller
           call CON_stop(NameSub//' MPI IO requires iComm to be present')
        end if
        ! Open file with MPI I/O
@@ -524,7 +549,8 @@ contains
             MPI_INFO_NULL, iUnitMpi, iError)
     else
        open(iUnit, FILE=File, FORM=TypeForm, STATUS=TypeStatus, &
-            POSITION=TypePosition, ACCESS=TypeAccess, IOSTAT=iError)
+            POSITION=TypePosition, ACCESS=TypeAccess, ACTION=TypeAction, &
+            IOSTAT=iError)
     end if
 
     if(iError /= 0)then
@@ -978,7 +1004,7 @@ contains
     ! Create an error message by passing incorrect filename
     ! Since the error code varies by compiler, this is commented out
     ! call open_file(FILE='xxx/testfile.bad', STATUS='old', &
-    !     NameCaller=NameSub)
+    !     iErrorOut=iError, NameCaller=NameSub)
 
     ! Use all arguments
     call open_file(UnitTmp_, FILE='xxx/testfile.dat', FORM='formatted', &
