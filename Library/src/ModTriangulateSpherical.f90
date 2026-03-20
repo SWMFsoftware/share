@@ -5517,12 +5517,12 @@ contains
 
        iRestart = iRestart + 1
        if (iRestart > MaxRestart) then
-          write(*,*) 'trfind ERROR: cycle restart limit exceeded'
+          write(*,*) 'trfind ERROR: CYCLE restart limit exceeded'
           write(*,*) '  iRestart=', iRestart
           write(*,*) '  nst=', nst, ' n0=', n0, ' n1=', n1, ' n2=', n2, &
                ' n3=', n3, ' n4=', n4
           write(*,*) '  p=', xp, yp, zp
-          call CON_stop('ModTriangulateSpherical/trfind: cycle restart limit exceeded')
+          call CON_stop('ModTriangulateSpherical/trfind: CYCLE restart limit exceeded')
        end if
 
        n0 = jrand ( n, ix, iy, iz )
