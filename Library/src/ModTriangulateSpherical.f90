@@ -3,6 +3,7 @@
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 module ModTriangulateSpherical
   use ModUtilities, ONLY: CON_stop
+  use ModKind, ONLY: nByteReal
   implicit none
 
   private ! except
@@ -21,13 +22,14 @@ module ModTriangulateSpherical
   public save_triangulation_map ! Saves a file of sections displaying
                                 ! triangulation on a map (0:360,-90:90) degrees
   public fix_state ! Corrects the defected state vector in chosen node
-                   ! by interpolating it from the neighboring cells
+  ! by interpolating it from the neighboring cells
+  real :: cEps = 0.010**nByteReal
 contains
   !============================================================================
 
   subroutine addnod ( nst, k, x, y, z, list, lptr, lend, lnew, ier )
     !
-    !*******************************************************************************
+    !**************************************************************************
     !
     !! ADDNOD adds a node to a triangulation.
     !
@@ -43,7 +45,8 @@ contains
     !    index is added to the data structure (INTADD or BDYADD),
     !    and a sequence of swaps (SWPTST and SWAP) are applied to
     !    the arcs opposite K so that all arcs incident on node K
-    !    and opposite node K are locally optimal (satisfy the circumcircle test).
+    !    and opposite node K are locally optimal (satisfy the circumcircle
+    !    test).
     !
     !    Thus, if a Delaunay triangulation of nodes 1 through K-1 is input,
     !    a Delaunay triangulation of nodes 1 through K will be output.
@@ -265,7 +268,7 @@ contains
   !============================================================================
   function arc_cosine ( c )
     !
-    !*******************************************************************************
+    !**************************************************************************
     !
     !! ARC_COSINE computes the arc cosine function, with argument truncation.
     !
@@ -297,8 +300,8 @@ contains
     real c2
     !
     c2 = c
-    c2 = max ( c2, -1.0E+00 )
-    c2 = min ( c2, +1.0E+00 )
+    c2 = max ( c2, -1.0 )
+    c2 = min ( c2, +1.0 )
 
     arc_cosine = acos ( c2 )
 
@@ -308,7 +311,7 @@ contains
   function areas ( v1, v2, v3 )
     use ModNumConst, ONLY: cPi
     !
-    !*******************************************************************************
+    !**************************************************************************
     !
     !! AREAS computes the area of a spherical triangle on the unit sphere.
     !
@@ -373,7 +376,7 @@ contains
     real v1(3)
     real v2(3)
     real v3(3)
-    real eps, tol
+    real tol
     !
     dv1(1:3) = dble ( v1(1:3) )
     dv2(1:3) = dble ( v2(1:3) )
@@ -404,13 +407,12 @@ contains
     !  Test for a degenerate triangle associated with collinear vertices.
     !
 
-    eps = epsilon ( eps )
-    tol = 100.0E+00 * eps
+    tol = 100.0 * cEps
 
     !  write(*,*) 's12,s23,s31',s12,s23,s31
     !  if ( s12 == 0.0D+00 .or. s23 == 0.0D+00  .or. s31 == 0.0D+00 ) then
     if ( abs(s12) <= tol .or. abs(s23) <= tol  .or. abs(s31) <= tol ) then
-       areas = 0.0E+00
+       areas = 0.0
        RETURN
     end if
 
@@ -446,8 +448,8 @@ contains
     !
     areas = real ( a1 + a2 + a3  -cPi)
 
-    if ( areas < 0.0E+00 ) then
-       areas = 0.0E+00
+    if ( areas < 0.0 ) then
+       areas = 0.0
     end if
 
     RETURN
@@ -455,7 +457,7 @@ contains
   !============================================================================
   subroutine bdyadd ( kk, i1, i2, list, lptr, lend, lnew )
     !
-    !*******************************************************************************
+    !**************************************************************************
     !
     !! BDYADD adds a boundary node to a triangulation.
     !
@@ -589,7 +591,7 @@ contains
   !============================================================================
   subroutine bnodes ( n, list, lptr, lend, nodes, nb, na, nt )
     !
-    !*******************************************************************************
+    !**************************************************************************
     !
     !! BNODES returns the boundary nodes of a triangulation.
     !
@@ -716,7 +718,7 @@ contains
   !============================================================================
   subroutine circum ( v1, v2, v3, c, ier )
     !
-    !*******************************************************************************
+    !**************************************************************************
     !
     !! CIRCUM returns the circumcenter of a spherical triangle.
     !
@@ -725,8 +727,8 @@ contains
     !
     !    This subroutine returns the circumcenter of a spherical triangle on the
     !    unit sphere:  the point on the sphere surface that is equally distant
-    !    from the three triangle vertices and lies in the same hemisphere, where
-    !    distance is taken to be arc-length on the sphere surface.
+    !    from the three triangle vertices and lies in the same hemisphere,
+    !    where distance is taken to be arc-length on the sphere surface.
     !
     !  Author:
     !
@@ -784,7 +786,7 @@ contains
     !
     !  The vertices lie on a common line if and only if CU is the zero vector.
     !
-    if ( cnorm == 0.0E+00 ) then
+    if ( cnorm == 0.0 ) then
        ier = 1
        RETURN
     end if
@@ -796,7 +798,7 @@ contains
   !============================================================================
   subroutine covsph ( kk, n0, list, lptr, lend, lnew )
     !
-    !*******************************************************************************
+    !**************************************************************************
     !
     !! COVSPH connects an exterior node to boundary nodes, covering the sphere.
     !
@@ -827,9 +829,9 @@ contains
     !
     !    Input/output, integer LIST(6*(N-2)), LPTR(6*(N-2)), LEND(N), LNEW,
     !    the triangulation data structure created by TRMESH.  Node N0 must
-    !    be included in the triangulation.  On output, updated with the addition
-    !    of node KK as the last entry.  The updated triangulation contains no
-    !    boundary nodes.
+    !    be included in the triangulation.  On output, updated with the
+    !    addition of node KK as the last entry.  The updated triangulation
+    !    contains no boundary nodes.
     !
     !  Local parameters:
     !
@@ -902,7 +904,7 @@ contains
   subroutine crlist ( n, ncol, x, y, z, list, lend, lptr, lnew, &
        ltri, listc, nb, xc, yc, zc, rc, ier )
     !
-    !*******************************************************************************
+    !**************************************************************************
     !
     !! CRLIST returns triangle circumcenters and other information.
     !
@@ -958,12 +960,14 @@ contains
     !    Input, integer NCOL, the number of columns reserved for LTRI.  This
     !    must be at least NB-2, where NB is the number of boundary nodes.
     !
-    !    Input, real X(N), Y(N), Z(N), the coordinates of the nodes (unit vectors).
+    !    Input, real X(N), Y(N), Z(N), the coordinates of the nodes (unit
+    !    vectors).
     !
-    !    Input, integer LIST(6*(N-2)), the set of adjacency lists.  Refer to TRMESH.
+    !    Input, integer LIST(6*(N-2)), the set of adjacency lists.  Refer to
+    !    TRMESH.
     !
-    !    Input, integer LEND(N), the set of pointers to ends of adjacency lists.
-    !    Refer to TRMESH.
+    !    Input, integer LEND(N), the set of pointers to ends of adjacency
+    !    lists. Refer to TRMESH.
     !
     !    Input/output, integer LPTR(6*(N-2)), pointers associated with LIST.
     !    Refer to TRMESH.  On output, pointers associated with LISTC.  Updated
@@ -977,21 +981,22 @@ contains
     !
     !    Output, integer LTRI(6,NCOL).  Triangle list whose first NB-2 columns
     !    contain the indexes of a clockwise-ordered sequence of vertices (first
-    !    three rows) followed by the LTRI column indexes of the triangles opposite
-    !    the vertices (or 0 denoting the exterior region) in the last three rows.
+    !    three rows) followed by the LTRI column indexes of the triangles
+    !    opposite the vertices (or 0 denoting the exterior region) in the last
+    !    three rows.
     !    This array is not generally of any further use outside this routine.
     !
-    !    Output, integer LISTC(3*NT), where NT = 2*N-4 is the number of triangles
-    !    in the triangulation (after extending it to cover the entire surface
-    !    if necessary).  Contains the triangle indexes (indexes to XC, YC, ZC,
-    !    and RC) stored in 1-1 correspondence with LIST/LPTR entries (or entries
-    !    that would be stored in LIST for the extended triangulation):  the index
-    !    of triangle (N1,N2,N3) is stored in LISTC(K), LISTC(L), and LISTC(M),
-    !    where LIST(K), LIST(L), and LIST(M) are the indexes of N2 as a neighbor
-    !    of N1, N3 as a neighbor of N2, and N1 as a neighbor of N3.  The Voronoi
-    !    region associated with a node is defined by the CCW-ordered sequence of
-    !    circumcenters in one-to-one correspondence with its adjacency
-    !    list (in the extended triangulation).
+    !    Output, integer LISTC(3*NT), where NT = 2*N-4 is the number of
+    !    triangles in the triangulation (after extending it to cover the entire
+    !    surface if necessary).  Contains the triangle indexes (indexes to XC,
+    !    YC, ZC, and RC) stored in 1-1 correspondence with LIST/LPTR entries
+    !    (or entries that would be stored in LIST for the extended
+    !    triangulation):  the index of triangle (N1,N2,N3) is stored in
+    !    LISTC(K), LISTC(L), and LISTC(M), where LIST(K), LIST(L), and LIST(M)
+    !    are the indexes of N2 as a neighbor of N1, N3 as a neighbor of N2,
+    !    and N1 as a neighbor of N3.  The Voronoi region associated with a node
+    !    is defined by the CCW-ordered sequence of circumcenters in one-to-one
+    !    correspondence with its adjacency list (in the extended triangulation).
     !
     !    Output, integer NB, the number of boundary nodes unless IER = 1.
     !
@@ -1000,15 +1005,16 @@ contains
     !    + ZC(I)**2 = 1.  The first NB-2 entries correspond to pseudo-triangles
     !    if NB > 0.
     !
-    !    Output, real RC(2*N-4), the circumradii (the arc lengths or angles between
-    !    the circumcenters and associated triangle vertices) in 1-1 correspondence
-    !    with circumcenters.
+    !    Output, real RC(2*N-4), the circumradii (the arc lengths or angles
+    !    between the circumcenters and associated triangle vertices) in 1-1
+    !    correspondence with circumcenters.
     !
     !    Output, integer IER = Error indicator:
     !    0, if no errors were encountered.
     !    1, if N < 3.
     !    2, if NCOL < NB-2.
-    !    3, if a triangle is degenerate (has vertices lying on a common geodesic).
+    !    3, if a triangle is degenerate (has vertices lying on a common
+    !    geodesic).
     !
     !  Local parameters:
     !
@@ -1036,7 +1042,8 @@ contains
     !    NT =        Number of pseudo-triangles:  NB-2
     !    SWP =       Logical variable set to TRUE in each optimization
     !                loop (loop on pseudo-arcs) iff a swap is performed
-    !    V1,V2,V3 =  Vertices of triangle KT = (N1,N2,N3) sent to subroutine CIRCUM
+    !    V1,V2,V3 =  Vertices of triangle KT = (N1,N2,N3) sent to subroutine
+    !    CIRCUM
     !
     !
     !--------------------------------------------------------------------------
@@ -1206,7 +1213,8 @@ contains
                 n2 = ltri(i2,kt1)
                 n3 = ltri(i3,kt1)
                 !
-                !  KT2 = (N2,N1,N4) for N4 = LTRI(I,KT2), where LTRI(I+3,KT2) = KT1.
+                !  KT2 = (N2,N1,N4) for N4 = LTRI(I,KT2),
+                !  where LTRI(I+3,KT2) = KT1.
                 !
                 if ( ltri(4,kt2) == kt1 ) then
                    i4 = 1
@@ -1325,8 +1333,8 @@ contains
        zc(kt) = c(3)
 
        t = dot_product ( v1(1:3), c(1:3) )
-       t = max ( t, -1.0E+00 )
-       t = min ( t, +1.0E+00 )
+       t = max ( t, -1.0 )
+       t = min ( t, +1.0 )
 
        rc(kt) = acos(t)
 
@@ -1389,8 +1397,8 @@ contains
              zc(kt) = c(3)
 
              t = dot_product ( v1(1:3), c(1:3) )
-             t = max ( t, -1.0E+00 )
-             t = min ( t, +1.0E+00 )
+             t = max ( t, -1.0 )
+             t = min ( t, +1.0 )
 
              rc(kt) = acos(t)
              !
@@ -2632,8 +2640,8 @@ contains
              dp1r = x1*x(nr) + y1*y(nr) + z1*z(nr)
              dp2r = x2*x(nr) + y2*y(nr) + z2*z(nr)
 
-             if ( (dp2l-dp12*dp1l >= 0.0E+00 .or. dp2r-dp12*dp1r >= 0.0E+00 )  .and. &
-                  (dp1l-dp12*dp2l >= 0.0E+00 .or. dp1r-dp12*dp2r >= 0.0E+00 ) ) then
+             if ( (dp2l-dp12*dp1l >= 0.0 .or. dp2r-dp12*dp1r >= 0.0 )  .and. &
+                  (dp1l-dp12*dp2l >= 0.0 .or. dp1r-dp12*dp2r >= 0.0 ) ) then
                 GOTO 6
              end if
              !
@@ -3154,7 +3162,7 @@ contains
     !  of nodes in NPTS.  DNP is initially greater than -cos(PI)
     !  (the maximum distance).
     !
-    dnp = 2.0E+00
+    dnp = 2.0
     !
     !  Loop on nodes NI in NPTS.
     !
@@ -3427,7 +3435,7 @@ contains
     real bq
     real cn(3)
     real d
-    real, parameter :: eps = 0.001E+00
+    real, parameter :: eps = 0.001
     logical even
     integer i1
     integer i2
@@ -3511,7 +3519,7 @@ contains
     vn(3) = xv(i1)*yv(i2) - yv(i1)*xv(i2)
     vnrm = sqrt ( sum ( vn(1:3)**2 ) )
 
-    if ( vnrm == 0.0E+00 ) then
+    if ( vnrm == 0.0 ) then
        GOTO 1
     end if
 
@@ -3531,7 +3539,7 @@ contains
     cn(2) = q(3)*p(1) - q(1)*p(3)
     cn(3) = q(1)*p(2) - q(2)*p(1)
 
-    if ( cn(1) == 0.0E+00 .and. cn(2) == 0.0E+00  .and. cn(3) == 0.0E+00 ) then
+    if ( cn(1) == 0.0 .and. cn(2) == 0.0  .and. cn(3) == 0.0 ) then
        GOTO 1
     end if
 
@@ -3546,8 +3554,8 @@ contains
     !
     ni = 0
     even = .true.
-    bp = -2.0E+00
-    bq = -2.0E+00
+    bp = -2.0
+    bq = -2.0
     pinr = .true.
     qinr = .true.
     i2 = listv(n)
@@ -3557,7 +3565,7 @@ contains
        RETURN
     end if
 
-    lft2 = cn(1)*xv(i2) + cn(2)*yv(i2) + cn(3)*zv(i2) > 0.0E+00
+    lft2 = cn(1)*xv(i2) + cn(2)*yv(i2) + cn(3)*zv(i2) > 0.0
     !
     !  Loop on boundary arcs I1->I2.
     !
@@ -3572,7 +3580,7 @@ contains
           RETURN
        end if
 
-       lft2 = cn(1)*xv(i2) + cn(2)*yv(i2) + cn(3)*zv(i2) > 0.0E+00
+       lft2 = cn(1)*xv(i2) + cn(2)*yv(i2) + cn(3)*zv(i2) > 0.0
 
        if ( lft1 .eqv. lft2 ) then
           CYCLE
@@ -3595,8 +3603,8 @@ contains
        !  B Forward Q->P and B Forward P->Q       iff
        !  <B,QN> > 0 and <B,PN> > 0.
        !
-       if ( dot_product ( b(1:3), qn(1:3) ) > 0.0E+00 .and. &
-            dot_product ( b(1:3), pn(1:3) ) > 0.0E+00 ) then
+       if ( dot_product ( b(1:3), qn(1:3) ) > 0.0 .and. &
+            dot_product ( b(1:3), pn(1:3) ) > 0.0 ) then
           !
           !  Update EVEN, BQ, QINR, BP, and PINR.
           !
@@ -3812,7 +3820,7 @@ contains
     !
     t = d1 / (d1-d2)
 
-    ppn = 0.0E+00
+    ppn = 0.0
     do i = 1, 3
        pp(i) = p1(i) + t * ( p2(i)-p1(i) )
        ppn = ppn + pp(i) * pp(i)
@@ -3820,7 +3828,7 @@ contains
     !
     !  PPN = 0 iff PP = 0 iff P2 = -P1 (and T = .5).
     !
-    if ( ppn == 0.0E+00 ) then
+    if ( ppn == 0.0 ) then
        ier = 2
        RETURN
     end if
@@ -3892,12 +3900,12 @@ contains
     iy = mod ( 172 * iy, 30307 )
     iz = mod ( 170 * iz, 30323 )
 
-    x = ( real ( ix ) / 30269.0E+00 ) &
-         + ( real ( iy ) / 30307.0E+00 ) &
-         + ( real ( iz ) / 30323.0E+00 )
+    x = ( real ( ix ) / 30269.0 ) &
+         + ( real ( iy ) / 30307.0 ) &
+         + ( real ( iz ) / 30323.0 )
 
     u = x - int ( x )
-    jrand = real ( n ) * u + 1.0E+00
+    jrand = real ( n ) * u + 1.0
 
     RETURN
   end function jrand
@@ -3949,7 +3957,7 @@ contains
     !
     !  LEFT = TRUE iff <N0,N1 X N2> = det(N0,N1,N2) >= 0.
     !
-    left = x0*(y1*z2-y2*z1) - y0*(x1*z2-x2*z1) + z0*(x1*y2-x2*y1) >= 0.0E+00
+    left = x0*(y1*z2-y2*z1) - y0*(x1*z2-x2*z1) + z0*(x1*y2-x2*y1) >= 0.0
 
     RETURN
   end function left
@@ -4230,7 +4238,7 @@ contains
     real z(n)
     !
     nearnd = 0
-    al = 0.0E+00
+    al = 0.0
     !
     !  Store local parameters and test for N invalid.
     !
@@ -4349,7 +4357,7 @@ contains
           !
           if ( dx3*(dy2*dz1 - dy1*dz2) - &
                dy3*(dx2*dz1 - dx1*dz2) + &
-               dz3*(dx2*dy1 - dx1*dy2) > 0.0E+00 ) then
+               dz3*(dx2*dy1 - dx1*dy2) > 0.0 ) then
 
              l = l+1
              lptrp(lp2) = l
@@ -4406,7 +4414,7 @@ contains
     end do
 
     dsr = -dsr
-    dsr = min ( dsr, 1.0E+00 )
+    dsr = min ( dsr, 1.0 )
 
     al = acos ( dsr )
     nearnd = nr
@@ -4640,34 +4648,6 @@ contains
     RETURN
   end subroutine optim
   !============================================================================
-  function r_pi ( )
-    !
-    !*******************************************************************************
-    !
-    !! R_PI returns the value of pi.
-    !
-    !
-    !  Modified:
-    !
-    !    04 December 1998
-    !
-    !  Author:
-    !
-    !    John Burkardt
-    !
-    !  Parameters:
-    !
-    !    Output, real R_PI, the value of pi.
-    !
-    !
-    !--------------------------------------------------------------------------
-    real r_pi
-    !
-    r_pi = 3.14159265358979323846264338327950288419716939937510E+00
-
-    RETURN
-  end function r_pi
-  !============================================================================
   subroutine r3vec_normalize ( n, x, y, z )
     !
     !*******************************************************************************
@@ -4704,7 +4684,7 @@ contains
 
        norm = sqrt ( x(i)**2 + y(i)**2 + z(i)**2 )
 
-       if ( norm /= 0.0E+00 ) then
+       if ( norm /= 0.0 ) then
           x(i) = x(i) / norm
           y(i) = y(i) / norm
           z(i) = z(i) / norm
@@ -4757,16 +4737,16 @@ contains
     !
     pnrm = sqrt ( px*px + py*py + pz*pz )
 
-    if ( px /= 0.0E+00 .or. py /= 0.0E+00 ) then
+    if ( px /= 0.0 .or. py /= 0.0 ) then
        plon = atan2 ( py, px )
     else
-       plon = 0.0E+00
+       plon = 0.0
     end if
 
-    if ( pnrm /= 0.0E+00 ) then
+    if ( pnrm /= 0.0 ) then
        plat = asin ( pz / pnrm )
     else
-       plat = 0.0E+00
+       plat = 0.0
     end if
 
     RETURN
@@ -5011,7 +4991,7 @@ contains
     !
     swptst = dx3*(dy2*dz1 - dy1*dz2) &
          -dy3*(dx2*dz1 - dx1*dz2) &
-         +dz3*(dx2*dy1 - dx1*dy2) > 0.0E+00
+         +dz3*(dx2*dy1 - dx1*dy2) > 0.0
 
     RETURN
   end function swptst
@@ -5276,7 +5256,6 @@ contains
     real b1
     real b2
     real b3
-    real eps
     integer i1
     integer i2
     integer i3
@@ -5340,14 +5319,14 @@ contains
     !
     !  Compute the relative machine precision EPS and TOL.
     !
-    eps = epsilon ( eps )
-    tol = 100.0E+00 * eps
+    tol = 100.0 * cEps
 
     !  write(*,*) ''
-    !  write(*,*) 'eps',eps
+    !  write(*,*) 'eps', cEps
 
     !
-    !  Set NF and NL to the first and last neighbors of N0, and initialize N1 = NF.
+    !  Set NF and NL to the first and last neighbors of N0, and initialize
+    !  N1 = NF.
     !
 2   continue
 
@@ -5366,7 +5345,8 @@ contains
        !
 3      continue
 
-       if ( det ( x(n0),y(n0),z(n0),x(n1),y(n1),z(n1),xp,yp,zp ) < 0.0E+00 ) then
+       if ( det ( x(n0),y(n0),z(n0),x(n1),y(n1),z(n1),xp,yp,zp ) < 0.0 )&
+            then
           lp = lptr(lp)
           n1 = list(lp)
           if ( n1 == nl ) then
@@ -5383,7 +5363,7 @@ contains
        !
        !  Is P to the right of the boundary edge N0->NF?
        !
-       if ( det(x(n0),y(n0),z(n0),x(nf),y(nf),z(nf), xp,yp,zp) < 0.0E+00 ) then
+       if ( det(x(n0),y(n0),z(n0),x(nf),y(nf),z(nf), xp,yp,zp) < 0.0 ) then
           n1 = n0
           n2 = nf
           GOTO 9
@@ -5391,7 +5371,7 @@ contains
        !
        !  Is P to the right of the boundary edge NL->N0?
        !
-       if ( det(x(nl),y(nl),z(nl),x(n0),y(n0),z(n0),xp,yp,zp) < 0.0E+00 ) then
+       if ( det(x(nl),y(nl),z(nl),x(n0),y(n0),z(n0),xp,yp,zp) < 0.0 ) then
           n1 = nl
           n2 = n0
           GOTO 9
@@ -5407,7 +5387,7 @@ contains
     lp = lptr(lp)
     n2 = abs ( list(lp) )
 
-    if ( det(x(n0),y(n0),z(n0),x(n2),y(n2),z(n2),xp,yp,zp) < 0.0E+00 ) then
+    if ( det(x(n0),y(n0),z(n0),x(n2),y(n2),z(n2),xp,yp,zp) < 0.0 ) then
        GOTO 7
     end if
 
@@ -5417,7 +5397,7 @@ contains
        GOTO 4
     end if
 
-    if ( det(x(n0),y(n0),z(n0),x(nf),y(nf),z(nf),xp,yp,zp) < 0.0E+00 ) then
+    if ( det(x(n0),y(n0),z(n0),x(nf),y(nf),z(nf),xp,yp,zp) < 0.0 ) then
        GOTO 6
     end if
     !
@@ -5425,7 +5405,7 @@ contains
     !  of N0.  Test for P = +/-N0.
     !
     if ( store ( abs ( x(n0 ) * xp + y(n0) * yp + z(n0) * zp) ) &
-         < 1.0E+00 - 4.0E+00 * eps ) then
+         < 1.0 - 4.0 * cEps ) then
        !
        !  All points are collinear iff P Left NB->N0 for all
        !  neighbors NB of N0.  Search the neighbors of N0.
@@ -5433,9 +5413,8 @@ contains
        !
        do
 
-          if ( det(x(n1),y(n1),z(n1),x(n0),y(n0),z(n0),xp,yp,zp) < 0.0E+00 ) then
+          if ( det(x(n1),y(n1),z(n1),x(n0),y(n0),z(n0),xp,yp,zp) < 0.0 )&
              EXIT
-          end if
 
           lp = lptr(lp)
           n1 = abs ( list(lp) )
@@ -5478,7 +5457,7 @@ contains
 
     b3 = det ( x(n1),y(n1),z(n1),x(n2),y(n2),z(n2),xp,yp,zp )
 
-    if ( b3 < 0.0E+00 ) then
+    if ( b3 < 0.0 ) then
        !
        !  Set N4 to the first neighbor of N2 following N1 (the
        !  node opposite N2->N1) unless N1->N2 is a boundary arc.
@@ -5494,7 +5473,8 @@ contains
        !
        !  Define a new arc N1->N2 which intersects the geodesic N0-P.
        !
-       if ( det ( x(n0),y(n0),z(n0),x(n4),y(n4),z(n4),xp,yp,zp ) < 0.0E+00 ) then
+       if ( det ( x(n0),y(n0),z(n0),x(n4),y(n4),z(n4),xp,yp,zp ) < 0.0 )&
+            then
           n3 = n2
           n2 = n4
           n1s = n1
@@ -5533,7 +5513,7 @@ contains
     !  P is in (N1,N2,N3) unless N0, N1, N2, and P are collinear
     !  or P is close to -N0.
     !
-    if ( b3 >= eps ) then
+    if ( b3 >= cEps ) then
        !
        !  B3 /= 0.
        !
@@ -5563,7 +5543,7 @@ contains
        !  B3 = 0 and thus P lies on N1->N2. Compute
        !  B1 = Det(P,N2 X N1,N2) and B2 = Det(P,N1,N2 X N1).
        !
-       b3 = 0.0E+00
+       b3 = 0.0
        s12 = x(n1)*x(n2) + y(n1)*y(n2) + z(n1)*z(n2)
        ptn1 = xp*x(n1) + yp*y(n1) + zp*z(n1)
        ptn2 = xp*x(n2) + yp*y(n2) + zp*z(n2)
@@ -5595,8 +5575,8 @@ contains
     i1 = n1
     i2 = n2
     i3 = n3
-    b1 = max ( b1, 0.0E+00 )
-    b2 = max ( b2, 0.0E+00 )
+    b1 = max ( b1, 0.0 )
+    b2 = max ( b2, 0.0 )
     RETURN
     !
     !  P Right N1->N2, where N1->N2 is a boundary edge.
@@ -5617,7 +5597,8 @@ contains
     lp = lptr(lp)
     next = list(lp)
 
-    if ( det(x(n2),y(n2),z(n2),x(next),y(next),z(next),xp,yp,zp) >= 0.0E+00 ) then
+    if ( det(x(n2),y(n2),z(n2),x(next),y(next),z(next),xp,yp,zp) >= 0.0 )&
+         then
        !
        !  N2 is the rightmost visible node if P Forward N2->N1
        !  or NEXT Forward N2->N1.  Set Q to (N2 X N1) X N2.
@@ -5626,9 +5607,9 @@ contains
        q(1) = x(n1) - s12*x(n2)
        q(2) = y(n1) - s12*y(n2)
        q(3) = z(n1) - s12*z(n2)
-       if ( xp*q(1) + yp*q(2) + zp*q(3) >= 0.0E+00 ) GOTO 11
+       if ( xp*q(1) + yp*q(2) + zp*q(3) >= 0.0 ) GOTO 11
 
-       if ( x(next)*q(1) + y(next)*q(2) + z(next)*q(3) >= 0.0E+00 ) GOTO 11
+       if ( x(next)*q(1) + y(next)*q(2) + z(next)*q(3) >= 0.0 ) GOTO 11
        !
        !  N1, N2, NEXT, and P are nearly collinear, and N2 is
        !  the leftmost visible node.
@@ -5673,7 +5654,7 @@ contains
        lp = lend(n1)
        next = -list(lp)
 
-       if ( det(x(next),y(next),z(next),x(n1),y(n1),z(n1),xp,yp,zp) >= 0.0E+00 ) then
+       if ( det(x(next),y(next),z(next),x(n1),y(n1),z(n1),xp,yp,zp) >= 0.0 ) then
           !
           !  N1 is the leftmost visible node if P or NEXT is
           !  forward of N1->N2.  Compute Q = N1 X (N2 X N1).
@@ -5683,11 +5664,11 @@ contains
           q(2) = y(n2) - s12*y(n1)
           q(3) = z(n2) - s12*z(n1)
 
-          if ( xp*q(1) + yp*q(2) + zp*q(3) >= 0.0E+00 ) then
+          if ( xp*q(1) + yp*q(2) + zp*q(3) >= 0.0 ) then
              GOTO 13
           end if
 
-          if ( x(next)*q(1) + y(next)*q(2) + z(next)*q(3) >= 0.0E+00 ) then
+          if ( x(next)*q(1) + y(next)*q(2) + z(next)*q(3) >= 0.0 ) then
              GOTO 13
           end if
           !
@@ -5732,7 +5713,7 @@ contains
   !============================================================================
   subroutine trlist ( n, list, lptr, lend, nrow, nt, ltri, ier )
     !
-    !*******************************************************************************
+    !**************************************************************************
     !
     !! TRLIST converts a triangulation data structure to a triangle list.
     !
@@ -6785,8 +6766,8 @@ contains
     real ex
     real ey
     real ez
-    real, parameter :: fsizn = 10.0E+00
-    real, parameter :: fsizt = 16.0E+00
+    real, parameter :: fsizn = 10.0
+    real, parameter :: fsizt = 16.0
     integer ier
     integer ipx1
     integer ipx2
@@ -6835,10 +6816,10 @@ contains
     else if ( lun > 99 ) then
        ier = 1
        RETURN
-    else if ( pltsiz < 1.0E+00 ) then
+    else if ( pltsiz < 1.0 ) then
        ier = 1
        RETURN
-    else if ( pltsiz > 8.5E+00 ) then
+    else if ( pltsiz > 8.5 ) then
        ier = 1
        RETURN
     else if ( n < 3 ) then
@@ -6846,20 +6827,20 @@ contains
        RETURN
     end if
 
-    if ( abs ( elat ) > 90.0E+00 ) then
+    if ( abs ( elat ) > 90.0 ) then
        ier = 2
        RETURN
-    else if ( abs ( elon ) > 180.0E+00 ) then
+    else if ( abs ( elon ) > 180.0 ) then
        ier = 2
        RETURN
-    else if ( a > 90.0E+00 ) then
+    else if ( a > 90.0 ) then
        ier = 2
        RETURN
     end if
     !
     !  Compute a conversion factor CF for degrees to radians.
     !
-    cf = atan ( 1.0E+00 ) / 45.0E+00
+    cf = atan ( 1.0 ) / 45.0
     !
     !  Compute the window radius WR.
     !
@@ -6875,7 +6856,7 @@ contains
     !  by 11 inch page.  The center of the page is (306,396),
     !  and IR = PLTSIZ/2 in points.
     !
-    ir = nint ( 36.0E+00 * pltsiz )
+    ir = nint ( 36.0 * pltsiz )
     ipx1 = 306 - ir
     ipx2 = 306 + ir
     ipy1 = 396 - ir
@@ -6893,7 +6874,7 @@ contains
     !  of a viewport box obtained by shrinking the bounding box
     !  by 12% in each dimension.
     !
-    ir = nint ( 0.88E+00 * real ( ir ) )
+    ir = nint ( 0.88 * real ( ir ) )
     ipx1 = 306 - ir
     ipx2 = 306 + ir
     ipy1 = 396 - ir
@@ -6902,7 +6883,7 @@ contains
     !  Set the line thickness to 2 points, and draw the
     !  viewport boundary.
     !
-    t = 2.0E+00
+    t = 2.0
     write ( lun, '(f12.6,a)' ) t, ' setlinewidth'
     write ( lun, '(a,i3,a)' ) '306 396 ', ir, ' 0 360 arc'
     write ( lun, '(a)' ) 'stroke'
@@ -6920,7 +6901,7 @@ contains
     !  scaling which is applied to all subsequent output.
     !  Set it to 1.0 point.
     !
-    t = 1.0E+00 / sf
+    t = 1.0 / sf
     write ( lun, '(f12.6,a)' ) t, ' setlinewidth'
     !
     !  Save the current graphics state, and set the clip path to
@@ -6947,12 +6928,12 @@ contains
     ey = ct * sin ( t )
     ez = sin ( cf * elat )
 
-    if ( ct /= 0.0E+00 ) then
+    if ( ct /= 0.0 ) then
        r11 = -ey / ct
        r12 = ex / ct
     else
-       r11 = 0.0E+00
-       r12 = 1.0E+00
+       r11 = 0.0
+       r12 = 1.0
     end if
 
     r21 = -ez * r12
@@ -6965,7 +6946,7 @@ contains
 
        z0 = ex*x(n0) + ey*y(n0) + ez*z(n0)
 
-       if ( z0 < 0.0E+00 ) then
+       if ( z0 < 0.0 ) then
           CYCLE
        end if
 
@@ -6995,7 +6976,7 @@ contains
           !  the edge is clipped properly.  Z1 is implicitly set
           !  to 0.
           !
-          if (z1 < 0.0E+00 ) then
+          if (z1 < 0.0 ) then
              x1 = z0*x1 - z1*x0
              y1 = z0*y1 - z1*y0
              t = sqrt(x1*x1+y1*y1)
@@ -7008,7 +6989,7 @@ contains
           !
           !  Add the edge to the path.
           !
-          if ( z1 < 0.0E+00 .or. x1*x1 + y1*y1 > wrs .or. n1 >= n0 ) then
+          if ( z1 < 0.0 .or. x1*x1 + y1*y1 > wrs .or. n1 >= n0 ) then
              write ( lun, '(2f12.6,a,2f12.6,a)' ) &
                   x0, y0, ' moveto', x1, y1, ' lineto'
           end if
@@ -7042,7 +7023,7 @@ contains
        !
        do n0 = 1, n
 
-          if ( ex*x(n0) + ey*y(n0) + ez*z(n0) < 0.0E+00 ) then
+          if ( ex*x(n0) + ey*y(n0) + ez*z(n0) < 0.0 ) then
              CYCLE
           end if
 
@@ -7073,7 +7054,7 @@ contains
     !
     !  Display TITLE centered above the plot:
     !
-    y0 = wr + 3.0E+00 * t
+    y0 = wr + 3.0 * t
 
     write ( lun, '(a)' ) title
     write ( lun, '(a,f12.6,a)' ) '  stringwidth pop 2 div neg ', y0, ' moveto'
@@ -7085,11 +7066,11 @@ contains
     if ( annot ) then
 
        x0 = -wr
-       y0 = -wr - 50.0E+00 / sf
+       y0 = -wr - 50.0 / sf
        write ( lun, '(2f12.6,a)' ) x0, y0, ' moveto'
        write ( lun, '(a,f7.2,a,f8.2,a)' ) '(Window center:  Latitude = ', elat, &
             ', Longitude = ', elon , ') show'
-       y0 = y0 - 2.0E+00 * t
+       y0 = y0 - 2.0 * t
        write ( lun, '(2f12.6,a)' ) x0, y0, ' moveto'
        write ( lun, '(a,f5.2,a)' ) '(Angular extent = ', a, ') show'
 
@@ -7674,8 +7655,8 @@ contains
     real ex
     real ey
     real ez
-    real, parameter :: fsizn = 10.0E+00
-    real, parameter :: fsizt = 16.0E+00
+    real, parameter :: fsizn = 10.0
+    real, parameter :: fsizt = 16.0
     integer ier
     logical in1
     logical in2
@@ -7727,20 +7708,20 @@ contains
     !  Test for invalid parameters.
     !
     if (lun < 0 .or. lun > 99  .or. &
-         pltsiz < 1.0E+00 .or. pltsiz > 8.5E+00  .or. &
+         pltsiz < 1.0 .or. pltsiz > 8.5  .or. &
          n < 3 .or. nt /= 2*n-4) then
        ier = 1
        RETURN
     end if
 
-    if ( abs ( elat ) > 90.0E+00 .or. abs ( elon ) > 180.0E+00 .or. a > 90.0E+00 ) then
+    if ( abs ( elat ) > 90.0 .or. abs ( elon ) > 180.0 .or. a > 90.0 ) then
        ier = 2
        RETURN
     end if
     !
     !  Compute a conversion factor CF for degrees to radians.
     !
-    cf = atan ( 1.0E+00 ) / 45.0E+00
+    cf = atan ( 1.0 ) / 45.0
     !
     !  Compute the window radius WR.
     !
@@ -7756,7 +7737,7 @@ contains
     !  by 11 inch page.  The center of the page is (306,396),
     !  and IR = PLTSIZ/2 in points.
     !
-    ir = nint ( 36.0E+00 * pltsiz )
+    ir = nint ( 36.0 * pltsiz )
     ipx1 = 306 - ir
     ipx2 = 306 + ir
     ipy1 = 396 - ir
@@ -7774,7 +7755,7 @@ contains
     !  of a viewport box obtained by shrinking the bounding box
     !  by 12% in each dimension.
     !
-    ir = nint ( 0.88E+00 * real ( ir ) )
+    ir = nint ( 0.88 * real ( ir ) )
     ipx1 = 306 - ir
     ipx2 = 306 + ir
     ipy1 = 396 - ir
@@ -7782,7 +7763,7 @@ contains
     !
     !  Set the line thickness to 2 points, and draw the viewport boundary.
     !
-    t = 2.0E+00
+    t = 2.0
     write ( lun, '(f12.6,a)' ) t, ' setlinewidth'
     write ( lun, '(a,i3,a)' ) '306 396 ', ir, ' 0 360 arc'
     write ( lun, '(a)' ) 'stroke'
@@ -7801,7 +7782,7 @@ contains
     !  scaling which is applied to all subsequent output.
     !  Set it to 1.0 point.
     !
-    t = 1.0E+00 / sf
+    t = 1.0 / sf
     write ( lun, '(f12.6,a)' ) t, ' setlinewidth'
     !
     !  Save the current graphics state, and set the clip path to
@@ -7828,12 +7809,12 @@ contains
     ey = ct * sin ( t )
     ez = sin ( cf * elat )
 
-    if ( ct /= 0.0E+00 ) then
+    if ( ct /= 0.0 ) then
        r11 = -ey / ct
        r12 = ex / ct
     else
-       r11 = 0.0E+00
-       r12 = 1.0E+00
+       r11 = 0.0
+       r12 = 1.0
     end if
 
     r21 = -ez * r12
@@ -7857,7 +7838,7 @@ contains
        !
        !  IN2 = TRUE iff KV2 is in the window.
        !
-       in2 = z2 >= 0.0E+00 .and. x2*x2 + y2*y2 <= wrs
+       in2 = z2 >= 0.0 .and. x2*x2 + y2*y2 <= wrs
        !
        !  Loop on neighbors N1 of N0.  For each triangulation edge
        !  N0-N1, KV1-KV2 is the corresponding Voronoi edge.
@@ -7879,7 +7860,7 @@ contains
           x2 = r11*xc(kv2) + r12*yc(kv2)
           y2 = r21*xc(kv2) + r22*yc(kv2) + r23*zc(kv2)
           z2 = ex*xc(kv2) + ey*yc(kv2) + ez*zc(kv2)
-          in2 = z2 >= 0.0E+00 .and. x2*x2 + y2*y2 <= wrs
+          in2 = z2 >= 0.0 .and. x2*x2 + y2*y2 <= wrs
           !
           !  Add edge KV1-KV2 to the path iff both endpoints are inside
           !  the window and KV2 > KV1, or KV1 is inside and KV2 is
@@ -7891,7 +7872,7 @@ contains
              !  intersection of edge KV1-KV2 with the equator so that
              !  the edge is clipped properly.  Z2 is implicitly set to 0.
              !
-             if ( z2 < 0.0E+00 ) then
+             if ( z2 < 0.0 ) then
                 x2 = z1*x2 - z2*x1
                 y2 = z1*y2 - z2*y1
                 t = sqrt(x2*x2+y2*y2)
@@ -7932,7 +7913,7 @@ contains
        !
        do n0 = 1, n
 
-          if (ex*x(n0) + ey*y(n0) + ez*z(n0) < 0.0E+00 ) then
+          if (ex*x(n0) + ey*y(n0) + ez*z(n0) < 0.0 ) then
              CYCLE
           end if
 
@@ -7960,7 +7941,7 @@ contains
     !
     !  Display TITLE centered above the plot:
     !
-    y0 = wr + 3.0E+00 * t
+    y0 = wr + 3.0 * t
     write ( lun, '(a)' ) title
     write ( lun, '(a,g12.5,a)' ) '  stringwidth pop 2 div neg ', y0, ' moveto'
     write ( lun, '(a)' ) title
@@ -7971,11 +7952,11 @@ contains
     if ( annot ) then
 
        x0 = -wr
-       y0 = -wr - 50.0E+00 / sf
+       y0 = -wr - 50.0 / sf
        write ( lun, '(2f12.6,a)' ) x0, y0, ' moveto'
        write ( lun, '(a,f7.2,a,f8.2,a)' ) '(Window center:  Latitude = ', elat, &
             ', Longitude = ', elon , ') show'
-       y0 = y0 - 2.0E+00 * t
+       y0 = y0 - 2.0 * t
        write ( lun, '(2f12.6,a)' ) x0, y0, ' moveto'
        write ( lun, '(a,f5.2,a)' ) '(Angular extent = ', a, ') show'
 
