@@ -2,6 +2,7 @@
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 module ModTriangulateSpherical
+  use ModUtilities, ONLY: CON_stop
   implicit none
 
   private ! except
@@ -5282,6 +5283,8 @@ contains
     integer, save :: ix = 1
     integer, save :: iy = 2
     integer, save :: iz = 3
+    integer, parameter :: MaxRestart = 100000
+    integer :: iRestart
     ! integer jrand
     integer lend(n)
     integer list(6*(n-2))
@@ -5329,6 +5332,7 @@ contains
     yp = p(2)
     zp = p(3)
     n0 = nst
+    iRestart=0
 
     if ( n0 < 1 .or. n < n0 ) then
        n0 = jrand ( n, ix, iy, iz )
@@ -5510,6 +5514,17 @@ contains
        !  again, implying a cycle (infinite loop).  Restart
        !  with N0 randomly selected.
        !
+
+       iRestart = iRestart + 1
+       if (iRestart > MaxRestart) then
+          write(*,*) 'trfind ERROR: cycle restart limit exceeded'
+          write(*,*) '  iRestart=', iRestart
+          write(*,*) '  nst=', nst, ' n0=', n0, ' n1=', n1, ' n2=', n2, &
+               ' n3=', n3, ' n4=', n4
+          write(*,*) '  p=', xp, yp, zp
+          call CON_stop('ModTriangulateSpherical/trfind: cycle restart limit exceeded')
+       end if
+
        n0 = jrand ( n, ix, iy, iz )
        GOTO 2
 
@@ -5528,6 +5543,17 @@ contains
        !  Restart with N0 randomly selected.
        !
        if ( b1 < -tol .or. b2 < -tol ) then
+          iRestart = iRestart + 1
+          if (iRestart > MaxRestart) then
+             write(*,*) 'trfind ERROR: bary1 restart limit exceeded'
+             write(*,*) '  iRestart=', iRestart
+             write(*,*) '  nst=', nst, ' n0=', n0, ' n1=', n1, ' n2=', n2, &
+                  ' n3=', n3
+             write(*,*) '  b1=', b1, ' b2=', b2, ' b3=', b3, ' tol=', tol
+             write(*,*) '  p=', xp, yp, zp
+             call CON_stop('ModTriangulateSpherical/trfind: bary1 restart limit exceeded')
+          end if
+
           n0 = jrand ( n, ix, iy, iz )
           GOTO 2
        end if
@@ -5547,6 +5573,17 @@ contains
        !  Restart with N0 randomly selected.
        !
        if ( b1 < -tol .or. b2 < -tol ) then
+          iRestart = iRestart + 1
+          if (iRestart > MaxRestart) then
+             write(*,*) 'trfind ERROR: bary2 restart limit exceeded'
+             write(*,*) '  iRestart=', iRestart
+             write(*,*) '  nst=', nst, ' n0=', n0, ' n1=', n1, ' n2=', n2, &
+                  ' n3=', n3
+             write(*,*) '  b1=', b1, ' b2=', b2, ' b3=', b3, ' tol=', tol
+             write(*,*) '  p=', xp, yp, zp
+             call CON_stop('ModTriangulateSpherical/trfind: bary2 restart limit exceeded')
+          end if
+
           n0 = jrand ( n, ix, iy, iz )
           GOTO 2
        end if
