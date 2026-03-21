@@ -5497,12 +5497,11 @@ contains
 
        iRestart = iRestart + 1
        if (iRestart > MaxRestart) then
-          write(*,*) 'trfind ERROR: CYCLE restart limit exceeded'
           write(*,*) '  iRestart=', iRestart
           write(*,*) '  nst=', nst, ' n0=', n0, ' n1=', n1, ' n2=', n2, &
                ' n3=', n3, ' n4=', n4
           write(*,*) '  p=', xp, yp, zp
-          call CON_stop('ModTriangulateSpherical/trfind: CYCLE restart limit exceeded')
+          call CON_stop('trfind: CYCLE restart limit exceeded')
        end if
 
        n0 = jrand ( n, ix, iy, iz )
@@ -5525,13 +5524,12 @@ contains
        if ( b1 < -tol .or. b2 < -tol ) then
           iRestart = iRestart + 1
           if (iRestart > MaxRestart) then
-             write(*,*) 'trfind ERROR: bary1 restart limit exceeded'
              write(*,*) '  iRestart=', iRestart
              write(*,*) '  nst=', nst, ' n0=', n0, ' n1=', n1, ' n2=', n2, &
                   ' n3=', n3
              write(*,*) '  b1=', b1, ' b2=', b2, ' b3=', b3, ' tol=', tol
              write(*,*) '  p=', xp, yp, zp
-             call CON_stop('ModTriangulateSpherical/trfind: bary1 restart limit exceeded')
+             call CON_stop('trfind: bary1 restart limit exceeded')
           end if
 
           n0 = jrand ( n, ix, iy, iz )
@@ -5555,13 +5553,12 @@ contains
        if ( b1 < -tol .or. b2 < -tol ) then
           iRestart = iRestart + 1
           if (iRestart > MaxRestart) then
-             write(*,*) 'trfind ERROR: bary2 restart limit exceeded'
              write(*,*) '  iRestart=', iRestart
              write(*,*) '  nst=', nst, ' n0=', n0, ' n1=', n1, ' n2=', n2, &
                   ' n3=', n3
              write(*,*) '  b1=', b1, ' b2=', b2, ' b3=', b3, ' tol=', tol
              write(*,*) '  p=', xp, yp, zp
-             call CON_stop('ModTriangulateSpherical/trfind: bary2 restart limit exceeded')
+             call CON_stop('trfind: bary2 restart limit exceeded')
           end if
 
           n0 = jrand ( n, ix, iy, iz )
