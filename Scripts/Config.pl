@@ -919,7 +919,14 @@ sub set_amrex_{
 
     my $InstallDir = "InstallDir${NewAmrexDim}D";
     if($NewAmrex eq "yes" and not -e "util/AMREX/InstallDir${NewAmrexDim}D/lib/libamrex.a"){
-	my $AmrexCompiler="intel";
+	
+	my $AmrexCompiler="intel-classic";	
+	if($Compiler eq "ifx" or $Compiler eq "mpiifx" or 
+	   ($Compiler eq "mpiifort" and index(`mpiifort -show`, "ifx") != -1) or 
+	   ($Compiler eq "mpif90" and index(`mpif90 -show`, "ifx") != -1)){
+	    $AmrexCompiler="intel-llvm";
+	}
+
 	if($Compiler eq "gfortran"){
 	    if(index(`mpicxx -show`, "clang") != -1){
 		# mpicxx is installed with clang
