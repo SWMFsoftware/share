@@ -14,9 +14,10 @@
 ;
 ; fixing things if animate or slice crashes
 ;   reset_axis, slice_data_restore
-; reading ascii and binary data produced by VAC, BATSRUS, PWOM, FLEKS etc:
+; reading ascii and binary data produced by VAC, BATSRUS, PWOM, FLEKS, RIM etc:
 ;    open_file, get_file_types, get_file_head, get_pict, 
-;    get_pict_asc, get_pict_bin, get_pict_log, get_log, read_log_line
+;    get_pict_asc, get_pict_bin, get_pict_log, get_pict_rim,
+;    get_log, read_log_line
 ; showing / overwriting information read from last file:
 ;    show_head, show_units, set_units
 ; saving ascii and binary data in the same format as used for input:
@@ -2360,8 +2361,8 @@ pro get_pict_rim, unit, npict
   w = dblarr(nx[0],nx[1],nw)    ; complete variable array
   nLat = (nx[0]-1)/2 + 1        ; number of latitudes per hemisphere
   ;; read north hemisphere
-  for ilon = 0, nx[1]-1 do begin
-     for ilat = 0, nLat-1 do begin
+  for iLon = 0, nx[1]-1 do begin
+     for iLat = 2*(nLat-1), nLat-1, -1 do begin
         readf, unit, xrow, wrow
         x(iLon,iLat,0) = xrow[1]      ; longitude
         x(iLon,iLat,1) = 90 - xrow[0] ; convert colat to lat
@@ -2373,8 +2374,8 @@ pro get_pict_rim, unit, npict
   readf, unit, line
   readf, unit, line
   ;; read south hemisphere (equator at iLat=nLat-1 is repeated)
-  for ilon = 0, nx[1]-1 do begin
-     for ilat = nLat-1, 2*(nLat-1) do begin
+  for iLon = 0, nx[1]-1 do begin
+     for iLat = nLat-1, 0, -1 do begin
         readf, unit, xrow, wrow
         x(iLon,iLat,0) = xrow[1]
         x(iLon,iLat,1) = 90 - xrow[0]
