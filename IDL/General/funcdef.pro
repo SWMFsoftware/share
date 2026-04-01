@@ -131,6 +131,8 @@ function funcdef, xx, w, func
      ['se'       , '{pe}/rho^gammae'                         ], $ ; electron entropy
      ['spar'     , '{ppar}*bb/rho^3'                         ], $ ; parallel entropy
      ['sperp'    , '{pperp}/b/rho'                           ], $ ; perp. entropy
+     ['TS0'      , 'ti0/mi*mS0*{pS0}/{rhoS0}'                ], $ ; PIC electron temp. [K]
+     ['TS1'      , 'ti0/mi*mS1*{pS1}/{rhoS1}'                ], $ ; PIC electron temp. [K]
      ['Ti'       , 'ti0*p/rho'                               ], $ ; ion temperature [K]
      ['Te'       , 'ti0*{pe}/rho'                            ], $ ; electron temp. [K]
      ['calfvenx' , 'bx/sqrt(rho*mu0A)'                       ], $ ; Alfven velocity
