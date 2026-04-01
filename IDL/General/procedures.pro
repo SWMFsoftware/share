@@ -2373,9 +2373,10 @@ pro get_pict_rim, unit, npict
   line = ''
   readf, unit, line
   readf, unit, line
-  ;; read south hemisphere (equator at iLat=nLat-1 is repeated)
+  ;; read south hemisphere
   for iLon = 0, nx[1]-1 do begin
-     for iLat = nLat-1, 0, -1 do begin
+     readf, unit, line ; skip equator (it may not set by IPE)
+     for iLat = nLat-2, 0, -1 do begin
         readf, unit, xrow, wrow
         x(iLon,iLat,0) = xrow[1]
         x(iLon,iLat,1) = 90 - xrow[0]
