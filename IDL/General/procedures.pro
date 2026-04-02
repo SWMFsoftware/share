@@ -14,9 +14,10 @@
 ;
 ; fixing things if animate or slice crashes
 ;   reset_axis, slice_data_restore
-; reading ascii and binary data produced by VAC, BATSRUS, PWOM, FLEKS etc:
+; reading ascii and binary data produced by VAC, BATSRUS, PWOM, FLEKS, RIM etc:
 ;    open_file, get_file_types, get_file_head, get_pict, 
-;    get_pict_asc, get_pict_bin, get_pict_log, get_log, read_log_line
+;    get_pict_asc, get_pict_bin, get_pict_log, get_pict_rim,
+;    get_log, read_log_line
 ; showing / overwriting information read from last file:
 ;    show_head, show_units, set_units
 ; saving ascii and binary data in the same format as used for input:
@@ -94,13 +95,13 @@ pro set_default_values
   ;; Parameters for read_data
   common getpict_param, $
      filename, nfile, filenames, filetypes, npictinfiles, npict, filetype
-  filename=''          ; space separated list of filenames. May contain *, []
-  nfile=0              ; number of files
-  filenames=0          ; array of filenames
-  filetypes=''         ; file types (real4, real8, ascii, log ...)
-  npictinfiles=0       ; number of pictures in each file
-  npict=0              ; index of snapshot to be read
-  filetype=''          ; type of current file
+  filename = ''        ; space separated list of filenames. May contain *, []
+  nfile = 0            ; number of files
+  filenames = 0        ; array of filenames
+  filetypes = ''       ; file types (real4, real8, ascii, log ...)
+  npictinfiles = 0     ; number of pictures in each file
+  npict = 0            ; index of snapshot to be read
+  filetype = ''        ; type of current file
 
   ;; Parameters for plot_data
   common plotfunc_param, $
@@ -1931,6 +1932,7 @@ pro open_file, unit, filename, filetype
    close,unit
    case filetype of
        'log'   :openr,unit,filename
+       'rim'   :openr,unit,filename
        'ascii' :openr,unit,filename
        'real4' :openr,unit,filename,/f77_unf
        'real8' :openr,unit,filename,/f77_unf
@@ -1948,6 +1950,7 @@ pro get_file_types
 
   filetypes    = strarr(nfile)
   npictinfiles = intarr(nfile)
+  pictsize = long64(1)
   for ifile=0, nfile-1 do begin
      l = strlen(filenames(ifile)) - 4
      if    strpos(filenames(ifile),'.log') eq l $
@@ -1956,38 +1959,47 @@ pro get_file_types
         or strpos(filenames(ifile),'.csv') eq l then begin
         filetypes(ifile)    = 'log'
         npictinfiles(ifile) = 1000
+     endif else if strpos(filenames(ifile),'.idl') ge l-1 then begin
+        filetypes(ifile) = 'rim'
+        close, 1
+        openr, 1, filenames(ifile)
+        status = fstat(1)
+        fsize = status.size
+        get_file_head, 1, filenames(ifile), filetypes(ifile), pictsize=pictsize
+        close, 1
+        npictinfiles(ifile) = fsize/pictsize
      endif else begin
         ;; Obtain filetype based on the length info in the first 4 bytes
-        close,10
-        openr,10,filenames(ifile)
-        lenhead=1L
-        readu,10,lenhead
+        close, 10
+        openr, 10, filenames(ifile)
+        lenhead = 1L
+        readu, 10, lenhead
         if lenhead ne 79 and lenhead ne 500 then ftype='ascii' else begin
            ;; The length of the 2nd line decides between real4 and real8
            ;; since it contains the time, which is real*4 or real*8
-           head=bytarr(lenhead+4)
-           len=1L
-           readu,10,head,len
+           head = bytarr(lenhead+4)
+           len = 1L
+           readu, 10, head,len
            case len of
               20: ftype='real4'
               24: ftype='real8'
               else: begin
-                 print,'Error in get_file_types: strange unformatted file:',$
-                       filenames(ifile)
+                 print, $
+                    'Error in get_file_types: strange unformatted file:',$
+                    filenames(ifile)
                  retall
               end
            endcase
            if lenhead eq 500 then ftype = strupcase(ftype)
         endelse
         close,10
-        
-        ;; Obtain file size and number of snapshots
-        open_file,1,filenames(ifile),ftype
-        status=fstat(1)
-        fsize=status.size
 
-        pointer=long64(0)
-        pictsize=long64(1)
+        ;; Obtain file size and number of snapshots
+        open_file, 1, filenames(ifile), ftype
+        status = fstat(1)
+        fsize = status.size
+
+        pointer = long64(0)
         ipict=0
         while pointer lt fsize do begin
            ;; Obtain size of a single snapshot
@@ -2039,19 +2051,16 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
   common log_data, timeunit
 
   ftype = strlowcase(filetype)
-
-  if ftype eq filetype then lenstr = 79 else lenstr = 500
+  lenstr = 500
 
   ;; Type definitions
-  headline = ''
-  for i=1, lenstr do headline = headline + ' '
+  headline = strjoin(replicate(' ', lenstr))
   it      = 1L
   ndim    = 1L
   neqpar  = 0L
   eqpar   = 0.0
   nw      = 1L
-  varname = ''
-  for i=1, lenstr do varname = varname + ' '
+  varname = headline
 
   ;; Remember pointer position at beginning of header
   point_lun, -unit, pointer0
@@ -2071,8 +2080,58 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
         nx = lonarr(1)
         nx[0] = 1
      end
+     'rim': begin
+        line = headline         ; long string
+        time = double(1)        ; simulation time
+        ndim = 2                ; always 2D
+        nx = lonarr(ndim)       ; grid size
+        gencoord = 0            ; always regular grid
+        varname = 'lon lat'     ; convert to lon-lat
+        ;; read header
+        header = 1
+        while header do begin
+           line = ''
+           readf, unit, line
+           if line eq "TITLE" then readf, unit, headline
+           if line eq "NUMERICAL VALUES" then begin
+              print, 'reading NUMERICAL VALUES'
+              readf, unit, nw
+              nw -= 2              ; remove coord names
+              readf, unit, nTheta  ; latitudes per hemisphere
+              nx[1] = 2*nTheta - 1 ; latitudes on two hemispheres
+              readf, unit, nPsi    ; longitudes
+              nx[0] = nPsi
+           endif
+           if line eq "VARIABLE LIST" then begin
+              ;; print, 'reading VARIABLE LIST'
+              name = ''
+              for iw = 1, ndim do readf, unit, name
+              for iw = 1, nw do begin
+                 readf, unit, name
+                 parts = STRSPLIT(name, /EXTRACT)
+                 varname += ' ' + parts[1]
+                 headline += ' ' + parts[2]
+              endfor
+           endif
+           if line eq "SIMULATION" then begin
+              ;; print,'reading SIMULATION'
+              readf, unit, it
+              readf, unit, time
+           endif
+           if line eq "DIPOLE TILT" then begin
+              ;; print,'reading DIPOLE TILT'
+              neqpar = 1
+              eqpar = fltarr(neqpar)
+              name = ''
+              readf, unit, eqpar, name
+              varname += name + ' '
+           endif
+           if line eq "BEGIN NORTHERN HEMISPHERE" then header = 0
+        endwhile
+        ;; help,headline,ndim,nx,nw,it,time,eqpar
+     end
      'ascii': begin
-        time=double(1)
+        time = double(1)
         readf, unit, headline
         readf, unit, it, time, ndim, neqpar, nw
         gencoord = (ndim lt 0)
@@ -2129,7 +2188,18 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
      for idim = 1, ndim do nxs = nxs*nx(idim-1)
      ;; Snapshot size = header + data + recordmarks
      case ftype of
-        'log'  : pictsize = 1
+        'log': pictsize = 1
+        'rim': begin
+           ;; read one line and take its length (+1 for the newline)
+           line = ''
+           readf, unit, line
+           ;; the equator is repeated, hence nx[1]+1
+           ;; there is a "BEGIN SOUTHERN HEMISPHERE" line
+           ;; and a line with two spaces above it (+3)
+           pictsize = headlen + (strlen(line)+1)*nx[0]*(nx[1]+1) $
+                      + strlen("BEGIN SOUTHERN HEMISPHERE")+1 + 3
+           help, pictsize
+        end
         'ascii': begin
            ;; read one line and take its length (+1 for the newline)
            line = ''
@@ -2147,6 +2217,8 @@ end
 ;==============================================================================
 pro get_pict, unit, filename, filetype, npict, error
 
+  ; read a snapshot from the file after skipping npict-1 snapshots.
+  
   common debug_param & on_error, onerror
 
   if filetype eq 'IPIC3D' then begin 
@@ -2186,8 +2258,9 @@ pro get_pict, unit, filename, filetype, npict, error
 
      ;; Read data
      case strlowcase(filetype) of
-        'log':   get_pict_log, filename
+        'log'  : get_pict_log, filename
         'ascii': get_pict_asc, unit, npict
+        'rim'  : get_pict_rim, unit, npict
         'real8': get_pict_bin, unit, npict
         'real4': get_pict_real, unit, npict
         else:    begin
@@ -2205,6 +2278,8 @@ end
 ;==============================================================================
 pro get_pict_log, file
 
+  ;; read coordinate (=time) and values from ASCII log/satellite file
+  
   common debug_param & on_error, onerror
 
   common plot_data
@@ -2222,54 +2297,92 @@ end
 ;==============================================================================
 pro get_pict_asc, unit, npict
 
+  ;; Read coordinates and values row by row from ascii SWMF file
+
   common debug_param & on_error, onerror
 
   common plot_data
   common file_head
 
-  ;----------------------------------------
-  ; Read coordinates and values row by row
-  ;----------------------------------------
-  wrow=dblarr(nw)
-  xrow=dblarr(ndim)
+  wrow = dblarr(nw)
+  xrow = dblarr(ndim)
   case ndim of
   ;-------------- 1D ----------------------
   1: begin
-    x=dblarr(nx(0),ndim)
-    w=dblarr(nx(0),nw)
-    for ix=0L,nx(0)-1 do begin
+    x = dblarr(nx(0),ndim)
+    w = dblarr(nx(0),nw)
+    for ix=0L, nx(0)-1 do begin
       readf,unit,xrow,wrow
-      x(ix,0:ndim-1)=xrow(0:ndim-1)
-      w(ix,0:nw-1)  =wrow(0:nw-1)
+      x[ix,*] = xrow
+      w[ix,*] = wrow
     endfor
   end
   ;-------------- 2D ----------------------
   2: begin
-    x=dblarr(nx(0),nx(1),ndim)
-    w=dblarr(nx(0),nx(1),nw)
-    for jx=0L,nx(1)-1 do begin
-      for ix=0L,nx(0)-1 do begin
-        readf,unit,xrow,wrow
-        x(ix,jx,0:ndim-1)=xrow(0:ndim-1)
-        w(ix,jx,0:nw-1)  =wrow(0:nw-1)
+    x = dblarr(nx(0),nx(1),ndim)
+    w = dblarr(nx(0),nx(1),nw)
+    for jx=0L, nx(1)-1 do begin
+      for ix=0L, nx(0)-1 do begin
+        readf, unit, xrow, wrow
+        x[ix,jx,*] = xrow
+        w[ix,jx,*] = wrow
       endfor
     endfor
   end
   ;-------------- 3D ----------------------
   3: begin
-    x=dblarr(nx(0),nx(1),nx(2),ndim)
-    w=dblarr(nx(0),nx(1),nx(2),nw)
-    for kx=0L,nx(2)-1 do begin
-      for jx=0L,nx(1)-1 do begin
-        for ix=0L,nx(0)-1 do begin
-          readf,unit,xrow,wrow
-          x(ix,jx,kx,0:ndim-1)=xrow(0:ndim-1)
-          w(ix,jx,kx,0:nw-1)=wrow(0:nw-1)
+    x = dblarr(nx(0),nx(1),nx(2),ndim)
+    w = dblarr(nx(0),nx(1),nx(2),nw)
+    for kx=0L, nx(2)-1 do begin
+      for jx=0L, nx(1)-1 do begin
+        for ix=0L, nx(0)-1 do begin
+          readf, unit, xrow, wrow
+          x[ix,jx,kx,*] = xrow
+          w[ix,jx,kx,*] = wrow
         endfor
       endfor
     endfor
   end
   endcase
+end
+;==============================================================================
+pro get_pict_rim, unit, npict
+
+  ; Read coordinates and values row by row from a Ridley Ionosphere .idl file
+  
+  common debug_param & on_error, onerror
+
+  common plot_data
+  common file_head
+
+  xrow = dblarr(ndim)           ; coordinates in a row
+  wrow = dblarr(nw)             ; variables
+  x = dblarr(nx[0],nx[1],ndim)  ; complete coordinate array
+  w = dblarr(nx[0],nx[1],nw)    ; complete variable array
+  nLat = (nx[0]-1)/2 + 1        ; number of latitudes per hemisphere
+  ;; read north hemisphere
+  for iLon = 0, nx[1]-1 do begin
+     for iLat = 2*(nLat-1), nLat-1, -1 do begin
+        readf, unit, xrow, wrow
+        x(iLon,iLat,0) = xrow[1]      ; longitude
+        x(iLon,iLat,1) = 90 - xrow[0] ; convert colat to lat
+        w(iLon,iLat,*) = wrow
+     endfor
+  endfor
+  ;; skip southern header
+  line = ''
+  readf, unit, line
+  readf, unit, line
+  ;; read south hemisphere
+  for iLon = 0, nx[1]-1 do begin
+     readf, unit, line ; skip equator (it may not set by IPE)
+     for iLat = nLat-2, 0, -1 do begin
+        readf, unit, xrow, wrow
+        x(iLon,iLat,0) = xrow[1]
+        x(iLon,iLat,1) = 90 - xrow[0]
+        w(iLon,iLat,*) = wrow
+     endfor
+  endfor
 end
 ;==============================================================================
 pro get_pict_bin, unit, npict
