@@ -116,5 +116,53 @@ contains
 
   end subroutine mpi_reduce_integer_scalar
   !============================================================================
+  subroutine mpi_reduce_logical_array(&
+       Buffer_I, nSize, iOp, iRoot, iComm, iError)
+
+    logical, intent(inout):: Buffer_I(*)
+    integer, intent(in):: nSize
+    integer, intent(in):: iOp
+    integer, intent(in):: iRoot
+    integer, intent(in):: iComm
+    integer, intent(out):: iError
+
+    integer:: iRank
+    logical:: Recv_I(1)
+    !--------------------------------------------------------------------------
+    call MPI_comm_rank(iComm, iRank, iError)
+
+    if(iRoot == iRank)then
+       call MPI_reduce(MPI_IN_PLACE, Buffer_I, nSize, MPI_LOGICAL, iOp, &
+            iRoot, iComm, iError)
+    else
+       call MPI_reduce(Buffer_I, Recv_I, nSize, MPI_LOGICAL, iOp, &
+            iRoot, iComm, iError)
+    end if
+
+  end subroutine mpi_reduce_logical_array
+  !============================================================================
+  subroutine mpi_reduce_logical_scalar(Value, iOp, iRoot, iComm, iError)
+
+    logical, intent(inout):: Value
+    integer, intent(in):: iOp
+    integer, intent(in):: iRoot
+    integer, intent(in):: iComm
+    integer, intent(out):: iError
+
+    integer:: iRank
+    logical :: Recv
+    !--------------------------------------------------------------------------
+    call MPI_comm_rank(iComm, iRank, iError)
+
+    if(iRoot == iRank)then
+       call MPI_reduce(MPI_IN_PLACE, Value, 1, MPI_LOGICAL, iOp, &
+            iRoot, iComm, iError)
+    else
+       call MPI_reduce(Value, Recv, 1, MPI_LOGICAL, iOp, &
+            iRoot, iComm, iError)
+    end if
+
+  end subroutine mpi_reduce_logical_scalar
+  !============================================================================
 end module ModMpiModified
 !==============================================================================
