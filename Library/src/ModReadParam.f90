@@ -643,7 +643,7 @@ contains
 
   end subroutine read_var_i
   !============================================================================
-  subroutine read_real4(Real4Var,iError,StartTimeIn)
+  subroutine read_real4(Real4Var, iError, StartTimeIn)
 
     ! Read a single precision real variable
 
@@ -655,7 +655,7 @@ contains
 
   end subroutine read_real4
   !============================================================================
-  subroutine read_real8(RealVar,iError,StartTimeIn)
+  subroutine read_real8(RealVar, iError, StartTimeIn)
 
     ! Read a double precision real variable
 
