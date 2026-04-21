@@ -4212,7 +4212,8 @@ pro plot_func
         ;; Omit X axis if unneeded
         if filetype eq 'log' and timeunit eq 'date' then $
            !x.tickformat = ['LABEL_DATE']
-        if plotiy gt (multiy - nplot) > 0 and not showxtitle then begin
+        print,"plotiy,multiy,nplot=", plotiy,multiy,nplot
+        if plotiy gt 0 and not showxtitle then begin
            if not showxaxis then begin
               !x.tickname = strarr(60) + ' '
               !x.tickformat = strarr(10)
