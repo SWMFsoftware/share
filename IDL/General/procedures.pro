@@ -2094,7 +2094,6 @@ pro get_file_head, unit, filename, filetype, pictsize=pictsize
            readf, unit, line
            if line eq "TITLE" then readf, unit, headline
            if line eq "NUMERICAL VALUES" then begin
-              print, 'reading NUMERICAL VALUES'
               readf, unit, nw
               nw -= 2              ; remove coord names
               readf, unit, nTheta  ; latitudes per hemisphere
@@ -4212,7 +4211,7 @@ pro plot_func
         ;; Omit X axis if unneeded
         if filetype eq 'log' and timeunit eq 'date' then $
            !x.tickformat = ['LABEL_DATE']
-        print,"plotiy,multiy,nplot=", plotiy,multiy,nplot
+        
         if plotiy gt 0 and not showxtitle then begin
            if not showxaxis then begin
               !x.tickname = strarr(60) + ' '
