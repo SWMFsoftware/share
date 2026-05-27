@@ -155,11 +155,11 @@ test_linear_wrapper_exe:
 		-L${LIBDIR} -lSHARE ${LflagMpi}
 
 test_linear_wrapper:
-	@echo test_linear_wrapper starting 	>  test_linear_wrapper.diff	
-	make test_linear_wrapper_exe		>> test_linear_wrapper.diff
-	@echo ./test_linear_wrapper.exe		>> test_linear_wrapper.diff
+	@echo test_linear_wrapper starting 	  >  test_linear_wrapper.diff
+	make test_linear_wrapper_exe		  >> test_linear_wrapper.diff
+	@echo ${MPIRUN} ./test_linear_wrapper.exe >> test_linear_wrapper.diff
 	-@(${MPIRUN} ./test_linear_wrapper.exe > test_linear_wrapper.tmp)
-	-@grep "ERROR" test_linear_wrapper.tmp   > test_linear_wrapper.diff
+	-@grep "ERROR" test_linear_wrapper.tmp > test_linear_wrapper.diff
 	@ls -l test_linear_wrapper.diff
 
 #######################################################################
@@ -355,8 +355,8 @@ test_line_extract_exe:
 test_line_extract:
 	@echo test_line_extract starting	>  test_line_extract.diff
 	@make test_line_extract_exe		>> test_line_extract.diff
-	@echo ${MPIRUN} test_line_extract.exe	>> test_line_extract.diff
-	-@(${MPIRUN} test_line_extract.exe > test_line_extract.tmp)
+	@echo ${MPIRUN} ./test_line_extract.exe	>> test_line_extract.diff
+	-@(${MPIRUN} ./test_line_extract.exe > test_line_extract.tmp)
 	-@(diff test_line_extract.tmp test_line_extract.log \
 						>  test_line_extract.diff)
 	@ls -l test_line_extract.diff
@@ -451,7 +451,7 @@ test_lookup_table_exe:
 test_lookup_table:
 	@echo test_lookup_table starting	>  test_lookup_table.diff
 	@make test_lookup_table_exe		>> test_lookup_table.diff
-	@echo ${MPIRUN} test_lookup_table.exe   >> test_lookup_table.diff
+	@echo ${MPIRUN} ./test_lookup_table.exe >> test_lookup_table.diff
 	-@(${MPIRUN} ./test_lookup_table.exe > test_lookup_table.tmp)
 	-@(diff test_lookup_table.tmp test_lookup_table.log \
 						>  test_lookup_table.diff)
