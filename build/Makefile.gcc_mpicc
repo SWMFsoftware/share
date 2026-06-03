@@ -14,7 +14,7 @@ LINK.cpp = ${COMPILE.c} -lstdc++
 
 CPPLIB = -lstdc++ -lmpi_cxx -lmpi++
 
-#DEBUGC =  -g -Wall -Wextra -Wno-unused-parameter -Wno-psabi
+#DEBUGC =  -g -Wall -Wextra -Wno-unused-parameter 
 
 .SUFFIXES: .c .cpp
 
@@ -22,7 +22,7 @@ OMPLIBC = -lgomp
 
 FLAGC = ${SEARCH_C} ${FLAGC_EXTRA} -c ${OPT3} ${OPENMPFLAG} ${DEBUGC}
 
-FLAGCC = ${FLAGC} -std=c++17
+FLAGCC = ${FLAGC} -Wno-psabi -std=c++17
 
 .c.o:
 	${COMPILE.c} ${FLAGC} $< -o $@
