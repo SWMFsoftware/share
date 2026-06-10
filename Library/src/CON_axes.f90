@@ -147,7 +147,8 @@ module CON_axes
        UseRealMagAxis, UseRealRotAxis, MagAxisThetaGeo, MagAxisPhiGeo, &
        MagAxisTheta, MagAxisPhi, DipoleStrength, RotAxisTheta, RotAxisPhi, &
        UseRotation, TiltRotation, RadiusPlanet, OmegaPlanet, OmegaOrbit, &
-       TimeEquinox, AngleEquinox, DoUpdateB0, DtUpdateB0, NamePlanet
+       TimeEquinox, AngleEquinox, DoUpdateB0, DtUpdateB0, &
+       NamePlanet, IsInitializedPlanet, is_planet_init
   use CON_geopack, ONLY: &
        geopack_recalc, geopack_sun, &
        RotAxisPhiGeopack, RotAxisThetaGeopack, &
@@ -317,8 +318,8 @@ contains
 
        if(DoTest)then
           write(*,*)'MagAxisThetaGeo,MagAxisPhiGeo=',&
-               MagAxisThetaGeo*cRadToDeg,MagAxisPhiGeo*cRadToDeg
-          write(*,*)'MagAxisGeo_D=',MagAxis_D
+               MagAxisThetaGeo*cRadToDeg, MagAxisPhiGeo*cRadToDeg
+          write(*,*)'MagAxisGeo_D=', MagAxis_D
        end if
 
        ! GEO --> GEI
@@ -377,12 +378,11 @@ contains
     endif
 
     ! Obtain the cartesian components of the rotational axis (in GSE)
-    call dir_to_xyz(RotAxisTheta,RotAxisPhi,RotAxis_D)
+    call dir_to_xyz(RotAxisTheta, RotAxisPhi, RotAxis_D)
 
-    if(.not.(UseRealRotAxis.and.UseRealMagAxis))then
+    if(.not.(UseRealRotAxis .and. UseRealMagAxis))then
        ! Recalculate the magnetic axis direction in GEO
-
-       MagAxisGeo_D = matmul(MagAxis0Gei_D,GeiGeo_DD)
+       MagAxisGeo_D = matmul(MagAxis0Gei_D, GeiGeo_DD)
 
        call xyz_to_dir(MagAxisGeo_D, MagAxisThetaGeo, MagAxisPhiGeo)
 
@@ -718,8 +718,8 @@ contains
     ! and calculate the rotation axis in GSM coordinates.
     ! These are useful to obtain the dipole field and the corotation velocity
     ! in the GSM system.
-    MagAxisGsm_D     = matmul(GsmGse_DD,MagAxis_D)
-    RotAxisGsm_D     = matmul(GsmGse_DD,RotAxis_D)
+    MagAxisGsm_D = matmul(GsmGse_DD,MagAxis_D)
+    RotAxisGsm_D = matmul(GsmGse_DD,RotAxis_D)
 
     ! Now calculate the transformation matrices for the rotating systems
     call set_gei_geo_matrix(TimeSim)
@@ -1100,7 +1100,6 @@ contains
     if(.not.DoInitializeAxes) write(*,*)'test failed: DoInitializeAxes=',&
          DoInitializeAxes,' should be true'
 
-    call time_int_to_real(TimeEquinox)
     if(TimeEquinox % Time <= 0.0) write(*,*)'test failed: TimeEquinox =',&
          TimeEquinox,' should have a large positive double in the %Time field'
 
@@ -1321,6 +1320,14 @@ contains
     if(maxval(abs(v2_D - Result_D)) > Epsilon3) &
          write(*,*)'test angular_velocity failed: GEO-GSE2 v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
+
+    ! Test Mars
+    write(*,*) 'Testing Mars'
+    IsInitializedPlanet = .false.
+    DoInitializeAxes = .true.
+    if(.not.is_planet_init('Mars')) write(*,*)'is_planet_init("MARS") failed'
+
+    call init_axes(TimeEquinox % Time)
 
   end subroutine test_axes
   !============================================================================
