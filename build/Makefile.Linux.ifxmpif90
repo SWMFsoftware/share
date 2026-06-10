@@ -4,16 +4,16 @@
 
 SHELL=/bin/sh
 
-# Fortran language related part of Makefile.conf: Makefile.Linux.ifortmpif90
-FORTRAN_COMPILER_NAME=ifort
+# Fortran language related part of Makefile.conf: Makefile.Linux.ifxmpif90
+FORTRAN_COMPILER_NAME=ifx
 #
 #	Space Weather Modeling Framework (SWMF) 
-#	Intel Fortran compiler with mpif90
+#	Intel Fortran compiler with mpiifort
 #
 
-COMPILE.f77     = ${CUSTOMPATH_F}ifort
-COMPILE.f90     = ${CUSTOMPATH_F}ifort
-LINK.f90	= ${CUSTOMPATH_MPI}mpif90
+COMPILE.f77     = ${CUSTOMPATH_F}ifx
+COMPILE.f90     = ${CUSTOMPATH_F}ifx
+LINK.f90	= ${CUSTOMPATH_F}mpif90
 
 # To compile main C code with Fortran libraries
 NOMAINFLAG = -nofor-main
@@ -27,13 +27,13 @@ PRECISION  = ${DOUBLEPREC}
 MPILIB =
 #MPILIB = -L${LIBDIR} -lNOMPI
 
-#OPENMPFLAG = -fopenmp
+#OPENMPFLAG = -qopenmp
 
 # Define where modules are stored and add it to the search path
 # INCL_EXTRA can be defined to add more search directories.
 SEARCH = -module ${INCLDIR} ${INCL_EXTRA}
 
-DEBUGFLAG = -check noarg_temp_created -check bounds -g -traceback -init=snan,minus_huge,arrays -fp-speculation=safe
+DEBUGFLAG = -traceback -g -check bounds,pointers  
 DEBUG     = 
 
 OPT0 = -O0

@@ -4,7 +4,7 @@
 
 SHELL=/bin/sh
 
-# Fortran language related part of Makefile.conf: Makefile.Linux.mpiifort
+# Fortran language related part of Makefile.conf: Makefile.Linux.ifx
 FORTRAN_COMPILER_NAME=ifx
 #
 #	Space Weather Modeling Framework (SWMF) 
@@ -13,7 +13,7 @@ FORTRAN_COMPILER_NAME=ifx
 
 COMPILE.f77     = ${CUSTOMPATH_F}ifx
 COMPILE.f90     = ${CUSTOMPATH_F}ifx
-LINK.f90	= ${CUSTOMPATH_F}mpiifx
+LINK.f90	= ${CUSTOMPATH_MPI}mpiifx
 
 # To compile main C code with Fortran libraries
 NOMAINFLAG = -nofor-main
@@ -55,7 +55,7 @@ Cflag4  = ${CFLAG} ${PRECISION} ${OPT4}
 CFLAGS = ${CFLAG} ${OPT2} -save
 
 # Link with or without the MPI library
-Lflag    = ${PRECISION} ${OPENMPFLAG} ${CPPLIB} ${DEBUG} 
+Lflag    = ${PRECISION} ${OPENMPFLAG} ${CPPLIB} ${DEBUG}
 LflagMpi = ${Lflag} ${MPILIB}
 
 

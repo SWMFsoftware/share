@@ -922,8 +922,7 @@ sub set_amrex_{
 	
 	my $AmrexCompiler="intel-classic";	
 	if($Compiler eq "ifx" or $Compiler eq "mpiifx" or 
-	   ($Compiler eq "mpiifort" and index(`mpiifort -show`, "ifx") != -1) or 
-	   ($Compiler eq "mpif90" and index(`mpif90 -show`, "ifx") != -1)){
+	   ($MpiCompiler =~ /mpiifort|mpif90/ and index(`$MpiCompiler -show`, "ifx") != -1)){
 	    $AmrexCompiler="intel-llvm";
 	}
 
