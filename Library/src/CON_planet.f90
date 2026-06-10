@@ -14,10 +14,10 @@ module CON_planet
   ! Components can only access the data through the inquiry methods
   ! via the {\bf CON\_physics} class.
 
-  use ModNumConst, ONLY: cTwoPi, cDegToRad, cPi
+  use ModNumConst, ONLY: cTwoPi, cDegToRad, cPi, cTiny, cTiny8
   use ModPlanetConst
   use ModTimeConvert, ONLY: TimeType, time_int_to_real
-  use ModUtilities, ONLY: CON_stop
+  use ModUtilities, ONLY: upper_case, CON_stop
 
   ! revision history:
   ! 01Aug03 - Aaron Ridly <ridley@umich.edu> and
@@ -34,13 +34,15 @@ module CON_planet
 
   character (len=lNamePlanet) :: NamePlanet = ''
 
+  logical :: IsInitializedPlanet = .false.
+  
   ! Define variables
   real           :: RadiusPlanet
   real           :: MassPlanet
   real           :: TiltRotation
   real           :: IonosphereHeight
   real           :: OmegaPlanet     ! Rotation + Orbit
-  real           :: OmegaRotation    ! Rotation
+  real           :: OmegaRotation   ! Rotation
   real           :: RotPeriodPlanet ! Rotation
   real           :: OmegaOrbit      ! Orbit
   real           :: AngleEquinox
@@ -115,7 +117,6 @@ module CON_planet
   !$acc declare create(HgiOrb_DD,SemiMinorAxis, SemiMajorAxis)
 contains
   !============================================================================
-
   subroutine set_planet_defaults
 
     ! Initialize parameters for Earth as the default planet.  This is in case
@@ -181,20 +182,18 @@ contains
     ! once.
     integer :: i
 
-    logical :: IsInitialized = .false.
-
     character(len=*), parameter:: NameSub = 'is_planet_init'
     !--------------------------------------------------------------------------
     IsKnown = .true.
-    if(IsInitialized)then
+    if(IsInitializedPlanet)then
        if(NamePlanet == NamePlanetIn) RETURN
        call CON_stop(NameSub//&
             ' ERROR: attempt to change planet name from '// &
             trim(NamePlanet)//' to '//NamePlanetIn)
     end if
 
-    NamePlanet    = NamePlanetIn
-    IsInitialized = .true.
+    NamePlanet = NamePlanetIn; call upper_case(NamePlanet)
+    IsInitializedPlanet = .true.
 
     IsKnown       = .false.
     do i = NoPlanet_, MaxPlanet
@@ -207,7 +206,7 @@ contains
 
     if (.not. IsKnown)  then
        Planet_    = NewPlanet_
-       NamePlanet = NamePlanetIN
+       NamePlanet = NamePlanetIn
     end if
 
     ! Set all values for the selected planet
@@ -241,6 +240,8 @@ contains
          iSecondEquinoxPlanet_I(Planet_), &
          FracSecondEquinoxPlanet_I(Planet_), &
          0.0_Real8_, '')
+    ! Set the real value and the string
+    call time_int_to_real(TimeEquinox)
 
     ! Magnetic field type and strength in teslas
     TypeBField        = TypeBFieldPlanet_I(Planet_)
@@ -249,14 +250,14 @@ contains
     MagAxisPhiGeo     = bAxisPhiPlanet_I(Planet_)    ! Permanent phi    in GEO
 
     rOrbitPlanet     = rOrbitPlanet_I(Planet_)  ! [m]
-    Excentricity     = Excentricity_I(Planet_) ! dimless
+    Excentricity     = Excentricity_I(Planet_)  ! dimless
     ! Euler angles of orbit (read in degs, convert to rads):
     RightAscension   = RightAscension_I(Planet_)*cDegToRad
     Inclination      = Inclination_I(Planet_)*cDegToRad
     ArgPeriapsis     = ArgPeriapsis_I(Planet_)*cDegToRad
     call get_orbit_elements
     ! For Enceladus the dipole is at Saturn's center
-    if(Planet_==Enceladus_) MagCenter_D(2)    = 944.23
+    if(Planet_ == Enceladus_) MagCenter_D(2) = 944.23
 
     !$acc update device(OmegaPlanet, AngleEquinox, OmegaRotation, TimeEquinox,&
     !$acc MagAxisPhi, MagAxisTheta,  rOrbitPlanet, Excentricity,              &
@@ -642,6 +643,7 @@ contains
     SemiMajorAxis = rOrbitPlanet   ! Check acculacy!
     SemiMinorAxis= SemiMajorAxis*sqrt(1 - Excentricity**2)
     UseOrbitElements = NamePlanet /= 'EARTH'
+
     !$acc update device(HgiOrb_DD, SemiMajorAxis, SemiMinorAxis)
 
   end subroutine get_orbit_elements
@@ -652,20 +654,42 @@ contains
     real(real8_), intent(in)  :: Time
     real, intent(out)           :: XyzHgi_D(3)  ! Coordinates in HGI
     real, optional, intent(out) :: vHgi_D(3)    ! Velocity in HGI
-    ! True (in fact, not true) anomaly:
-    real :: TrueAnomaly
+    ! Mean and eccentric anomalies for a Kepler orbit
+    real :: MeanAnomaly, EccentricAnomaly
+    real :: SinE, CosE, dEdt
     ! Coordinates and velocity in the orbital plane
     real              :: XyzOrbit_D(3),  vOrbit_D(3)
+    integer           :: iIter
+    real              :: dE
     !--------------------------------------------------------------------------
-    ! Check accuracy!!!
-    TrueAnomaly = OmegaOrbit*(Time - TimeEquinox%Time) - ArgPeriapsis
-    TrueAnomaly= modulo(TrueAnomaly,cTwoPi)
-    XyzOrbit_D = [SemiMajorAxis*(cos(TrueAnomaly) - Excentricity), &
-         SemiMinorAxis*sin(TrueAnomaly), 0.0]
+    MeanAnomaly = modulo( &
+         OmegaOrbit*(Time - TimeEquinox%Time) - ArgPeriapsis, cTwoPi)
+
+    if(MeanAnomaly > cPi) MeanAnomaly = MeanAnomaly - cTwoPi
+
+    if(Excentricity < 0.8)then
+       EccentricAnomaly = MeanAnomaly
+    else
+       EccentricAnomaly = sign(cPi, MeanAnomaly)
+    end if
+
+    do iIter = 1, 12
+       dE = (EccentricAnomaly - Excentricity*sin(EccentricAnomaly) - &
+            MeanAnomaly)/max(1.0 - Excentricity*cos(EccentricAnomaly), cTiny)
+       EccentricAnomaly = EccentricAnomaly - dE
+       if(abs(dE) < 100.0*cTiny8) EXIT
+    end do
+
+    SinE = sin(EccentricAnomaly)
+    CosE = cos(EccentricAnomaly)
+
+    XyzOrbit_D = [SemiMajorAxis*(CosE - Excentricity), &
+         SemiMinorAxis*SinE, 0.0]
     XyzHgi_D = matmul(HgiOrb_DD, XyzOrbit_D)
     if(present(vHgi_D))then
-       vOrbit_D = [-SemiMajorAxis*sin(TrueAnomaly), &
-            SemiMinorAxis*cos(TrueAnomaly), 0.0]*OmegaOrbit
+       dEdt = OmegaOrbit/max(1.0 - Excentricity*CosE, cTiny)
+       vOrbit_D = [-SemiMajorAxis*SinE, &
+            SemiMinorAxis*CosE, 0.0]*dEdt
        vHgi_D =  matmul(HgiOrb_DD, vOrbit_D)
     end if
   end subroutine orbit_in_hgi
