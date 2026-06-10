@@ -35,7 +35,7 @@ module CON_planet
   character (len=lNamePlanet) :: NamePlanet = ''
 
   logical :: IsInitializedPlanet = .false.
-  
+
   ! Define variables
   real           :: RadiusPlanet
   real           :: MassPlanet
