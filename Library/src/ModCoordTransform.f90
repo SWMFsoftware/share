@@ -1130,6 +1130,7 @@ contains
     write(*,*) Matrix_DD(1,1), Matrix_DD(1,2), Matrix_DD(1,3)
     write(*,*) Matrix_DD(2,1), Matrix_DD(2,2), Matrix_DD(2,3)
     write(*,*) Matrix_DD(3,1), Matrix_DD(3,2), Matrix_DD(3,3)
+
   end subroutine show_rot_matrix_acc
   !============================================================================
 #endif
@@ -1142,7 +1143,7 @@ contains
 
   end subroutine show_rot_matrix
   !============================================================================
-  subroutine show_nbyn_matrix(n,Matrix_II)
+  subroutine show_nbyn_matrix(n, Matrix_II)
 
     integer, intent(in) :: n
     real, intent(in) :: Matrix_II(n,n)
