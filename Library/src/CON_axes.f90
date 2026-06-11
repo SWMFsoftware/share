@@ -140,7 +140,8 @@ module CON_axes
 
   use ModKind
   use ModCoordTransform, ONLY: rot_matrix_x, rot_matrix_y, rot_matrix_z, &
-       show_rot_matrix, cross_product, dir_to_xyz, xyz_to_dir, atan2_check
+       show_rot_matrix, cross_product, dir_to_xyz, xyz_to_dir, xyz_to_lonlat, &
+       atan2_check
   use ModTimeConvert, ONLY: time_int_to_real,time_real_to_int
   use ModPlanetConst, ONLY: DipoleStrengthPlanet_I, Earth_, CAU
   use CON_planet, ONLY: UseSetMagAxis, UseSetRotAxis, UseAlignedAxes, &
@@ -247,18 +248,17 @@ contains
 
     call CON_set_do_test(NameSub, DoTest)
 
-    ! DoTest = .true.
+    if(UseRealMagAxis .and. .not.UseRealRotAxis) call CON_stop(NameSub// &
+         'UseRealMagAxis=T and UseRealRotAxis=F is not allowed')
 
     tStart = tStartIn
 
     call time_int_to_real(TimeEquinox)
 
-      if(UseRealMagAxis .and. .not.UseRealRotAxis)call CON_stop(NameSub// &
-          ' SWMF_ERROR UseRealMagAxis requires UseRealRotAxis')
-
     if(UseOrbitElements)then
        ! Set initial planet position and velocity in HGI
        call orbit_in_hgi(tStart, XyzPlanetHgi_D, vPlanetHgi_D)
+
        ! Set HgiGse matrix
        GseX_D = -XyzPlanetHgi_D/norm2(XyzPlanetHgi_D)
        GseZ_D = cross_product(XyzPlanetHgi_D, vPlanetHgi_D) ! orbit normal
@@ -1110,10 +1110,10 @@ contains
 
     ! Do some self consistency checks. Stop with an error message if
     ! test fails. Otherwise write out success.
-    real :: MagAxisTilt
-    real :: RotAxisGsm_D(3), RotAxisGeo_D(3), Rot_DD(3,3), Result_DD(3,3)
-    real :: Omega_D(3), v2_D(3), Result_D(3), Position_D(3)
-    real :: Epsilon1, Epsilon2, Epsilon3
+    real:: MagAxisTilt, LonSubSolar, LatSubSolar
+    real:: RotAxisGsm_D(3), RotAxisGeo_D(3), Rot_DD(3,3), Result_DD(3,3)
+    real:: Omega_D(3), v2_D(3), Result_D(3), Position_D(3)
+    real:: Epsilon1, Epsilon2, Epsilon3
     !--------------------------------------------------------------------------
     if(precision(1.0) >= 12)then
        Epsilon1 = 1e-10
@@ -1356,7 +1356,12 @@ contains
     if(.not.is_planet_init('Mars')) write(*,*)'is_planet_init("MARS") failed'
 
     call init_axes(TimeEquinox % Time)
-    
+    write(*,*)'XyzPlanetHgi_D=', XyzPlanetHgi_D
+    write(*,*)'vPlanetHgi_D=', vPlanetHgi_D
+    call xyz_to_lonlat(GeoGse_DD(:,x_), LonSubSolar, LatSubSolar)
+    write(*,*)'LonSubSolar=', LonSubSolar*cRadToDeg
+    write(*,*)'LatSubSolar=', LatSubSolar*cRadToDeg
+
   end subroutine test_axes
   !============================================================================
 end module CON_axes
