@@ -101,7 +101,7 @@ module CON_planet
   ! rather thhan the harwired in geopack and more
   ! accurate description applicable to the Earth only
   logical :: UseOrbitElements = .false.
-  real :: rOrbitPlanet     ! [m]
+  real :: rOrbitPlanet    ! [m]
   real :: Excentricity    ! Dimless
   ! Euler angles of orbit (in degs):
   real :: RightAscension, Inclination, ArgPeriapsis
@@ -639,7 +639,7 @@ contains
     !--------------------------------------------------------------------------
     HgiOrb_DD = matmul(rot_matrix_x(Inclination),&
          rot_matrix_z(ArgPeriapsis - RightAscension) )
-    HgiOrb_DD = matmul(rot_matrix_z(cPi),HgiOrb_DD)
+    HgiOrb_DD = matmul(rot_matrix_z(cPi), HgiOrb_DD)
     SemiMajorAxis = rOrbitPlanet   ! Check acculacy!
     SemiMinorAxis= SemiMajorAxis*sqrt(1 - Excentricity**2)
     UseOrbitElements = NamePlanet /= 'EARTH'
@@ -661,6 +661,8 @@ contains
     real              :: XyzOrbit_D(3),  vOrbit_D(3)
     integer           :: iIter
     real              :: dE
+
+    character(len=*), parameter:: NameSub = 'orbit_in_hgi'
     !--------------------------------------------------------------------------
     MeanAnomaly = modulo( &
          OmegaOrbit*(Time - TimeEquinox%Time) - ArgPeriapsis, cTwoPi)
@@ -673,6 +675,9 @@ contains
        EccentricAnomaly = sign(cPi, MeanAnomaly)
     end if
 
+    ! write(*,*) NameSub, ': MeanAnomaly, EccentricAnomaly=', &
+    !    MeanAnomaly, EccentricAnomaly
+
     do iIter = 1, 12
        dE = (EccentricAnomaly - Excentricity*sin(EccentricAnomaly) - &
             MeanAnomaly)/max(1.0 - Excentricity*cos(EccentricAnomaly), cTiny)
@@ -683,8 +688,12 @@ contains
     SinE = sin(EccentricAnomaly)
     CosE = cos(EccentricAnomaly)
 
+    !write(*,*) NameSub, ': SemiMajorAxis, CosE, SinE, Excentricity=', &
+    !     SemiMajorAxis, CosE, SinE, Excentricity
+
     XyzOrbit_D = [SemiMajorAxis*(CosE - Excentricity), &
          SemiMinorAxis*SinE, 0.0]
+
     XyzHgi_D = matmul(HgiOrb_DD, XyzOrbit_D)
     if(present(vHgi_D))then
        dEdt = OmegaOrbit/max(1.0 - Excentricity*CosE, cTiny)
@@ -692,6 +701,7 @@ contains
             SemiMinorAxis*CosE, 0.0]*dEdt
        vHgi_D =  matmul(HgiOrb_DD, vOrbit_D)
     end if
+
   end subroutine orbit_in_hgi
   !============================================================================
 end module CON_planet
