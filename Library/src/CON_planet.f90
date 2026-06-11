@@ -688,7 +688,7 @@ contains
     SinE = sin(EccentricAnomaly)
     CosE = cos(EccentricAnomaly)
 
-    !write(*,*) NameSub, ': SemiMajorAxis, CosE, SinE, Excentricity=', &
+    ! write(*,*) NameSub, ': SemiMajorAxis, CosE, SinE, Excentricity=', &
     !     SemiMajorAxis, CosE, SinE, Excentricity
 
     XyzOrbit_D = [SemiMajorAxis*(CosE - Excentricity), &

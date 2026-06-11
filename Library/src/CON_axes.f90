@@ -266,7 +266,7 @@ contains
        HgiGse_DD(:,x_) = GseX_D
        HgiGse_DD(:,y_) = cross_product(GseZ_D, GseX_D)
        HgiGse_DD(:,z_) = GseZ_D
-	  
+
        if(UseRealRotAxis)then
           ! Get rotational axis from orbit information
           ! At equinox the rotation axis is in the GSE Y-Z plane
@@ -290,11 +290,11 @@ contains
        ! to be aligned with the planet if this is required by a negative
        ! value of dLongitudeHgi. Also calculates the planet distance.
        call set_hgi_gse_d_planet(0.0)
-   
+
        ! Calculate the planet position in HGI
        ! In GSE shifted to the center of the Sun the planet is at (-d,0,0)
        XyzPlanetHgi_D = matmul(HgiGse_DD, [-cAU*SunEMBDistance, 0.0, 0.0])
-   
+
        ! Calculate the planet velocity in HGI
        call set_v_planet
     end if
