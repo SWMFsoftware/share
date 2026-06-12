@@ -33,7 +33,7 @@ module ModPlanetConst
   ! Orbital parameters
   real, dimension(0:MaxPlanet+1):: &
        rPlanet_I, mPlanet_I, rOrbitPlanet_I, Excentricity_I, &
-       OrbitalPeriodPlanet_I, RotationPeriodPlanet_I, TiltPlanet_I, &  
+       OrbitalPeriodPlanet_I, RotationPeriodPlanet_I, TiltPlanet_I, &
        RightAscension_I, Inclination_I, ArgPeriapsis_I ! Euler angles [deg]
 
   ! Equinox time
