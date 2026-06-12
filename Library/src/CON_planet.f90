@@ -508,7 +508,7 @@ contains
        RightAscension = RightAscension*cDegToRad
        call read_var('Inclination', Inclination)
        Inclination = Inclination*cDegToRad
-       call read_var('ArgPeriapsis',ArgPeriapsis)
+       call read_var('ArgPeriapsis', ArgPeriapsis)
        ArgPeriapsis = ArgPeriapsis*cDegToRad
        !$acc update device(OmegaOrbit,  rOrbitPlanet, Excentricity,    &
        !$acc RightAscension, Inclination, ArgPeriapsis)
@@ -637,12 +637,16 @@ contains
     ! used with properly re-defined RightAscension and ArgPeriapsis.
 
     !--------------------------------------------------------------------------
+    if(NamePlanet == 'EARTH' .or. rOrbitPlanet == 0.0)then
+       UseOrbitElements = .false.
+       RETURN
+    end if
+    UseOrbitElements = .true.
     HgiOrb_DD = matmul(rot_matrix_x(Inclination),&
          rot_matrix_z(ArgPeriapsis - RightAscension) )
     HgiOrb_DD = matmul(rot_matrix_z(cPi), HgiOrb_DD)
-    SemiMajorAxis = rOrbitPlanet   ! Check acculacy!
+    SemiMajorAxis = rOrbitPlanet
     SemiMinorAxis= SemiMajorAxis*sqrt(1 - Excentricity**2)
-    UseOrbitElements = NamePlanet /= 'EARTH'
 
     !$acc update device(HgiOrb_DD, SemiMajorAxis, SemiMinorAxis)
 
