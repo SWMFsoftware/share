@@ -30,25 +30,26 @@ module ModPlanetConst
   ! NOTE THE THE PRECISE DEFINITIONS OF WHAT THE VARIABLES MEAN CAN BE
   ! FOUND AT THE END OF THE FILE AND IN THE CODE DOCUMENTATION (we hope).
 
-  real,dimension(0:MaxPlanet+1):: rPlanet_I, mPlanet_I, rOrbitPlanet_I
-  real,dimension(0:MaxPlanet+1):: Excentricity_I   ! Dimless
-  ! Euler angles of orbit (in degs):
-  real,dimension(0:MaxPlanet+1):: RightAscension_I, Inclination_I, ArgPeriapsis_I
-  real,dimension(0:MaxPlanet+1):: OrbitalPeriodPlanet_I, RotationPeriodPlanet_I
+  ! Orbital parameters
+  real, dimension(0:MaxPlanet+1):: &
+       rPlanet_I, mPlanet_I, rOrbitPlanet_I, Excentricity_I, &
+       OrbitalPeriodPlanet_I, RotationPeriodPlanet_I, TiltPlanet_I, &  
+       RightAscension_I, Inclination_I, ArgPeriapsis_I ! Euler angles [deg]
 
-  integer,dimension(0:MaxPlanet+1):: &
+  ! Equinox time
+  integer, dimension(0:MaxPlanet+1):: &
        iYearEquinoxPlanet_I, iMonthEquinoxPlanet_I, iDayEquinoxPlanet_I, &
        iHourEquinoxPlanet_I,iMinuteEquinoxPlanet_I,iSecondEquinoxPlanet_I
-  real,dimension(0:MaxPlanet+1)   :: FracSecondEquinoxPlanet_I
-  real,dimension(0:MaxPlanet+1)   :: TiltPlanet_I
+  real, dimension(0:MaxPlanet+1):: FracSecondEquinoxPlanet_I
 
-  character (len=lTypeBField)  :: TypeBFieldPlanet_I(0:MaxPlanet+1)
-  real,dimension(0:MaxPlanet+1):: DipoleStrengthPlanet_I
-  real,dimension(0:MaxPlanet+1):: bAxisThetaPlanet_I, bAxisPhiPlanet_I
+  ! Magnetic field of planet
+  character (len=lTypeBField):: TypeBFieldPlanet_I(0:MaxPlanet+1)
+  real, dimension(0:MaxPlanet+1):: &
+       DipoleStrengthPlanet_I, bAxisThetaPlanet_I, bAxisPhiPlanet_I
 
-  real,dimension(0:MaxPlanet+1):: IonoHeightPlanet_I
+  real, dimension(0:MaxPlanet+1):: IonoHeightPlanet_I
 
-  character (len=lNamePlanet)  :: NamePlanet_I(0:MaxPlanet+1)
+  character(len=lNamePlanet):: NamePlanet_I(0:MaxPlanet+1)
 
   integer:: Planet_
 
@@ -110,8 +111,8 @@ contains
 
     rPlanet_I                        = 0.0                        ! [m]
     mPlanet_I                        = 0.0                        ! [kg]
-    rOrbitPlanet_I                   = 0.0                        ! [m]
-    OrbitalPeriodPlanet_I            = 0.0                        ! [s]
+    rOrbitPlanet_I                   = cAU                        ! [m]
+    OrbitalPeriodPlanet_I            = 365.24218967*cDay          ! [s]
     RotationPeriodPlanet_I           = 0.0                        ! [s]
     Excentricity_I                   = 0.0                        ! dimless
     RightAscension_I                 = 0.0                        ! [deg]
