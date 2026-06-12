@@ -111,8 +111,8 @@ contains
 
     rPlanet_I                        = 0.0                        ! [m]
     mPlanet_I                        = 0.0                        ! [kg]
-    rOrbitPlanet_I                   = cAU                        ! [m]
-    OrbitalPeriodPlanet_I            = 365.24218967*cDay          ! [s]
+    rOrbitPlanet_I                   = 0.0                        ! [m]
+    OrbitalPeriodPlanet_I            = 0.0                        ! [s]
     RotationPeriodPlanet_I           = 0.0                        ! [s]
     Excentricity_I                   = 0.0                        ! dimless
     RightAscension_I                 = 0.0                        ! [deg]
