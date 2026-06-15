@@ -140,14 +140,16 @@ module CON_axes
 
   use ModKind
   use ModCoordTransform, ONLY: rot_matrix_x, rot_matrix_y, rot_matrix_z, &
-       show_rot_matrix, cross_product, dir_to_xyz, xyz_to_dir, atan2_check
+       show_rot_matrix, cross_product, dir_to_xyz, xyz_to_dir, xyz_to_lonlat, &
+       atan2_check
   use ModTimeConvert, ONLY: time_int_to_real,time_real_to_int
   use ModPlanetConst, ONLY: DipoleStrengthPlanet_I, Earth_, CAU
   use CON_planet, ONLY: UseSetMagAxis, UseSetRotAxis, UseAlignedAxes, &
        UseRealMagAxis, UseRealRotAxis, MagAxisThetaGeo, MagAxisPhiGeo, &
        MagAxisTheta, MagAxisPhi, DipoleStrength, RotAxisTheta, RotAxisPhi, &
        UseRotation, TiltRotation, RadiusPlanet, OmegaPlanet, OmegaOrbit, &
-       TimeEquinox, AngleEquinox, DoUpdateB0, DtUpdateB0, NamePlanet
+       TimeEquinox, AngleEquinox, DoUpdateB0, DtUpdateB0, &
+       NamePlanet, IsInitializedPlanet, is_planet_init
   use CON_geopack, ONLY: &
        geopack_recalc, geopack_sun, &
        RotAxisPhiGeopack, RotAxisThetaGeopack, &
@@ -224,6 +226,8 @@ contains
   !============================================================================
   subroutine init_axes(tStartIn)
 
+    use CON_planet, ONLY: UseOrbitElements, orbit_in_hgi
+
     real(Real8_) :: tStartIn
 
     ! Set the direction and position of the rotation axis in GSE
@@ -233,8 +237,9 @@ contains
     ! Calculate conversion matrices between MAG-GEO-GEI-GSE systems.
 
     real :: XyzPlanetHgr_D(3)
+    real :: RotAxisHgi_D(3), GseX_D(3), GseY_D(3), GseZ_D(3)
 
-    integer :: iTime_I(1:7)
+    integer :: iTime_I(7)
 
     logical:: DoTest
     character(len=*), parameter:: NameSub = 'init_axes'
@@ -243,19 +248,66 @@ contains
 
     call CON_set_do_test(NameSub, DoTest)
 
+    if(UseRealMagAxis .and. .not.UseRealRotAxis) call CON_stop(NameSub// &
+         'UseRealMagAxis=T and UseRealRotAxis=F is not allowed')
+
     tStart = tStartIn
 
     call time_int_to_real(TimeEquinox)
 
-    ! Get GSE position for the rotational axis
+    if(UseOrbitElements)then
+       ! Set initial planet position and velocity in HGI
+       call orbit_in_hgi(tStart, XyzPlanetHgi_D, vPlanetHgi_D)
+
+       ! Set HgiGse matrix
+       GseX_D = -XyzPlanetHgi_D/norm2(XyzPlanetHgi_D)
+       GseZ_D = cross_product(XyzPlanetHgi_D, vPlanetHgi_D) ! orbit normal
+       GseZ_D = GseZ_D/norm2(GseZ_D)
+       HgiGse_DD(:,x_) = GseX_D
+       HgiGse_DD(:,y_) = cross_product(GseZ_D, GseX_D)
+       HgiGse_DD(:,z_) = GseZ_D
+
+       if(UseRealRotAxis)then
+          ! Get rotational axis from orbit information
+          ! At equinox the rotation axis is in the GSE Y-Z plane
+          call orbit_in_hgi(TimeEquinox%Time, GseX_D)
+          GseX_D = -GseX_D/norm2(GseX_D)
+          GseY_D = cross_product(GseZ_D, GseX_D)
+          RotAxisHgi_D = GseY_D*sin(TiltRotation) + GseZ_D*cos(TiltRotation)
+          ! Get rotation axis in GSE
+          RotAxis_D = matmul(RotAxisHgi_D, HgiGse_DD)
+          ! Get direction angles in GSE
+          call xyz_to_dir(RotAxis_D, RotAxisTheta, RotAxisPhi)
+          ! Check result
+          if(abs(RotAxisTheta - TiltRotation) > cTiny)call CON_stop(NameSub// &
+              ': incorrect RotAxisTheta=', RotAxisTheta)
+          ! Set RotAxisTheta to be exactly TiltRotation
+          RotAxisTheta = TiltRotation
+       endif
+    else
+       ! Calculate HgiGse matrix for the first time.
+       ! This should be done for t=0.0 so that the HgiGse can be shifted
+       ! to be aligned with the planet if this is required by a negative
+       ! value of dLongitudeHgi. Also calculates the planet distance.
+       call set_hgi_gse_d_planet(0.0)
+
+       ! Calculate the planet position in HGI
+       ! In GSE shifted to the center of the Sun the planet is at (-d,0,0)
+       XyzPlanetHgi_D = matmul(HgiGse_DD, [-cAU*SunEMBDistance, 0.0, 0.0])
+
+       ! Calculate the planet velocity in HGI
+       call set_v_planet
+    end if
 
     if(NamePlanet == 'EARTH' .and. UseRealRotAxis .and. UseRealMagAxis)then
        ! Use GEOPACK axes for Earth (elliptic orbit and IGRF dipole)
        call time_real_to_int(tStart, iTime_I)
        call geopack_recalc(iTime_I)
-       ! Copy GEOPACK rotation axis
-       RotAxisTheta = RotAxisThetaGeopack
-       RotAxisPhi   = RotAxisPhiGeopack
+       if(.not.UseOrbitElements)then
+          ! Copy GEOPACK rotation axis
+          RotAxisTheta = RotAxisThetaGeopack
+          RotAxisPhi   = RotAxisPhiGeopack
+       end if
        ! Calculate magnetic axis angles from the direction vector
        call xyz_to_dir(AxisMagGeo_D, MagAxisThetaGeo, MagAxisPhiGeo)
        ! Copy dipole strength if it is the default
@@ -270,15 +322,17 @@ contains
                DipoleStrengthPlanet_I(Earth_), DipoleStrength
        end if
     elseif(.not.UseSetRotAxis)then
-       if(UseRealRotAxis .or. UseRealMagAxis)then
-          RotAxisTheta = TiltRotation
-          if(OmegaOrbit == 0.0)then
-             ! Make the rotation axis to be as equinox condition
-             RotAxisPhi   = -cHalfPi
-          else
-             ! This assumes circular orbit that is a crude approximation
-             RotAxisPhi   = modulo( &
-                  cHalfPi - OmegaOrbit*(tStart - TimeEquinox % Time), cTwoPi8)
+       if(UseRealRotAxis)then
+          if(.not.UseOrbitElements)then
+             RotAxisTheta = TiltRotation
+             if(OmegaOrbit == 0.0)then
+                ! Make the rotation axis to be as equinox condition
+                RotAxisPhi   = -cHalfPi
+             else
+                ! This assumes a circular orbit
+                RotAxisPhi   = modulo( &
+                     cHalfPi - OmegaOrbit*(tStart - TimeEquinox % Time), cTwoPi8)
+             end if
           end if
           if(DoTest)write(*,*)NameSub, &
                ': UseRealRotAxis, UseRealMagAxis, TiltRotation, ', &
@@ -317,19 +371,19 @@ contains
 
        if(DoTest)then
           write(*,*)'MagAxisThetaGeo,MagAxisPhiGeo=',&
-               MagAxisThetaGeo*cRadToDeg,MagAxisPhiGeo*cRadToDeg
-          write(*,*)'MagAxisGeo_D=',MagAxis_D
+               MagAxisThetaGeo*cRadToDeg, MagAxisPhiGeo*cRadToDeg
+          write(*,*)'MagAxisGeo_D=', MagAxis_D
        end if
 
        ! GEO --> GEI
        call set_gei_geo_matrix(0.0)
-       MagAxis0Gei_D = matmul(GeiGeo_DD,MagAxis_D)
+       MagAxis0Gei_D = matmul(GeiGeo_DD, MagAxis_D)
 
        ! GEI --> GSE
-       MagAxis_D = matmul(GseGei_DD,MagAxis0Gei_D)
+       MagAxis_D = matmul(GseGei_DD, MagAxis0Gei_D)
 
        ! Cartesian vector to spherical direction
-       call xyz_to_dir(MagAxis_D,MagAxisTheta,MagAxisPhi)
+       call xyz_to_dir(MagAxis_D, MagAxisTheta, MagAxisPhi)
 
        if(DoTest)then
           write(*,*)'UseRealMagAxis:'
@@ -348,12 +402,12 @@ contains
           MagAxisPhi   = RotAxisPhi
        end if
        ! Convert direction to Cartesian coordinates in GSE
-       call dir_to_xyz(MagAxisTheta,MagAxisPhi,MagAxis_D)
+       call dir_to_xyz(MagAxisTheta, MagAxisPhi, MagAxis_D)
 
        ! Calculate the GEI position too
        ! (in case mag axis is not aligned and rotates)
        call set_gei_geo_matrix(0.0)
-       MagAxis0Gei_D = matmul(MagAxis_D,GseGei_DD)
+       MagAxis0Gei_D = matmul(MagAxis_D, GseGei_DD)
 
        if(DoTest)then
           write(*,*)'Aligned=',.not.UseSetMagAxis,' Set=',UseSetMagAxis
@@ -365,24 +419,12 @@ contains
 
     end if
 
-    if(.not.(UseRealRotAxis .or. UseSetRotAxis) .and. UseRealMagAxis)then
-       ! Rotation axis is aligned.
-       ! The angles are reset now because we needed the real rotational axis
-       ! to find the real magnetic axis. We do not need that anymore.
-       RotAxisTheta = MagAxisTheta
-       RotAxisPhi   = MagAxisPhi
-       ! The "permanent" matrices are also recalculated
-       call set_gse_gei_matrix
-       call set_gei_geo_matrix(0.0)
-    endif
-
     ! Obtain the cartesian components of the rotational axis (in GSE)
-    call dir_to_xyz(RotAxisTheta,RotAxisPhi,RotAxis_D)
+    call dir_to_xyz(RotAxisTheta, RotAxisPhi, RotAxis_D)
 
-    if(.not.(UseRealRotAxis.and.UseRealMagAxis))then
+    if(.not.UseRealMagAxis)then
        ! Recalculate the magnetic axis direction in GEO
-
-       MagAxisGeo_D = matmul(MagAxis0Gei_D,GeiGeo_DD)
+       MagAxisGeo_D = matmul(MagAxis0Gei_D, GeiGeo_DD)
 
        call xyz_to_dir(MagAxisGeo_D, MagAxisThetaGeo, MagAxisPhiGeo)
 
@@ -396,19 +438,6 @@ contains
     ! From MagAxisThetaGeo and MagAxisPhiGeo obtain the MAG-GEO matrix
     ! This matrix does not change with simulation time.
     call set_mag_geo_matrix
-
-    ! Calculate HgiGse matrix for the first time.
-    ! This should be done for t=0.0 so that the HgiGse can be shifted
-    ! to be aligned with the planet if this is required by a negative
-    ! value of dLongitudeHgi. Also calculates the planet distance.
-    call set_hgi_gse_d_planet(0.0)
-
-    ! Calculate the planet position in HGI
-    ! In GSE shifted to the center of the Sun the planet is at (-d,0,0)
-    XyzPlanetHgi_D = matmul(HgiGse_DD, [-cAU*SunEMBDistance, 0.0, 0.0])
-
-    ! Calculate the planet velocity in HGI
-    call set_v_planet
 
     ! Set the time dependent axes for the initial time
     call set_axes(0.0, .true.)
@@ -429,7 +458,7 @@ contains
           write(*,*)'XyzPlanetHgr_D/rSun = ', XyzPlanetHgr_D/rSun
           write(*,*)'r/AU,HG_lat,HGR_lon,HGI_lon=',&
                sqrt(sum(XyzPlanetHgi_D**2))/cAU,&
-               asin(XyzPlanetHgi_D(3)/sqrt(sum(XyzPlanetHgi_D**2)))*cRadToDeg, &
+               asin(XyzPlanetHgi_D(3)/norm2(XyzPlanetHgi_D))*cRadToDeg, &
                atan2_check(XyzPlanetHgr_D(2), XyzPlanetHgr_D(1))*cRadToDeg, &
                atan2_check(XyzPlanetHgi_D(2), XyzPlanetHgi_D(1))*cRadToDeg
           write(*,*)'vPlanetHgi_D/(km/s) = ', vPlanetHgi_D/1000.0
@@ -574,8 +603,7 @@ contains
   !============================================================================
   subroutine set_axes(TimeSim, DoSetAxes)
 
-    use CON_planet, ONLY: RightAscension, TimeEquinox, Inclination, &
-         OmegaOrbit, UseOrbitElements, orbit_in_hgi
+    use CON_planet, ONLY: TimeEquinox, UseOrbitElements, orbit_in_hgi
 
     real,              intent(in) :: TimeSim
     logical, optional, intent(in) :: DoSetAxes
@@ -604,7 +632,7 @@ contains
     !      if int(TimeSim/DtUpdateB0) differs from int(TimeSimLast/DtUpdateB0)
     !
 
-    real :: MagAxisGei_D(3)
+    real :: MagAxisGei_D(3), OrbitNormal_D(3)
 
     real :: TimeSimLast = -1000.0  ! Last simulation time for magnetic fields
     real :: TimeSimHgr  = -1000.0  ! Last simulation time for HGR update
@@ -617,12 +645,12 @@ contains
     if(TimeSimHgr /= TimeSim)then
        if(UseOrbitElements)then
           Time8 = tStart + TimeSim
-          ! Convert real precision
-          Phi = modulo(OmegaOrbit*(Time8 - TimeEquinox%Time), cTwoPi) &
-               - RightAscension
-          HgiGse_DD = matmul(rot_matrix_x(-Inclination), rot_matrix_z(Phi))
-
           call orbit_in_hgi(Time8, XyzPlanetHgi_D, vPlanetHgi_D)
+
+          HgiGse_DD(:,x_) = -XyzPlanetHgi_D/max(norm2(XyzPlanetHgi_D), cTiny)
+          OrbitNormal_D   = cross_product(XyzPlanetHgi_D, vPlanetHgi_D)
+          HgiGse_DD(:,z_) = OrbitNormal_D/max(norm2(OrbitNormal_D), cTiny)
+          HgiGse_DD(:,y_) = cross_product(HgiGse_DD(:,z_), HgiGse_DD(:,x_))
           SunEMBDistance = norm2(XyzPlanetHgi_D)/cAU
        end if
        ! Recalculate the HgrHgi_DD matrix
@@ -718,8 +746,8 @@ contains
     ! and calculate the rotation axis in GSM coordinates.
     ! These are useful to obtain the dipole field and the corotation velocity
     ! in the GSM system.
-    MagAxisGsm_D     = matmul(GsmGse_DD,MagAxis_D)
-    RotAxisGsm_D     = matmul(GsmGse_DD,RotAxis_D)
+    MagAxisGsm_D = matmul(GsmGse_DD,MagAxis_D)
+    RotAxisGsm_D = matmul(GsmGse_DD,RotAxis_D)
 
     ! Now calculate the transformation matrices for the rotating systems
     call set_gei_geo_matrix(TimeSim)
@@ -1082,10 +1110,10 @@ contains
 
     ! Do some self consistency checks. Stop with an error message if
     ! test fails. Otherwise write out success.
-    real :: MagAxisTilt
-    real :: RotAxisGsm_D(3), RotAxisGeo_D(3), Rot_DD(3,3), Result_DD(3,3)
-    real :: Omega_D(3), v2_D(3), Result_D(3), Position_D(3)
-    real :: Epsilon1, Epsilon2, Epsilon3
+    real:: MagAxisTilt, LonSubSolar, LatSubSolar
+    real:: RotAxisGsm_D(3), RotAxisGeo_D(3), Rot_DD(3,3), Result_DD(3,3)
+    real:: Omega_D(3), v2_D(3), Result_D(3), Position_D(3)
+    real:: Epsilon1, Epsilon2, Epsilon3
     !--------------------------------------------------------------------------
     if(precision(1.0) >= 12)then
        Epsilon1 = 1e-10
@@ -1100,7 +1128,6 @@ contains
     if(.not.DoInitializeAxes) write(*,*)'test failed: DoInitializeAxes=',&
          DoInitializeAxes,' should be true'
 
-    call time_int_to_real(TimeEquinox)
     if(TimeEquinox % Time <= 0.0) write(*,*)'test failed: TimeEquinox =',&
          TimeEquinox,' should have a large positive double in the %Time field'
 
@@ -1321,6 +1348,19 @@ contains
     if(maxval(abs(v2_D - Result_D)) > Epsilon3) &
          write(*,*)'test angular_velocity failed: GEO-GSE2 v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
+
+    ! Test Mars
+    write(*,*) 'Testing Mars'
+    IsInitializedPlanet = .false.
+    DoInitializeAxes = .true.
+    if(.not.is_planet_init('Mars')) write(*,*)'is_planet_init("MARS") failed'
+
+    call init_axes(TimeEquinox % Time)
+    write(*,*)'XyzPlanetHgi_D=', XyzPlanetHgi_D
+    write(*,*)'vPlanetHgi_D=', vPlanetHgi_D
+    call xyz_to_lonlat(GeoGse_DD(:,x_), LonSubSolar, LatSubSolar)
+    write(*,*)'LonSubSolar=', LonSubSolar*cRadToDeg
+    write(*,*)'LatSubSolar=', LatSubSolar*cRadToDeg
 
   end subroutine test_axes
   !============================================================================

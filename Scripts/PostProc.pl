@@ -140,15 +140,19 @@ REPEAT:{
 	# Post process files if necessary
 	if($Dir eq "IE"){
 	    if($Gzip){
-		&shell("./pION -g");
+		&shell("./pION -g -n=$nThread");
 	    }else{
-		&shell("./pION");
+		&shell("./pION -n=$nThread");
 	    }
             &concat_sat_log if $Concat;
 	}elsif( $Dir =~ /^PC|PT$/ ){
 	    &shell($pIDL);
 	}elsif( $Dir =~ "UA"){
-	    &shell("./pGITM");
+	    if (-e "./post_process.py") {
+		&shell("./pGITM -np $nThread");
+	    }else{
+		&shell("./pGITM");
+	    }
 	}elsif( $Dir =~ /^SC|IH|OH|GM|EE$/ ){
 	    &shell($pIDL);
 	    unless($NoPtec){
