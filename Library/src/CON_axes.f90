@@ -1356,8 +1356,8 @@ contains
     if(.not.is_planet_init('Mars')) write(*,*)'is_planet_init("MARS") failed'
 
     call init_axes(TimeEquinox % Time)
-    write(*,*)'XyzPlanetHgi_D=', XyzPlanetHgi_D
-    write(*,*)'vPlanetHgi_D=', vPlanetHgi_D
+    write(*,"(a,3es21.12)")' XyzPlanetHgi_D=', XyzPlanetHgi_D
+    write(*,"(a,3es21.12)")' vPlanetHgi_D=', vPlanetHgi_D
     call xyz_to_lonlat(GeoGse_DD(:,x_), LonSubSolar, LatSubSolar)
     write(*,*)'LonSubSolar=', LonSubSolar*cRadToDeg
     write(*,*)'LatSubSolar=', LatSubSolar*cRadToDeg
