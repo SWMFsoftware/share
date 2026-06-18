@@ -234,7 +234,7 @@ contains
     RightAscension_I(Mars_)            = 49.57854                ! [deg]
     Inclination_I(Mars_)               = 1.85                    ! [deg]
     ArgPeriapsis_I(Mars_)              = 286.5                   ! [deg]
-    ! AngleEquinox was obtained by Gemini. Needs to be checked. 
+    ! AngleEquinox was obtained by Gemini. Needs to be checked.
     AngleEquinox_I(Mars_)              = 238.462 * cDegToRad     ! [rad]
 
     ! Vernal Equinox at midnight (Ls = 0.0)
