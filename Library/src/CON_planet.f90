@@ -281,7 +281,6 @@ contains
     !--------------------------------------------------------------------------
     select case(NameCommand)
     case("#PLANET", "#MOON", "#COMET")
-
        call read_var('NamePlanet',NamePlanetIn)
        call upper_case(NamePlanetIn)
 
@@ -343,7 +342,6 @@ contains
     case('#IDEALAXES')
        ! This is a short version of setting one axis parallel with Z
        ! and the other one aligned with it
-
        NamePlanetCommands = '#IDEALAXES ' // NamePlanetCommands
        IsPlanetModified = .true.
 
@@ -357,7 +355,6 @@ contains
        UseSetMagAxis    = .false.
 
     case('#ROTATIONAXIS')
-
        NamePlanetCommands = '#ROTATIONAXIS ' // NamePlanetCommands
        IsPlanetModified = .true.
        UseRealRotAxis = .false.
@@ -380,7 +377,6 @@ contains
        end if
 
     case('#MAGNETICAXIS')
-
        NamePlanetCommands = '#MAGNETICAXIS ' // NamePlanetCommands
        IsPlanetModified = .true.
        UseRealMagAxis = .false.
@@ -403,7 +399,6 @@ contains
        end if
 
     case('#MAGNETICCENTER')
-
        NamePlanetCommands = '#MAGNETICCENTER ' // NamePlanetCommands
        IsPlanetModified = .true.
        call read_var('MagneticCenterX',MagCenter_D(1))
@@ -411,7 +406,6 @@ contains
        call read_var('MagneticCenterZ',MagCenter_D(3))
 
     case('#ROTATION')
-
        NamePlanetCommands = '#ROTATION ' // NamePlanetCommands
        IsPlanetModified = .true.
 
@@ -426,7 +420,6 @@ contains
        endif
        !$acc update device(UseRotation, OmegaPlanet)
     case('#NONDIPOLE')
-
        NamePlanetCommands = '#NONDIPOLE ' // NamePlanetCommands
        IsPlanetModified = .true.
 
@@ -439,7 +432,6 @@ contains
        endif
 
     case('#DIPOLE')
-
        NamePlanetCommands = '#DIPOLE ' // NamePlanetCommands
        IsPlanetModified = .true.
 
@@ -451,18 +443,17 @@ contains
        end if
 
     case('#UPDATEB0')
-
        call read_var('DtUpdateB0',DtUpdateB0)
 
     case('#MULTIPOLEB0')
-
        call read_var('UseMultipoleB0', UseMultipoleB0)
        if(UseMultipoleB0) then
+          NamePlanetCommands = '#MULTIPOLEB0 ' // NamePlanetCommands
+          IsPlanetModified = .true.
 
           ! If multipole is used, the magnetic axis is aligned
           ! with the rotation axis. Rotation axis may be real or
           ! user-specified using #ROTATIONAXIS command.
-          IsPlanetModified = .true.
           UseRealRotAxis   = .true.
           IsRotAxisPrimary = .true.
           UseRealMagAxis   = .false.
@@ -494,28 +485,39 @@ contains
           call normalize_schmidt_coefficients
        end if
     case('#ORBIT')
+       NamePlanetCommands = '#ORBIT ' // NamePlanetCommands
+       IsPlanetModified = .true.
        call read_var('OrbitalPeriodPlanet', OrbitalPeriodPlanet_I(Planet_))
        OmegaOrbit = cTwoPi/OrbitalPeriodPlanet_I(Planet_)
        ! Correct omega planet?
-       call read_var('rOrbitPlanet',rOrbitPlanet) ! [m]
-       call read_var('Excentricity',Excentricity) ! dimless
-       ! read Euler angles of orbit (read in degs, convert to rads):
+       call read_var('rOrbitPlanet', rOrbitPlanet) ! [m]
+       call read_var('Excentricity', Excentricity) ! dimless
+       ! read Euler angles of orbit
        call read_var('RightAscension', RightAscension)
        RightAscension = RightAscension*cDegToRad
        call read_var('Inclination', Inclination)
        Inclination = Inclination*cDegToRad
        call read_var('ArgPeriapsis', ArgPeriapsis)
        ArgPeriapsis = ArgPeriapsis*cDegToRad
-       !$acc update device(OmegaOrbit,  rOrbitPlanet, Excentricity,    &
+       !$acc update device(OmegaOrbit,  rOrbitPlanet, Excentricity, &
        !$acc RightAscension, Inclination, ArgPeriapsis)
        call get_orbit_elements
+
     case('#TIMEEQUINOX')
-       call read_var('iYear',  TimeEquinox%iYear)
-       call read_var('iMonth', TimeEquinox%iMonth)
-       call read_var('iDay',   TimeEquinox%iDay)
-       call read_var('iHour',  TimeEquinox%iHour)
-       call read_var('iMinute',TimeEquinox%iMinute)
+       NamePlanetCommands = '#TIMEEQUINOX ' // NamePlanetCommands
+       IsPlanetModified = .true.
+       call read_var('iYear',   TimeEquinox%iYear)
+       call read_var('iMonth',  TimeEquinox%iMonth)
+       call read_var('iDay',    TimeEquinox%iDay)
+       call read_var('iHour',   TimeEquinox%iHour)
+       call read_var('iMinute', TimeEquinox%iMinute)
+       call read_var('AngleEquinox', AngleEquinox)
+       ! Set real and string parts
        call time_int_to_real(TimeEquinox)
+       AngleEquinox = AngleEquinox*cDegToRad
+
+    case default
+       call CON_stop(NameSub//': unknown command='//NameCommand)
     end select
 
   end subroutine read_planet_var
