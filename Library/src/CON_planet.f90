@@ -225,12 +225,8 @@ contains
     else
        OmegaOrbit = cTwoPi/OrbitalPeriodPlanet_I(Planet_)
     end if
-    OmegaPlanet     = OmegaRotation + OmegaOrbit
-    AngleEquinox =  &
-         cTwoPi*(iHourEquinoxPlanet_I(Planet_)*3600 &
-         +       iMinuteEquinoxPlanet_I(Planet_)*60 &
-         +       iSecondEquinoxPlanet_I(Planet_)  &
-         +       FracSecondEquinoxPlanet_I(Planet_))/(24*3600)
+    OmegaPlanet  = OmegaRotation + OmegaOrbit
+    AngleEquinox = AngleEquinox_I(Planet_)
     TimeEquinox  = TimeType(&
          iYearEquinoxPlanet_I(Planet_), &
          iMonthEquinoxPlanet_I(Planet_), &

@@ -30,11 +30,13 @@ module ModPlanetConst
   ! NOTE THE THE PRECISE DEFINITIONS OF WHAT THE VARIABLES MEAN CAN BE
   ! FOUND AT THE END OF THE FILE AND IN THE CODE DOCUMENTATION (we hope).
 
-  ! Orbital parameters
+  ! Radius, mass, and Orbital parameters
+  ! RightAscension_I, Inclination_I, ArgPeriapsis_I are relative to HGI [deg]
+  ! AngleEquinox_I is the GEO longitude of midnight at equinox time [rad]
   real, dimension(0:MaxPlanet+1):: &
        rPlanet_I, mPlanet_I, rOrbitPlanet_I, Excentricity_I, &
        OrbitalPeriodPlanet_I, RotationPeriodPlanet_I, TiltPlanet_I, &
-       RightAscension_I, Inclination_I, ArgPeriapsis_I ! Euler angles [deg]
+       RightAscension_I, Inclination_I, ArgPeriapsis_I, AngleEquinox_I
 
   ! Equinox time
   integer, dimension(0:MaxPlanet+1):: &
@@ -118,6 +120,7 @@ contains
     RightAscension_I                 = 0.0                        ! [deg]
     Inclination_I                    = 0.0                        ! [deg]
     ArgPeriapsis_I                   = 0.0                        ! [deg]
+    AngleEquinox_I                   = 0.0                        ! [rad]
 
     iYearEquinoxPlanet_I             =2000                        ! [yr]
     iMonthEquinoxPlanet_I            =   1                        ! [mo]
@@ -181,6 +184,7 @@ contains
     iMinuteEquinoxPlanet_I(Earth_)      =   35                    ! [mn]
     iSecondEquinoxPlanet_I(Earth_)      =    0                    ! [s]
     FracSecondEquinoxPlanet_I(Earth_)   =  0.0                    ! [s]
+
     TiltPlanet_I(Earth_)                = 23.5 * cDegToRad        ! [rad]
 
     TypeBFieldPlanet_I(Earth_)          = 'DIPOLE'
@@ -201,11 +205,8 @@ contains
     OrbitalPeriodPlanet_I(Moon_)       = 365.24218967 * cDay     ! [s]
     RotationPeriodPlanet_I(Moon_)      = cDay                    ! [s]
     Excentricity_I(Moon_)              = 0.016                   ! dimless
-    ! As in geopack
     RightAscension_I(Moon_)            = 75.77                   ! [Deg]
-    ! As in geopack
     Inclination_I(Moon_)               = 7.25                    ! [Deg]
-    ! https://data.giss.nasa.gov/cgi-bin/ar5/srorbpar.cgi for year 2023
     ArgPeriapsis_I(Moon_)              = 283.29                  ! [Deg]
 
     iYearEquinoxPlanet_I(Moon_)        = 2000                    ! [yr]
@@ -226,13 +227,15 @@ contains
 
     ! Semi-major axis
     rOrbitPlanet_I(Mars_)               = 227939200.0e3          ! [m]
-    OrbitalPeriodPlanet_I(Mars_)        = 686.98* cDay           ! [s]
+    OrbitalPeriodPlanet_I(Mars_)        = 686.98 * cDay          ! [s]
     RotationPeriodPlanet_I(Mars_)       = 1.0275 * cDay          ! [s]
 
     Excentricity_I(Mars_)              = 0.0934                  ! dimless
     RightAscension_I(Mars_)            = 49.57854                ! [deg]
     Inclination_I(Mars_)               = 1.85                    ! [deg]
     ArgPeriapsis_I(Mars_)              = 286.5                   ! [deg]
+    ! AngleEquinox was obtained by Gemini. Needs to be checked. 
+    AngleEquinox_I(Mars_)              = 238.462 * cDegToRad     ! [rad]
 
     ! Vernal Equinox at midnight (Ls = 0.0)
     iYearEquinoxPlanet_I(Mars_)        = 1998                    ! [yr]
