@@ -119,53 +119,16 @@ contains
   !============================================================================
   subroutine set_planet_defaults
 
-    ! Initialize parameters for Earth as the default planet.  This is in case
+    ! Initialize parameters for Earth as the default planet in case
     ! there is no \#PLANET command.
 
     character(len=*), parameter:: NameSub = 'set_planet_defaults'
     !--------------------------------------------------------------------------
-    Planet_          = Earth_
-    NamePlanet       = NamePlanet_I(Earth_)
-    RadiusPlanet     = rPlanet_I(Earth_)
-    MassPlanet       = mPlanet_I(Earth_)
-    RotPeriodPlanet  = RotationPeriodPlanet_I(Earth_)
-    TiltRotation     = TiltPlanet_I(Earth_)
-    IonosphereHeight = IonoHeightPlanet_I(Earth_)
-    OmegaOrbit       = cTwoPi/OrbitalPeriodPlanet_I(Earth_)
-    OmegaPlanet      = OmegaOrbit + cTwoPi/RotationPeriodPlanet_I(Earth_)
-    AngleEquinox     = cTwoPi * &
-         ( iHourEquinoxPlanet_I(Earth_) * 3600 &
-         + iMinuteEquinoxPlanet_I(Earth_) * 60 &
-         + iSecondEquinoxPlanet_I(Earth_) &
-         + FracSecondEquinoxPlanet_I(Earth_) &
-         ) / (24 * 3600)
-    TimeEquinox      = TimeType(&
-         iYearEquinoxPlanet_I(Earth_), &
-         iMonthEquinoxPlanet_I(Earth_), &
-         iDayEquinoxPlanet_I(Earth_), &
-         iHourEquinoxPlanet_I(Earth_),   &
-         iMinuteEquinoxPlanet_I(Earth_), &
-         iSecondEquinoxPlanet_I(Earth_), &
-         FracSecondEquinoxPlanet_I(Earth_), &
-         0.0_Real8_, '20000320073500')
-    call time_int_to_real(TimeEquinox)
-    TypeBField       = TypeBFieldPlanet_I(Earth_)
-    DipoleStrength   = DipoleStrengthPlanet_I(Earth_)
-    MagAxisThetaGeo  = bAxisThetaPlanet_I(Earth_)
-    MagAxisPhiGeo    = bAxisPhiPlanet_I(Earth_)
-    rOrbitPlanet     = rOrbitPlanet_I(Earth_)  ! [m]
-    Excentricity     = Excentricity_I(Earth_) ! dimless
-    ! Euler angles of orbit (read in degs, convert to rads):
-    RightAscension   = RightAscension_I(Earth_)
-    RightAscension   = RightAscension*cDegToRad
-    Inclination      = Inclination_I(Earth_)
-    Inclination      = Inclination*cDegToRad
-    ArgPeriapsis     = ArgPeriapsis_I(Earth_)
-    ArgPeriapsis     = ArgPeriapsis*cDegToRad
-    call get_orbit_elements
-    !$acc update device(OmegaPlanet, AngleEquinox, OmegaRotation,             &
-    !$acc TimeEquinox, MagAxisPhi, MagAxisTheta,  rOrbitPlanet, Excentricity, &
-    !$acc RightAscension, Inclination, ArgPeriapsis)
+    if(.not.is_planet_init("EARTH")) call CON_stop(NameSub // &
+         ': failed to initialize with Earth')
+
+    ! Allow switching to a different planet
+    IsInitializedPlanet = .false.
 
   end subroutine set_planet_defaults
   !============================================================================
@@ -195,7 +158,7 @@ contains
     NamePlanet = NamePlanetIn; call upper_case(NamePlanet)
     IsInitializedPlanet = .true.
 
-    IsKnown       = .false.
+    IsKnown = .false.
     do i = NoPlanet_, MaxPlanet
       if (NamePlanet == NamePlanet_I(i)) then
          IsKnown = .true.
@@ -226,16 +189,21 @@ contains
        OmegaOrbit = cTwoPi/OrbitalPeriodPlanet_I(Planet_)
     end if
     OmegaPlanet  = OmegaRotation + OmegaOrbit
-    AngleEquinox = AngleEquinox_I(Planet_)
+    if(Planet_ == Earth_)then
+       ! For Earth the longitude of midnight can be obtained
+       ! from the time of day
+       AngleEquinox = cTwoPi/(24*60) * &
+            (iHourEquinoxPlanet_I(Earth_)*60 + iMinuteEquinoxPlanet_I(Earth_))
+    else
+       AngleEquinox = AngleEquinox_I(Planet_)
+    end if
     TimeEquinox  = TimeType(&
          iYearEquinoxPlanet_I(Planet_), &
          iMonthEquinoxPlanet_I(Planet_), &
          iDayEquinoxPlanet_I(Planet_), &
          iHourEquinoxPlanet_I(Planet_), &
          iMinuteEquinoxPlanet_I(Planet_), &
-         iSecondEquinoxPlanet_I(Planet_), &
-         FracSecondEquinoxPlanet_I(Planet_), &
-         0.0_Real8_, '')
+         0, 0.0, 0.0_Real8_, '')
     ! Set the real value and the string
     call time_int_to_real(TimeEquinox)
 
@@ -247,10 +215,10 @@ contains
 
     rOrbitPlanet     = rOrbitPlanet_I(Planet_)  ! [m]
     Excentricity     = Excentricity_I(Planet_)  ! dimless
-    ! Euler angles of orbit (read in degs, convert to rads):
-    RightAscension   = RightAscension_I(Planet_)*cDegToRad
-    Inclination      = Inclination_I(Planet_)*cDegToRad
-    ArgPeriapsis     = ArgPeriapsis_I(Planet_)*cDegToRad
+    ! Euler angles of orbit relative to HGI
+    RightAscension   = RightAscension_I(Planet_)
+    Inclination      = Inclination_I(Planet_)
+    ArgPeriapsis     = ArgPeriapsis_I(Planet_)
     call get_orbit_elements
     ! For Enceladus the dipole is at Saturn's center
     if(Planet_ == Enceladus_) MagCenter_D(2) = 944.23
@@ -640,11 +608,11 @@ contains
        RETURN
     end if
     UseOrbitElements = .true.
-    HgiOrb_DD = matmul(rot_matrix_x(Inclination),&
-         rot_matrix_z(ArgPeriapsis - RightAscension) )
+    HgiOrb_DD = matmul(rot_matrix_x(Inclination), &
+         rot_matrix_z(ArgPeriapsis - RightAscension))
     HgiOrb_DD = matmul(rot_matrix_z(cPi), HgiOrb_DD)
     SemiMajorAxis = rOrbitPlanet
-    SemiMinorAxis= SemiMajorAxis*sqrt(1 - Excentricity**2)
+    SemiMinorAxis = SemiMajorAxis*sqrt(1 - Excentricity**2)
 
     !$acc update device(HgiOrb_DD, SemiMajorAxis, SemiMinorAxis)
 
