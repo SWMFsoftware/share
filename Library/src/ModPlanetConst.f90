@@ -31,8 +31,8 @@ module ModPlanetConst
   ! FOUND AT THE END OF THE FILE AND IN THE CODE DOCUMENTATION (we hope).
 
   ! Radius, mass, and Orbital parameters
-  ! RightAscension_I, Inclination_I, ArgPeriapsis_I are relative to HGI [deg]
-  ! AngleEquinox_I is the GEO longitude of midnight at equinox time [rad]
+  ! RightAscension_I, Inclination_I, ArgPeriapsis_I are relative to HGI
+  ! AngleEquinox_I is the GEO longitude of midnight at equinox time
   real, dimension(0:MaxPlanet+1):: &
        rPlanet_I, mPlanet_I, rOrbitPlanet_I, Excentricity_I, &
        OrbitalPeriodPlanet_I, RotationPeriodPlanet_I, TiltPlanet_I, &
@@ -41,8 +41,7 @@ module ModPlanetConst
   ! Equinox time
   integer, dimension(0:MaxPlanet+1):: &
        iYearEquinoxPlanet_I, iMonthEquinoxPlanet_I, iDayEquinoxPlanet_I, &
-       iHourEquinoxPlanet_I,iMinuteEquinoxPlanet_I,iSecondEquinoxPlanet_I
-  real, dimension(0:MaxPlanet+1):: FracSecondEquinoxPlanet_I
+       iHourEquinoxPlanet_I, iMinuteEquinoxPlanet_I
 
   ! Magnetic field of planet
   character (len=lTypeBField):: TypeBFieldPlanet_I(0:MaxPlanet+1)
@@ -116,10 +115,10 @@ contains
     rOrbitPlanet_I                   = 0.0                        ! [m]
     OrbitalPeriodPlanet_I            = 0.0                        ! [s]
     RotationPeriodPlanet_I           = 0.0                        ! [s]
-    Excentricity_I                   = 0.0                        ! dimless
-    RightAscension_I                 = 0.0                        ! [deg]
-    Inclination_I                    = 0.0                        ! [deg]
-    ArgPeriapsis_I                   = 0.0                        ! [deg]
+    Excentricity_I                   = 0.0
+    RightAscension_I                 = 0.0                        ! [rad]
+    Inclination_I                    = 0.0                        ! [rad]
+    ArgPeriapsis_I                   = 0.0                        ! [rad]
     AngleEquinox_I                   = 0.0                        ! [rad]
 
     iYearEquinoxPlanet_I             =2000                        ! [yr]
@@ -127,8 +126,6 @@ contains
     iDayEquinoxPlanet_I              =   1                        ! [dy]
     iHourEquinoxPlanet_I             =   0                        ! [hr]
     iMinuteEquinoxPlanet_I           =   0                        ! [mn]
-    iSecondEquinoxPlanet_I           =   0                        ! [s]
-    FracSecondEquinoxPlanet_I        = 0.0                        ! [s]
     TiltPlanet_I                     = 0.0                        ! [rad]
 
     TypeBFieldPlanet_I               = 'NONE'
@@ -167,23 +164,21 @@ contains
     rPlanet_I(Earth_)                   = 6378.0e+3               ! [m]
     mPlanet_I(Earth_)                   = 5.976e+24               ! [kg]
     rOrbitPlanet_I(Earth_)              = cAU                     ! [m]
-    OrbitalPeriodPlanet_I(Earth_)       = 365.24218967*cDay       ! [s]
+    OrbitalPeriodPlanet_I(Earth_)       = 365.24218967 * cDay     ! [s]
     RotationPeriodPlanet_I(Earth_)      = cDay                    ! [s]
-    Excentricity_I(Earth_)              = 0.016                   ! dimless
+    Excentricity_I(Earth_)              = 0.016
     ! As in geopack
-    RightAscension_I(Earth_)            = 75.77                   ! [deg]
+    RightAscension_I(Earth_)            = 75.77 * cDegToRad       ! [rad]
     ! As in geopack
-    Inclination_I(Earth_)               = 7.25                    ! [deg]
+    Inclination_I(Earth_)               = 7.25 * cDegToRad        ! [rad]
     ! https://data.giss.nasa.gov/cgi-bin/ar5/srorbpar.cgi for year 2023
-    ArgPeriapsis_I(Earth_)              = 283.29                  ! [deg]
+    ArgPeriapsis_I(Earth_)              = 283.29 * cDegToRad      ! [rad]
 
     iYearEquinoxPlanet_I(Earth_)        = 2000                    ! [yr]
     iMonthEquinoxPlanet_I(Earth_)       =    3                    ! [mo]
     iDayEquinoxPlanet_I(Earth_)         =   20                    ! [dy]
     iHourEquinoxPlanet_I(Earth_)        =    7                    ! [hr]
     iMinuteEquinoxPlanet_I(Earth_)      =   35                    ! [mn]
-    iSecondEquinoxPlanet_I(Earth_)      =    0                    ! [s]
-    FracSecondEquinoxPlanet_I(Earth_)   =  0.0                    ! [s]
 
     TiltPlanet_I(Earth_)                = 23.5 * cDegToRad        ! [rad]
 
@@ -204,18 +199,16 @@ contains
     rOrbitPlanet_I(Moon_)              = cAU                     ! [m]
     OrbitalPeriodPlanet_I(Moon_)       = 365.24218967 * cDay     ! [s]
     RotationPeriodPlanet_I(Moon_)      = cDay                    ! [s]
-    Excentricity_I(Moon_)              = 0.016                   ! dimless
-    RightAscension_I(Moon_)            = 75.77                   ! [Deg]
-    Inclination_I(Moon_)               = 7.25                    ! [Deg]
-    ArgPeriapsis_I(Moon_)              = 283.29                  ! [Deg]
+    Excentricity_I(Moon_)              = 0.016
+    RightAscension_I(Moon_)            = 75.77 * cDegToRad       ! [rad]
+    Inclination_I(Moon_)               = 7.25 * cDegToRad        ! [rad]
+    ArgPeriapsis_I(Moon_)              = 283.29 * cDegToRad      ! [rad]
 
     iYearEquinoxPlanet_I(Moon_)        = 2000                    ! [yr]
     iMonthEquinoxPlanet_I(Moon_)       =    3                    ! [mo]
     iDayEquinoxPlanet_I(Moon_)         =   20                    ! [dy]
     iHourEquinoxPlanet_I(Moon_)        =    7                    ! [hr]
     iMinuteEquinoxPlanet_I(Moon_)      =   35                    ! [mn]
-    iSecondEquinoxPlanet_I(Moon_)      =    0                    ! [s]
-    FracSecondEquinoxPlanet_I(Moon_)   =  0.0                    ! [s]
 
     ! Mars (40)
     ! See https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html
@@ -230,10 +223,10 @@ contains
     OrbitalPeriodPlanet_I(Mars_)        = 686.98 * cDay          ! [s]
     RotationPeriodPlanet_I(Mars_)       = 1.0275 * cDay          ! [s]
 
-    Excentricity_I(Mars_)              = 0.0934                  ! dimless
-    RightAscension_I(Mars_)            = 49.57854                ! [deg]
-    Inclination_I(Mars_)               = 1.85                    ! [deg]
-    ArgPeriapsis_I(Mars_)              = 286.5                   ! [deg]
+    Excentricity_I(Mars_)              = 0.0934
+    RightAscension_I(Mars_)            = 49.57854 * cDegToRad    ! [rad]
+    Inclination_I(Mars_)               = 1.85 * cDegToRad        ! [rad]
+    ArgPeriapsis_I(Mars_)              = 286.5 * cDegToRad       ! [rad]
     ! AngleEquinox was obtained by Gemini. Needs to be checked.
     AngleEquinox_I(Mars_)              = 238.462 * cDegToRad     ! [rad]
 
@@ -243,8 +236,7 @@ contains
     iDayEquinoxPlanet_I(Mars_)         =   14                    ! [dy]
     iHourEquinoxPlanet_I(Mars_)        =   13                    ! [hr]
     iMinuteEquinoxPlanet_I(Mars_)      =   40                    ! [mn]
-    iSecondEquinoxPlanet_I(Mars_)      =    0                    ! [s]
-    FracSecondEquinoxPlanet_I(Mars_)   =  0.0                    ! [s]
+
     TiltPlanet_I(Mars_)                = 25.19 * cDegToRad       ! [rad]
 
     ! Jupiter (50)
@@ -293,8 +285,7 @@ contains
     iDayEquinoxPlanet_I(Uranus_)         =    3                  ! [dy]
     iHourEquinoxPlanet_I(Uranus_)        =    0                  ! [hr]
     iMinuteEquinoxPlanet_I(Uranus_)      =    0                  ! [mn]
-    iSecondEquinoxPlanet_I(Uranus_)      =    0                  ! [s]
-    FracSecondEquinoxPlanet_I(Uranus_)   =  0.0                  ! [s]
+
     TiltPlanet_I(Uranus_)                = 97.9 * cDegToRad      ! [rad]
 
     TypeBFieldPlanet_I(Uranus_)          = 'DIPOLE'
@@ -329,8 +320,7 @@ contains
     iDayEquinoxPlanet_I(Europa_)        =    1                   ! [dy]
     iHourEquinoxPlanet_I(Europa_)       =    0                   ! [hr]
     iMinuteEquinoxPlanet_I(Europa_)     =    0                   ! [mn]
-    iSecondEquinoxPlanet_I(Europa_)     =    0                   ! [s]
-    FracSecondEquinoxPlanet_I(Europa_)  =  0.0                   ! [s]
+
     TiltPlanet_I(Europa_)               =  0.0 * cDegToRad       ! [rad]
 
     TypeBFieldPlanet_I(Europa_)         = 'DIPOLE'
