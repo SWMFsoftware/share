@@ -27,7 +27,7 @@ module ModPlanetConst
 
   ! Conversion matrix between HGI adn J2000 coordinates (calculated once)
   real:: HgiJ2k_DD(3,3)
-  
+
   type OrbitType
      real :: aAu
      real :: Eccentricity
@@ -131,6 +131,7 @@ contains
     use ModCoordTransform, ONLY: rot_matrix_x, rot_matrix_z
     use ModUtilities, ONLY: upper_case
 
+    !--------------------------------------------------------------------------
     save
 
     integer:: i
@@ -487,7 +488,6 @@ contains
          matmul(rot_matrix_z(-75.77*cDegToRad),       & ! ascending node
          rot_matrix_x(-23.4392911*cDegToRad))) ! Obliquity (Earth tilt at J2K)
 
-    
     ! No Planet (0)
     !     - No Planet and no body - defaults for everything, just set name.
     NamePlanet_I(NoPlanet_)             = 'NONE'
@@ -534,7 +534,7 @@ contains
   subroutine transform_orbit_j2k_hgi(OrbitJ2k, OrbitHgi)
 
     use ModCoordTransform, ONLY: cross_product
-    
+
     ! Convert J2000 orbit elements into HGI orbit elements
 
     type(OrbitType), intent(in)::  OrbitJ2k

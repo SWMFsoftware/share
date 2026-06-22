@@ -801,7 +801,7 @@ contains
     if (present(MagAxisGseOut_D))   MagAxisGseOut_D   = MagAxis_D
 
   end subroutine get_axes
-  !==========================================================================
+  !============================================================================
   subroutine set_gse_gei_matrix
 
     ! The GseGei_DD matrix converts between GSE and GEI with two rotations:
@@ -811,7 +811,7 @@ contains
     !
     ! The GseGei_DD matrix changes at the order of TimeSimulation/TimeOrbit.
     ! For usual simulations that change can be safely neglected.
-    !------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     GseGei_DD = matmul(&
          rot_matrix_z(RotAxisPhi + cHalfPi), &
          rot_matrix_x(RotAxisTheta) &
@@ -1377,7 +1377,7 @@ contains
     TimeStart = TimeType(2017, 9, 12, 18, 0, 0, 0.0, 0.0_Real8_, '')
     call time_int_to_real(TimeStart)
     call init_axes(TimeStart % Time)
-    write(*,"(a,3es21.12)")' XyzPlanetHgi_D=', XyzPlanetHgi_D    
+    write(*,"(a,3es21.12)")' XyzPlanetHgi_D=', XyzPlanetHgi_D
     write(*,"(a,3es21.12)")' vPlanetHgi_D=', vPlanetHgi_D
     write(*,"(a,es21.12)")' Sun-Mars dist=', norm2(XyzPlanetHgi_D)/cAU
     call xyz_to_lonlat(GeoGse_DD(:,x_), LonSubSolar, LatSubSolar)
