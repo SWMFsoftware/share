@@ -531,6 +531,73 @@ contains
 
   end subroutine get_planet_orbital_elements
   !============================================================================
+  subroutine transform_orbit_j2k_hgi(OrbitJ2k, OrbitHgi)
+
+    use ModCoordTransform, ONLY: cross_product
+    
+    ! Convert J2000 orbit elements into HGI orbit elements
+
+    type(OrbitType), intent(in)::  OrbitJ2k
+    type(OrbitType), intent(out):: OrbitHgi
+
+    real :: pJ2k_D(3), hJ2k_D(3), pHgi_D(3), hHgi_D(3)
+    real :: Incl, Node, Peri
+    real :: Node_D(3), ArgPeriX, ArgPeriY
+    !--------------------------------------------------------------------------
+    ! Copy major axis and Eccentricity
+    OrbitHgi % aAU          = OrbitJ2k % aAU
+    OrbitHgi % Eccentricity = OrbitJ2k % Eccentricity
+
+    ! Get angles from J2000 orbit
+    Incl = OrbitJ2k % InclinationDeg * cDegToRad
+    Node = OrbitJ2k % LongNodeDeg * cDegToRad
+    Peri = (OrbitJ2k % LongPeriDeg - OrbitJ2k % LongNodeDeg) * cDegToRad
+
+    ! pJ2k is a unit vector pointing directly toward periapsis
+    pJ2k_D(1) = cos(Node)*cos(Peri) - sin(Node)*sin(Peri)*cos(Incl)
+    pJ2k_D(2) = sin(Node)*cos(Peri) + cos(Node)*sin(Peri)*cos(Incl)
+    pJ2k_D(3) = sin(Peri)*sin(Incl)
+
+    ! hJ2k is the normal vector to the orbital plane in J2000
+    hJ2k_D(1) = sin(Node)*sin(Incl)
+    hJ2k_D(2) = -cos(Node)*sin(Incl)
+    hJ2k_D(3) = cos(Incl)
+
+    ! Transform the vectors to the HGI frame
+    pHgi_D = matmul(HgiJ2k_DD, pJ2k_D)
+    hHgi_D = matmul(HgiJ2k_DD, hJ2k_D)
+
+    ! Extract HGI Inclination safely capped to avoid acos numerical overflow
+    Incl = acos(max(-1.0, min(1.0, hHgi_D(3))))
+
+    ! Extract Periapsis safely using vector projections
+    if (hHgi_D(3) < 0.999999) then
+       Node = atan2(hHgi_D(1), -hHgi_D(2))
+       if (Node < 0) Node = Node + cTwoPi
+
+       ! Node_D points to the ascending node in the HGI XY plane
+       Node_D(1) = cos(Node)
+       Node_D(2) = sin(Node)
+       Node_D(3) = 0.0
+
+       ! PeriX and PeriY are the components of arg periapsis to node line
+       ArgPeriX = dot_product(Node_D, pHgi_D)
+       ArgPeriY = dot_product(cross_product(hHgi_D, Node_D), pHgi_D)
+       Peri = modulo(Node + atan2(ArgPeriY, ArgPeriX), cTwoPi)
+    else
+       ! Node is conventionally set to 0
+       Node = 0.0
+       ! For flat equatorial orbit, calculate angle directly
+       Peri = modulo(atan2(pHgi_D(2), pHgi_D(1)), cTwoPi)
+    end if
+
+    ! Put angles into the output
+    OrbitHgi % InclinationDeg = Incl * cRadToDeg
+    OrbitHgi % LongPeriDeg    = Peri * cRadToDeg
+    OrbitHgi % LongNodeDeg    = Node * cRadToDeg
+
+  end subroutine transform_orbit_j2k_hgi
+  !============================================================================
   subroutine get_planet_rotation_elements(iPlanet, JulianDay, Rot)
 
     integer, intent(in) :: iPlanet
@@ -642,7 +709,8 @@ contains
     Alpha = Rot%Alpha0Deg*cDegToRad
     Delta = Rot%Delta0Deg*cDegToRad
 
-    AxisHgi_D = [cos(Delta)*cos(Alpha), cos(Delta)*sin(Alpha), sin(Delta)]
+    AxisHgi_D = matmul(HgiJ2k_DD, &
+         [cos(Delta)*cos(Alpha), cos(Delta)*sin(Alpha), sin(Delta)])
 
   end subroutine get_rotation_axis_hgi
   !============================================================================
