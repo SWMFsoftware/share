@@ -16,7 +16,7 @@ module CON_planet
 
   use ModNumConst, ONLY: cTwoPi, cDegToRad, cPi, cTiny, cTiny8
   use ModPlanetConst
-  use ModTimeConvert, ONLY: TimeType, time_int_to_real
+  use ModTimeConvert, ONLY: TimeType, time_int_to_real, time_real_to_julian
   use ModUtilities, ONLY: upper_case, CON_stop
 
   ! revision history:
@@ -112,6 +112,7 @@ module CON_planet
   real :: HgiOrb_DD(3,3)
   ! 2. Major and minor semiaxes
   real :: SemiMinorAxis, SemiMajorAxis
+  logical :: UseOrbitTable = .false.
   !$acc declare create(rOrbitPlanet, Excentricity)
   !$acc declare create(RightAscension, Inclination, ArgPeriapsis)
   !$acc declare create(HgiOrb_DD,SemiMinorAxis, SemiMajorAxis)
@@ -160,11 +161,11 @@ contains
 
     IsKnown = .false.
     do i = NoPlanet_, MaxPlanet
-      if (NamePlanet == NamePlanet_I(i)) then
-         IsKnown = .true.
-         Planet_ = i
-         EXIT
-      end if
+       if (NamePlanet == NamePlanet_I(i)) then
+          IsKnown = .true.
+          Planet_ = i
+          EXIT
+       end if
     end do
 
     if (.not. IsKnown)  then
@@ -174,7 +175,7 @@ contains
 
     ! Set all values for the selected planet
     RadiusPlanet     = rPlanet_I(Planet_)
-    MassPlanet       = mPlanet_I(Planet_)
+    MassPlanet       = MassPlanet_I(Planet_)
     RotPeriodPlanet  = RotationPeriodPlanet_I(Planet_)
     TiltRotation     = TiltPlanet_I(Planet_)
     IonosphereHeight = IonoHeightPlanet_I(Planet_)
@@ -277,34 +278,34 @@ contains
 
           select case(TypeBField)
           case('NONE')
-            MagAxisTheta   = 0.0
-            MagAxisPhi     = 0.0
-            UseSetMagAxis  = .true.
-            UseRealMagAxis = .false.
-            DipoleStrength = 0.0
+             MagAxisTheta   = 0.0
+             MagAxisPhi     = 0.0
+             UseSetMagAxis  = .true.
+             UseRealMagAxis = .false.
+             DipoleStrength = 0.0
 
           case('DIPOLE','QUADRUPOLE','OCTUPOLE')
-            call read_var('MagAxisThetaGeo', MagAxisThetaGeo)
-            MagAxisThetaGeo = MagAxisThetaGeo * cDegToRad
-            call read_var('MagAxisPhiGeo',   MagAxisPhiGeo)
-            MagAxisPhiGeo = MagAxisPhiGeo * cDegToRad
-            call read_var('DipoleStrength',DipoleStrength)
+             call read_var('MagAxisThetaGeo', MagAxisThetaGeo)
+             MagAxisThetaGeo = MagAxisThetaGeo * cDegToRad
+             call read_var('MagAxisPhiGeo',   MagAxisPhiGeo)
+             MagAxisPhiGeo = MagAxisPhiGeo * cDegToRad
+             call read_var('DipoleStrength',DipoleStrength)
 
-            if (TypeBField == 'QUADRUPOLE') then
-              call CON_stop(NameSub// &
-              ' ERROR: quadrupole field unimplemented')
-            endif
+             if (TypeBField == 'QUADRUPOLE') then
+                call CON_stop(NameSub// &
+                     ' ERROR: quadrupole field unimplemented')
+             endif
 
-            if (TypeBField == 'OCTUPOLE') then
-              call CON_stop(NameSub// &
-                  ' ERROR: octupole field unimplemented')
-            endif
+             if (TypeBField == 'OCTUPOLE') then
+                call CON_stop(NameSub// &
+                     ' ERROR: octupole field unimplemented')
+             endif
 
-            case default
-              call CON_stop(NameSub// &
-              ' ERROR: TypeBfield not specified for planet.'//TypeBField)
+          case default
+             call CON_stop(NameSub// &
+                  ' ERROR: TypeBfield not specified for planet.'//TypeBField)
 
-            end select
+          end select
        end if
        !$acc update device(OmegaPlanet)
     case('#IDEALAXES')
@@ -560,17 +561,17 @@ contains
     s_II = 1.0
 
     do n = 1, MaxHarmonicDegree
-      s_II(n,0) = s_II(n-1,0)*(2*n - 1.0)/n
-      s_II(n,1) = s_II(n,0)*sqrt(2*n/(n + 1.0))
-      gPlanet_II(n,0) = gPlanet_II(n,0)*s_II(n,0)
-      hPlanet_II(n,0) = hPlanet_II(n,0)*s_II(n,0)
-      gPlanet_II(n,1) = gPlanet_II(n,1)*s_II(n,1)
-      hPlanet_II(n,1) = hPlanet_II(n,1)*s_II(n,1)
-      do m = 2, n
-        s_II(n,m) = s_II(n,m-1) * sqrt((n - m + 1.0)/(n + m))
-        gPlanet_II(n,m) = gPlanet_II(n,m)*s_II(n,m)
-        hPlanet_II(n,m) = hPlanet_II(n,m)*s_II(n,m)
-      end do
+       s_II(n,0) = s_II(n-1,0)*(2*n - 1.0)/n
+       s_II(n,1) = s_II(n,0)*sqrt(2*n/(n + 1.0))
+       gPlanet_II(n,0) = gPlanet_II(n,0)*s_II(n,0)
+       hPlanet_II(n,0) = hPlanet_II(n,0)*s_II(n,0)
+       gPlanet_II(n,1) = gPlanet_II(n,1)*s_II(n,1)
+       hPlanet_II(n,1) = hPlanet_II(n,1)*s_II(n,1)
+       do m = 2, n
+          s_II(n,m) = s_II(n,m-1) * sqrt((n - m + 1.0)/(n + m))
+          gPlanet_II(n,m) = gPlanet_II(n,m)*s_II(n,m)
+          hPlanet_II(n,m) = hPlanet_II(n,m)*s_II(n,m)
+       end do
     end do
 
     deallocate(s_II)
@@ -603,10 +604,18 @@ contains
     ! used with properly re-defined RightAscension and ArgPeriapsis.
 
     !--------------------------------------------------------------------------
+    UseOrbitTable = UseOrbitalTable_I(Planet_)
+
     if(NamePlanet == 'EARTH' .or. rOrbitPlanet == 0.0)then
        UseOrbitElements = .false.
        RETURN
     end if
+
+    if(UseOrbitTable)then
+       UseOrbitElements = .true.
+       RETURN
+    end if
+
     UseOrbitElements = .true.
     HgiOrb_DD = matmul(rot_matrix_x(Inclination), &
          rot_matrix_z(ArgPeriapsis - RightAscension))
@@ -625,7 +634,7 @@ contains
     real, intent(out)           :: XyzHgi_D(3)  ! Coordinates in HGI
     real, optional, intent(out) :: vHgi_D(3)    ! Velocity in HGI
     ! Mean and eccentric anomalies for a Kepler orbit
-    real :: MeanAnomaly, EccentricAnomaly
+    real :: MeanAnomaly, EccentricAnomaly, JulianDay
     real :: SinE, CosE, dEdt
     ! Coordinates and velocity in the orbital plane
     real              :: XyzOrbit_D(3),  vOrbit_D(3)
@@ -634,6 +643,12 @@ contains
 
     character(len=*), parameter:: NameSub = 'orbit_in_hgi'
     !--------------------------------------------------------------------------
+    if(UseOrbitTable)then
+       call time_real_to_julian(real(Time), JulianDay)
+       call orbit_state_hgi_from_table(Planet_, JulianDay, XyzHgi_D, vHgi_D)
+       RETURN
+    end if
+
     MeanAnomaly = modulo( &
          OmegaOrbit*(Time - TimeEquinox%Time) - ArgPeriapsis, cTwoPi)
 
