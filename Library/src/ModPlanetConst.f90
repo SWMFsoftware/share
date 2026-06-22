@@ -25,6 +25,9 @@ module ModPlanetConst
   real, parameter:: JulianDayJ2000 = 2451545.0
   real, parameter:: DayPerCentury  = 36525.0
 
+  ! Conversion matrix between HGI adn J2000 coordinates (calculated once)
+  real:: HgiJ2k_DD(3,3)
+  
   type OrbitType
      real :: aAu
      real :: Eccentricity
@@ -125,8 +128,9 @@ contains
   !============================================================================
   subroutine init_planet_const
 
+    use ModCoordTransform, ONLY: rot_matrix_x, rot_matrix_z
     use ModUtilities, ONLY: upper_case
-    !--------------------------------------------------------------------------
+
     save
 
     integer:: i
@@ -135,7 +139,7 @@ contains
     NamePlanet_I                     = ''
 
     rPlanet_I                        = 0.0                        ! [m]
-    MassPlanet_I                        = 0.0                        ! [kg]
+    MassPlanet_I                     = 0.0                        ! [kg]
     rOrbitPlanet_I                   = 0.0                        ! [m]
     OrbitalPeriodPlanet_I            = 0.0                        ! [s]
     RotationPeriodPlanet_I           = 0.0                        ! [s]
@@ -159,10 +163,10 @@ contains
 
     UseOrbitalTable_I                = .false.
     UseRotationTable_I               = .false.
-    OrbitJ2000_I           = OrbitType(0.0,0.0,0.0,0.0,0.0,0.0)
-    OrbitRate_I         = OrbitType(0.0,0.0,0.0,0.0,0.0,0.0)
-    RotationJ2000_I          = RotationType(0.0,0.0,0.0)
-    RotationRate_I                  = RotationType(0.0,0.0,0.0)
+    OrbitJ2000_I                     = OrbitType(0.0,0.0,0.0,0.0,0.0,0.0)
+    OrbitRate_I                      = OrbitType(0.0,0.0,0.0,0.0,0.0,0.0)
+    RotationJ2000_I                  = RotationType(0.0,0.0,0.0)
+    RotationRate_I                   = RotationType(0.0,0.0,0.0)
 
     IonoHeightPlanet_I               = 0.0                        ! [m]
 
@@ -170,7 +174,7 @@ contains
     NamePlanet_I(Mercury_)              = 'MERCURY'
 
     rPlanet_I(Mercury_)                 = 2439.0e+3               ! [m]
-    MassPlanet_I(Mercury_)                 = 3.3022e+23              ! [kg]
+    MassPlanet_I(Mercury_)              = 3.3022e+23              ! [kg]
 
     rOrbitPlanet_I(Mercury_)            = 57909101.0e+3           ! [m]
     OrbitalPeriodPlanet_I(Mercury_)     = 87.969*cDay             ! [s]
@@ -183,7 +187,7 @@ contains
     NamePlanet_I(Venus_)                = 'VENUS'
 
     rPlanet_I(Venus_)                   = 6052.0e+3               ! [m]
-    MassPlanet_I(Venus_)                   = 4.865e+24               ! [kg]
+    MassPlanet_I(Venus_)                = 4.865e+24               ! [kg]
 
     rOrbitPlanet_I(Venus_)              = 108208930.0e+3          ! [m]
     OrbitalPeriodPlanet_I(Venus_)       = 224.7   * cDay          ! [s]
@@ -193,7 +197,7 @@ contains
     NamePlanet_I(Earth_)                = 'EARTH'
 
     rPlanet_I(Earth_)                   = 6378.0e+3               ! [m]
-    MassPlanet_I(Earth_)                   = 5.976e+24               ! [kg]
+    MassPlanet_I(Earth_)                = 5.976e+24               ! [kg]
     rOrbitPlanet_I(Earth_)              = cAU                     ! [m]
     OrbitalPeriodPlanet_I(Earth_)       = 365.24218967 * cDay     ! [s]
     RotationPeriodPlanet_I(Earth_)      = cDay                    ! [s]
@@ -224,7 +228,7 @@ contains
     NamePlanet_I(Moon_)                 = 'MOON'
 
     rPlanet_I(Moon_)                    = 1737.0e+3               ! [m]
-    MassPlanet_I(Moon_)                    = 7.3477e+22              ! [kg]
+    MassPlanet_I(Moon_)                 = 7.3477e+22              ! [kg]
 
     ! Same values as for Earth (relative to the Sun)
     rOrbitPlanet_I(Moon_)              = cAU                     ! [m]
@@ -247,7 +251,7 @@ contains
     NamePlanet_I(Mars_)                 = 'MARS'
 
     rPlanet_I(Mars_)                    = 3396.0e+3              ! [m]
-    MassPlanet_I(Mars_)                    = 0.6436e+24             ! [kg]
+    MassPlanet_I(Mars_)                 = 0.6436e+24             ! [kg]
 
     ! Semi-major axis
     rOrbitPlanet_I(Mars_)               = 227939200.0e3          ! [m]
@@ -274,7 +278,7 @@ contains
     NamePlanet_I(Jupiter_)              = 'JUPITER'
 
     rPlanet_I(Jupiter_)                 = 71492.0e+3             ! [m]
-    MassPlanet_I(Jupiter_)                 = 1.8980e+27             ! [kg]
+    MassPlanet_I(Jupiter_)              = 1.8980e+27             ! [kg]
 
     rOrbitPlanet_I(Jupiter_)            = 778570000.0e3          ! [m]
     OrbitalPeriodPlanet_I(Jupiter_)     = 4330.6 * cDay          ! [s]
@@ -290,7 +294,7 @@ contains
     NamePlanet_I(Saturn_)               = 'SATURN'
 
     rPlanet_I(Saturn_)                  = 60268.0e+3             ! [m]
-    MassPlanet_I(Saturn_)                  = 0.5685e+27             ! [kg]
+    MassPlanet_I(Saturn_)               = 0.5685e+27             ! [kg]
 
     rOrbitPlanet_I(Saturn_)             = 1433529000.0e3         ! [m]
     OrbitalPeriodPlanet_I(Saturn_)      = 10746.94 * cDay        ! [s]
@@ -304,7 +308,7 @@ contains
     ! Uranus (70)
     NamePlanet_I(Uranus_)                = 'URANUS'
     rPlanet_I(Uranus_)                   = 25559.0e+3            ! [m]
-    MassPlanet_I(Uranus_)                   = 8.681e+25             ! [kg]
+    MassPlanet_I(Uranus_)                = 8.681e+25             ! [kg]
     rOrbitPlanet_I(Uranus_)              = 2872463000.0e3        ! [m]
     OrbitalPeriodPlanet_I(Uranus_)       = 30688.5 * cDay        ! [s]
     RotationPeriodPlanet_I(Uranus_)      = 17.2 * cHour          ! [s]
@@ -334,15 +338,12 @@ contains
     NamePlanet_I(Io_)                   = 'IO'
 
     rPlanet_I(Io_)                      = 1821.0e+3              ! [m]
-    MassPlanet_I(Io_)                      = 0.0                    ! [kg]
-    OrbitalPeriodPlanet_I(Io_)          = 0.0                    ! [s]
-    RotationPeriodPlanet_I(Io_)         = 0.0                    ! [s]
 
     ! Europa (52)
     NamePlanet_I(Europa_)               = 'EUROPA'
 
     rPlanet_I(Europa_)                  = 1569.0e+3              ! [m]
-    MassPlanet_I(Europa_)                  = 4.80e22                ! [kg]
+    MassPlanet_I(Europa_)               = 4.80e22                ! [kg]
     OrbitalPeriodPlanet_I(Europa_)      = 3.551 * cDay           ! [s]
     RotationPeriodPlanet_I(Europa_)     = 3.551 * cDay           ! [s]
 
@@ -363,19 +364,19 @@ contains
     NamePlanet_I(Titan_)                = 'TITAN'
 
     rPlanet_I(Titan_)                   = 2575.0e+3              ! [m]
-    MassPlanet_I(Titan_)                   = 0.1346e+24             ! [kg]
+    MassPlanet_I(Titan_)                = 0.1346e+24             ! [kg]
     rOrbitPlanet_I(Titan_)              = 1.222e+9               ! [m]
     OrbitalPeriodPlanet_I(Titan_)       = 15.945 * cDay          ! [s]
     RotationPeriodPlanet_I(Titan_)      = 15.945 * cDay          ! [s]
 
     ! Enceladus (62)
-    NamePlanet_I(Enceladus_)                = 'ENCELADUS'
+    NamePlanet_I(Enceladus_)            = 'ENCELADUS'
 
-    rPlanet_I(Enceladus_)                   = 252.0e+3           ! [m]
-    MassPlanet_I(Enceladus_)                   = 8.4e+19            ! [kg]
-    rOrbitPlanet_I(Enceladus_)              = 2.3802e+8          ! [m]
-    OrbitalPeriodPlanet_I(Enceladus_)       = 1.370218 * cDay    ! [s]
-    RotationPeriodPlanet_I(Enceladus_)      = 1.370218 * cDay    ! [s]
+    rPlanet_I(Enceladus_)               = 252.0e+3               ! [m]
+    MassPlanet_I(Enceladus_)            = 8.4e+19                ! [kg]
+    rOrbitPlanet_I(Enceladus_)          = 2.3802e+8              ! [m]
+    OrbitalPeriodPlanet_I(Enceladus_)   = 1.370218 * cDay        ! [s]
+    RotationPeriodPlanet_I(Enceladus_)  = 1.370218 * cDay        ! [s]
 
     ! This is the field of Saturn but using a different distance unit !!!
     TypeBFieldPlanet_I(Enceladus_)         = 'DIPOLE'
@@ -385,19 +386,10 @@ contains
 
     ! Comets
     NamePlanet_I(Halley_) = 'HALLEY'
-
     rPlanet_I(Halley_)                   = 1.0E9    ! [m] for distance units
-    MassPlanet_I(Halley_)                   = 1.0      ! [kg]
-    rOrbitPlanet_I(Halley_)              = cAU      ! [m]
-    OrbitalPeriodPlanet_I(Halley_)       = 1.0      ! [s]
-    RotationPeriodPlanet_I(Halley_)      = 1.0      ! [s]
 
     NamePlanet_I(CometCG_)='CometCG'
     rPlanet_I(CometCG_) = 1.0E3
-    MassPlanet_I(CometCG_) =1.0
-    rOrbitPlanet_I(CometCG_) =cAU
-    OrbitalPeriodPlanet_I(CometCG_) =1.0
-    RotationPeriodPlanet_I(CometCG_)=1.0
 
     ! Table-driven orbital elements and rates (JPL Table 1, 1800-2050)
     ! a [au], e [-], I/L/long.peri/long.node [deg], rates per century.
@@ -490,6 +482,12 @@ contains
     RotationJ2000_I(Neptune_) = RotationType(299.36,43.46,253.18)
     RotationRate_I(Neptune_) = RotationType(0.0,0.0,536.3128492)
 
+    ! Calculate the rotation matrix from J2000 to HGI system
+    HgiJ2k_DD = matmul(rot_matrix_x(-7.25*cDegToRad), & ! inclination
+         matmul(rot_matrix_z(-75.77*cDegToRad),       & ! ascending node
+         rot_matrix_x(-23.4392911*cDegToRad))) ! Obliquity (Earth tilt at J2K)
+
+    
     ! No Planet (0)
     !     - No Planet and no body - defaults for everything, just set name.
     NamePlanet_I(NoPlanet_)             = 'NONE'
@@ -503,7 +501,7 @@ contains
     MassPlanet_I(NewPlanet_)            = -1.0
 
     ! make all the planet names upper case
-    do i=NoPlanet_,MaxPlanet+1
+    do i = 0, MaxPlanet+1
        call upper_case(NamePlanet_I(i))  ! make all the names upper case
     end do
 
