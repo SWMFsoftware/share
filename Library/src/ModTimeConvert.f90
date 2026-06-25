@@ -3,27 +3,27 @@
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 !
 !
-! The methods in this module can convert between various representations
-! of time. The date can be defined as year, month, day, hour, minute, second
-! and a fractional second, which is double precision real.
-! Alternatively an integer millisecond can be used.
-! These representations are easy to read, but difficult to manipulate.
-!
-! An easy to manipulate representation is the time measured
-! from some base time, namely the 00:00 GMT on January 1 of iYearBase.
-! This time is measured in seconds with an 8 byte real number.
-!
-! Finally, for output and for constructing file names, a string
-! representation is convenient. The string contains year, month,
-! day, hour, minute, second in 14 characters. This order of the date and
-! time makes alphabetic order to be the same as temporal order.
-! The string is padded with 0-s so it can be used to form file names.
-!
-! The conversion routines can convert between the different fields
-! of a variable of TimeType, or they can convert between integer arrays
-! (year...millisecond) and an 8 byte real variable (seconds since base time).
-!
 module ModTimeConvert
+
+  ! The methods in this module can convert between various representations
+  ! of time. The date can be defined as year, month, day, hour, minute, second
+  ! and a fractional second, which is double precision real.
+  ! Alternatively an integer millisecond can be used.
+  ! These representations are easy to read, but difficult to manipulate.
+  !
+  ! An easy to manipulate representation is the time measured
+  ! from some base time, namely the 00:00 GMT on January 1 of iYearBase.
+  ! This time is measured in seconds with an 8 byte real number.
+  !
+  ! Finally, for output and for constructing file names, a string
+  ! representation is convenient. The string contains year, month,
+  ! day, hour, minute, second in 14 characters. This order of the date and
+  ! time makes alphabetic order to be the same as temporal order.
+  ! The string is padded with 0-s so it can be used to form file names.
+  !
+  ! The conversion routines can convert between the different fields
+  ! of a variable of TimeType, or they can convert between integer arrays
+  ! (year...millisecond) and an 8 byte real variable (seconds since base time).
 
   use ModUtilities, ONLY: CON_stop
   use ModKind
@@ -54,13 +54,15 @@ module ModTimeConvert
   public :: time_int_to_real ! Convert integer time info to real
   interface time_int_to_real
      module procedure time_int_to_real1, time_int_to_real2
-  end interface
+  end interface time_int_to_real
 
   public :: time_real_to_int ! Convert real time info into integer
   interface time_real_to_int
      module procedure time_real_to_int1, time_real_to_int2
-  end interface
-  public :: time_real_to_julian, time_int_to_julian
+  end interface time_real_to_int
+
+  public :: time_real_to_julian, time_int_to_julian ! Julian day 
+
   public :: test_time        ! unit tester
 
   !PUBLIC DATA MEMBERS:
@@ -86,21 +88,20 @@ module ModTimeConvert
 
 contains
   !============================================================================
-
   logical function is_valid_int_time(Time)
-    type(TimeType), intent(inout) :: Time
 
     ! Check if the integer description of the time is valid.
     ! The year may be corrected, e.g. 66 --> 1966, 03 --> 2003.
     ! Return false if time is not valid.
-
+    
+    type(TimeType), intent(inout) :: Time
     !--------------------------------------------------------------------------
     call fix_year(Time % iYear)
     is_valid_int_time = .false.
-!    if(Time % iYear < iYearMin) RETURN
+    ! if(Time % iYear < iYearMin) RETURN
     if(Time % iMonth > 12 .or. Time % iMonth < 1) RETURN
     if(Time % iMonth == 2) call fix_february(Time % iYear)
-!    if(Time % iDay < 1 .or. Time % iDay > nDayInMonth_I(Time % iMonth)) RETURN
+    ! if(Time%iDay < 1 .or. Time%iDay > nDayInMonth_I(Time % iMonth)) RETURN
     if(Time % iHour < 0   .or. Time % iHour   > 23) RETURN
     if(Time % iMinute < 0 .or. Time % iMinute > 59) RETURN
     if(Time % iSecond < 0 .or. Time % iSecond > 59) RETURN
@@ -110,10 +111,11 @@ contains
 
   end function is_valid_int_time
   !============================================================================
-
   subroutine time_int_to_string(Time)
-    type(TimeType), intent(inout) :: Time
+
     ! Convert integer time info into the string field of the Time variable
+
+    type(TimeType), intent(inout) :: Time
 
     character(len=*), parameter:: NameSub = 'time_int_to_string'
     !--------------------------------------------------------------------------
@@ -128,16 +130,17 @@ contains
 
   end subroutine time_int_to_string
   !============================================================================
+  subroutine time_int_to_real2(iTime_I, Time)
 
-  subroutine time_int_to_real2(iTime_I,Time)
+    ! Convert an integer array containing
+    ! year, month, day, hour, minute, second, millisecond
+    ! into the number of seconds since 00:00 January 1 of the base year.
 
     integer, intent(in) :: iTime_I(1:7)
 
     real(real8_), intent(out) :: Time
-    ! Convert an integer array containing
-    ! year, month, day, hour, minute, second, millisecond
-    ! into the number of seconds since 00:00 January 1 of the base year.
     type(TimeType) :: TimeTmp
+
     character(len=*), parameter:: NameSub = 'time_int_to_real2'
     !--------------------------------------------------------------------------
     TimeTmp % iYear   = iTime_I(1)
@@ -154,7 +157,6 @@ contains
 
   end subroutine time_int_to_real2
   !============================================================================
-
   subroutine time_int_to_real1(Time)
 
     type(TimeType), intent(inout) :: Time
@@ -183,7 +185,6 @@ contains
 
   end subroutine time_int_to_real1
   !============================================================================
-
   subroutine time_real_to_int1(Time)
 
     type(TimeType), intent(inout) :: Time
@@ -239,14 +240,17 @@ contains
 
   end subroutine time_real_to_int1
   !============================================================================
-
   subroutine time_real_to_int2(Time, iTime_I)
-    real(real8_), intent(in) :: Time
-    integer, intent(out) :: iTime_I(1:7)
+
     ! Convert the double precision number of seconds since the beginning
     ! of the base year into an integer array of year, month, day, hour,
     ! minute, second, millisecond.
+
+    real(real8_), intent(in) :: Time
+    integer, intent(out) :: iTime_I(1:7)
+
     type(TimeType) :: TimeTmp
+
     character(len=*), parameter:: NameSub = 'time_real_to_int2'
     !--------------------------------------------------------------------------
     TimeTmp % Time = Time
@@ -263,8 +267,10 @@ contains
 
   end subroutine time_real_to_int2
   !============================================================================
-
   subroutine fix_february(iYear)
+
+    ! Set number of days in February for year iYear
+    
     integer, intent(in) :: iYear
     !--------------------------------------------------------------------------
     if(is_leap_year(iYear))then
@@ -272,10 +278,11 @@ contains
     else
        nDayInMonth_I(2) = 28
     end if
+
   end subroutine fix_february
   !============================================================================
-
   subroutine fix_year(iYear)
+
     integer, intent(inout) :: iYear
 
     ! Attempt to fix 2 digit years. Assumption :
@@ -296,11 +303,10 @@ contains
 
   end subroutine fix_year
   !============================================================================
-
   integer function n_leap_day(iYear)
 
-    ! Return the number of leap days from base year to the year preceeding iYear.
-    ! The leap day in iYear itself is not counted!
+    ! Return the number of leap days from base year to the year preceeding
+    ! iYear. The leap day in iYear itself is not counted!
 
     integer, intent(in) :: iYear
 
@@ -315,6 +321,7 @@ contains
          (iYear - iYearBase)/4 &
          - (iYear - iYearBase100)/100 &
          + (iYear - iYearBase400)/400
+
   end function n_leap_day
   !============================================================================
   logical function is_leap_year(iYear)
@@ -341,8 +348,11 @@ contains
   end function n_day_of_year
   !============================================================================
   subroutine time_real_to_julian(Time, JulianDay)
-    ! convert real time info into real julian time
-    real, intent(in)  :: Time
+
+    ! convert real time info into real Julian day.
+    ! Note that accuracy may be single precision.
+
+    real(Real8_), intent(in)  :: Time
     real, intent(out) :: JulianDay
 
     integer:: iTime_I(7)
@@ -353,25 +363,29 @@ contains
   !============================================================================
   subroutine time_int_to_julian(iTime_I, JulianDay)
 
-    ! convert integer time info into real julian time
+    ! convert integer time info into real julian day
+    ! formula is valid for date after March, 1900 to yar 2099
+
     integer, intent(in)  :: iTime_I(1:7)
     real,    intent(out) :: JulianDay
 
-    ! formula is valid for date after March, 1900 to yar 2099
+    character(len=*), parameter:: NameSub = 'time_int_to_julian'
     !--------------------------------------------------------------------------
+    if(iTime_I(1) < 1900 .or. iTime_I(1) > 2099) call CON_stop(NameSub // &
+         ': the magical formula is only valid from March, 1900 to 2099')
+
     JulianDay = 367*iTime_I(1) - &
-               floor(7*(iTime_I(1)+floor((iTime_I(2)+9)/12.))/4.)+&
-               floor(275 * iTime_I(2) / 9.) + &
-               iTime_I(3) + 1721013.5 +&
-               (iTime_I(4)+iTime_I(5)/60.+iTime_I(6)/3600.)/24.
+         floor(7*(iTime_I(1) + floor((iTime_I(2)+9)/12.))/4.) + &
+         floor(275*iTime_I(2)/9.) + &
+         iTime_I(3) + 1721013.5 + &
+         (iTime_I(4) + iTime_I(5)/60. + iTime_I(6)/3600.)/24.
+
   end subroutine time_int_to_julian
   !============================================================================
-
   subroutine test_time
 
     integer, parameter :: iYearMax  = 2499
     type(TimeType) :: TimeConvert, TimeStart
-
     !--------------------------------------------------------------------------
     write(*,*)'Testing time conversion routines'
     TimeStart % FracSecond = 0.0;
@@ -385,13 +399,11 @@ contains
 
   contains
     !==========================================================================
-
     subroutine check_all_days
 
       ! The latest year to be tested
       integer :: iYear, iMonth, iDay
       !------------------------------------------------------------------------
-
       do iYear = iYearMin,iYearMax
          TimeStart % iYear = iYear
          do iMonth = 1, 12
@@ -416,9 +428,7 @@ contains
       end do
     end subroutine check_all_days
     !==========================================================================
-
   end subroutine test_time
   !============================================================================
-
 end module ModTimeConvert
 !==============================================================================
