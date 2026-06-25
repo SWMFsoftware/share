@@ -61,7 +61,7 @@ module ModTimeConvert
      module procedure time_real_to_int1, time_real_to_int2
   end interface time_real_to_int
 
-  public :: time_real_to_julian, time_int_to_julian ! Julian day 
+  public :: time_real_to_julian, time_int_to_julian ! Julian day
 
   public :: test_time        ! unit tester
 
@@ -93,7 +93,7 @@ contains
     ! Check if the integer description of the time is valid.
     ! The year may be corrected, e.g. 66 --> 1966, 03 --> 2003.
     ! Return false if time is not valid.
-    
+
     type(TimeType), intent(inout) :: Time
     !--------------------------------------------------------------------------
     call fix_year(Time % iYear)
@@ -270,7 +270,7 @@ contains
   subroutine fix_february(iYear)
 
     ! Set number of days in February for year iYear
-    
+
     integer, intent(in) :: iYear
     !--------------------------------------------------------------------------
     if(is_leap_year(iYear))then
@@ -386,6 +386,8 @@ contains
 
     integer, parameter :: iYearMax  = 2499
     type(TimeType) :: TimeConvert, TimeStart
+    real(Real8_):: Time
+    real:: JulianDay
     !--------------------------------------------------------------------------
     write(*,*)'Testing time conversion routines'
     TimeStart % FracSecond = 0.0;
@@ -396,6 +398,15 @@ contains
     call check_all_days
     write(*,'(a,i5,a,i5)')'Successfully tested all days from Jan 1',&
          iYearMin,' to Dec 31',iYearMax
+    call time_int_to_julian([2026, 6, 25, 12, 0, 0, 0], JulianDay)
+    if(abs(JulianDay - 2461217.0) > 0.1) &
+         write(*,*)'Error for time_int_to_julian: JulianDay=', JulianDay, &
+         ' instead of 2461217.0'
+    call time_int_to_real([2026, 6, 25, 12, 0, 0, 0], Time)
+    call time_real_to_julian(Time, JulianDay)
+    if(abs(JulianDay - 2461217.0) > 0.1) &
+         write(*,*)'Error for time_real_to_julian: JulianDay=', JulianDay, &
+         ' instead of 2461217.0'
 
   contains
     !==========================================================================
