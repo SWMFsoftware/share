@@ -363,22 +363,22 @@ contains
   !============================================================================
   subroutine time_int_to_julian(iTime_I, JulianDay)
 
-    ! convert integer time info into real julian day
-    ! formula is valid for date after March, 1900 to yar 2099
+    ! convert integer time info into Julian day
 
     integer, intent(in)  :: iTime_I(1:7)
     real,    intent(out) :: JulianDay
 
+    integer:: iYear, iMonth, iDay, Di
+
     character(len=*), parameter:: NameSub = 'time_int_to_julian'
     !--------------------------------------------------------------------------
-    if(iTime_I(1) < 1900 .or. iTime_I(1) > 2099) call CON_stop(NameSub // &
-         ': the magical formula is only valid from March, 1900 to 2099')
-
-    JulianDay = 367*iTime_I(1) - &
-         floor(7*(iTime_I(1) + floor((iTime_I(2)+9)/12.))/4.) + &
-         floor(275*iTime_I(2)/9.) + &
-         iTime_I(3) + 1721013.5 + &
-         (iTime_I(4) + iTime_I(5)/60. + iTime_I(6)/3600.)/24.
+    iYear = iTime_I(1); iMonth = iTime_I(2); iDay = iTime_I(3)
+    Di = 0; if(iMonth < 3) Di = -1
+    JulianDay = (1461*(iYear + 4800 + Di))/4 &
+         + (367*(iMonth - 2 - 12 * Di))/12 &
+         - (3*((iYear + 4900 + Di)/100))/4 &
+         + iDay - 32075 &
+         + (iTime_I(4) - 12 + iTime_I(5)/60. + iTime_I(6)/3600.)/24.
 
   end subroutine time_int_to_julian
   !============================================================================
@@ -399,9 +399,16 @@ contains
     write(*,'(a,i5,a,i5)')'Successfully tested all days from Jan 1',&
          iYearMin,' to Dec 31',iYearMax
     call time_int_to_julian([2026, 6, 25, 12, 0, 0, 0], JulianDay)
+    ! Test on month index > 2:
     if(abs(JulianDay - 2461217.0) > 0.1) &
          write(*,*)'Error for time_int_to_julian: JulianDay=', JulianDay, &
          ' instead of 2461217.0'
+    ! Test on month index <= 2:
+    call time_int_to_julian([2026, 1, 12, 0, 0, 0, 0], JulianDay)
+    if(abs(JulianDay - 2461052.5) > 0.1) &
+         write(*,*)'Error for time_int_to_julian: JulianDay=', JulianDay, &
+         ' instead of 2461052.5'
+    ! Test converting to seconds and then to Julian day
     call time_int_to_real([2026, 6, 25, 12, 0, 0, 0], Time)
     call time_real_to_julian(Time, JulianDay)
     if(abs(JulianDay - 2461217.0) > 0.1) &
