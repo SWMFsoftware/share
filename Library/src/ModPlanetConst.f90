@@ -4,7 +4,9 @@
 module ModPlanetConst
 
   use ModNumConst, ONLY: cDegToRad, cRadToDeg, cPi, cTwoPi, cHalfPi, cTiny
-  use ModConst, ONLY: cAU, cHour => cSecondPerHour, cDay => cSecondPerDay
+  use ModConst, ONLY: cAU, cHour => cSecondPerHour, cDay => cSecondPerDay, &
+       cCentury => cSecondPerCentury
+  use ModTimeConvert, ONLY: TimeType, time_int_to_real
   use ModKind
 
   implicit none
@@ -17,12 +19,14 @@ module ModPlanetConst
   ! The maximum number of astronomical bodies.  This is set at 200, it can be
   ! increased if necessary
 
+  type(TimeType):: TimeJ2k = &
+       TimeType(2000, 1, 1, 12, 0, 0, 0.0, 0.0_REAL8_, '')
+
   integer, parameter:: MaxPlanet = 200
 
   integer, parameter:: lNamePlanet = 40
   integer, parameter:: lTypeBField = 40
 
-  real, parameter:: JulianDayJ2000 = 2451545.0
   real, parameter:: DayPerCentury  = 36525.0
 
   ! Conversion matrix between HGI adn J2000 coordinates (calculated once)
@@ -130,9 +134,6 @@ contains
 
     use ModCoordTransform, ONLY: rot_matrix_x, rot_matrix_z
     use ModUtilities, ONLY: upper_case
-
-    !--------------------------------------------------------------------------
-    save
 
     integer:: i
     !-----------------------------------------------------------------------
@@ -392,6 +393,9 @@ contains
     NamePlanet_I(CometCG_)='CometCG'
     rPlanet_I(CometCG_) = 1.0E3
 
+    ! Get the base time for the J2000 system
+    call time_int_to_real(TimeJ2k)
+
     ! Table-driven orbital elements and rates (JPL Table 1, 1800-2050)
     ! a [au], e [-], I/L/long.peri/long.node [deg], rates per century.
     ! Here we will set UseOrbitalTable_I true for available planets
@@ -507,15 +511,16 @@ contains
 
   end subroutine init_planet_const
   !============================================================================
-  subroutine get_planet_orbital_elements(iPlanet, JulianDay, Elem)
+  subroutine get_planet_orbital_elements(iPlanet, Time, Elem)
 
     integer, intent(in) :: iPlanet
-    real,    intent(in) :: JulianDay
-    type(OrbitType), intent(out) :: Elem
+    real(Real8_),    intent(in) :: Time
+    type(OrbitType), intent(out):: Elem
 
     real :: T
     !--------------------------------------------------------------------------
-    T = (JulianDay - JulianDayJ2000)/DayPerCentury
+    T = (Time - TimeJ2k % Time)/cCentury
+
     Elem%aAu = OrbitJ2000_I(iPlanet)%aAu + &
          T*OrbitRate_I(iPlanet)%aAu
     Elem%Eccentricity = OrbitJ2000_I(iPlanet)%Eccentricity + &
@@ -598,16 +603,16 @@ contains
 
   end subroutine transform_orbit_j2k_hgi
   !============================================================================
-  subroutine get_planet_rotation_elements(iPlanet, JulianDay, Rot)
+  subroutine get_planet_rotation_elements(iPlanet, Time, Rot)
 
-    integer, intent(in) :: iPlanet
-    real,    intent(in) :: JulianDay
-    type(RotationType), intent(out) :: Rot
+    integer,            intent(in) :: iPlanet
+    real(Real8_),       intent(in) :: Time
+    type(RotationType), intent(out):: Rot
 
     real :: T, d, Angle
     !--------------------------------------------------------------------------
-    T = (JulianDay - JulianDayJ2000)/DayPerCentury
-    d = JulianDay - JulianDayJ2000
+    T = (Time - TimeJ2k % Time)/cCentury
+    d = (Time - TimeJ2k % Time)/cDay
 
     Rot%Alpha0Deg = RotationJ2000_I(iPlanet)%Alpha0Deg &
          + T*RotationRate_I(iPlanet)%Alpha0Deg
@@ -631,11 +636,11 @@ contains
 
   end subroutine get_planet_rotation_elements
   !============================================================================
-  subroutine orbit_state_hgi_from_table(iPlanet, JulianDay, XyzHgi_D, vHgi_D)
+  subroutine orbit_state_hgi_from_table(iPlanet, Time, XyzHgi_D, vHgi_D)
 
-    integer, intent(in) :: iPlanet
-    real,    intent(in) :: JulianDay
-    real,    intent(out) :: XyzHgi_D(3)
+    integer,      intent(in) :: iPlanet
+    real(Real8_), intent(in):: Time
+    real,        intent(out):: XyzHgi_D(3)
     real, optional, intent(out) :: vHgi_D(3)
 
     type(OrbitType) :: Elem
@@ -647,7 +652,7 @@ contains
     real :: P_D(3), Q_D(3)
     integer :: iIter
     !--------------------------------------------------------------------------
-    call get_planet_orbital_elements(iPlanet, JulianDay, Elem)
+    call get_planet_orbital_elements(iPlanet, Time, Elem)
 
     a         = Elem%aAu*cAU
     Ecc       = max(Elem%Eccentricity, 0.0)
@@ -686,8 +691,7 @@ contains
     XyzHgi_D = xOrb*P_D + yOrb*Q_D
 
     if(present(vHgi_D))then
-       MeanMotion = OrbitRate_I(iPlanet)%MeanLongitudeDeg*&
-            cDegToRad/(DayPerCentury*cDay)
+       MeanMotion = OrbitRate_I(iPlanet)%MeanLongitudeDeg*cDegToRad/cCentury
        dEdt = MeanMotion/max(1.0 - Ecc*CosEAnom, cTiny)
        VxOrb = -a*SinEAnom*dEdt
        VyOrb =  b*CosEAnom*dEdt
@@ -696,36 +700,38 @@ contains
 
   end subroutine orbit_state_hgi_from_table
   !============================================================================
-  subroutine get_rotation_axis_hgi(iPlanet, JulianDay, AxisHgi_D)
+  subroutine get_rotation_axis_hgi(iPlanet, Time, AxisHgi_D)
 
-    integer, intent(in) :: iPlanet
-    real,    intent(in) :: JulianDay
-    real,    intent(out) :: AxisHgi_D(3)
+    integer,      intent(in) :: iPlanet
+    real(Real8_), intent(in) :: Time
+    real,         intent(out):: AxisHgi_D(3)
 
     type(RotationType) :: Rot
     real :: Alpha, Delta
     !--------------------------------------------------------------------------
-    call get_planet_rotation_elements(iPlanet, JulianDay, Rot)
-    Alpha = Rot%Alpha0Deg*cDegToRad
-    Delta = Rot%Delta0Deg*cDegToRad
+    call get_planet_rotation_elements(iPlanet, Time, Rot)
+    Alpha = Rot % Alpha0Deg*cDegToRad
+    Delta = Rot % Delta0Deg*cDegToRad
 
     AxisHgi_D = matmul(HgiJ2k_DD, &
          [cos(Delta)*cos(Alpha), cos(Delta)*sin(Alpha), sin(Delta)])
 
   end subroutine get_rotation_axis_hgi
   !============================================================================
-  subroutine get_gei_geo_matrix_from_w(iPlanet, JulianDay, GeiGeo_DD)
+  subroutine get_gei_geo_matrix_from_w(iPlanet, Time, GeiGeo_DD)
 
-    integer, intent(in) :: iPlanet
-    real,    intent(in) :: JulianDay
-    real,    intent(out) :: GeiGeo_DD(3,3)
+    integer,      intent(in) :: iPlanet
+    real(Real8_), intent(in) :: Time
+    real,        intent(out) :: GeiGeo_DD(3,3)
 
     type(RotationType) :: Rot
     real :: Angle
     !--------------------------------------------------------------------------
-    call get_planet_rotation_elements(iPlanet, JulianDay, Rot)
-    Angle = modulo(Rot%WDeg*cDegToRad, cTwoPi)
+    call get_planet_rotation_elements(iPlanet, Time, Rot)
+    Angle = Rot % WDeg*cDegToRad
 
+    ! GeiGeo_DD = rot_matrix_z(Angle)
+    
     GeiGeo_DD(1,1) =  cos(Angle);
     GeiGeo_DD(1,2) = -sin(Angle);
     GeiGeo_DD(1,3) = 0.0

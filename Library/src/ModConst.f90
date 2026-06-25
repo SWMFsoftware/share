@@ -19,13 +19,14 @@ module ModConst
   ! Physical constants
 
   ! Time units
-  real, parameter:: cSecondPerYear   = 31536000.0
-  real, parameter:: cSecondPerDay    =    86400.0
-  real, parameter:: cSecondPerHour   =     3600.0
-  real, parameter:: cSecondPerMinute =       60.0
+  real, parameter:: cSecondPerYear    = 31536000.0
+  real, parameter:: cSecondPerDay     =    86400.0
+  real, parameter:: cSecondPerHour    =     3600.0
+  real, parameter:: cSecondPerMinute  =       60.0
+  real, parameter:: cSecondPerCentury = 36525*cSecondPerDay
 
   ! Boltzmann constant [J/K]
-  real, parameter::  cBoltzmann  = 1.3807E-23
+  real, parameter:: cBoltzmann  = 1.3807E-23
 
   ! Atomic unit of mass [kg]
   real,parameter:: cAtomicMass = 1.66053E-27
