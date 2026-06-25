@@ -368,17 +368,12 @@ contains
     integer, intent(in)  :: iTime_I(1:7)
     real,    intent(out) :: JulianDay
 
-    integer:: iYear, iMonth, iDay, Di
+    real(Real8_):: Time
 
     character(len=*), parameter:: NameSub = 'time_int_to_julian'
     !--------------------------------------------------------------------------
-    iYear = iTime_I(1); iMonth = iTime_I(2); iDay = iTime_I(3)
-    Di = 0; if(iMonth < 3) Di = -1
-    JulianDay = (1461*(iYear + 4800 + Di))/4 &
-         + (367*(iMonth - 2 - 12 * Di))/12 &
-         - (3*((iYear + 4900 + Di)/100))/4 &
-         + iDay - 32075 &
-         + (iTime_I(4) - 12 + iTime_I(5)/60. + iTime_I(6)/3600.)/24.
+    call time_int_to_real(iTime_I, Time)
+    call time_real_to_julian(Time, JulianDay)
 
   end subroutine time_int_to_julian
   !============================================================================
