@@ -16,7 +16,7 @@ module CON_planet
 
   use ModNumConst, ONLY: cTwoPi, cDegToRad, cPi, cTiny, cTiny8
   use ModPlanetConst
-  use ModTimeConvert, ONLY: TimeType, time_int_to_real, time_real_to_julian
+  use ModTimeConvert, ONLY: TimeType, time_int_to_real
   use ModUtilities, ONLY: upper_case, CON_stop
 
   ! revision history:
@@ -634,7 +634,7 @@ contains
     real, intent(out)           :: XyzHgi_D(3)  ! Coordinates in HGI
     real, optional, intent(out) :: vHgi_D(3)    ! Velocity in HGI
     ! Mean and eccentric anomalies for a Kepler orbit
-    real :: MeanAnomaly, EccentricAnomaly, JulianDay
+    real :: MeanAnomaly, EccentricAnomaly
     real :: SinE, CosE, dEdt
     ! Coordinates and velocity in the orbital plane
     real              :: XyzOrbit_D(3),  vOrbit_D(3)
@@ -644,8 +644,7 @@ contains
     character(len=*), parameter:: NameSub = 'orbit_in_hgi'
     !--------------------------------------------------------------------------
     if(UseOrbitTable)then
-       call time_real_to_julian(real(Time), JulianDay)
-       call orbit_state_hgi_from_table(Planet_, JulianDay, XyzHgi_D, vHgi_D)
+       call orbit_state_hgi_from_table(Planet_, Time, XyzHgi_D, vHgi_D)
        RETURN
     end if
 
