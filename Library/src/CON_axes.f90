@@ -142,8 +142,7 @@ module CON_axes
   use ModCoordTransform, ONLY: rot_matrix_x, rot_matrix_y, rot_matrix_z, &
        show_rot_matrix, cross_product, dir_to_xyz, xyz_to_dir, xyz_to_lonlat, &
        atan2_check
-  use ModTimeConvert, ONLY: &
-       time_int_to_real,time_real_to_int, time_real_to_julian, TimeType
+  use ModTimeConvert, ONLY: time_int_to_real, time_real_to_int, TimeType
   use ModPlanetConst, ONLY: DipoleStrengthPlanet_I, Earth_, CAU, Planet_, &
        UseRotationTable_I, get_rotation_axis_hgi, get_gei_geo_matrix_from_w
   use CON_planet, ONLY: UseSetMagAxis, UseSetRotAxis, UseAlignedAxes, &
@@ -156,7 +155,7 @@ module CON_axes
        geopack_recalc, geopack_sun, &
        RotAxisPhiGeopack, RotAxisThetaGeopack, &
        AxisMagGeo_D, DipoleStrengthGeopack, &
-       HgiGse_DD, dLongitudeHgiDeg, dLongitudeHgi, SunEMBDistance, JulianDay
+       HgiGse_DD, dLongitudeHgiDeg, dLongitudeHgi, SunEMBDistance
   use ModNumConst, ONLY: cHalfPi, cRadToDeg, cTwoPi, cTwoPi8, cUnit_DD, cTiny
   use ModConst, ONLY: rSun
   use ModUtilities, ONLY: CON_stop, CON_set_do_test
@@ -239,7 +238,7 @@ contains
     ! Calculate conversion matrices between MAG-GEO-GEI-GSE systems.
 
     real :: XyzPlanetHgr_D(3)
-    real :: RotAxisHgi_D(3), GseX_D(3), GseY_D(3), GseZ_D(3), JulianDayNow
+    real :: RotAxisHgi_D(3), GseX_D(3), GseY_D(3), GseZ_D(3)
 
     integer :: iTime_I(7)
 
@@ -271,8 +270,7 @@ contains
 
        if(UseRealRotAxis)then
           if(UseRotationTable_I(Planet_))then
-             call time_real_to_julian(real(tStart), JulianDayNow)
-             call get_rotation_axis_hgi(Planet_, JulianDayNow, RotAxisHgi_D)
+             call get_rotation_axis_hgi(Planet_, tStart, RotAxisHgi_D)
           else
              ! Legacy: infer axis from tilt and equinox geometry.
              call orbit_in_hgi(TimeEquinox%Time, GseX_D)
@@ -574,7 +572,7 @@ contains
 
     real, intent(in) :: TimeSim
 
-    real :: AlphaEquinox, JulianDayNow
+    real :: AlphaEquinox
     !--------------------------------------------------------------------------
     if(.not.UseRotation)then
        ! If the planet does not rotate we may take GEI=GEO
@@ -583,8 +581,7 @@ contains
     end if
 
     if(UseRotationTable_I(Planet_) .and. Planet_ /= Earth_)then
-       call time_real_to_julian(real(tStart + TimeSim), JulianDayNow)
-       call get_gei_geo_matrix_from_w(Planet_, JulianDayNow, GeiGeo_DD)
+       call get_gei_geo_matrix_from_w(Planet_, tStart + TimeSim, GeiGeo_DD)
     else
        AlphaEquinox = (TimeSim + tStart - TimeEquinox % Time) &
             * OmegaPlanet + AngleEquinox
@@ -624,7 +621,7 @@ contains
     !      if int(TimeSim/DtUpdateB0) differs from int(TimeSimLast/DtUpdateB0)
     !
 
-    real :: MagAxisGei_D(3), OrbitNormal_D(3), RotAxisHgi_D(3), JulianDayNow
+    real :: MagAxisGei_D(3), OrbitNormal_D(3), RotAxisHgi_D(3)
 
     real :: TimeSimLast = -1000.0  ! Last simulation time for magnetic fields
     real :: TimeSimHgr  = -1000.0  ! Last simulation time for HGR update
@@ -646,8 +643,7 @@ contains
           SunEMBDistance = norm2(XyzPlanetHgi_D)/cAU
 
           if(UseRealRotAxis .and. UseRotationTable_I(Planet_))then
-             call time_real_to_julian(real(Time8), JulianDayNow)
-             call get_rotation_axis_hgi(Planet_, JulianDayNow, RotAxisHgi_D)
+             call get_rotation_axis_hgi(Planet_, Time8, RotAxisHgi_D)
              RotAxis_D = matmul(RotAxisHgi_D, HgiGse_DD)
              call xyz_to_dir(RotAxis_D, RotAxisTheta, RotAxisPhi)
              call set_gse_gei_matrix

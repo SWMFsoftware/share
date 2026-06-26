@@ -136,7 +136,7 @@ contains
     use ModUtilities, ONLY: upper_case
 
     integer:: i
-    !-----------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     ! Initialize all values - below set only the non-default values
     NamePlanet_I                     = ''
 
@@ -731,7 +731,7 @@ contains
     Angle = Rot % WDeg*cDegToRad
 
     ! GeiGeo_DD = rot_matrix_z(Angle)
-    
+
     GeiGeo_DD(1,1) =  cos(Angle);
     GeiGeo_DD(1,2) = -sin(Angle);
     GeiGeo_DD(1,3) = 0.0
