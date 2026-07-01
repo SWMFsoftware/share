@@ -178,20 +178,47 @@ contains
     ! Set all values for the selected planet
     RadiusPlanet     = rPlanet_I(iPlanet)
     MassPlanet       = MassPlanet_I(iPlanet)
-    RotPeriodPlanet  = RotationPeriodPlanet_I(iPlanet)
     TiltRotation     = TiltPlanet_I(iPlanet)
     IonosphereHeight = IonoHeightPlanet_I(iPlanet)
-    if (RotationPeriodPlanet_I(iPlanet) == 0.0) then
-       OmegaRotation = 0.0
+
+    if (UseOrbitalTable_I(iPlanet)) then
+       rOrbitPlanet   = OrbitJ2000_I(iPlanet)%aAu * cAU
+       Excentricity   = OrbitJ2000_I(iPlanet)%Eccentricity
+       RightAscension = OrbitJ2000_I(iPlanet)%LongNodeDeg * cDegToRad
+       Inclination    = OrbitJ2000_I(iPlanet)%InclinationDeg * cDegToRad
+       ArgPeriapsis   = (OrbitJ2000_I(iPlanet)%LongPeriDeg - &
+            OrbitJ2000_I(iPlanet)%LongNodeDeg) * cDegToRad
+       OmegaOrbit     = OrbitRate_I(iPlanet)%MeanLongitudeDeg * cDegToRad / cCentury
     else
-       OmegaRotation = cTwoPi/RotationPeriodPlanet_I(iPlanet)
+       rOrbitPlanet   = rOrbitPlanet_I(iPlanet)
+       Excentricity   = Excentricity_I(iPlanet)
+       RightAscension = RightAscension_I(iPlanet)
+       Inclination    = Inclination_I(iPlanet)
+       ArgPeriapsis   = ArgPeriapsis_I(iPlanet)
+       if (OrbitalPeriodPlanet_I(iPlanet) == 0.0) then
+          OmegaOrbit = 0.0
+       else
+          OmegaOrbit = cTwoPi/OrbitalPeriodPlanet_I(iPlanet)
+       end if
     end if
-    if (OrbitalPeriodPlanet_I(iPlanet) == 0.0) then
-       OmegaOrbit = 0.0
+
+    if (UseRotationTable_I(iPlanet)) then
+       OmegaPlanet  = RotationRate_I(iPlanet)%WDeg * cDegToRad / cDay
+       OmegaRotation = OmegaPlanet - OmegaOrbit
+       if (OmegaPlanet /= 0.0) then
+          RotPeriodPlanet = cTwoPi/OmegaPlanet
+       else
+          RotPeriodPlanet = 0.0
+       end if
     else
-       OmegaOrbit = cTwoPi/OrbitalPeriodPlanet_I(iPlanet)
+       RotPeriodPlanet  = RotationPeriodPlanet_I(iPlanet)
+       if (RotationPeriodPlanet_I(iPlanet) == 0.0) then
+          OmegaRotation = 0.0
+       else
+          OmegaRotation = cTwoPi/RotationPeriodPlanet_I(iPlanet)
+       end if
+       OmegaPlanet  = OmegaRotation + OmegaOrbit
     end if
-    OmegaPlanet  = OmegaRotation + OmegaOrbit
     if(iPlanet == Earth_)then
        ! For Earth the longitude of midnight can be obtained
        ! from the time of day
@@ -216,12 +243,15 @@ contains
     MagAxisThetaGeo   = bAxisThetaPlanet_I(iPlanet)  ! Permanent theta  in GEO
     MagAxisPhiGeo     = bAxisPhiPlanet_I(iPlanet)    ! Permanent phi    in GEO
 
-    rOrbitPlanet     = rOrbitPlanet_I(iPlanet)  ! [m]
-    Excentricity     = Excentricity_I(iPlanet)  ! dimless
-    ! Euler angles of orbit relative to HGI
-    RightAscension   = RightAscension_I(iPlanet)
-    Inclination      = Inclination_I(iPlanet)
-    ArgPeriapsis     = ArgPeriapsis_I(iPlanet)
+    ! For table-driven bodies the orbit values are already set above.
+    if (.not.UseOrbitalTable_I(iPlanet)) then
+       rOrbitPlanet     = rOrbitPlanet_I(iPlanet)  ! [m]
+       Excentricity     = Excentricity_I(iPlanet)  ! dimless
+       ! Euler angles of orbit relative to HGI
+       RightAscension   = RightAscension_I(iPlanet)
+       Inclination      = Inclination_I(iPlanet)
+       ArgPeriapsis     = ArgPeriapsis_I(iPlanet)
+    end if
     call get_orbit_elements
     ! For Enceladus the dipole is at Saturn's center
     if(iPlanet == Enceladus_) MagCenter_D(2) = 944.23
