@@ -470,7 +470,7 @@ contains
 
     ! Equatorial ICRF/J2000: rotation by obliquity (Earth tilt at J2K)
     HgiIcrf_DD = matmul(HgiJ2k_DD, J2kIcrf_DD)
-    
+
     ! No Planet (0)
     !     - No Planet and no body - defaults for everything, just set name.
     NamePlanet_I(NoPlanet_)             = 'NONE'
@@ -512,11 +512,11 @@ contains
     Elem%LongNodeDeg = OrbitJ2000_I(iPlanet)%LongNodeDeg + &
          T*OrbitRate_I(iPlanet)%LongNodeDeg
 
-    !write(*,*)'!!! MeanLon0, Rate, Period [yr]=', &
+    ! write(*,*)'!!! MeanLon0, Rate, Period [yr]=', &
     !     OrbitJ2000_I(iPlanet)%MeanLongitudeDeg, &
     !     OrbitRate_I(iPlanet)%MeanLongitudeDeg, &
     !     36000/OrbitRate_I(iPlanet)%MeanLongitudeDeg
-    
+
   end subroutine get_planet_orbital_elements
   !============================================================================
   subroutine transform_orbit_j2k_hgi(OrbitJ2k, OrbitHgi)
@@ -663,7 +663,7 @@ contains
 
     ! write(*,*)'!!! a, b, xOrb, yOrb, r=', &
     !     a/cAU, b/cAU, xOrb/cAU, yOrb/cAU, sqrt(xOrb**2+yOrb**2)/cAU
-    
+
     CosOm = cos(OmegaNode); SinOm = sin(OmegaNode)
     CosI  = cos(Inc);       SinI  = sin(Inc)
     CosW  = cos(LongPeri - OmegaNode)
