@@ -283,11 +283,6 @@ contains
           RotAxis_D = matmul(RotAxisHgi_D, HgiGse_DD)
           ! Get direction angles in GSE
           call xyz_to_dir(RotAxis_D, RotAxisTheta, RotAxisPhi)
-          if(abs(RotAxisTheta - TiltRotation)*cRadToDeg > 0.1) &
-               call CON_stop(NameSub// &
-               ': incorrect RotAxisTheta, TiltRotation=', &
-               RotAxisTheta*cRadToDeg, TiltRotation*cRadToDeg)
-          RotAxisTheta = TiltRotation
        endif
     else
        ! Calculate HgiGse matrix for the first time.
