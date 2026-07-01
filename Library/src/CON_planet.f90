@@ -163,66 +163,68 @@ contains
     do i = NoPlanet_, MaxPlanet
        if (NamePlanet == NamePlanet_I(i)) then
           IsKnown = .true.
+          iPlanet = i
           Planet_ = i
           EXIT
        end if
     end do
 
     if (.not. IsKnown)  then
+       iPlanet    = NewPlanet_
        Planet_    = NewPlanet_
        NamePlanet = NamePlanetIn
     end if
 
     ! Set all values for the selected planet
-    RadiusPlanet     = rPlanet_I(Planet_)
-    MassPlanet       = MassPlanet_I(Planet_)
-    RotPeriodPlanet  = RotationPeriodPlanet_I(Planet_)
-    TiltRotation     = TiltPlanet_I(Planet_)
-    IonosphereHeight = IonoHeightPlanet_I(Planet_)
-    if (RotationPeriodPlanet_I(Planet_) == 0.0) then
+    RadiusPlanet     = rPlanet_I(iPlanet)
+    MassPlanet       = MassPlanet_I(iPlanet)
+    RotPeriodPlanet  = RotationPeriodPlanet_I(iPlanet)
+    TiltRotation     = TiltPlanet_I(iPlanet)
+    IonosphereHeight = IonoHeightPlanet_I(iPlanet)
+    if (RotationPeriodPlanet_I(iPlanet) == 0.0) then
        OmegaRotation = 0.0
     else
-       OmegaRotation = cTwoPi/RotationPeriodPlanet_I(Planet_)
+       OmegaRotation = cTwoPi/RotationPeriodPlanet_I(iPlanet)
     end if
-    if (OrbitalPeriodPlanet_I(Planet_) == 0.0) then
+    if (OrbitalPeriodPlanet_I(iPlanet) == 0.0) then
        OmegaOrbit = 0.0
     else
-       OmegaOrbit = cTwoPi/OrbitalPeriodPlanet_I(Planet_)
+       OmegaOrbit = cTwoPi/OrbitalPeriodPlanet_I(iPlanet)
     end if
     OmegaPlanet  = OmegaRotation + OmegaOrbit
-    if(Planet_ == Earth_)then
+    if(iPlanet == Earth_)then
        ! For Earth the longitude of midnight can be obtained
        ! from the time of day
        AngleEquinox = cTwoPi/(24*60) * &
             (iHourEquinoxPlanet_I(Earth_)*60 + iMinuteEquinoxPlanet_I(Earth_))
     else
-       AngleEquinox = AngleEquinox_I(Planet_)
+       AngleEquinox = AngleEquinox_I(iPlanet)
     end if
     TimeEquinox  = TimeType(&
-         iYearEquinoxPlanet_I(Planet_), &
-         iMonthEquinoxPlanet_I(Planet_), &
-         iDayEquinoxPlanet_I(Planet_), &
-         iHourEquinoxPlanet_I(Planet_), &
-         iMinuteEquinoxPlanet_I(Planet_), &
+         iYearEquinoxPlanet_I(iPlanet), &
+         iMonthEquinoxPlanet_I(iPlanet), &
+         iDayEquinoxPlanet_I(iPlanet), &
+         iHourEquinoxPlanet_I(iPlanet), &
+         iMinuteEquinoxPlanet_I(iPlanet), &
          0, 0.0, 0.0_Real8_, '')
     ! Set the real value and the string
     call time_int_to_real(TimeEquinox)
 
     ! Magnetic field type and strength in teslas
-    TypeBField        = TypeBFieldPlanet_I(Planet_)
-    DipoleStrength    = DipoleStrengthPlanet_I(Planet_)
-    MagAxisThetaGeo   = bAxisThetaPlanet_I(Planet_)  ! Permanent theta  in GEO
-    MagAxisPhiGeo     = bAxisPhiPlanet_I(Planet_)    ! Permanent phi    in GEO
+    TypeBField        = TypeBFieldPlanet_I(iPlanet)
+    DipoleStrength    = DipoleStrengthPlanet_I(iPlanet)
+    MagAxisThetaGeo   = bAxisThetaPlanet_I(iPlanet)  ! Permanent theta  in GEO
+    MagAxisPhiGeo     = bAxisPhiPlanet_I(iPlanet)    ! Permanent phi    in GEO
 
-    rOrbitPlanet     = rOrbitPlanet_I(Planet_)  ! [m]
-    Excentricity     = Excentricity_I(Planet_)  ! dimless
+    rOrbitPlanet     = rOrbitPlanet_I(iPlanet)  ! [m]
+    Excentricity     = Excentricity_I(iPlanet)  ! dimless
     ! Euler angles of orbit relative to HGI
-    RightAscension   = RightAscension_I(Planet_)
-    Inclination      = Inclination_I(Planet_)
-    ArgPeriapsis     = ArgPeriapsis_I(Planet_)
+    RightAscension   = RightAscension_I(iPlanet)
+    Inclination      = Inclination_I(iPlanet)
+    ArgPeriapsis     = ArgPeriapsis_I(iPlanet)
     call get_orbit_elements
     ! For Enceladus the dipole is at Saturn's center
-    if(Planet_ == Enceladus_) MagCenter_D(2) = 944.23
+    if(iPlanet == Enceladus_) MagCenter_D(2) = 944.23
 
     !$acc update device(OmegaPlanet, AngleEquinox, OmegaRotation, TimeEquinox,&
     !$acc MagAxisPhi, MagAxisTheta,  rOrbitPlanet, Excentricity,              &
@@ -456,8 +458,8 @@ contains
     case('#ORBIT')
        NamePlanetCommands = '#ORBIT ' // NamePlanetCommands
        IsPlanetModified = .true.
-       call read_var('OrbitalPeriodPlanet', OrbitalPeriodPlanet_I(Planet_))
-       OmegaOrbit = cTwoPi/OrbitalPeriodPlanet_I(Planet_)
+       call read_var('OrbitalPeriodPlanet', OrbitalPeriodPlanet_I(iPlanet))
+       OmegaOrbit = cTwoPi/OrbitalPeriodPlanet_I(iPlanet)
        ! Correct omega planet?
        call read_var('rOrbitPlanet', rOrbitPlanet) ! [m]
        call read_var('Excentricity', Excentricity) ! dimless
@@ -604,7 +606,7 @@ contains
     ! used with properly re-defined RightAscension and ArgPeriapsis.
 
     !--------------------------------------------------------------------------
-    UseOrbitTable = UseOrbitalTable_I(Planet_)
+    UseOrbitTable = UseOrbitalTable_I(iPlanet)
 
     if(NamePlanet == 'EARTH' .or. rOrbitPlanet == 0.0)then
        UseOrbitElements = .false.
@@ -644,7 +646,10 @@ contains
     character(len=*), parameter:: NameSub = 'orbit_in_hgi'
     !--------------------------------------------------------------------------
     if(UseOrbitTable)then
-       call orbit_state_hgi_from_table(Planet_, Time, XyzHgi_D, vHgi_D)
+       call orbit_state_hgi_from_table(Time, XyzHgi_D, vHgi_D)
+       ! write(*,*)'!!! Planet_=', Planet_
+       ! write(*,*)'!!! XyzHgi_D,r [au]=', XyzHgi_D/cAU, norm2(XyzHgi_D)/cAU
+       ! write(*,*)'!!! vHgi_D [km/s]=', vHgi_D/1e3
        RETURN
     end if
 

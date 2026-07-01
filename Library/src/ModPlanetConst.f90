@@ -6,6 +6,8 @@ module ModPlanetConst
   use ModNumConst, ONLY: cDegToRad, cRadToDeg, cPi, cTwoPi, cHalfPi, cTiny
   use ModConst, ONLY: cAU, cHour => cSecondPerHour, cDay => cSecondPerDay, &
        cCentury => cSecondPerCentury
+  use ModCoordTransform, ONLY: rot_matrix_x, rot_matrix_z, show_rot_matrix, &
+       cross_product
   use ModTimeConvert, ONLY: TimeType, time_int_to_real
   use ModKind
 
@@ -29,8 +31,16 @@ module ModPlanetConst
 
   real, parameter:: DayPerCentury  = 36525.0
 
-  ! Conversion matrix between HGI adn J2000 coordinates (calculated once)
+  ! Angle between ICRF midnight meridian and equinox direction of planet
+  real :: GeiOffset = -10.0
+  ! Rotation angle between J2K and Icrf is Earth inclination at J2000 epoch
+  real, parameter:: InclJ2k = 23.4392911*cDegToRad
+  ! Conversion matrix from equatorial ICRF to ecliptic J2000 = rot_x(-InclJ2k)
+  real:: J2kIcrf_DD(3,3)
+  ! Conversion matrix from ecliptic J2000 to HGI coordinates
   real:: HgiJ2k_DD(3,3)
+  ! Conversion matrix from equatorial ICRF to HGI coordinates
+  real:: HgiIcrf_DD(3,3)
 
   type OrbitType
      real :: aAu
@@ -77,7 +87,9 @@ module ModPlanetConst
 
   character(len=lNamePlanet):: NamePlanet_I(0:MaxPlanet+1)
 
-  integer:: Planet_
+  ! Index of the selected planet
+  integer:: iPlanet = -1
+  integer:: Planet_ = -1 ! For compatibility with some other code
 
   logical, dimension(0:MaxPlanet+1) :: UseOrbitalTable_I, UseRotationTable_I
 
@@ -132,7 +144,6 @@ contains
   !============================================================================
   subroutine init_planet_const
 
-    use ModCoordTransform, ONLY: rot_matrix_x, rot_matrix_z
     use ModUtilities, ONLY: upper_case
 
     integer:: i
@@ -163,8 +174,8 @@ contains
     bAxisThetaPlanet_I               = 0.0                        ! [rad]
     bAxisPhiPlanet_I                 = 0.0                        ! [rad]
 
-    UseOrbitalTable_I                = .false.
-    UseRotationTable_I               = .false.
+    UseOrbitalTable_I                = .true.
+    UseRotationTable_I               = .true.
     OrbitJ2000_I                     = OrbitType(0.0,0.0,0.0,0.0,0.0,0.0)
     OrbitRate_I                      = OrbitType(0.0,0.0,0.0,0.0,0.0,0.0)
     RotationJ2000_I                  = RotationType(0.0,0.0,0.0)
@@ -487,11 +498,16 @@ contains
     RotationJ2000_I(Neptune_) = RotationType(299.36,43.46,253.18)
     RotationRate_I(Neptune_) = RotationType(0.0,0.0,536.3128492)
 
-    ! Calculate the rotation matrix from J2000 to HGI system
-    HgiJ2k_DD = matmul(rot_matrix_x(-7.25*cDegToRad), & ! inclination
-         matmul(rot_matrix_z(-75.77*cDegToRad),       & ! ascending node
-         rot_matrix_x(-23.4392911*cDegToRad))) ! Obliquity (Earth tilt at J2K)
+    ! Calculate the rotation matrix for J2k to Icrf:
+    J2kIcrf_DD = rot_matrix_x(-InclJ2k)
 
+    ! Calculate the rotation matrix from ecliptic J2000 to HGI system
+    HgiJ2k_DD = matmul(rot_matrix_x(-7.25*cDegToRad), & ! inclination
+         rot_matrix_z(-75.77*cDegToRad)) ! ascending node
+
+    ! Equatorial ICRF/J2000: rotation by obliquity (Earth tilt at J2K)
+    HgiIcrf_DD = matmul(HgiJ2k_DD, J2kIcrf_DD)
+    
     ! No Planet (0)
     !     - No Planet and no body - defaults for everything, just set name.
     NamePlanet_I(NoPlanet_)             = 'NONE'
@@ -511,9 +527,8 @@ contains
 
   end subroutine init_planet_const
   !============================================================================
-  subroutine get_planet_orbital_elements(iPlanet, Time, Elem)
+  subroutine get_planet_orbital_elements(Time, Elem)
 
-    integer, intent(in) :: iPlanet
     real(Real8_),    intent(in) :: Time
     type(OrbitType), intent(out):: Elem
 
@@ -534,6 +549,11 @@ contains
     Elem%LongNodeDeg = OrbitJ2000_I(iPlanet)%LongNodeDeg + &
          T*OrbitRate_I(iPlanet)%LongNodeDeg
 
+    !write(*,*)'!!! MeanLon0, Rate, Period [yr]=', &
+    !     OrbitJ2000_I(iPlanet)%MeanLongitudeDeg, &
+    !     OrbitRate_I(iPlanet)%MeanLongitudeDeg, &
+    !     36000/OrbitRate_I(iPlanet)%MeanLongitudeDeg
+    
   end subroutine get_planet_orbital_elements
   !============================================================================
   subroutine transform_orbit_j2k_hgi(OrbitJ2k, OrbitHgi)
@@ -603,9 +623,8 @@ contains
 
   end subroutine transform_orbit_j2k_hgi
   !============================================================================
-  subroutine get_planet_rotation_elements(iPlanet, Time, Rot)
+  subroutine get_planet_rotation_elements(Time, Rot)
 
-    integer,            intent(in) :: iPlanet
     real(Real8_),       intent(in) :: Time
     type(RotationType), intent(out):: Rot
 
@@ -636,9 +655,8 @@ contains
 
   end subroutine get_planet_rotation_elements
   !============================================================================
-  subroutine orbit_state_hgi_from_table(iPlanet, Time, XyzHgi_D, vHgi_D)
+  subroutine orbit_state_hgi_from_table(Time, XyzHgi_D, vHgi_D)
 
-    integer,      intent(in) :: iPlanet
     real(Real8_), intent(in):: Time
     real,        intent(out):: XyzHgi_D(3)
     real, optional, intent(out) :: vHgi_D(3)
@@ -652,7 +670,7 @@ contains
     real :: P_D(3), Q_D(3)
     integer :: iIter
     !--------------------------------------------------------------------------
-    call get_planet_orbital_elements(iPlanet, Time, Elem)
+    call get_planet_orbital_elements(Time, Elem)
 
     a         = Elem%aAu*cAU
     Ecc       = max(Elem%Eccentricity, 0.0)
@@ -670,14 +688,19 @@ contains
     do iIter = 1, 12
        dEAnom = (EAnom - Ecc*sin(EAnom) - Lon)/max(1 - Ecc*cos(EAnom), cTiny)
        EAnom = EAnom - dEAnom
-       if(abs(dEAnom) < 100.0*cTiny) EXIT
+       if(abs(dEAnom) < cTiny) EXIT
     end do
 
+    ! write(*,*)'!!! iIter, Lon, Eanom=', iIter, Lon&cRadToDeg, Eanom*cRadToDeg
+
     CosEAnom = cos(EAnom); SinEAnom = sin(EAnom)
-    b = a*sqrt(max(1 - Ecc*Ecc, 0.0))
+    b = a*sqrt(max(1 - Ecc**2, 0.0))
     xOrb = a*(CosEAnom - Ecc)
     yOrb = b*SinEAnom
 
+    ! write(*,*)'!!! a, b, xOrb, yOrb, r=', &
+    !     a/cAU, b/cAU, xOrb/cAU, yOrb/cAU, sqrt(xOrb**2+yOrb**2)/cAU
+    
     CosOm = cos(OmegaNode); SinOm = sin(OmegaNode)
     CosI  = cos(Inc);       SinI  = sin(Inc)
     CosW  = cos(LongPeri - OmegaNode)
@@ -688,59 +711,85 @@ contains
     Q_D = [-CosOm*SinW - SinOm*CosW*CosI, -SinOm*SinW + CosOm*CosW*CosI, &
          CosW*SinI]
 
-    XyzHgi_D = xOrb*P_D + yOrb*Q_D
+    XyzHgi_D = matmul(HgiJ2k_DD, xOrb*P_D + yOrb*Q_D)
 
     if(present(vHgi_D))then
        MeanMotion = OrbitRate_I(iPlanet)%MeanLongitudeDeg*cDegToRad/cCentury
        dEdt = MeanMotion/max(1.0 - Ecc*CosEAnom, cTiny)
        VxOrb = -a*SinEAnom*dEdt
        VyOrb =  b*CosEAnom*dEdt
-       vHgi_D = VxOrb*P_D + VyOrb*Q_D
+       vHgi_D = matmul(HgiJ2k_DD, VxOrb*P_D + VyOrb*Q_D)
     end if
 
   end subroutine orbit_state_hgi_from_table
   !============================================================================
-  subroutine get_rotation_axis_hgi(iPlanet, Time, AxisHgi_D)
+  subroutine get_rotation_axis_hgi(Time, AxisHgi_D)
 
-    integer,      intent(in) :: iPlanet
     real(Real8_), intent(in) :: Time
     real,         intent(out):: AxisHgi_D(3)
 
     type(RotationType) :: Rot
     real :: Alpha, Delta
     !--------------------------------------------------------------------------
-    call get_planet_rotation_elements(iPlanet, Time, Rot)
+    call get_planet_rotation_elements(Time, Rot)
     Alpha = Rot % Alpha0Deg*cDegToRad
     Delta = Rot % Delta0Deg*cDegToRad
 
-    AxisHgi_D = matmul(HgiJ2k_DD, &
+    AxisHgi_D = matmul(HgiIcrf_DD, &
          [cos(Delta)*cos(Alpha), cos(Delta)*sin(Alpha), sin(Delta)])
 
   end subroutine get_rotation_axis_hgi
   !============================================================================
-  subroutine get_gei_geo_matrix_from_w(iPlanet, Time, GeiGeo_DD)
+  subroutine get_gei_geo_matrix_from_w(Time, GeiGeo_DD)
 
-    integer,      intent(in) :: iPlanet
     real(Real8_), intent(in) :: Time
     real,        intent(out) :: GeiGeo_DD(3,3)
 
+    type(OrbitType)    :: Orbit
     type(RotationType) :: Rot
-    real :: Angle
+    real :: Angle, Alpha, Delta, Incl, Node
+    real :: PoleIcrf_D(3), OrbitJ2k_D(3), OrbitIcrf_D(3)
+    real :: IcrfNode_D(3), Equinox_D(3)
+    real :: NormIcrfNode, NormEquinox
     !--------------------------------------------------------------------------
-    call get_planet_rotation_elements(iPlanet, Time, Rot)
-    Angle = Rot % WDeg*cDegToRad
+    call get_planet_rotation_elements(Time, Rot)
 
-    ! GeiGeo_DD = rot_matrix_z(Angle)
+    if(GeiOffset < -9.0)then
+       ! Calculate offset angle between ICRF 0 longitude and GEI 0 longitude
+       call get_planet_orbital_elements(Time, Orbit)
+       Alpha = Rot%Alpha0Deg*cDegToRad
+       Delta = Rot%Delta0Deg*cDegToRad
+       Incl  = Orbit%InclinationDeg*cDegToRad
+       Node  = Orbit%LongNodeDeg*cDegToRad
 
-    GeiGeo_DD(1,1) =  cos(Angle);
-    GeiGeo_DD(1,2) = -sin(Angle);
-    GeiGeo_DD(1,3) = 0.0
-    GeiGeo_DD(2,1) =  sin(Angle);
-    GeiGeo_DD(2,2) =  cos(Angle);
-    GeiGeo_DD(2,3) = 0.0
-    GeiGeo_DD(3,1) = 0.0;
-    GeiGeo_DD(3,2) = 0.0;
-    GeiGeo_DD(3,3) = 1.0
+       ! Pole direction in ICRF/J2000 equatorial coordinates.
+       PoleIcrf_D = [cos(Delta)*cos(Alpha), cos(Delta)*sin(Alpha), sin(Delta)]
+
+       ! Orbit normal from J2000 ecliptic elements, converted to ICRF.
+       OrbitJ2k_D = [sin(Node)*sin(Incl), -cos(Node)*sin(Incl), cos(Incl)]
+       OrbitIcrf_D = matmul(OrbitJ2k_D, J2kIcrf_DD)
+
+       ! IcrfNode is the ascending node of the body equator on the ICRF equator
+       IcrfNode_D = cross_product([0.0, 0.0, 1.0], PoleIcrf_D)
+       IcrfNode_D = IcrfNode_D/norm2(IcrfNode_D)
+
+       ! GEI x-axis is the planet's vernal equinox direction on the equator
+       Equinox_D = cross_product(PoleIcrf_D, OrbitIcrf_D)
+       Equinox_D = Equinox_D/norm2(Equinox_D)
+
+       ! Exact signed angle from IAU node (0 longitude) to the GEI x-axis.
+       ! The cPi is due to GEO has 0 at midnight while the rotation
+       ! parameters define the angle for the noon meridian
+       GeiOffset = cPi + atan2( &
+            dot_product(cross_product(IcrfNode_D, Equinox_D), PoleIcrf_D), &
+            dot_product(IcrfNode_D, Equinox_D))
+
+    end if
+
+    ! W is measured from Q to the prime meridian point B.
+    ! This code's GEO x-axis follows the midnight half-plane convention
+    ! used by the legacy AngleEquinox logic, so it is opposite to B.
+    GeiGeo_DD = rot_matrix_z(Rot%WDeg*cDegToRad - GeiOffset)
 
   end subroutine get_gei_geo_matrix_from_w
   !============================================================================

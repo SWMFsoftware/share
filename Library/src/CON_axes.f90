@@ -143,8 +143,9 @@ module CON_axes
        show_rot_matrix, cross_product, dir_to_xyz, xyz_to_dir, xyz_to_lonlat, &
        atan2_check
   use ModTimeConvert, ONLY: time_int_to_real, time_real_to_int, TimeType
-  use ModPlanetConst, ONLY: DipoleStrengthPlanet_I, Earth_, CAU, Planet_, &
-       UseRotationTable_I, get_rotation_axis_hgi, get_gei_geo_matrix_from_w
+  use ModPlanetConst, ONLY: DipoleStrengthPlanet_I, Earth_, iPlanet, &
+       UseRotationTable_I, GeiOffset, &
+       get_rotation_axis_hgi, get_gei_geo_matrix_from_w
   use CON_planet, ONLY: UseSetMagAxis, UseSetRotAxis, UseAlignedAxes, &
        UseRealMagAxis, UseRealRotAxis, MagAxisThetaGeo, MagAxisPhiGeo, &
        MagAxisTheta, MagAxisPhi, DipoleStrength, RotAxisTheta, RotAxisPhi, &
@@ -157,7 +158,7 @@ module CON_axes
        AxisMagGeo_D, DipoleStrengthGeopack, &
        HgiGse_DD, dLongitudeHgiDeg, dLongitudeHgi, SunEMBDistance
   use ModNumConst, ONLY: cHalfPi, cRadToDeg, cTwoPi, cTwoPi8, cUnit_DD, cTiny
-  use ModConst, ONLY: rSun
+  use ModConst, ONLY: rSun, cAU
   use ModUtilities, ONLY: CON_stop, CON_set_do_test
   use CON_star, ONLY:OmegaCarrington=>OmegaStar, &
        tStartCarringtonCoord=>tAlignmentHgrHgi
@@ -269,8 +270,8 @@ contains
        HgiGse_DD(:,z_) = GseZ_D
 
        if(UseRealRotAxis)then
-          if(UseRotationTable_I(Planet_))then
-             call get_rotation_axis_hgi(Planet_, tStart, RotAxisHgi_D)
+          if(UseRotationTable_I(iPlanet))then
+             call get_rotation_axis_hgi(tStart, RotAxisHgi_D)
           else
              ! Legacy: infer axis from tilt and equinox geometry.
              call orbit_in_hgi(TimeEquinox%Time, GseX_D)
@@ -282,8 +283,10 @@ contains
           RotAxis_D = matmul(RotAxisHgi_D, HgiGse_DD)
           ! Get direction angles in GSE
           call xyz_to_dir(RotAxis_D, RotAxisTheta, RotAxisPhi)
-          if(abs(RotAxisTheta - TiltRotation) > cTiny)call CON_stop(NameSub// &
-                  ': incorrect RotAxisTheta=', RotAxisTheta)
+          if(abs(RotAxisTheta - TiltRotation)*cRadToDeg > 0.1) &
+               call CON_stop(NameSub// &
+               ': incorrect RotAxisTheta, TiltRotation=', &
+               RotAxisTheta*cRadToDeg, TiltRotation*cRadToDeg)
           RotAxisTheta = TiltRotation
        endif
     else
@@ -580,8 +583,8 @@ contains
        RETURN
     end if
 
-    if(UseRotationTable_I(Planet_) .and. Planet_ /= Earth_)then
-       call get_gei_geo_matrix_from_w(Planet_, tStart + TimeSim, GeiGeo_DD)
+    if(UseRotationTable_I(iPlanet) .and. iPlanet /= Earth_)then
+       call get_gei_geo_matrix_from_w(tStart + TimeSim, GeiGeo_DD)
     else
        AlphaEquinox = (TimeSim + tStart - TimeEquinox % Time) &
             * OmegaPlanet + AngleEquinox
@@ -642,8 +645,8 @@ contains
           HgiGse_DD(:,y_) = cross_product(HgiGse_DD(:,z_), HgiGse_DD(:,x_))
           SunEMBDistance = norm2(XyzPlanetHgi_D)/cAU
 
-          if(UseRealRotAxis .and. UseRotationTable_I(Planet_))then
-             call get_rotation_axis_hgi(Planet_, Time8, RotAxisHgi_D)
+          if(UseRealRotAxis .and. UseRotationTable_I(iPlanet))then
+             call get_rotation_axis_hgi(Time8, RotAxisHgi_D)
              RotAxis_D = matmul(RotAxisHgi_D, HgiGse_DD)
              call xyz_to_dir(RotAxis_D, RotAxisTheta, RotAxisPhi)
              call set_gse_gei_matrix
@@ -1368,6 +1371,7 @@ contains
     write(*,*) 'Testing Mars'
     IsInitializedPlanet = .false.
     DoInitializeAxes = .true.
+    GeiOffset = -10.0 ! reset GEI offset angle to default value
     if(.not.is_planet_init('Mars')) write(*,*)'is_planet_init("MARS") failed'
 
     TimeStart = TimeType(2017, 9, 12, 18, 0, 0, 0.0, 0.0_Real8_, '')
