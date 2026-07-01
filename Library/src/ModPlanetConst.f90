@@ -174,8 +174,8 @@ contains
     bAxisThetaPlanet_I               = 0.0                        ! [rad]
     bAxisPhiPlanet_I                 = 0.0                        ! [rad]
 
-    UseOrbitalTable_I                = .true.
-    UseRotationTable_I               = .true.
+    UseOrbitalTable_I                = .false.
+    UseRotationTable_I               = .false.
     OrbitJ2000_I                     = OrbitType(0.0,0.0,0.0,0.0,0.0,0.0)
     OrbitRate_I                      = OrbitType(0.0,0.0,0.0,0.0,0.0,0.0)
     RotationJ2000_I                  = RotationType(0.0,0.0,0.0)
@@ -188,11 +188,6 @@ contains
 
     rPlanet_I(Mercury_)                 = 2439.0e+3               ! [m]
     MassPlanet_I(Mercury_)              = 3.3022e+23              ! [kg]
-
-    rOrbitPlanet_I(Mercury_)            = 57909101.0e+3           ! [m]
-    OrbitalPeriodPlanet_I(Mercury_)     = 87.969*cDay             ! [s]
-    RotationPeriodPlanet_I(Mercury_)    = 175.942*cDay            ! [s]
-
     TypeBFieldPlanet_I(Mercury_)        = 'DIPOLE'
     DipoleStrengthPlanet_I(Mercury_)    = -200.0e-9               ! [T]
 
@@ -202,25 +197,11 @@ contains
     rPlanet_I(Venus_)                   = 6052.0e+3               ! [m]
     MassPlanet_I(Venus_)                = 4.865e+24               ! [kg]
 
-    rOrbitPlanet_I(Venus_)              = 108208930.0e+3          ! [m]
-    OrbitalPeriodPlanet_I(Venus_)       = 224.7   * cDay          ! [s]
-    RotationPeriodPlanet_I(Venus_)      = 116.750 * cDay          ! [s]
-
     ! Earth (30)
     NamePlanet_I(Earth_)                = 'EARTH'
 
     rPlanet_I(Earth_)                   = 6378.0e+3               ! [m]
     MassPlanet_I(Earth_)                = 5.976e+24               ! [kg]
-    rOrbitPlanet_I(Earth_)              = cAU                     ! [m]
-    OrbitalPeriodPlanet_I(Earth_)       = 365.24218967 * cDay     ! [s]
-    RotationPeriodPlanet_I(Earth_)      = cDay                    ! [s]
-    Excentricity_I(Earth_)              = 0.016
-    ! As in geopack
-    RightAscension_I(Earth_)            = 75.77 * cDegToRad       ! [rad]
-    ! As in geopack
-    Inclination_I(Earth_)               = 7.25 * cDegToRad        ! [rad]
-    ! https://data.giss.nasa.gov/cgi-bin/ar5/srorbpar.cgi for year 2023
-    ArgPeriapsis_I(Earth_)              = 283.29 * cDegToRad      ! [rad]
 
     iYearEquinoxPlanet_I(Earth_)        = 2000                    ! [yr]
     iMonthEquinoxPlanet_I(Earth_)       =    3                    ! [mo]
@@ -243,21 +224,6 @@ contains
     rPlanet_I(Moon_)                    = 1737.0e+3               ! [m]
     MassPlanet_I(Moon_)                 = 7.3477e+22              ! [kg]
 
-    ! Same values as for Earth (relative to the Sun)
-    rOrbitPlanet_I(Moon_)              = cAU                     ! [m]
-    OrbitalPeriodPlanet_I(Moon_)       = 365.24218967 * cDay     ! [s]
-    RotationPeriodPlanet_I(Moon_)      = cDay                    ! [s]
-    Excentricity_I(Moon_)              = 0.016
-    RightAscension_I(Moon_)            = 75.77 * cDegToRad       ! [rad]
-    Inclination_I(Moon_)               = 7.25 * cDegToRad        ! [rad]
-    ArgPeriapsis_I(Moon_)              = 283.29 * cDegToRad      ! [rad]
-
-    iYearEquinoxPlanet_I(Moon_)        = 2000                    ! [yr]
-    iMonthEquinoxPlanet_I(Moon_)       =    3                    ! [mo]
-    iDayEquinoxPlanet_I(Moon_)         =   20                    ! [dy]
-    iHourEquinoxPlanet_I(Moon_)        =    7                    ! [hr]
-    iMinuteEquinoxPlanet_I(Moon_)      =   35                    ! [mn]
-
     ! Mars (40)
     ! See https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html
     !     https://www.princeton.edu/~willman/planetary_systems/Sol/Mars
@@ -266,36 +232,11 @@ contains
     rPlanet_I(Mars_)                    = 3396.0e+3              ! [m]
     MassPlanet_I(Mars_)                 = 0.6436e+24             ! [kg]
 
-    ! Semi-major axis
-    rOrbitPlanet_I(Mars_)               = 227939200.0e3          ! [m]
-    OrbitalPeriodPlanet_I(Mars_)        = 686.98 * cDay          ! [s]
-    RotationPeriodPlanet_I(Mars_)       = 1.0275 * cDay          ! [s]
-
-    Excentricity_I(Mars_)              = 0.0934
-    RightAscension_I(Mars_)            = 49.57854 * cDegToRad    ! [rad]
-    Inclination_I(Mars_)               = 1.85 * cDegToRad        ! [rad]
-    ArgPeriapsis_I(Mars_)              = 286.5 * cDegToRad       ! [rad]
-    ! AngleEquinox was obtained by Gemini. Needs to be checked.
-    AngleEquinox_I(Mars_)              = 238.462 * cDegToRad     ! [rad]
-
-    ! Vernal Equinox at midnight (Ls = 0.0)
-    iYearEquinoxPlanet_I(Mars_)        = 1998                    ! [yr]
-    iMonthEquinoxPlanet_I(Mars_)       =    7                    ! [mo]
-    iDayEquinoxPlanet_I(Mars_)         =   14                    ! [dy]
-    iHourEquinoxPlanet_I(Mars_)        =   13                    ! [hr]
-    iMinuteEquinoxPlanet_I(Mars_)      =   40                    ! [mn]
-
-    TiltPlanet_I(Mars_)                = 25.19 * cDegToRad       ! [rad]
-
     ! Jupiter (50)
     NamePlanet_I(Jupiter_)              = 'JUPITER'
 
     rPlanet_I(Jupiter_)                 = 71492.0e+3             ! [m]
     MassPlanet_I(Jupiter_)              = 1.8980e+27             ! [kg]
-
-    rOrbitPlanet_I(Jupiter_)            = 778570000.0e3          ! [m]
-    OrbitalPeriodPlanet_I(Jupiter_)     = 4330.6 * cDay          ! [s]
-    RotationPeriodPlanet_I(Jupiter_)    = 9.9259 * cHour         ! [s]
 
     TypeBFieldPlanet_I(Jupiter_)        = 'DIPOLE'
     DipoleStrengthPlanet_I(Jupiter_)    = 428000.0e-9            ! [T]
@@ -309,10 +250,6 @@ contains
     rPlanet_I(Saturn_)                  = 60268.0e+3             ! [m]
     MassPlanet_I(Saturn_)               = 0.5685e+27             ! [kg]
 
-    rOrbitPlanet_I(Saturn_)             = 1433529000.0e3         ! [m]
-    OrbitalPeriodPlanet_I(Saturn_)      = 10746.94 * cDay        ! [s]
-    RotationPeriodPlanet_I(Saturn_)     = 10.656 * cHour         ! [s]
-
     TypeBFieldPlanet_I(Saturn_)         = 'DIPOLE'
     DipoleStrengthPlanet_I(Saturn_)     = 20800.0e-9             ! [T]
 
@@ -322,20 +259,6 @@ contains
     NamePlanet_I(Uranus_)                = 'URANUS'
     rPlanet_I(Uranus_)                   = 25559.0e+3            ! [m]
     MassPlanet_I(Uranus_)                = 8.681e+25             ! [kg]
-    rOrbitPlanet_I(Uranus_)              = 2872463000.0e3        ! [m]
-    OrbitalPeriodPlanet_I(Uranus_)       = 30688.5 * cDay        ! [s]
-    RotationPeriodPlanet_I(Uranus_)      = 17.2 * cHour          ! [s]
-    ! Retrograde"ness" should be enforced due to the >90deg obliquity
-    ! instead of a negative rotation period.
-    ! Following lines assume Spring equinox.
-    iYearEquinoxPlanet_I(Uranus_)        = 1966                  ! [yr]
-    iMonthEquinoxPlanet_I(Uranus_)       =    2                  ! [mo]
-    iDayEquinoxPlanet_I(Uranus_)         =    3                  ! [dy]
-    iHourEquinoxPlanet_I(Uranus_)        =    0                  ! [hr]
-    iMinuteEquinoxPlanet_I(Uranus_)      =    0                  ! [mn]
-
-    TiltPlanet_I(Uranus_)                = 97.9 * cDegToRad      ! [rad]
-
     TypeBFieldPlanet_I(Uranus_)          = 'DIPOLE'
     DipoleStrengthPlanet_I(Uranus_)      = 22800.0e-9            ! [T]
     bAxisThetaPlanet_I(Uranus_)          = 58.6 * cDegToRad      ! [rad]
@@ -346,11 +269,14 @@ contains
     ! Neptune (80)
 
     ! Pluto (90)
+    NamePlanet_I(Pluto_)               = 'PLUTO'
+    rPlanet_I(Pluto_)                  = 1188.3e+3               ! [m]
+    MassPlanet_I(Pluto_)               = 1.303e22                ! [kg]
 
     ! Io (51)
     NamePlanet_I(Io_)                   = 'IO'
-
     rPlanet_I(Io_)                      = 1821.0e+3              ! [m]
+    MassPlanet_I(Io_)                   = 8.93e22                ! [kg]
 
     ! Europa (52)
     NamePlanet_I(Europa_)               = 'EUROPA'
@@ -359,14 +285,6 @@ contains
     MassPlanet_I(Europa_)               = 4.80e22                ! [kg]
     OrbitalPeriodPlanet_I(Europa_)      = 3.551 * cDay           ! [s]
     RotationPeriodPlanet_I(Europa_)     = 3.551 * cDay           ! [s]
-
-    iYearEquinoxPlanet_I(Europa_)       = 2000                   ! [yr]
-    iMonthEquinoxPlanet_I(Europa_)      =    1                   ! [mo]
-    iDayEquinoxPlanet_I(Europa_)        =    1                   ! [dy]
-    iHourEquinoxPlanet_I(Europa_)       =    0                   ! [hr]
-    iMinuteEquinoxPlanet_I(Europa_)     =    0                   ! [mn]
-
-    TiltPlanet_I(Europa_)               =  0.0 * cDegToRad       ! [rad]
 
     TypeBFieldPlanet_I(Europa_)         = 'DIPOLE'
     DipoleStrengthPlanet_I(Europa_)     =    100.0e-9            ! [T]
@@ -466,6 +384,29 @@ contains
          0.00026291,0.00005105,0.00035372,218.45945325,-0.32241464, &
          -0.00508664)
 
+    ! Pluto values in J2000 ecliptic coordinates (osculating-like set).
+    ! Rates other than mean longitude are set to zero in this approximation.
+    OrbitJ2000_I(Pluto_) = OrbitType(&
+         39.48211675,0.24882730,17.14001206,238.92903833,224.06891629, &
+         110.30393684)
+    OrbitRate_I(Pluto_) = OrbitType(&
+         0.0,0.0,0.0,145.1964,0.0,0.0)
+
+    ! Requested simplification: moons use parent-planet heliocentric orbit.
+    OrbitJ2000_I(Moon_)      = OrbitJ2000_I(Earth_)
+    OrbitRate_I(Moon_)       = OrbitRate_I(Earth_)
+    OrbitJ2000_I(Io_)        = OrbitJ2000_I(Jupiter_)
+    OrbitRate_I(Io_)         = OrbitRate_I(Jupiter_)
+    OrbitJ2000_I(Europa_)    = OrbitJ2000_I(Jupiter_)
+    OrbitRate_I(Europa_)     = OrbitRate_I(Jupiter_)
+    OrbitJ2000_I(Titan_)     = OrbitJ2000_I(Saturn_)
+    OrbitRate_I(Titan_)      = OrbitRate_I(Saturn_)
+    OrbitJ2000_I(Enceladus_) = OrbitJ2000_I(Saturn_)
+    OrbitRate_I(Enceladus_)  = OrbitRate_I(Saturn_)
+
+    UseOrbitalTable_I([Mercury_,Venus_,Earth_,Moon_,Mars_,Jupiter_,Io_, &
+         Europa_,Saturn_,Titan_,Enceladus_,Uranus_,Neptune_,Pluto_]) = .true.
+
     ! Table-driven rotation parameters (IAU WGCCRE 2009, Table 1)
     ! alpha0, delta0 [deg], W [deg]; rates are per T (century) for alpha/delta
     ! and per day for W.
@@ -497,6 +438,28 @@ contains
 
     RotationJ2000_I(Neptune_) = RotationType(299.36,43.46,253.18)
     RotationRate_I(Neptune_) = RotationType(0.0,0.0,536.3128492)
+
+    ! Moon and selected moons from NAIF PCK pck00011.tpc.
+    RotationJ2000_I(Moon_) = RotationType(269.9949,66.5392,38.3213)
+    RotationRate_I(Moon_)  = RotationType(0.0031,0.0130,13.17635815)
+
+    RotationJ2000_I(Io_) = RotationType(268.05,64.50,200.39)
+    RotationRate_I(Io_)  = RotationType(-0.009,0.003,203.4889538)
+
+    RotationJ2000_I(Europa_) = RotationType(268.08,64.51,36.022)
+    RotationRate_I(Europa_)  = RotationType(-0.009,0.003,101.3747235)
+
+    RotationJ2000_I(Titan_) = RotationType(39.4827,83.4279,186.5855)
+    RotationRate_I(Titan_)  = RotationType(0.0,0.0,22.5769768)
+
+    RotationJ2000_I(Enceladus_) = RotationType(40.66,83.52,6.32)
+    RotationRate_I(Enceladus_)  = RotationType(-0.036,-0.004,262.7318996)
+
+    RotationJ2000_I(Pluto_) = RotationType(132.993,-6.163,302.695)
+    RotationRate_I(Pluto_)  = RotationType(0.0,0.0,56.3625225)
+
+    UseRotationTable_I([Sun_,Mercury_,Venus_,Earth_,Moon_,Mars_,Jupiter_, &
+         Io_,Europa_,Saturn_,Titan_,Enceladus_,Uranus_,Neptune_,Pluto_]) = .true.
 
     ! Calculate the rotation matrix for J2k to Icrf:
     J2kIcrf_DD = rot_matrix_x(-InclJ2k)
