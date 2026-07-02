@@ -209,6 +209,9 @@ contains
     iHourEquinoxPlanet_I(Earth_)        =    7                    ! [hr]
     iMinuteEquinoxPlanet_I(Earth_)      =   35                    ! [mn]
 
+    rOrbitPlanet_I(Earth_)              = cAU                     ! [m]
+    OrbitalPeriodPlanet_I(Earth_)       = 365.24218967*cDay       ! [s]
+    RotationPeriodPlanet_I(Earth_)      = cDay                    ! [s]
     TiltPlanet_I(Earth_)                = 23.5 * cDegToRad        ! [rad]
 
     TypeBFieldPlanet_I(Earth_)          = 'DIPOLE'
@@ -327,7 +330,6 @@ contains
 
     ! Table-driven orbital elements and rates (JPL Table 1, 1800-2050)
     ! a [au], e [-], I/L/long.peri/long.node [deg], rates per century.
-    ! Here we will set UseOrbitalTable_I true for available planets
 
     OrbitJ2000_I(Mercury_) = OrbitType(&
          0.38709927,0.20563593,7.00497902,252.25032350,77.45779628, &
@@ -404,13 +406,12 @@ contains
     OrbitJ2000_I(Enceladus_) = OrbitJ2000_I(Saturn_)
     OrbitRate_I(Enceladus_)  = OrbitRate_I(Saturn_)
 
-    UseOrbitalTable_I([Mercury_,Venus_,Earth_,Moon_,Mars_,Jupiter_,Io_, &
+    UseOrbitalTable_I([Mercury_,Venus_,Moon_,Mars_,Jupiter_,Io_, &
          Europa_,Saturn_,Titan_,Enceladus_,Uranus_,Neptune_,Pluto_]) = .true.
 
     ! Table-driven rotation parameters (IAU WGCCRE 2009, Table 1)
     ! alpha0, delta0 [deg], W [deg]; rates are per T (century) for alpha/delta
     ! and per day for W.
-    ! Here set     UseRotationTable_I to true for available bodies
 
     RotationJ2000_I(Sun_) = RotationType(286.13,63.87,84.176)
     RotationRate_I(Sun_) = RotationType(0.0,0.0,14.1844000)
@@ -458,8 +459,8 @@ contains
     RotationJ2000_I(Pluto_) = RotationType(132.993,-6.163,302.695)
     RotationRate_I(Pluto_)  = RotationType(0.0,0.0,56.3625225)
 
-    UseRotationTable_I([Sun_,Mercury_,Venus_,Earth_,Moon_,Mars_,Jupiter_, &
-         Io_,Europa_,Saturn_,Titan_,Enceladus_,Uranus_,Neptune_,Pluto_]) = .true.
+    UseRotationTable_I([Sun_,Mercury_,Venus_,Moon_,Mars_,Jupiter_,Io_, &
+         Europa_,Saturn_,Titan_,Enceladus_,Uranus_,Neptune_,Pluto_]) = .true.
 
     ! Calculate the rotation matrix for J2k to Icrf:
     J2kIcrf_DD = rot_matrix_x(-InclJ2k)
