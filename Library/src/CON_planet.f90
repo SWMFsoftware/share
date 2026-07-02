@@ -182,13 +182,14 @@ contains
     IonosphereHeight = IonoHeightPlanet_I(iPlanet)
 
     if (UseOrbitalTable_I(iPlanet)) then
-       rOrbitPlanet   = OrbitJ2000_I(iPlanet)%aAu * cAU
-       Excentricity   = OrbitJ2000_I(iPlanet)%Eccentricity
-       RightAscension = OrbitJ2000_I(iPlanet)%LongNodeDeg * cDegToRad
-       Inclination    = OrbitJ2000_I(iPlanet)%InclinationDeg * cDegToRad
-       ArgPeriapsis   = (OrbitJ2000_I(iPlanet)%LongPeriDeg - &
-            OrbitJ2000_I(iPlanet)%LongNodeDeg) * cDegToRad
-       OmegaOrbit     = OrbitRate_I(iPlanet)%MeanLongitudeDeg * cDegToRad / cCentury
+       rOrbitPlanet   = OrbitJ2k_I(iPlanet) % aAu * cAU
+       Excentricity   = OrbitJ2k_I(iPlanet) % Eccentricity
+       RightAscension = OrbitJ2k_I(iPlanet) % LongNodeDeg * cDegToRad
+       Inclination    = OrbitJ2k_I(iPlanet) % InclinationDeg * cDegToRad
+       ArgPeriapsis   = (OrbitJ2k_I(iPlanet) % LongPeriDeg - &
+            OrbitJ2k_I(iPlanet)%LongNodeDeg) * cDegToRad
+       OmegaOrbit     = dOrbitJ2k_I(iPlanet) % MeanLongitudeDeg*cDegToRad &
+            /cCentury
     else
        rOrbitPlanet   = rOrbitPlanet_I(iPlanet)
        Excentricity   = Excentricity_I(iPlanet)
@@ -203,7 +204,7 @@ contains
     end if
 
     if (UseRotationTable_I(iPlanet)) then
-       OmegaPlanet  = RotationRate_I(iPlanet)%WDeg * cDegToRad / cDay
+       OmegaPlanet   = dRotationIcrf_I(iPlanet) % WDeg*cDegToRad/cDay
        OmegaRotation = OmegaPlanet - OmegaOrbit
        if (OmegaPlanet /= 0.0) then
           RotPeriodPlanet = cTwoPi/OmegaPlanet
