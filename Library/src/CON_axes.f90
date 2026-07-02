@@ -144,14 +144,14 @@ module CON_axes
        atan2_check
   use ModTimeConvert, ONLY: time_int_to_real, time_real_to_int, TimeType
   use ModPlanetConst, ONLY: DipoleStrengthPlanet_I, Earth_, iPlanet, &
-       UseRotationTable_I, GeiOffset, &
-       get_rotation_axis_hgi, get_gei_geo_matrix_from_w
+       UseRotationTable_I, GeiOffset
   use CON_planet, ONLY: UseSetMagAxis, UseSetRotAxis, UseAlignedAxes, &
        UseRealMagAxis, UseRealRotAxis, MagAxisThetaGeo, MagAxisPhiGeo, &
        MagAxisTheta, MagAxisPhi, DipoleStrength, RotAxisTheta, RotAxisPhi, &
        UseRotation, TiltRotation, RadiusPlanet, OmegaPlanet, OmegaOrbit, &
        TimeEquinox, AngleEquinox, DoUpdateB0, DtUpdateB0, &
-       NamePlanet, IsInitializedPlanet, is_planet_init
+       NamePlanet, IsInitializedPlanet, is_planet_init, &
+       get_rotation_axis_hgi, get_gei_geo_matrix_from_w
   use CON_geopack, ONLY: &
        geopack_recalc, geopack_sun, &
        RotAxisPhiGeopack, RotAxisThetaGeopack, &
