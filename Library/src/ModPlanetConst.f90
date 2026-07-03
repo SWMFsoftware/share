@@ -6,6 +6,8 @@ module ModPlanetConst
   use ModNumConst, ONLY: cDegToRad, cRadToDeg, cPi, cTwoPi, cHalfPi, cTiny
   use ModConst, ONLY: cAU, cHour => cSecondPerHour, cDay => cSecondPerDay, &
        cCentury => cSecondPerCentury
+  use ModCoordTransform, ONLY: rot_matrix_x, rot_matrix_z, show_rot_matrix, &
+       cross_product
   use ModTimeConvert, ONLY: TimeType, time_int_to_real
   use ModKind
 
@@ -29,8 +31,16 @@ module ModPlanetConst
 
   real, parameter:: DayPerCentury  = 36525.0
 
-  ! Conversion matrix between HGI adn J2000 coordinates (calculated once)
+  ! Angle between ICRF midnight meridian and equinox direction of planet
+  real :: GeiOffset = -10.0
+  ! Rotation angle between J2K and Icrf is Earth inclination at J2000 epoch
+  real, parameter:: InclJ2k = 23.4392911*cDegToRad
+  ! Conversion matrix from equatorial ICRF to ecliptic J2000 = rot_x(-InclJ2k)
+  real:: J2kIcrf_DD(3,3)
+  ! Conversion matrix from ecliptic J2000 to HGI coordinates
   real:: HgiJ2k_DD(3,3)
+  ! Conversion matrix from equatorial ICRF to HGI coordinates
+  real:: HgiIcrf_DD(3,3)
 
   type OrbitType
      real :: aAu
@@ -42,8 +52,8 @@ module ModPlanetConst
   end type OrbitType
 
   type RotationType
-     real :: Alpha0Deg
-     real :: Delta0Deg
+     real :: AlphaDeg
+     real :: DeltaDeg
      real :: WDeg
   end type RotationType
 
@@ -77,14 +87,16 @@ module ModPlanetConst
 
   character(len=lNamePlanet):: NamePlanet_I(0:MaxPlanet+1)
 
-  integer:: Planet_
+  ! Index of the selected planet
+  integer:: iPlanet = -1
+  integer:: Planet_ = -1 ! For compatibility with some other code
 
-  logical, dimension(0:MaxPlanet+1) :: UseOrbitalTable_I, UseRotationTable_I
+  logical, dimension(0:MaxPlanet+1):: UseOrbitalTable_I, UseRotationTable_I
 
-  type(OrbitType), dimension(0:MaxPlanet+1) :: &
-       OrbitJ2000_I, OrbitRate_I
-  type(RotationType), dimension(0:MaxPlanet+1) :: &
-       RotationJ2000_I, RotationRate_I
+  type(OrbitType), dimension(0:MaxPlanet+1):: &
+       OrbitJ2k_I, dOrbitJ2k_I
+  type(RotationType), dimension(0:MaxPlanet+1):: &
+       RotationIcrf_I, dRotationIcrf_I
 
   ! Below are defining constants for all astronomical bodies.  They are
   ! grouped using a system similar to JPL's naif/spice toolkit although
@@ -132,56 +144,50 @@ contains
   !============================================================================
   subroutine init_planet_const
 
-    use ModCoordTransform, ONLY: rot_matrix_x, rot_matrix_z
     use ModUtilities, ONLY: upper_case
 
     integer:: i
     !--------------------------------------------------------------------------
     ! Initialize all values - below set only the non-default values
-    NamePlanet_I                     = ''
+    NamePlanet_I           = ''
 
-    rPlanet_I                        = 0.0                        ! [m]
-    MassPlanet_I                     = 0.0                        ! [kg]
-    rOrbitPlanet_I                   = 0.0                        ! [m]
-    OrbitalPeriodPlanet_I            = 0.0                        ! [s]
-    RotationPeriodPlanet_I           = 0.0                        ! [s]
-    Excentricity_I                   = 0.0
-    RightAscension_I                 = 0.0                        ! [rad]
-    Inclination_I                    = 0.0                        ! [rad]
-    ArgPeriapsis_I                   = 0.0                        ! [rad]
-    AngleEquinox_I                   = 0.0                        ! [rad]
+    rPlanet_I              = 0.0                        ! [m]
+    MassPlanet_I           = 0.0                        ! [kg]
+    rOrbitPlanet_I         = 0.0                        ! [m]
+    OrbitalPeriodPlanet_I  = 0.0                        ! [s]
+    RotationPeriodPlanet_I = 0.0                        ! [s]
+    Excentricity_I         = 0.0
+    RightAscension_I       = 0.0                        ! [rad]
+    Inclination_I          = 0.0                        ! [rad]
+    ArgPeriapsis_I         = 0.0                        ! [rad]
+    AngleEquinox_I         = 0.0                        ! [rad]
 
-    iYearEquinoxPlanet_I             =2000                        ! [yr]
-    iMonthEquinoxPlanet_I            =   1                        ! [mo]
-    iDayEquinoxPlanet_I              =   1                        ! [dy]
-    iHourEquinoxPlanet_I             =   0                        ! [hr]
-    iMinuteEquinoxPlanet_I           =   0                        ! [mn]
-    TiltPlanet_I                     = 0.0                        ! [rad]
+    iYearEquinoxPlanet_I   =2000                        ! [yr]
+    iMonthEquinoxPlanet_I  =   1                        ! [mo]
+    iDayEquinoxPlanet_I    =   1                        ! [dy]
+    iHourEquinoxPlanet_I   =   0                        ! [hr]
+    iMinuteEquinoxPlanet_I =   0                        ! [mn]
+    TiltPlanet_I           = 0.0                        ! [rad]
 
-    TypeBFieldPlanet_I               = 'NONE'
-    DipoleStrengthPlanet_I           = 0.0                        ! [T]
-    bAxisThetaPlanet_I               = 0.0                        ! [rad]
-    bAxisPhiPlanet_I                 = 0.0                        ! [rad]
+    TypeBFieldPlanet_I     = 'NONE'
+    DipoleStrengthPlanet_I = 0.0                        ! [T]
+    bAxisThetaPlanet_I     = 0.0                        ! [rad]
+    bAxisPhiPlanet_I       = 0.0                        ! [rad]
 
-    UseOrbitalTable_I                = .false.
-    UseRotationTable_I               = .false.
-    OrbitJ2000_I                     = OrbitType(0.0,0.0,0.0,0.0,0.0,0.0)
-    OrbitRate_I                      = OrbitType(0.0,0.0,0.0,0.0,0.0,0.0)
-    RotationJ2000_I                  = RotationType(0.0,0.0,0.0)
-    RotationRate_I                   = RotationType(0.0,0.0,0.0)
+    UseOrbitalTable_I      = .false.
+    UseRotationTable_I     = .false.
+    OrbitJ2k_I             = OrbitType(0.0,0.0,0.0,0.0,0.0,0.0)
+    dOrbitJ2k_I            = OrbitType(0.0,0.0,0.0,0.0,0.0,0.0)
+    RotationIcrf_I         = RotationType(0.0,0.0,0.0)
+    dRotationIcrf_I        = RotationType(0.0,0.0,0.0)
 
-    IonoHeightPlanet_I               = 0.0                        ! [m]
+    IonoHeightPlanet_I     = 0.0                        ! [m]
 
     ! Mercury (10)
     NamePlanet_I(Mercury_)              = 'MERCURY'
 
     rPlanet_I(Mercury_)                 = 2439.0e+3               ! [m]
     MassPlanet_I(Mercury_)              = 3.3022e+23              ! [kg]
-
-    rOrbitPlanet_I(Mercury_)            = 57909101.0e+3           ! [m]
-    OrbitalPeriodPlanet_I(Mercury_)     = 87.969*cDay             ! [s]
-    RotationPeriodPlanet_I(Mercury_)    = 175.942*cDay            ! [s]
-
     TypeBFieldPlanet_I(Mercury_)        = 'DIPOLE'
     DipoleStrengthPlanet_I(Mercury_)    = -200.0e-9               ! [T]
 
@@ -191,25 +197,11 @@ contains
     rPlanet_I(Venus_)                   = 6052.0e+3               ! [m]
     MassPlanet_I(Venus_)                = 4.865e+24               ! [kg]
 
-    rOrbitPlanet_I(Venus_)              = 108208930.0e+3          ! [m]
-    OrbitalPeriodPlanet_I(Venus_)       = 224.7   * cDay          ! [s]
-    RotationPeriodPlanet_I(Venus_)      = 116.750 * cDay          ! [s]
-
     ! Earth (30)
     NamePlanet_I(Earth_)                = 'EARTH'
 
     rPlanet_I(Earth_)                   = 6378.0e+3               ! [m]
     MassPlanet_I(Earth_)                = 5.976e+24               ! [kg]
-    rOrbitPlanet_I(Earth_)              = cAU                     ! [m]
-    OrbitalPeriodPlanet_I(Earth_)       = 365.24218967 * cDay     ! [s]
-    RotationPeriodPlanet_I(Earth_)      = cDay                    ! [s]
-    Excentricity_I(Earth_)              = 0.016
-    ! As in geopack
-    RightAscension_I(Earth_)            = 75.77 * cDegToRad       ! [rad]
-    ! As in geopack
-    Inclination_I(Earth_)               = 7.25 * cDegToRad        ! [rad]
-    ! https://data.giss.nasa.gov/cgi-bin/ar5/srorbpar.cgi for year 2023
-    ArgPeriapsis_I(Earth_)              = 283.29 * cDegToRad      ! [rad]
 
     iYearEquinoxPlanet_I(Earth_)        = 2000                    ! [yr]
     iMonthEquinoxPlanet_I(Earth_)       =    3                    ! [mo]
@@ -217,6 +209,9 @@ contains
     iHourEquinoxPlanet_I(Earth_)        =    7                    ! [hr]
     iMinuteEquinoxPlanet_I(Earth_)      =   35                    ! [mn]
 
+    rOrbitPlanet_I(Earth_)              = cAU                     ! [m]
+    OrbitalPeriodPlanet_I(Earth_)       = 365.24218967*cDay       ! [s]
+    RotationPeriodPlanet_I(Earth_)      = cDay                    ! [s]
     TiltPlanet_I(Earth_)                = 23.5 * cDegToRad        ! [rad]
 
     TypeBFieldPlanet_I(Earth_)          = 'DIPOLE'
@@ -232,21 +227,6 @@ contains
     rPlanet_I(Moon_)                    = 1737.0e+3               ! [m]
     MassPlanet_I(Moon_)                 = 7.3477e+22              ! [kg]
 
-    ! Same values as for Earth (relative to the Sun)
-    rOrbitPlanet_I(Moon_)              = cAU                     ! [m]
-    OrbitalPeriodPlanet_I(Moon_)       = 365.24218967 * cDay     ! [s]
-    RotationPeriodPlanet_I(Moon_)      = cDay                    ! [s]
-    Excentricity_I(Moon_)              = 0.016
-    RightAscension_I(Moon_)            = 75.77 * cDegToRad       ! [rad]
-    Inclination_I(Moon_)               = 7.25 * cDegToRad        ! [rad]
-    ArgPeriapsis_I(Moon_)              = 283.29 * cDegToRad      ! [rad]
-
-    iYearEquinoxPlanet_I(Moon_)        = 2000                    ! [yr]
-    iMonthEquinoxPlanet_I(Moon_)       =    3                    ! [mo]
-    iDayEquinoxPlanet_I(Moon_)         =   20                    ! [dy]
-    iHourEquinoxPlanet_I(Moon_)        =    7                    ! [hr]
-    iMinuteEquinoxPlanet_I(Moon_)      =   35                    ! [mn]
-
     ! Mars (40)
     ! See https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html
     !     https://www.princeton.edu/~willman/planetary_systems/Sol/Mars
@@ -255,36 +235,11 @@ contains
     rPlanet_I(Mars_)                    = 3396.0e+3              ! [m]
     MassPlanet_I(Mars_)                 = 0.6436e+24             ! [kg]
 
-    ! Semi-major axis
-    rOrbitPlanet_I(Mars_)               = 227939200.0e3          ! [m]
-    OrbitalPeriodPlanet_I(Mars_)        = 686.98 * cDay          ! [s]
-    RotationPeriodPlanet_I(Mars_)       = 1.0275 * cDay          ! [s]
-
-    Excentricity_I(Mars_)              = 0.0934
-    RightAscension_I(Mars_)            = 49.57854 * cDegToRad    ! [rad]
-    Inclination_I(Mars_)               = 1.85 * cDegToRad        ! [rad]
-    ArgPeriapsis_I(Mars_)              = 286.5 * cDegToRad       ! [rad]
-    ! AngleEquinox was obtained by Gemini. Needs to be checked.
-    AngleEquinox_I(Mars_)              = 238.462 * cDegToRad     ! [rad]
-
-    ! Vernal Equinox at midnight (Ls = 0.0)
-    iYearEquinoxPlanet_I(Mars_)        = 1998                    ! [yr]
-    iMonthEquinoxPlanet_I(Mars_)       =    7                    ! [mo]
-    iDayEquinoxPlanet_I(Mars_)         =   14                    ! [dy]
-    iHourEquinoxPlanet_I(Mars_)        =   13                    ! [hr]
-    iMinuteEquinoxPlanet_I(Mars_)      =   40                    ! [mn]
-
-    TiltPlanet_I(Mars_)                = 25.19 * cDegToRad       ! [rad]
-
     ! Jupiter (50)
     NamePlanet_I(Jupiter_)              = 'JUPITER'
 
     rPlanet_I(Jupiter_)                 = 71492.0e+3             ! [m]
     MassPlanet_I(Jupiter_)              = 1.8980e+27             ! [kg]
-
-    rOrbitPlanet_I(Jupiter_)            = 778570000.0e3          ! [m]
-    OrbitalPeriodPlanet_I(Jupiter_)     = 4330.6 * cDay          ! [s]
-    RotationPeriodPlanet_I(Jupiter_)    = 9.9259 * cHour         ! [s]
 
     TypeBFieldPlanet_I(Jupiter_)        = 'DIPOLE'
     DipoleStrengthPlanet_I(Jupiter_)    = 428000.0e-9            ! [T]
@@ -298,10 +253,6 @@ contains
     rPlanet_I(Saturn_)                  = 60268.0e+3             ! [m]
     MassPlanet_I(Saturn_)               = 0.5685e+27             ! [kg]
 
-    rOrbitPlanet_I(Saturn_)             = 1433529000.0e3         ! [m]
-    OrbitalPeriodPlanet_I(Saturn_)      = 10746.94 * cDay        ! [s]
-    RotationPeriodPlanet_I(Saturn_)     = 10.656 * cHour         ! [s]
-
     TypeBFieldPlanet_I(Saturn_)         = 'DIPOLE'
     DipoleStrengthPlanet_I(Saturn_)     = 20800.0e-9             ! [T]
 
@@ -311,20 +262,6 @@ contains
     NamePlanet_I(Uranus_)                = 'URANUS'
     rPlanet_I(Uranus_)                   = 25559.0e+3            ! [m]
     MassPlanet_I(Uranus_)                = 8.681e+25             ! [kg]
-    rOrbitPlanet_I(Uranus_)              = 2872463000.0e3        ! [m]
-    OrbitalPeriodPlanet_I(Uranus_)       = 30688.5 * cDay        ! [s]
-    RotationPeriodPlanet_I(Uranus_)      = 17.2 * cHour          ! [s]
-    ! Retrograde"ness" should be enforced due to the >90deg obliquity
-    ! instead of a negative rotation period.
-    ! Following lines assume Spring equinox.
-    iYearEquinoxPlanet_I(Uranus_)        = 1966                  ! [yr]
-    iMonthEquinoxPlanet_I(Uranus_)       =    2                  ! [mo]
-    iDayEquinoxPlanet_I(Uranus_)         =    3                  ! [dy]
-    iHourEquinoxPlanet_I(Uranus_)        =    0                  ! [hr]
-    iMinuteEquinoxPlanet_I(Uranus_)      =    0                  ! [mn]
-
-    TiltPlanet_I(Uranus_)                = 97.9 * cDegToRad      ! [rad]
-
     TypeBFieldPlanet_I(Uranus_)          = 'DIPOLE'
     DipoleStrengthPlanet_I(Uranus_)      = 22800.0e-9            ! [T]
     bAxisThetaPlanet_I(Uranus_)          = 58.6 * cDegToRad      ! [rad]
@@ -335,11 +272,14 @@ contains
     ! Neptune (80)
 
     ! Pluto (90)
+    NamePlanet_I(Pluto_)               = 'PLUTO'
+    rPlanet_I(Pluto_)                  = 1188.3e+3               ! [m]
+    MassPlanet_I(Pluto_)               = 1.303e22                ! [kg]
 
     ! Io (51)
     NamePlanet_I(Io_)                   = 'IO'
-
     rPlanet_I(Io_)                      = 1821.0e+3              ! [m]
+    MassPlanet_I(Io_)                   = 8.93e22                ! [kg]
 
     ! Europa (52)
     NamePlanet_I(Europa_)               = 'EUROPA'
@@ -348,14 +288,6 @@ contains
     MassPlanet_I(Europa_)               = 4.80e22                ! [kg]
     OrbitalPeriodPlanet_I(Europa_)      = 3.551 * cDay           ! [s]
     RotationPeriodPlanet_I(Europa_)     = 3.551 * cDay           ! [s]
-
-    iYearEquinoxPlanet_I(Europa_)       = 2000                   ! [yr]
-    iMonthEquinoxPlanet_I(Europa_)      =    1                   ! [mo]
-    iDayEquinoxPlanet_I(Europa_)        =    1                   ! [dy]
-    iHourEquinoxPlanet_I(Europa_)       =    0                   ! [hr]
-    iMinuteEquinoxPlanet_I(Europa_)     =    0                   ! [mn]
-
-    TiltPlanet_I(Europa_)               =  0.0 * cDegToRad       ! [rad]
 
     TypeBFieldPlanet_I(Europa_)         = 'DIPOLE'
     DipoleStrengthPlanet_I(Europa_)     =    100.0e-9            ! [T]
@@ -398,111 +330,159 @@ contains
 
     ! Table-driven orbital elements and rates (JPL Table 1, 1800-2050)
     ! a [au], e [-], I/L/long.peri/long.node [deg], rates per century.
-    ! Here we will set UseOrbitalTable_I true for available planets
 
-    OrbitJ2000_I(Mercury_) = OrbitType(&
+    OrbitJ2k_I(Mercury_) = OrbitType(&
          0.38709927,0.20563593,7.00497902,252.25032350,77.45779628, &
          48.33076593)
-    OrbitRate_I(Mercury_) = OrbitType(&
+    dOrbitJ2k_I(Mercury_) = OrbitType(&
          0.00000037,0.00001906,-0.00594749,149472.67411175,0.16047689,&
          -0.12534081)
 
-    OrbitJ2000_I(Venus_) = OrbitType(&
+    OrbitJ2k_I(Venus_) = OrbitType(&
          0.72333566,0.00677672,3.39467605,181.97909950,131.60246718, &
          76.67984255)
-    OrbitRate_I(Venus_) = OrbitType(&
+    dOrbitJ2k_I(Venus_) = OrbitType(&
          0.00000390,-0.00004107,-0.00078890,58517.81538729,0.00268329, &
          -0.27769418)
 
     ! Use EMB elements for Earth as commonly done in JPL approximation.
-    OrbitJ2000_I(Earth_) = OrbitType(&
+    OrbitJ2k_I(Earth_) = OrbitType(&
          1.00000261,0.01671123,-0.00001531,100.46457166,102.93768193,0.0)
-    OrbitRate_I(Earth_) = OrbitType(&
+    dOrbitJ2k_I(Earth_) = OrbitType(&
          0.00000562,-0.00004392,-0.01294668,35999.37244981,0.32327364,0.0)
 
-    OrbitJ2000_I(Mars_) = OrbitType(&
+    OrbitJ2k_I(Mars_) = OrbitType(&
          1.52371034,0.09339410,1.84969142,-4.55343205,-23.94362959, &
          49.55953891)
-    OrbitRate_I(Mars_) = OrbitType(&
+    dOrbitJ2k_I(Mars_) = OrbitType(&
          0.00001847,0.00007882,-0.00813131,19140.30268499,0.44441088, &
          -0.29257343)
 
-    OrbitJ2000_I(Jupiter_) = OrbitType(&
+    OrbitJ2k_I(Jupiter_) = OrbitType(&
          5.20288700,0.04838624,1.30439695,34.39644051,14.72847983, &
          100.47390909)
-    OrbitRate_I(Jupiter_) = OrbitType(&
+    dOrbitJ2k_I(Jupiter_) = OrbitType(&
          -0.00011607,-0.00013253,-0.00183714,3034.74612775,0.21252668, &
          0.20469106)
 
-    OrbitJ2000_I(Saturn_) = OrbitType(&
+    OrbitJ2k_I(Saturn_) = OrbitType(&
          9.53667594,0.05386179,2.48599187,49.95424423,92.59887831, &
          113.66242448)
-    OrbitRate_I(Saturn_) = OrbitType(&
+    dOrbitJ2k_I(Saturn_) = OrbitType(&
          -0.00125060,-0.00050991,0.00193609,1222.49362201,-0.41897216, &
          -0.28867794)
 
-    OrbitJ2000_I(Uranus_) = OrbitType(&
+    OrbitJ2k_I(Uranus_) = OrbitType(&
          19.18916464,0.04725744,0.77263783,313.23810451,170.95427630, &
          74.01692503)
-    OrbitRate_I(Uranus_) = OrbitType(&
+    dOrbitJ2k_I(Uranus_) = OrbitType(&
          -0.00196176,-0.00004397,-0.00242939,428.48202785,0.40805281, &
          0.04240589)
 
-    OrbitJ2000_I(Neptune_) = OrbitType(&
+    OrbitJ2k_I(Neptune_) = OrbitType(&
          30.06992276,0.00859048,1.77004347,-55.12002969,44.96476227, &
          131.78422574)
-    OrbitRate_I(Neptune_) = OrbitType(&
+    dOrbitJ2k_I(Neptune_) = OrbitType(&
          0.00026291,0.00005105,0.00035372,218.45945325,-0.32241464, &
          -0.00508664)
+
+    ! Pluto values in J2000 ecliptic coordinates (osculating-like set).
+    ! Rates other than mean longitude are set to zero in this approximation.
+    OrbitJ2k_I(Pluto_) = OrbitType(&
+         39.48211675,0.24882730,17.14001206,238.92903833,224.06891629, &
+         110.30393684)
+    dOrbitJ2k_I(Pluto_) = OrbitType(&
+         0.0,0.0,0.0,145.1964,0.0,0.0)
+
+    ! Requested simplification: moons use parent-planet heliocentric orbit.
+    OrbitJ2k_I(Moon_)       = OrbitJ2k_I(Earth_)
+    dOrbitJ2k_I(Moon_)      = dOrbitJ2k_I(Earth_)
+    OrbitJ2k_I(Io_)         = OrbitJ2k_I(Jupiter_)
+    dOrbitJ2k_I(Io_)        = dOrbitJ2k_I(Jupiter_)
+    OrbitJ2k_I(Europa_)     = OrbitJ2k_I(Jupiter_)
+    dOrbitJ2k_I(Europa_)    = dOrbitJ2k_I(Jupiter_)
+    OrbitJ2k_I(Titan_)      = OrbitJ2k_I(Saturn_)
+    dOrbitJ2k_I(Titan_)     = dOrbitJ2k_I(Saturn_)
+    OrbitJ2k_I(Enceladus_)  = OrbitJ2k_I(Saturn_)
+    dOrbitJ2k_I(Enceladus_) = dOrbitJ2k_I(Saturn_)
+
+    UseOrbitalTable_I([Mercury_,Venus_,Moon_,Mars_,Jupiter_,Io_, &
+         Europa_,Saturn_,Titan_,Enceladus_,Uranus_,Neptune_,Pluto_]) = .true.
 
     ! Table-driven rotation parameters (IAU WGCCRE 2009, Table 1)
     ! alpha0, delta0 [deg], W [deg]; rates are per T (century) for alpha/delta
     ! and per day for W.
-    ! Here set     UseRotationTable_I to true for available bodies
 
-    RotationJ2000_I(Sun_) = RotationType(286.13,63.87,84.176)
-    RotationRate_I(Sun_) = RotationType(0.0,0.0,14.1844000)
+    RotationIcrf_I(Sun_)  = RotationType(286.13,63.87,84.176)
+    dRotationIcrf_I(Sun_) = RotationType(0.0,0.0,14.1844000)
 
-    RotationJ2000_I(Mercury_) = RotationType(281.0097,61.4143,329.5469)
-    RotationRate_I(Mercury_) = RotationType(-0.0328,-0.0049,6.1385025)
+    RotationIcrf_I(Mercury_)  = RotationType(281.0097,61.4143,329.5469)
+    dRotationIcrf_I(Mercury_) = RotationType(-0.0328,-0.0049,6.1385025)
 
-    RotationJ2000_I(Venus_) = RotationType(272.76,67.16,160.20)
-    RotationRate_I(Venus_) = RotationType(0.0,0.0,-1.4813688)
+    RotationIcrf_I(Venus_)  = RotationType(272.76,67.16,160.20)
+    dRotationIcrf_I(Venus_) = RotationType(0.0,0.0,-1.4813688)
 
-    RotationJ2000_I(Earth_) = RotationType(0.00,90.00,190.147)
-    RotationRate_I(Earth_) = RotationType(-0.641,-0.557,360.9856235)
+    RotationIcrf_I(Earth_)  = RotationType(0.00,90.00,190.147)
+    dRotationIcrf_I(Earth_) = RotationType(-0.641,-0.557,360.9856235)
 
-    RotationJ2000_I(Mars_) = RotationType(317.68143,52.88650,176.630)
-    RotationRate_I(Mars_) = RotationType(-0.1061,-0.0609,350.89198226)
+    RotationIcrf_I(Mars_)  = RotationType(317.68143,52.88650,176.630)
+    dRotationIcrf_I(Mars_) = RotationType(-0.1061,-0.0609,350.89198226)
 
-    RotationJ2000_I(Jupiter_) = RotationType(268.056595,64.495303,284.95)
-    RotationRate_I(Jupiter_) = RotationType(-0.006499,0.002413,870.5360000)
+    RotationIcrf_I(Jupiter_)  = RotationType(268.056595,64.495303,284.95)
+    dRotationIcrf_I(Jupiter_) = RotationType(-0.006499,0.002413,870.5360000)
 
-    RotationJ2000_I(Saturn_) = RotationType(40.589,83.537,38.90)
-    RotationRate_I(Saturn_) = RotationType(-0.036,-0.004,810.7939024)
+    RotationIcrf_I(Saturn_)  = RotationType(40.589,83.537,38.90)
+    dRotationIcrf_I(Saturn_) = RotationType(-0.036,-0.004,810.7939024)
 
-    RotationJ2000_I(Uranus_) = RotationType(257.311,-15.175,203.81)
-    RotationRate_I(Uranus_) = RotationType(0.0,0.0,-501.1600928)
+    RotationIcrf_I(Uranus_)  = RotationType(257.311,-15.175,203.81)
+    dRotationIcrf_I(Uranus_) = RotationType(0.0,0.0,-501.1600928)
 
-    RotationJ2000_I(Neptune_) = RotationType(299.36,43.46,253.18)
-    RotationRate_I(Neptune_) = RotationType(0.0,0.0,536.3128492)
+    RotationIcrf_I(Neptune_)  = RotationType(299.36,43.46,253.18)
+    dRotationIcrf_I(Neptune_) = RotationType(0.0,0.0,536.3128492)
 
-    ! Calculate the rotation matrix from J2000 to HGI system
+    ! Moon and selected moons from NAIF PCK pck00011.tpc.
+    RotationIcrf_I(Moon_)  = RotationType(269.9949,66.5392,38.3213)
+    dRotationIcrf_I(Moon_) = RotationType(0.0031,0.0130,13.17635815)
+
+    RotationIcrf_I(Io_)  = RotationType(268.05,64.50,200.39)
+    dRotationIcrf_I(Io_) = RotationType(-0.009,0.003,203.4889538)
+
+    RotationIcrf_I(Europa_)  = RotationType(268.08,64.51,36.022)
+    dRotationIcrf_I(Europa_) = RotationType(-0.009,0.003,101.3747235)
+
+    RotationIcrf_I(Titan_)  = RotationType(39.4827,83.4279,186.5855)
+    dRotationIcrf_I(Titan_) = RotationType(0.0,0.0,22.5769768)
+
+    RotationIcrf_I(Enceladus_)  = RotationType(40.66,83.52,6.32)
+    dRotationIcrf_I(Enceladus_) = RotationType(-0.036,-0.004,262.7318996)
+
+    RotationIcrf_I(Pluto_)  = RotationType(132.993,-6.163,302.695)
+    dRotationIcrf_I(Pluto_) = RotationType(0.0,0.0,56.3625225)
+
+    UseRotationTable_I([Sun_,Mercury_,Venus_,Moon_,Mars_,Jupiter_,Io_, &
+         Europa_,Saturn_,Titan_,Enceladus_,Uranus_,Neptune_,Pluto_]) = .true.
+
+    ! Calculate the rotation matrix for J2k to Icrf:
+    J2kIcrf_DD = rot_matrix_x(-InclJ2k)
+
+    ! Calculate the rotation matrix from ecliptic J2000 to HGI system
     HgiJ2k_DD = matmul(rot_matrix_x(-7.25*cDegToRad), & ! inclination
-         matmul(rot_matrix_z(-75.77*cDegToRad),       & ! ascending node
-         rot_matrix_x(-23.4392911*cDegToRad))) ! Obliquity (Earth tilt at J2K)
+         rot_matrix_z(-75.77*cDegToRad)) ! ascending node
+
+    ! Equatorial ICRF/J2000: rotation by obliquity (Earth tilt at J2000 epoch)
+    HgiIcrf_DD = matmul(HgiJ2k_DD, J2kIcrf_DD)
 
     ! No Planet (0)
     !     - No Planet and no body - defaults for everything, just set name.
-    NamePlanet_I(NoPlanet_)             = 'NONE'
+    NamePlanet_I(NoPlanet_) = 'NONE'
 
     ! New Planet (MaxPlanet+1)
     !     - A planet whose parameters are not defined in the database above.
     !       A few values are set to clearly meaningless values to prevent
     !       a users from using the values incorrectly.
-    NamePlanet_I(NewPlanet_)            = 'NEW/UNKNOWN'
-    rPlanet_I(NewPlanet_)               = -1.0
-    MassPlanet_I(NewPlanet_)            = -1.0
+    NamePlanet_I(NewPlanet_) = 'NEW/UNKNOWN'
+    rPlanet_I(NewPlanet_)    = -1.0
+    MassPlanet_I(NewPlanet_) = -1.0
 
     ! make all the planet names upper case
     do i = 0, MaxPlanet+1
@@ -511,9 +491,8 @@ contains
 
   end subroutine init_planet_const
   !============================================================================
-  subroutine get_planet_orbital_elements(iPlanet, Time, Elem)
+  subroutine get_planet_orbital_elements(Time, Elem)
 
-    integer, intent(in) :: iPlanet
     real(Real8_),    intent(in) :: Time
     type(OrbitType), intent(out):: Elem
 
@@ -521,18 +500,23 @@ contains
     !--------------------------------------------------------------------------
     T = (Time - TimeJ2k % Time)/cCentury
 
-    Elem%aAu = OrbitJ2000_I(iPlanet)%aAu + &
-         T*OrbitRate_I(iPlanet)%aAu
-    Elem%Eccentricity = OrbitJ2000_I(iPlanet)%Eccentricity + &
-         T*OrbitRate_I(iPlanet)%Eccentricity
-    Elem%InclinationDeg = OrbitJ2000_I(iPlanet)%InclinationDeg + &
-         T*OrbitRate_I(iPlanet)%InclinationDeg
-    Elem%MeanLongitudeDeg = OrbitJ2000_I(iPlanet)%MeanLongitudeDeg &
-         + T*OrbitRate_I(iPlanet)%MeanLongitudeDeg
-    Elem%LongPeriDeg = OrbitJ2000_I(iPlanet)%LongPeriDeg + &
-         T*OrbitRate_I(iPlanet)%LongPeriDeg
-    Elem%LongNodeDeg = OrbitJ2000_I(iPlanet)%LongNodeDeg + &
-         T*OrbitRate_I(iPlanet)%LongNodeDeg
+    Elem%aAu = OrbitJ2k_I(iPlanet)%aAu + &
+         T*dOrbitJ2k_I(iPlanet)%aAu
+    Elem%Eccentricity = OrbitJ2k_I(iPlanet)%Eccentricity + &
+         T*dOrbitJ2k_I(iPlanet)%Eccentricity
+    Elem%InclinationDeg = OrbitJ2k_I(iPlanet)%InclinationDeg + &
+         T*dOrbitJ2k_I(iPlanet)%InclinationDeg
+    Elem%MeanLongitudeDeg = OrbitJ2k_I(iPlanet)%MeanLongitudeDeg &
+         + T*dOrbitJ2k_I(iPlanet)%MeanLongitudeDeg
+    Elem%LongPeriDeg = OrbitJ2k_I(iPlanet)%LongPeriDeg + &
+         T*dOrbitJ2k_I(iPlanet)%LongPeriDeg
+    Elem%LongNodeDeg = OrbitJ2k_I(iPlanet)%LongNodeDeg + &
+         T*dOrbitJ2k_I(iPlanet)%LongNodeDeg
+
+    ! write(*,*)'!!! MeanLon0, Rate, Period [yr]=', &
+    !     OrbitJ2k_I(iPlanet)%MeanLongitudeDeg, &
+    !     dOrbitJ2k_I(iPlanet)%MeanLongitudeDeg, &
+    !     36000/dOrbitJ2k_I(iPlanet)%MeanLongitudeDeg
 
   end subroutine get_planet_orbital_elements
   !============================================================================
@@ -603,9 +587,8 @@ contains
 
   end subroutine transform_orbit_j2k_hgi
   !============================================================================
-  subroutine get_planet_rotation_elements(iPlanet, Time, Rot)
+  subroutine get_planet_rotation_elements(Time, Rot)
 
-    integer,            intent(in) :: iPlanet
     real(Real8_),       intent(in) :: Time
     type(RotationType), intent(out):: Rot
 
@@ -614,135 +597,27 @@ contains
     T = (Time - TimeJ2k % Time)/cCentury
     d = (Time - TimeJ2k % Time)/cDay
 
-    Rot%Alpha0Deg = RotationJ2000_I(iPlanet)%Alpha0Deg &
-         + T*RotationRate_I(iPlanet)%Alpha0Deg
-    Rot%Delta0Deg = RotationJ2000_I(iPlanet)%Delta0Deg + &
-         T*RotationRate_I(iPlanet)%Delta0Deg
-    Rot%WDeg      = RotationJ2000_I(iPlanet)%WDeg &
-         + d*RotationRate_I(iPlanet)%WDeg
+    Rot%AlphaDeg = RotationIcrf_I(iPlanet)%AlphaDeg &
+         + T*dRotationIcrf_I(iPlanet)%AlphaDeg
+    Rot%DeltaDeg = RotationIcrf_I(iPlanet)%DeltaDeg + &
+         T*dRotationIcrf_I(iPlanet)%DeltaDeg
+    Rot%WDeg     = RotationIcrf_I(iPlanet)%WDeg &
+         + d*dRotationIcrf_I(iPlanet)%WDeg
 
     select case(iPlanet)
     case(Mercury_)
        call add_mercury_rotation_terms(d, Rot%WDeg)
     case(Jupiter_)
-       call add_jupiter_rotation_terms(T, Rot%Alpha0Deg, Rot%Delta0Deg)
+       call add_jupiter_rotation_terms(T, Rot%AlphaDeg, Rot%DeltaDeg)
     case(Neptune_)
        Angle = (357.85 + 52.316*T)*cDegToRad
-       Rot%Alpha0Deg = RotationJ2000_I(Neptune_)%Alpha0Deg + 0.70*sin(Angle)
-       Rot%Delta0Deg = RotationJ2000_I(Neptune_)%Delta0Deg - 0.51*cos(Angle)
-       Rot%WDeg      = RotationJ2000_I(Neptune_)%WDeg &
-            + d*RotationRate_I(Neptune_)%WDeg - 0.48*sin(Angle)
+       Rot%AlphaDeg = RotationIcrf_I(Neptune_)%AlphaDeg + 0.70*sin(Angle)
+       Rot%DeltaDeg = RotationIcrf_I(Neptune_)%DeltaDeg - 0.51*cos(Angle)
+       Rot%WDeg      = RotationIcrf_I(Neptune_)%WDeg &
+            + d*dRotationIcrf_I(Neptune_)%WDeg - 0.48*sin(Angle)
     end select
 
   end subroutine get_planet_rotation_elements
-  !============================================================================
-  subroutine orbit_state_hgi_from_table(iPlanet, Time, XyzHgi_D, vHgi_D)
-
-    integer,      intent(in) :: iPlanet
-    real(Real8_), intent(in):: Time
-    real,        intent(out):: XyzHgi_D(3)
-    real, optional, intent(out) :: vHgi_D(3)
-
-    type(OrbitType) :: Elem
-    real :: a, Ecc, Inc, OmegaNode, LongPeri, Lon
-    real :: EAnom, dEAnom, CosEAnom, SinEAnom, MeanMotion, dEdt
-    real :: b
-    real :: xOrb, yOrb, VxOrb, VyOrb
-    real :: CosOm, SinOm, CosI, SinI, CosW, SinW
-    real :: P_D(3), Q_D(3)
-    integer :: iIter
-    !--------------------------------------------------------------------------
-    call get_planet_orbital_elements(iPlanet, Time, Elem)
-
-    a         = Elem%aAu*cAU
-    Ecc       = max(Elem%Eccentricity, 0.0)
-    Inc       = Elem%InclinationDeg*cDegToRad
-    OmegaNode = Elem%LongNodeDeg*cDegToRad
-    LongPeri  = Elem%LongPeriDeg*cDegToRad
-    Lon = modulo((Elem%MeanLongitudeDeg - Elem%LongPeriDeg)*cDegToRad, cTwoPi)
-    if(Lon > cPi) Lon = Lon - cTwoPi
-
-    if(Ecc < 0.8)then
-       EAnom = Lon
-    else
-       EAnom = sign(cPi, Lon)
-    end if
-    do iIter = 1, 12
-       dEAnom = (EAnom - Ecc*sin(EAnom) - Lon)/max(1 - Ecc*cos(EAnom), cTiny)
-       EAnom = EAnom - dEAnom
-       if(abs(dEAnom) < 100.0*cTiny) EXIT
-    end do
-
-    CosEAnom = cos(EAnom); SinEAnom = sin(EAnom)
-    b = a*sqrt(max(1 - Ecc*Ecc, 0.0))
-    xOrb = a*(CosEAnom - Ecc)
-    yOrb = b*SinEAnom
-
-    CosOm = cos(OmegaNode); SinOm = sin(OmegaNode)
-    CosI  = cos(Inc);       SinI  = sin(Inc)
-    CosW  = cos(LongPeri - OmegaNode)
-    SinW  = sin(LongPeri - OmegaNode)
-
-    P_D = [CosOm*CosW - SinOm*SinW*CosI, SinOm*CosW + CosOm*SinW*CosI, &
-         SinW*SinI]
-    Q_D = [-CosOm*SinW - SinOm*CosW*CosI, -SinOm*SinW + CosOm*CosW*CosI, &
-         CosW*SinI]
-
-    XyzHgi_D = xOrb*P_D + yOrb*Q_D
-
-    if(present(vHgi_D))then
-       MeanMotion = OrbitRate_I(iPlanet)%MeanLongitudeDeg*cDegToRad/cCentury
-       dEdt = MeanMotion/max(1.0 - Ecc*CosEAnom, cTiny)
-       VxOrb = -a*SinEAnom*dEdt
-       VyOrb =  b*CosEAnom*dEdt
-       vHgi_D = VxOrb*P_D + VyOrb*Q_D
-    end if
-
-  end subroutine orbit_state_hgi_from_table
-  !============================================================================
-  subroutine get_rotation_axis_hgi(iPlanet, Time, AxisHgi_D)
-
-    integer,      intent(in) :: iPlanet
-    real(Real8_), intent(in) :: Time
-    real,         intent(out):: AxisHgi_D(3)
-
-    type(RotationType) :: Rot
-    real :: Alpha, Delta
-    !--------------------------------------------------------------------------
-    call get_planet_rotation_elements(iPlanet, Time, Rot)
-    Alpha = Rot % Alpha0Deg*cDegToRad
-    Delta = Rot % Delta0Deg*cDegToRad
-
-    AxisHgi_D = matmul(HgiJ2k_DD, &
-         [cos(Delta)*cos(Alpha), cos(Delta)*sin(Alpha), sin(Delta)])
-
-  end subroutine get_rotation_axis_hgi
-  !============================================================================
-  subroutine get_gei_geo_matrix_from_w(iPlanet, Time, GeiGeo_DD)
-
-    integer,      intent(in) :: iPlanet
-    real(Real8_), intent(in) :: Time
-    real,        intent(out) :: GeiGeo_DD(3,3)
-
-    type(RotationType) :: Rot
-    real :: Angle
-    !--------------------------------------------------------------------------
-    call get_planet_rotation_elements(iPlanet, Time, Rot)
-    Angle = Rot % WDeg*cDegToRad
-
-    ! GeiGeo_DD = rot_matrix_z(Angle)
-
-    GeiGeo_DD(1,1) =  cos(Angle);
-    GeiGeo_DD(1,2) = -sin(Angle);
-    GeiGeo_DD(1,3) = 0.0
-    GeiGeo_DD(2,1) =  sin(Angle);
-    GeiGeo_DD(2,2) =  cos(Angle);
-    GeiGeo_DD(2,3) = 0.0
-    GeiGeo_DD(3,1) = 0.0;
-    GeiGeo_DD(3,2) = 0.0;
-    GeiGeo_DD(3,3) = 1.0
-
-  end subroutine get_gei_geo_matrix_from_w
   !============================================================================
   subroutine add_mercury_rotation_terms(d, WDeg)
 
