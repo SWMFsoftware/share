@@ -46,8 +46,9 @@ module CON_planet
   real           :: RotPeriodPlanet ! Rotation
   real           :: OmegaOrbit      ! Orbit
   real           :: AngleEquinox
-  type(TimeType) :: TimeEquinox = TimeType(2000, 1, 1, 0, 0, 0, &
-       0.0, 0.0_REAL8_, '20000101000000')
+  ! Default equinox time value is valid for Earth
+  type(TimeType) :: TimeEquinox = TimeType(2000, 3, 20, 7, 35, 0, &
+       0.0, 0.0_REAL8_, '20000320073500')
   !$acc declare create(OmegaPlanet, OmegaRotation, AngleEquinox, TimeEquinox)
 
   ! Magnetic field type and strength in teslas
@@ -224,17 +225,8 @@ contains
        ! For Earth the longitude of midnight can be obtained
        ! from the time of day
        AngleEquinox = cTwoPi/(24*60) * &
-            (iHourEquinoxPlanet_I(Earth_)*60 + iMinuteEquinoxPlanet_I(Earth_))
-    else
-       AngleEquinox = AngleEquinox_I(iPlanet)
+            (TimeEquinox % iHour*60 + TimeEquinox % iMinute)
     end if
-    TimeEquinox  = TimeType(&
-         iYearEquinoxPlanet_I(iPlanet), &
-         iMonthEquinoxPlanet_I(iPlanet), &
-         iDayEquinoxPlanet_I(iPlanet), &
-         iHourEquinoxPlanet_I(iPlanet), &
-         iMinuteEquinoxPlanet_I(iPlanet), &
-         0, 0.0, 0.0_Real8_, '')
     ! Set the real value and the string
     call time_int_to_real(TimeEquinox)
 
@@ -664,72 +656,10 @@ contains
   !============================================================================
   subroutine orbit_in_hgi(Time, XyzHgi_D, vHgi_D)
 
-    use ModKind
-    real(real8_), intent(in)  :: Time
-    real, intent(out)           :: XyzHgi_D(3)  ! Coordinates in HGI
-    real, optional, intent(out) :: vHgi_D(3)    ! Velocity in HGI
-    ! Mean and eccentric anomalies for a Kepler orbit
-    real :: MeanAnomaly, EccentricAnomaly
-    real :: SinE, CosE, dEdt
-    ! Coordinates and velocity in the orbital plane
-    real              :: XyzOrbit_D(3),  vOrbit_D(3)
-    integer           :: iIter
-    real              :: dE
-
-    character(len=*), parameter:: NameSub = 'orbit_in_hgi'
-    !--------------------------------------------------------------------------
-    if(UseOrbitTable)then
-       call orbit_state_hgi_from_table(Time, XyzHgi_D, vHgi_D)
-       ! write(*,*)'!!! Planet_=', Planet_
-       ! write(*,*)'!!! XyzHgi_D,r [au]=', XyzHgi_D/cAU, norm2(XyzHgi_D)/cAU
-       ! write(*,*)'!!! vHgi_D [km/s]=', vHgi_D/1e3
-       RETURN
-    end if
-
-    MeanAnomaly = modulo( &
-         OmegaOrbit*(Time - TimeEquinox%Time) - ArgPeriapsis, cTwoPi)
-
-    if(MeanAnomaly > cPi) MeanAnomaly = MeanAnomaly - cTwoPi
-
-    if(Excentricity < 0.8)then
-       EccentricAnomaly = MeanAnomaly
-    else
-       EccentricAnomaly = sign(cPi, MeanAnomaly)
-    end if
-
-    ! write(*,*) NameSub, ': MeanAnomaly, EccentricAnomaly=', &
-    !    MeanAnomaly, EccentricAnomaly
-
-    do iIter = 1, 12
-       dE = (EccentricAnomaly - Excentricity*sin(EccentricAnomaly) - &
-            MeanAnomaly)/max(1.0 - Excentricity*cos(EccentricAnomaly), cTiny)
-       EccentricAnomaly = EccentricAnomaly - dE
-       if(abs(dE) < 100.0*cTiny8) EXIT
-    end do
-
-    SinE = sin(EccentricAnomaly)
-    CosE = cos(EccentricAnomaly)
-
-    ! write(*,*) NameSub, ': SemiMajorAxis, CosE, SinE, Excentricity=', &
-    !     SemiMajorAxis, CosE, SinE, Excentricity
-
-    XyzOrbit_D = [SemiMajorAxis*(CosE - Excentricity), &
-         SemiMinorAxis*SinE, 0.0]
-
-    XyzHgi_D = matmul(HgiOrb_DD, XyzOrbit_D)
-    if(present(vHgi_D))then
-       dEdt = OmegaOrbit/max(1.0 - Excentricity*CosE, cTiny)
-       vOrbit_D = [-SemiMajorAxis*SinE, &
-            SemiMinorAxis*CosE, 0.0]*dEdt
-       vHgi_D =  matmul(HgiOrb_DD, vOrbit_D)
-    end if
-
-  end subroutine orbit_in_hgi
-  !============================================================================
-  subroutine orbit_state_hgi_from_table(Time, XyzHgi_D, vHgi_D)
+    ! Calculate location and velocity at current Time in HGI coordinate system
 
     real(Real8_), intent(in):: Time
-    real,        intent(out):: XyzHgi_D(3)
+    real,intent(out):: XyzHgi_D(3)
     real, optional, intent(out) :: vHgi_D(3)
 
     type(OrbitType) :: Elem
@@ -740,6 +670,8 @@ contains
     real :: CosOm, SinOm, CosI, SinI, CosW, SinW
     real :: P_D(3), Q_D(3)
     integer :: iIter
+
+    character(len=*), parameter:: NameSub = 'orbit_in_hgi'
     !--------------------------------------------------------------------------
     call get_planet_orbital_elements(Time, Elem)
 
@@ -792,7 +724,7 @@ contains
        vHgi_D = matmul(HgiJ2k_DD, VxOrb*P_D + VyOrb*Q_D)
     end if
 
-  end subroutine orbit_state_hgi_from_table
+  end subroutine orbit_in_hgi
   !============================================================================
   subroutine get_rotation_axis_hgi(Time, AxisHgi_D)
 

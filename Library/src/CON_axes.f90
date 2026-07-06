@@ -270,15 +270,8 @@ contains
        HgiGse_DD(:,z_) = GseZ_D
 
        if(UseRealRotAxis)then
-          if(UseRotationTable_I(iPlanet))then
-             call get_rotation_axis_hgi(tStart, RotAxisHgi_D)
-          else
-             ! Legacy: infer axis from tilt and equinox geometry.
-             call orbit_in_hgi(TimeEquinox%Time, GseX_D)
-             GseX_D = -GseX_D/norm2(GseX_D)
-             GseY_D = cross_product(GseZ_D, GseX_D)
-             RotAxisHgi_D = GseY_D*sin(TiltRotation) + GseZ_D*cos(TiltRotation)
-          end if
+          ! Get rotation axis in HGI
+          call get_rotation_axis_hgi(tStart, RotAxisHgi_D)
           ! Get rotation axis in GSE
           RotAxis_D = matmul(RotAxisHgi_D, HgiGse_DD)
           ! Get direction angles in GSE
