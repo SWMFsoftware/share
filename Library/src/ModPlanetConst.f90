@@ -67,16 +67,10 @@ module ModPlanetConst
 
   ! Radius, mass, and Orbital parameters
   ! RightAscension_I, Inclination_I, ArgPeriapsis_I are relative to HGI
-  ! AngleEquinox_I is the GEO longitude of midnight at equinox time
   real, dimension(0:MaxPlanet+1):: &
        rPlanet_I, MassPlanet_I, rOrbitPlanet_I, Excentricity_I, &
        OrbitalPeriodPlanet_I, RotationPeriodPlanet_I, TiltPlanet_I, &
-       RightAscension_I, Inclination_I, ArgPeriapsis_I, AngleEquinox_I
-
-  ! Equinox time
-  integer, dimension(0:MaxPlanet+1):: &
-       iYearEquinoxPlanet_I, iMonthEquinoxPlanet_I, iDayEquinoxPlanet_I, &
-       iHourEquinoxPlanet_I, iMinuteEquinoxPlanet_I
+       RightAscension_I, Inclination_I, ArgPeriapsis_I
 
   ! Magnetic field of planet
   character (len=lTypeBField):: TypeBFieldPlanet_I(0:MaxPlanet+1)
@@ -160,13 +154,7 @@ contains
     RightAscension_I       = 0.0                        ! [rad]
     Inclination_I          = 0.0                        ! [rad]
     ArgPeriapsis_I         = 0.0                        ! [rad]
-    AngleEquinox_I         = 0.0                        ! [rad]
 
-    iYearEquinoxPlanet_I   =2000                        ! [yr]
-    iMonthEquinoxPlanet_I  =   1                        ! [mo]
-    iDayEquinoxPlanet_I    =   1                        ! [dy]
-    iHourEquinoxPlanet_I   =   0                        ! [hr]
-    iMinuteEquinoxPlanet_I =   0                        ! [mn]
     TiltPlanet_I           = 0.0                        ! [rad]
 
     TypeBFieldPlanet_I     = 'NONE'
@@ -202,12 +190,6 @@ contains
 
     rPlanet_I(Earth_)                   = 6378.0e+3               ! [m]
     MassPlanet_I(Earth_)                = 5.976e+24               ! [kg]
-
-    iYearEquinoxPlanet_I(Earth_)        = 2000                    ! [yr]
-    iMonthEquinoxPlanet_I(Earth_)       =    3                    ! [mo]
-    iDayEquinoxPlanet_I(Earth_)         =   20                    ! [dy]
-    iHourEquinoxPlanet_I(Earth_)        =    7                    ! [hr]
-    iMinuteEquinoxPlanet_I(Earth_)      =   35                    ! [mn]
 
     rOrbitPlanet_I(Earth_)              = cAU                     ! [m]
     OrbitalPeriodPlanet_I(Earth_)       = 365.24218967*cDay       ! [s]
