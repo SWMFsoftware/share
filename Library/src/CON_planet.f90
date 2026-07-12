@@ -461,8 +461,8 @@ contains
        call read_var('Eccentricity',  Orbit % Eccentricity)
        call read_var('Inclination',   Orbit % InclinationDeg) ! [deg]
        call read_var('MeanLongitude', Orbit % MeanLonDeg)     ! [deg]
-       call read_var('LongitudeNosw', Orbit % LonNodeDeg)     ! [deg]
        call read_var('LongitudePeri', Orbit % LonPeriDeg)     ! [deg]
+       call read_var('LongitudeNode', Orbit % LonNodeDeg)     ! [deg]
 
        !$acc update device(OmegaOrbit,  rOrbitPlanet)
 
