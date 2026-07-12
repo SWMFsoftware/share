@@ -634,14 +634,16 @@ contains
     Q_D = [-CosOm*SinW - SinOm*CosW*CosI, -SinOm*SinW + CosOm*CosW*CosI, &
          CosW*SinI]
 
-    XyzHgi_D = matmul(HgiJ2k_DD, xOrb*P_D + yOrb*Q_D)
+    XyzHgi_D = xOrb*P_D + yOrb*Q_D
+    if(.not.IsOrbitSet) XyzHgi_D = matmul(HgiJ2k_DD, XyzHgi_D)
 
     if(present(vHgi_D))then
        MeanMotion = dOrbitJ2k_I(iPlanet)%MeanLonDeg*cDegToRad/cCentury
        dEdt = MeanMotion/max(1.0 - Ecc*CosEAnom, cTiny)
        VxOrb = -a*SinEAnom*dEdt
        VyOrb =  b*CosEAnom*dEdt
-       vHgi_D = matmul(HgiJ2k_DD, VxOrb*P_D + VyOrb*Q_D)
+       vHgi_D = VxOrb*P_D + VyOrb*Q_D
+       if(.not.IsOrbitSet) vHgi_D = matmul(HgiJ2k_DD, vHgi_D)
     end if
 
   end subroutine orbit_in_hgi
