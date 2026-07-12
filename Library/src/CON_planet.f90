@@ -48,6 +48,7 @@ module CON_planet
   real:: AngleEquinox
 
   ! Orbit description
+  logical:: IsOrbitSet = .false.
   type(OrbitType) :: Orbit
 
   ! Default equinox time value is valid for Earth
@@ -453,6 +454,7 @@ contains
     case('#ORBIT')
        NamePlanetCommands = '#ORBIT ' // NamePlanetCommands
        IsPlanetModified = .true.
+       IsOrbitSet = .true.
        call read_var('OrbitalPeriodPlanet', OrbitalPeriodPlanet_I(iPlanet))
        OmegaOrbit = cTwoPi/OrbitalPeriodPlanet_I(iPlanet)
        ! Correct omega planet?
@@ -592,7 +594,7 @@ contains
 
     character(len=*), parameter:: NameSub = 'orbit_in_hgi'
     !--------------------------------------------------------------------------
-    call get_planet_orbit(Time, Orbit)
+    if(.not.IsOrbitSet) call get_planet_orbit(Time, Orbit)
     a         = Orbit%aAu*cAU
     Ecc       = Orbit%Eccentricity
     Inc       = Orbit%InclinationDeg*cDegToRad
@@ -677,7 +679,7 @@ contains
 
     if(GeiOffset < -9.0)then
        ! Calculate offset angle between ICRF 0 longitude and GEI 0 longitude
-       call get_planet_orbit(Time, Orbit)
+       if(.not.IsOrbitSet) call get_planet_orbit(Time, Orbit)
        Alpha = Rot%AlphaDeg*cDegToRad
        Delta = Rot%DeltaDeg*cDegToRad
        Incl  = Orbit%InclinationDeg*cDegToRad
