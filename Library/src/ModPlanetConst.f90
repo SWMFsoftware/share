@@ -388,7 +388,7 @@ contains
     OrbitJ2k_I(Enceladus_)  = OrbitJ2k_I(Saturn_)
     dOrbitJ2k_I(Enceladus_) = dOrbitJ2k_I(Saturn_)
 
-    UseOrbitalTable_I([Mercury_,Venus_,Moon_,Mars_,Jupiter_,Io_, &
+    UseOrbitalTable_I([NewPlanet_,Mercury_,Venus_,Moon_,Mars_,Jupiter_,Io_, &
          Europa_,Saturn_,Titan_,Enceladus_,Uranus_,Neptune_,Pluto_]) = .true.
 
     ! Table-driven rotation parameters (IAU WGCCRE 2009, Table 1)
@@ -441,7 +441,7 @@ contains
     RotationIcrf_I(Pluto_)  = RotationType(132.993,-6.163,302.695)
     dRotationIcrf_I(Pluto_) = RotationType(0.0,0.0,56.3625225)
 
-    UseRotationTable_I([Sun_,Mercury_,Venus_,Moon_,Mars_,Jupiter_,Io_, &
+    UseRotationTable_I([NewPlanet_,Mercury_,Venus_,Moon_,Mars_,Jupiter_,Io_, &
          Europa_,Saturn_,Titan_,Enceladus_,Uranus_,Neptune_,Pluto_]) = .true.
 
     ! Calculate the rotation matrix for J2k to Icrf:
