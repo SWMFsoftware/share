@@ -476,7 +476,7 @@ contains
   subroutine get_planet_orbit(Time, Orbit)
 
     ! Set orbit parameters for time Time
-    
+
     real(Real8_),    intent(in) :: Time
     type(OrbitType), intent(out):: Orbit
 
