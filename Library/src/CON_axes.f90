@@ -144,14 +144,14 @@ module CON_axes
        atan2_check
   use ModTimeConvert, ONLY: time_int_to_real, time_real_to_int, TimeType
   use ModPlanetConst, ONLY: DipoleStrengthPlanet_I, Earth_, iPlanet, &
-       UseRotationTable_I, GeiOffset
+       UseOrbitalTable_I, UseRotationTable_I, GeiOffset
   use CON_planet, ONLY: UseSetMagAxis, UseSetRotAxis, UseAlignedAxes, &
        UseRealMagAxis, UseRealRotAxis, MagAxisThetaGeo, MagAxisPhiGeo, &
        MagAxisTheta, MagAxisPhi, DipoleStrength, RotAxisTheta, RotAxisPhi, &
        UseRotation, TiltRotation, RadiusPlanet, OmegaPlanet, OmegaOrbit, &
        TimeEquinox, AngleEquinox, DoUpdateB0, DtUpdateB0, &
        NamePlanet, IsInitializedPlanet, is_planet_init, &
-       get_rotation_axis_hgi, get_gei_geo_matrix_from_w
+       get_rotation_axis_hgi, get_gei_geo_matrix_from_w, orbit_in_hgi
   use CON_geopack, ONLY: &
        geopack_recalc, geopack_sun, &
        RotAxisPhiGeopack, RotAxisThetaGeopack, &
@@ -228,8 +228,6 @@ contains
   !============================================================================
   subroutine init_axes(tStartIn)
 
-    use CON_planet, ONLY: UseOrbitElements, orbit_in_hgi
-
     real(Real8_) :: tStartIn
 
     ! Set the direction and position of the rotation axis in GSE
@@ -257,7 +255,7 @@ contains
 
     call time_int_to_real(TimeEquinox)
 
-    if(UseOrbitElements)then
+    if(UseOrbitalTable_I(iPlanet))then
        ! Set initial planet position and velocity in HGI
        call orbit_in_hgi(tStart, XyzPlanetHgi_D, vPlanetHgi_D)
 
@@ -296,7 +294,7 @@ contains
        ! Use GEOPACK axes for Earth (elliptic orbit and IGRF dipole)
        call time_real_to_int(tStart, iTime_I)
        call geopack_recalc(iTime_I)
-       if(.not.UseOrbitElements)then
+       if(.not.UseOrbitalTable_I(iPlanet))then
           ! Copy GEOPACK rotation axis
           RotAxisTheta = RotAxisThetaGeopack
           RotAxisPhi   = RotAxisPhiGeopack
@@ -316,7 +314,7 @@ contains
        end if
     elseif(.not.UseSetRotAxis)then
        if(UseRealRotAxis)then
-          if(.not.UseOrbitElements)then
+          if(.not.UseOrbitalTable_I(iPlanet))then
              RotAxisTheta = TiltRotation
              if(OmegaOrbit == 0.0)then
                 ! Make the rotation axis to be as equinox condition
@@ -583,8 +581,6 @@ contains
   !============================================================================
   subroutine set_axes(TimeSim, DoSetAxes)
 
-    use CON_planet, ONLY: TimeEquinox, UseOrbitElements, orbit_in_hgi
-
     real,              intent(in) :: TimeSim
     logical, optional, intent(in) :: DoSetAxes
 
@@ -623,7 +619,7 @@ contains
     character(len=*), parameter:: NameSub = 'set_axes'
     !--------------------------------------------------------------------------
     if(TimeSimHgr /= TimeSim)then
-       if(UseOrbitElements)then
+       if(UseOrbitalTable_I(iPlanet))then
           Time8 = tStart + TimeSim
           call orbit_in_hgi(Time8, XyzPlanetHgi_D, vPlanetHgi_D)
 

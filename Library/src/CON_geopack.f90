@@ -253,9 +253,6 @@ contains
   subroutine geopack_recalc(iYear, iMonth, iDay, iHour, iMin, iSec)
 
     use ModCoordTransform, ONLY: rot_matrix_z, rot_matrix_x
-    use ModConst, ONLY: cAU
-    use CON_planet, ONLY: RightAscension, TimeEquinox, Inclination, &
-         OmegaOrbit, UseOrbitElements, orbit_in_hgi
     use ModTimeConvert, ONLY: time_int_to_real
 
     ! Updates matrices for the coordinate transformations
@@ -292,20 +289,9 @@ contains
     GeiGse_DD = &
          matmul(rot_matrix_x(Obliq), rot_matrix_z(SunLongitude - 9.924E-5))
 
-    if(UseOrbitElements)then
-       call time_int_to_real([iYear,iMonth,iDay,iHour,iMin,iSec,0], Time)
-       ! Convert real precision
-       Phi = modulo(OmegaOrbit*(Time - TimeEquinox%Time), cTwoPi) &
-            - RightAscension
-       HgiGse_DD = matmul(rot_matrix_x(-Inclination), rot_matrix_z(Phi))
-
-       call orbit_in_hgi(Time, XyzPlanet_D)
-       SunEMBDistance = norm2(XyzPlanet_D)/cAU
-    else
-       HgiGse_DD = matmul( &
-            rot_matrix_x(-cInclinationSolEquator),&
-            rot_matrix_z( SunLongitude - cLongAscNodeSolEquator ))
-    end if
+    HgiGse_DD = matmul( &
+         rot_matrix_x(-cInclinationSolEquator),&
+         rot_matrix_z( SunLongitude - cLongAscNodeSolEquator ))
 
     ! Offset the HGI coordinate system if required
     if(dLongitudeHgi > 0.0) &

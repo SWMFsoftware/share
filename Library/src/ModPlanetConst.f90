@@ -43,18 +43,18 @@ module ModPlanetConst
   real:: HgiIcrf_DD(3,3)
 
   type OrbitType
-     real :: aAu
-     real :: Eccentricity
-     real :: InclinationDeg
-     real :: MeanLongitudeDeg
-     real :: LongPeriDeg
-     real :: LongNodeDeg
+     real :: aAu            ! Semi major axis measured in [au]
+     real :: Eccentricity   ! Eccentricity of orbit (0 for circular)
+     real :: InclinationDeg ! Inclination of orbit in the  reference frame
+     real :: MeanLonDeg     ! Longitude of planet for constant angular speed
+     real :: LonPeriDeg     ! Longitude of periapsis (if Eccentricity /= 0)
+     real :: LonNodeDeg     ! Longiude of the node (if Inclination /= 0)
   end type OrbitType
 
   type RotationType
-     real :: AlphaDeg
-     real :: DeltaDeg
-     real :: WDeg
+     real :: AlphaDeg  ! longirude of rotation axis in reference frame
+     real :: DeltaDeg  ! latiude of rotation axis in reference frame
+     real :: WDeg      ! direction of meridian relative to vernal equinox
   end type RotationType
 
   ! Declarations for the variables that we are storing to define each body.
@@ -388,7 +388,7 @@ contains
     OrbitJ2k_I(Enceladus_)  = OrbitJ2k_I(Saturn_)
     dOrbitJ2k_I(Enceladus_) = dOrbitJ2k_I(Saturn_)
 
-    UseOrbitalTable_I([Mercury_,Venus_,Moon_,Mars_,Jupiter_,Io_, &
+    UseOrbitalTable_I([NewPlanet_,Mercury_,Venus_,Moon_,Mars_,Jupiter_,Io_, &
          Europa_,Saturn_,Titan_,Enceladus_,Uranus_,Neptune_,Pluto_]) = .true.
 
     ! Table-driven rotation parameters (IAU WGCCRE 2009, Table 1)
@@ -441,7 +441,7 @@ contains
     RotationIcrf_I(Pluto_)  = RotationType(132.993,-6.163,302.695)
     dRotationIcrf_I(Pluto_) = RotationType(0.0,0.0,56.3625225)
 
-    UseRotationTable_I([Sun_,Mercury_,Venus_,Moon_,Mars_,Jupiter_,Io_, &
+    UseRotationTable_I([NewPlanet_,Mercury_,Venus_,Moon_,Mars_,Jupiter_,Io_, &
          Europa_,Saturn_,Titan_,Enceladus_,Uranus_,Neptune_,Pluto_]) = .true.
 
     ! Calculate the rotation matrix for J2k to Icrf:
@@ -473,34 +473,36 @@ contains
 
   end subroutine init_planet_const
   !============================================================================
-  subroutine get_planet_orbital_elements(Time, Elem)
+  subroutine get_planet_orbit(Time, Orbit)
 
+    ! Set orbit parameters for time Time
+    
     real(Real8_),    intent(in) :: Time
-    type(OrbitType), intent(out):: Elem
+    type(OrbitType), intent(out):: Orbit
 
     real :: T
     !--------------------------------------------------------------------------
     T = (Time - TimeJ2k % Time)/cCentury
 
-    Elem%aAu = OrbitJ2k_I(iPlanet)%aAu + &
+    Orbit % aAu = OrbitJ2k_I(iPlanet)%aAu + &
          T*dOrbitJ2k_I(iPlanet)%aAu
-    Elem%Eccentricity = OrbitJ2k_I(iPlanet)%Eccentricity + &
+    Orbit % Eccentricity = OrbitJ2k_I(iPlanet)%Eccentricity + &
          T*dOrbitJ2k_I(iPlanet)%Eccentricity
-    Elem%InclinationDeg = OrbitJ2k_I(iPlanet)%InclinationDeg + &
+    Orbit % InclinationDeg = OrbitJ2k_I(iPlanet)%InclinationDeg + &
          T*dOrbitJ2k_I(iPlanet)%InclinationDeg
-    Elem%MeanLongitudeDeg = OrbitJ2k_I(iPlanet)%MeanLongitudeDeg &
-         + T*dOrbitJ2k_I(iPlanet)%MeanLongitudeDeg
-    Elem%LongPeriDeg = OrbitJ2k_I(iPlanet)%LongPeriDeg + &
-         T*dOrbitJ2k_I(iPlanet)%LongPeriDeg
-    Elem%LongNodeDeg = OrbitJ2k_I(iPlanet)%LongNodeDeg + &
-         T*dOrbitJ2k_I(iPlanet)%LongNodeDeg
+    Orbit % MeanLonDeg = OrbitJ2k_I(iPlanet)%MeanLonDeg &
+         + T*dOrbitJ2k_I(iPlanet)%MeanLonDeg
+    Orbit % LonPeriDeg = OrbitJ2k_I(iPlanet)%LonPeriDeg + &
+         T*dOrbitJ2k_I(iPlanet)%LonPeriDeg
+    Orbit % LonNodeDeg = OrbitJ2k_I(iPlanet)%LonNodeDeg + &
+         T*dOrbitJ2k_I(iPlanet)%LonNodeDeg
 
     ! write(*,*)'!!! MeanLon0, Rate, Period [yr]=', &
-    !     OrbitJ2k_I(iPlanet)%MeanLongitudeDeg, &
-    !     dOrbitJ2k_I(iPlanet)%MeanLongitudeDeg, &
-    !     36000/dOrbitJ2k_I(iPlanet)%MeanLongitudeDeg
+    !     OrbitJ2k_I(iPlanet)%MeanLonDeg, &
+    !     dOrbitJ2k_I(iPlanet)%MeanLonDeg, &
+    !     36000/dOrbitJ2k_I(iPlanet)%MeanLonDeg
 
-  end subroutine get_planet_orbital_elements
+  end subroutine get_planet_orbit
   !============================================================================
   subroutine transform_orbit_j2k_hgi(OrbitJ2k, OrbitHgi)
 
@@ -521,8 +523,8 @@ contains
 
     ! Get angles from J2000 orbit
     Incl = OrbitJ2k % InclinationDeg * cDegToRad
-    Node = OrbitJ2k % LongNodeDeg * cDegToRad
-    Peri = (OrbitJ2k % LongPeriDeg - OrbitJ2k % LongNodeDeg) * cDegToRad
+    Node = OrbitJ2k % LonNodeDeg * cDegToRad
+    Peri = (OrbitJ2k % LonPeriDeg - OrbitJ2k % LonNodeDeg) * cDegToRad
 
     ! pJ2k is a unit vector pointing directly toward periapsis
     pJ2k_D(1) = cos(Node)*cos(Peri) - sin(Node)*sin(Peri)*cos(Incl)
@@ -564,8 +566,8 @@ contains
 
     ! Put angles into the output
     OrbitHgi % InclinationDeg = Incl * cRadToDeg
-    OrbitHgi % LongPeriDeg    = Peri * cRadToDeg
-    OrbitHgi % LongNodeDeg    = Node * cRadToDeg
+    OrbitHgi % LonPeriDeg     = Peri * cRadToDeg
+    OrbitHgi % LonNodeDeg     = Node * cRadToDeg
 
   end subroutine transform_orbit_j2k_hgi
   !============================================================================
