@@ -216,10 +216,9 @@ contains
     MagAxisThetaGeo   = bAxisThetaPlanet_I(iPlanet)  ! Permanent theta  in GEO
     MagAxisPhiGeo     = bAxisPhiPlanet_I(iPlanet)    ! Permanent phi    in GEO
 
-    !write(*,*)'!!! iPlanet, UseOrbitalTable, UseRotationTable=', &
+    ! write(*,*)'!!! iPlanet, UseOrbitalTable, UseRotationTable=', &
     !     iPlanet, UseOrbitalTable_I(iPlanet), UseRotationTable_I(iPlanet)
 
-    
     ! For Enceladus the dipole is at Saturn's center
     if(iPlanet == Enceladus_) MagCenter_D(2) = 944.23
 
