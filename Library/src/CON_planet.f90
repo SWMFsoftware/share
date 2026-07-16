@@ -38,7 +38,7 @@ module CON_planet
   ! Initial time in 8 byte real
   real(Real8_) :: tStart = -1.0
   !$acc declare create(tStart)
-  
+
   ! Define variables
   real:: RadiusPlanet
   real:: MassPlanet
