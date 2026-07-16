@@ -1,8 +1,7 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-!
-!
+
 module CON_planet
 
   ! Physical information about the planet. The planet is described
@@ -36,6 +35,10 @@ module CON_planet
 
   logical :: IsInitializedPlanet = .false.
 
+  ! Initial time in 8 byte real
+  real(Real8_) :: tStart = -1.0
+  !$acc declare create(tStart)
+  
   ! Define variables
   real:: RadiusPlanet
   real:: MassPlanet
@@ -324,6 +327,7 @@ contains
        NamePlanetCommands = '#ROTATIONAXIS ' // NamePlanetCommands
        IsPlanetModified = .true.
        UseRealRotAxis = .false.
+       UseRealMagAxis = .false. ! Cannot use real mag axis
 
        call read_var('IsRotAxisPrimary', IsRotAxisPrimary)
        if (IsRotAxisPrimary) then
@@ -597,13 +601,14 @@ contains
 
     character(len=*), parameter:: NameSub = 'orbit_in_hgi'
     !--------------------------------------------------------------------------
-    if(.not.IsOrbitSet) call get_planet_orbit(Time, Orbit)
+    if(.not.IsOrbitSet) call get_planet_orbit(tStart, Orbit)
     a         = Orbit%aAu*cAU
     Ecc       = Orbit%Eccentricity
     Inc       = Orbit%InclinationDeg*cDegToRad
     OmegaNode = Orbit%LonNodeDeg*cDegToRad
     LongPeri  = Orbit%LonPeriDeg*cDegToRad
-    Lon = modulo((Orbit%MeanLonDeg - Orbit%LonPeriDeg)*cDegToRad, cTwoPi)
+    Lon = modulo((Orbit%MeanLonDeg - Orbit%LonPeriDeg)*cDegToRad &
+         + OmegaOrbit*(Time - tStart), cTwoPi)
     if(Lon > cPi) Lon = Lon - cTwoPi
 
     if(Ecc < 0.8)then

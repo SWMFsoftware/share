@@ -150,7 +150,7 @@ module CON_axes
        MagAxisTheta, MagAxisPhi, DipoleStrength, RotAxisTheta, RotAxisPhi, &
        UseRotation, TiltRotation, RadiusPlanet, OmegaPlanet, OmegaOrbit, &
        TimeEquinox, AngleEquinox, DoUpdateB0, DtUpdateB0, &
-       NamePlanet, IsInitializedPlanet, is_planet_init, &
+       NamePlanet, IsInitializedPlanet, is_planet_init, tStart, &
        get_rotation_axis_hgi, get_gei_geo_matrix_from_w, orbit_in_hgi
   use CON_geopack, ONLY: &
        geopack_recalc, geopack_sun, &
@@ -183,10 +183,6 @@ module CON_axes
 
   ! Offset longitude angle for HGR in degrees and radians
   real :: dLongitudeHgrDeg = 0.0, dLongitudeHgr = 0.0
-
-  ! Initial time in 8 byte real
-  real(Real8_) :: tStart = -1.0
-  !$acc declare create(tStart)
 
   ! Rotational axis in GSE and GSM
   real    :: RotAxis_D(3)      ! Permanent Cartesian components in GSE
