@@ -166,7 +166,7 @@ contains
     UseRotationTable_I     = .false.
     OrbitJ2k_I             = OrbitType(0.0,0.0,0.0,0.0,0.0,0.0)
     dOrbitJ2k_I            = OrbitType(0.0,0.0,0.0,0.0,0.0,0.0)
-    RotationIcrf_I         = RotationType(0.0,0.0,0.0)
+    RotationIcrf_I         = RotationType(90.0,90.0,0.0)
     dRotationIcrf_I        = RotationType(0.0,0.0,0.0)
 
     IonoHeightPlanet_I     = 0.0                        ! [m]
@@ -392,7 +392,7 @@ contains
          Europa_,Saturn_,Titan_,Enceladus_,Uranus_,Neptune_,Pluto_]) = .true.
 
     ! Table-driven rotation parameters (IAU WGCCRE 2009, Table 1)
-    ! alpha0, delta0 [deg], W [deg]; rates are per T (century) for alpha/delta
+    ! alpha, delta, W [deg] rates are per century for alpha/delta
     ! and per day for W.
 
     RotationIcrf_I(Sun_)  = RotationType(286.13,63.87,84.176)

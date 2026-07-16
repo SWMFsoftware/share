@@ -14,7 +14,7 @@ module CON_planet
   ! Components can only access the data through the inquiry methods
   ! via the {\bf CON\_physics} class.
 
-  use ModNumConst, ONLY: cTwoPi, cDegToRad, cPi, cTiny, cTiny8
+  use ModNumConst, ONLY: cTwoPi, cDegToRad, cPi, cTiny, cUnit_DD
   use ModPlanetConst
   use ModTimeConvert, ONLY: TimeType, time_int_to_real
   use ModUtilities, ONLY: upper_case, CON_stop
@@ -454,6 +454,10 @@ contains
        NamePlanetCommands = '#ORBIT ' // NamePlanetCommands
        IsPlanetModified = .true.
        IsOrbitSet = .true.
+       ! Use HGI (instead of J2000 and ICRF) for orbit and rotation
+       HgiJ2k_DD  = cUnit_DD
+       HgiIcrf_DD = cUnit_DD
+       J2kIcrf_DD = cUnit_DD
        call read_var('OrbitalPeriodPlanet', OrbitalPeriodPlanet_I(iPlanet))
        OmegaOrbit = cTwoPi/OrbitalPeriodPlanet_I(iPlanet)
        ! Correct omega planet?
@@ -637,7 +641,11 @@ contains
     if(.not.IsOrbitSet) XyzHgi_D = matmul(HgiJ2k_DD, XyzHgi_D)
 
     if(present(vHgi_D))then
-       MeanMotion = dOrbitJ2k_I(iPlanet)%MeanLonDeg*cDegToRad/cCentury
+       if(.not.IsOrbitSet)then
+          MeanMotion = dOrbitJ2k_I(iPlanet)%MeanLonDeg*cDegToRad/cCentury
+       else
+          MeanMotion = OmegaOrbit
+       end if
        dEdt = MeanMotion/max(1.0 - Ecc*CosEAnom, cTiny)
        VxOrb = -a*SinEAnom*dEdt
        VyOrb =  b*CosEAnom*dEdt
