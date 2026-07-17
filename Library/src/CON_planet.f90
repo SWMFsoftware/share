@@ -42,13 +42,13 @@ module CON_planet
   ! Define variables
   real:: RadiusPlanet
   real:: MassPlanet
-  real:: TiltRotation
   real:: IonosphereHeight
-  real:: OmegaPlanet     ! Rotation + Orbit
-  real:: OmegaRotation   ! Rotation
-  real:: RotPeriodPlanet ! Rotation
-  real:: OmegaOrbit      ! Orbit
-  real:: AngleEquinox
+  real:: TiltRotation    ! tilt relative to orbital plane
+  real:: OmegaRotation   ! Average angular speed relative to Sun/Star
+  real:: OmegaPlanet     ! OmegaRotation + OmegaOrbit (inertial omega)
+  real:: RotPeriodPlanet ! 2*pi/OmegaPlanet (inertial period)
+  real:: OmegaOrbit      ! Average angular speed of orbital motion
+  real:: AngleEquinox    ! The Sun's meridian at equinox time for Earth
 
   ! Orbit description
   logical:: IsOrbitSet = .false.
@@ -196,11 +196,11 @@ contains
           RotPeriodPlanet = 0.0
        end if
     else
-       RotPeriodPlanet  = RotationPeriodPlanet_I(iPlanet)
-       if (RotationPeriodPlanet_I(iPlanet) == 0.0) then
+       RotPeriodPlanet = RotationPeriodPlanet_I(iPlanet)
+       if (RotPeriodPlanet == 0.0) then
           OmegaRotation = 0.0
        else
-          OmegaRotation = cTwoPi/RotationPeriodPlanet_I(iPlanet)
+          OmegaRotation = cTwoPi/RotPeriodPlanet
        end if
        OmegaPlanet  = OmegaRotation + OmegaOrbit
     end if
@@ -470,21 +470,6 @@ contains
        call read_var('LongitudePeri', Orbit % LonPeriDeg)     ! [deg]
        call read_var('LongitudeNode', Orbit % LonNodeDeg)     ! [deg]
 
-       !$acc update device(OmegaOrbit,  rOrbitPlanet)
-
-    case('#TIMEEQUINOX')
-       NamePlanetCommands = '#TIMEEQUINOX ' // NamePlanetCommands
-       IsPlanetModified = .true.
-       call read_var('iYear',   TimeEquinox%iYear)
-       call read_var('iMonth',  TimeEquinox%iMonth)
-       call read_var('iDay',    TimeEquinox%iDay)
-       call read_var('iHour',   TimeEquinox%iHour)
-       call read_var('iMinute', TimeEquinox%iMinute)
-       call read_var('AngleEquinox', AngleEquinox)
-       ! Set real and string parts
-       call time_int_to_real(TimeEquinox)
-       AngleEquinox = AngleEquinox*cDegToRad
-
     case default
        call CON_stop(NameSub//': unknown command='//NameCommand)
     end select
@@ -580,11 +565,11 @@ contains
 
   end subroutine normalize_schmidt_coefficients
   !============================================================================
-  subroutine orbit_in_hgi(Time, XyzHgi_D, vHgi_D)
+  subroutine orbit_in_hgi(TimeSim, XyzHgi_D, vHgi_D)
 
     ! Calculate location and velocity at current Time in HGI coordinate system
 
-    real(Real8_), intent(in):: Time
+    real, intent(in):: TimeSim
     real,intent(out):: XyzHgi_D(3)
     real, optional, intent(out) :: vHgi_D(3)
 
@@ -592,7 +577,7 @@ contains
     real :: EAnom, dEAnom, CosEAnom, SinEAnom, MeanMotion, dEdt
     real :: b
     real :: xOrb, yOrb, VxOrb, VyOrb
-    real :: CosOm, SinOm, CosI, SinI, CosW, SinW
+    real :: CosO, SinO, CosI, SinI, CosW, SinW
     real :: P_D(3), Q_D(3)
     integer :: iIter
 
@@ -603,15 +588,18 @@ contains
     Inc       = Orbit%InclinationDeg*cDegToRad
     OmegaNode = Orbit%LonNodeDeg*cDegToRad
     LongPeri  = Orbit%LonPeriDeg*cDegToRad
+    ! Get the mean longitude based on mean angular speed
     Lon = modulo((Orbit%MeanLonDeg - Orbit%LonPeriDeg)*cDegToRad &
-         + OmegaOrbit*(Time - tStart), cTwoPi)
+         + OmegaOrbit*TimeSim, cTwoPi)
     if(Lon > cPi) Lon = Lon - cTwoPi
 
+    ! Initialize the true anomaly (=true longitude)
     if(Ecc < 0.8)then
        EAnom = Lon
     else
        EAnom = sign(cPi, Lon)
     end if
+    ! Iterative Kepler solver for true anomaly (true longitude)
     do iIter = 1, 12
        dEAnom = (EAnom - Ecc*sin(EAnom) - Lon)/max(1 - Ecc*cos(EAnom), cTiny)
        EAnom = EAnom - dEAnom
@@ -619,47 +607,45 @@ contains
     end do
 
     CosEAnom = cos(EAnom); SinEAnom = sin(EAnom)
-    b = a*sqrt(max(1 - Ecc**2, 0.0))
-    xOrb = a*(CosEAnom - Ecc)
-    yOrb = b*SinEAnom
+    b = a*sqrt(max(1 - Ecc**2, 0.0)) ! minor axis
+    xOrb = a*(CosEAnom - Ecc)        ! position along major axis direction
+    yOrb = b*SinEAnom                ! position along minor axis direction
 
-    CosOm = cos(OmegaNode); SinOm = sin(OmegaNode)
+    CosO = cos(OmegaNode); SinO = sin(OmegaNode)
     CosI  = cos(Inc);       SinI  = sin(Inc)
     CosW  = cos(LongPeri - OmegaNode)
     SinW  = sin(LongPeri - OmegaNode)
 
-    P_D = [CosOm*CosW - SinOm*SinW*CosI, SinOm*CosW + CosOm*SinW*CosI, &
+    ! Unit vector towards periapsis
+    P_D = [CosO*CosW - SinO*SinW*CosI, SinO*CosW + CosO*SinW*CosI, &
          SinW*SinI]
-    Q_D = [-CosOm*SinW - SinOm*CosW*CosI, -SinOm*SinW + CosOm*CosW*CosI, &
+    ! Unit vector perpendicular to periapsis in the orbital plane
+    Q_D = [-CosO*SinW - SinO*CosW*CosI, -SinO*SinW + CosO*CosW*CosI, &
          CosW*SinI]
 
+    ! Location in HGI
     XyzHgi_D = xOrb*P_D + yOrb*Q_D
-    if(.not.IsOrbitSet) XyzHgi_D = matmul(HgiJ2k_DD, XyzHgi_D)
+    XyzHgi_D = matmul(HgiJ2k_DD, XyzHgi_D)
 
     if(present(vHgi_D))then
-       if(.not.IsOrbitSet)then
-          MeanMotion = dOrbitJ2k_I(iPlanet)%MeanLonDeg*cDegToRad/cCentury
-       else
-          MeanMotion = OmegaOrbit
-       end if
-       dEdt = MeanMotion/max(1.0 - Ecc*CosEAnom, cTiny)
-       VxOrb = -a*SinEAnom*dEdt
-       VyOrb =  b*CosEAnom*dEdt
+       dEdt   = OmegaOrbit/max(1.0 - Ecc*CosEAnom, cTiny)
+       VxOrb  = -a*SinEAnom*dEdt
+       VyOrb  =  b*CosEAnom*dEdt
        vHgi_D = VxOrb*P_D + VyOrb*Q_D
-       if(.not.IsOrbitSet) vHgi_D = matmul(HgiJ2k_DD, vHgi_D)
+       vHgi_D = matmul(HgiJ2k_DD, vHgi_D)
     end if
 
   end subroutine orbit_in_hgi
   !============================================================================
-  subroutine get_rotation_axis_hgi(Time, AxisHgi_D)
+  subroutine get_rotation_axis_hgi(TimeSim, AxisHgi_D)
 
-    real(Real8_), intent(in) :: Time
-    real,         intent(out):: AxisHgi_D(3)
+    real, intent(in) :: TimeSim
+    real, intent(out):: AxisHgi_D(3)
 
     type(RotationType) :: Rot
     real :: Alpha, Delta
     !--------------------------------------------------------------------------
-    call get_planet_rotation_elements(Time, Rot)
+    call get_planet_rotation_elements(tStart + TimeSim, Rot)
     Alpha = Rot % AlphaDeg*cDegToRad
     Delta = Rot % DeltaDeg*cDegToRad
 
@@ -668,10 +654,10 @@ contains
 
   end subroutine get_rotation_axis_hgi
   !============================================================================
-  subroutine get_gei_geo_matrix_from_w(Time, GeiGeo_DD)
+  subroutine get_gei_geo_matrix_from_w(TimeSim, GeiGeo_DD)
 
-    real(Real8_), intent(in) :: Time
-    real,        intent(out) :: GeiGeo_DD(3,3)
+    real, intent(in) :: TimeSim
+    real, intent(out) :: GeiGeo_DD(3,3)
 
     type(RotationType) :: Rot
     real :: Angle, Alpha, Delta, Incl, Node
@@ -679,7 +665,7 @@ contains
     real :: IcrfNode_D(3), Equinox_D(3)
     real :: NormIcrfNode, NormEquinox
     !--------------------------------------------------------------------------
-    call get_planet_rotation_elements(Time, Rot)
+    call get_planet_rotation_elements(tStart + TimeSim, Rot)
 
     if(GeiOffset < -9.0)then
        ! Calculate offset angle between ICRF 0 longitude and GEI 0 longitude

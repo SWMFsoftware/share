@@ -257,7 +257,7 @@ contains
        if(.not.IsOrbitSet) call get_planet_orbit(tStart, Orbit)
 
        ! Set initial planet position and velocity in HGI
-       call orbit_in_hgi(tStart, XyzPlanetHgi_D, vPlanetHgi_D)
+       call orbit_in_hgi(0.0, XyzPlanetHgi_D, vPlanetHgi_D)
 
        ! Set HgiGse matrix
        GseX_D = -XyzPlanetHgi_D/norm2(XyzPlanetHgi_D)
@@ -269,7 +269,7 @@ contains
 
        if(UseRealRotAxis)then
           ! Get rotation axis in HGI
-          call get_rotation_axis_hgi(tStart, RotAxisHgi_D)
+          call get_rotation_axis_hgi(0.0, RotAxisHgi_D)
           ! Get rotation axis in GSE
           RotAxis_D = matmul(RotAxisHgi_D, HgiGse_DD)
           ! Get direction angles in GSE
@@ -570,7 +570,7 @@ contains
     end if
 
     if(UseRotationTable_I(iPlanet) .and. iPlanet /= Earth_)then
-       call get_gei_geo_matrix_from_w(tStart + TimeSim, GeiGeo_DD)
+       call get_gei_geo_matrix_from_w(TimeSim, GeiGeo_DD)
     else
        AlphaEquinox = (TimeSim + tStart - TimeEquinox % Time) &
             * OmegaPlanet + AngleEquinox
@@ -613,15 +613,14 @@ contains
     real :: TimeSimLast = -1000.0  ! Last simulation time for magnetic fields
     real :: TimeSimHgr  = -1000.0  ! Last simulation time for HGR update
     real :: Angle, Phi
-    real(real8_) :: Time8
+
     ! Reset the helio-centered coordinate transformations if time changed
     logical:: DoTest
     character(len=*), parameter:: NameSub = 'set_axes'
     !--------------------------------------------------------------------------
     if(TimeSimHgr /= TimeSim)then
        if(UseOrbitalTable_I(iPlanet))then
-          Time8 = tStart + TimeSim
-          call orbit_in_hgi(Time8, XyzPlanetHgi_D, vPlanetHgi_D)
+          call orbit_in_hgi(TimeSim, XyzPlanetHgi_D, vPlanetHgi_D)
 
           HgiGse_DD(:,x_) = -XyzPlanetHgi_D/max(norm2(XyzPlanetHgi_D), cTiny)
           OrbitNormal_D   = cross_product(XyzPlanetHgi_D, vPlanetHgi_D)
@@ -630,7 +629,7 @@ contains
           SunEMBDistance = norm2(XyzPlanetHgi_D)/cAU
 
           if(UseRealRotAxis .and. UseRotationTable_I(iPlanet))then
-             call get_rotation_axis_hgi(Time8, RotAxisHgi_D)
+             call get_rotation_axis_hgi(TimeSim, RotAxisHgi_D)
              RotAxis_D = matmul(RotAxisHgi_D, HgiGse_DD)
              call xyz_to_dir(RotAxis_D, RotAxisTheta, RotAxisPhi)
              call set_gse_gei_matrix
@@ -691,10 +690,10 @@ contains
     TimeSimLast = TimeSim
 
     ! Rotate MagAxis0Gei around Z axis to get current position in GEI
-    MagAxisGei_D = matmul(rot_matrix_z(OmegaPlanet*TimeSim),MagAxis0Gei_D)
+    MagAxisGei_D = matmul(rot_matrix_z(OmegaPlanet*TimeSim), MagAxis0Gei_D)
 
     ! Transform from GEI to GSE
-    MagAxis_D = matmul(GseGei_DD,MagAxisGei_D)
+    MagAxis_D = matmul(GseGei_DD, MagAxisGei_D)
 
     ! Set the angles in GSE
     call xyz_to_dir(MagAxis_D, MagAxisTheta, MagAxisPhi)
@@ -717,8 +716,8 @@ contains
     ! This matrix changes with simulation time unless
     !    UseRotation=.false. or UseAlignedAxes=.true.
 
-    MagAxisTiltGsm   = -asin(MagAxis_D(x_))
-    SmgGsm_DD = rot_matrix_y( MagAxisTiltGsm )
+    MagAxisTiltGsm = -asin(MagAxis_D(x_))
+    SmgGsm_DD = rot_matrix_y(MagAxisTiltGsm)
 
     ! SMG-GSE transformation matrix
 
