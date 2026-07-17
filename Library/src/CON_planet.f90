@@ -1,8 +1,7 @@
 !  Copyright (C) 2002 Regents of the University of Michigan,
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-!
-!
+
 module CON_planet
 
   ! Physical information about the planet. The planet is described
@@ -14,7 +13,7 @@ module CON_planet
   ! Components can only access the data through the inquiry methods
   ! via the {\bf CON\_physics} class.
 
-  use ModNumConst, ONLY: cTwoPi, cDegToRad, cPi, cTiny, cTiny8
+  use ModNumConst, ONLY: cTwoPi, cDegToRad, cPi, cTiny, cUnit_DD
   use ModPlanetConst
   use ModTimeConvert, ONLY: TimeType, time_int_to_real
   use ModUtilities, ONLY: upper_case, CON_stop
@@ -36,6 +35,10 @@ module CON_planet
 
   logical :: IsInitializedPlanet = .false.
 
+  ! Initial time in 8 byte real
+  real(Real8_) :: tStart = -1.0
+  !$acc declare create(tStart)
+  
   ! Define variables
   real:: RadiusPlanet
   real:: MassPlanet
@@ -324,6 +327,7 @@ contains
        NamePlanetCommands = '#ROTATIONAXIS ' // NamePlanetCommands
        IsPlanetModified = .true.
        UseRealRotAxis = .false.
+       UseRealMagAxis = .false. ! Cannot use real mag axis
 
        call read_var('IsRotAxisPrimary', IsRotAxisPrimary)
        if (IsRotAxisPrimary) then
@@ -454,6 +458,10 @@ contains
        NamePlanetCommands = '#ORBIT ' // NamePlanetCommands
        IsPlanetModified = .true.
        IsOrbitSet = .true.
+       ! Use HGI (instead of J2000 and ICRF) for orbit and rotation
+       HgiJ2k_DD  = cUnit_DD
+       HgiIcrf_DD = cUnit_DD
+       J2kIcrf_DD = cUnit_DD
        call read_var('OrbitalPeriodPlanet', OrbitalPeriodPlanet_I(iPlanet))
        OmegaOrbit = cTwoPi/OrbitalPeriodPlanet_I(iPlanet)
        ! Correct omega planet?
@@ -593,13 +601,14 @@ contains
 
     character(len=*), parameter:: NameSub = 'orbit_in_hgi'
     !--------------------------------------------------------------------------
-    if(.not.IsOrbitSet) call get_planet_orbit(Time, Orbit)
+    if(.not.IsOrbitSet) call get_planet_orbit(tStart, Orbit)
     a         = Orbit%aAu*cAU
     Ecc       = Orbit%Eccentricity
     Inc       = Orbit%InclinationDeg*cDegToRad
     OmegaNode = Orbit%LonNodeDeg*cDegToRad
     LongPeri  = Orbit%LonPeriDeg*cDegToRad
-    Lon = modulo((Orbit%MeanLonDeg - Orbit%LonPeriDeg)*cDegToRad, cTwoPi)
+    Lon = modulo((Orbit%MeanLonDeg - Orbit%LonPeriDeg)*cDegToRad &
+         + OmegaOrbit*(Time - tStart), cTwoPi)
     if(Lon > cPi) Lon = Lon - cTwoPi
 
     if(Ecc < 0.8)then
@@ -637,7 +646,11 @@ contains
     if(.not.IsOrbitSet) XyzHgi_D = matmul(HgiJ2k_DD, XyzHgi_D)
 
     if(present(vHgi_D))then
-       MeanMotion = dOrbitJ2k_I(iPlanet)%MeanLonDeg*cDegToRad/cCentury
+       if(.not.IsOrbitSet)then
+          MeanMotion = dOrbitJ2k_I(iPlanet)%MeanLonDeg*cDegToRad/cCentury
+       else
+          MeanMotion = OmegaOrbit
+       end if
        dEdt = MeanMotion/max(1.0 - Ecc*CosEAnom, cTiny)
        VxOrb = -a*SinEAnom*dEdt
        VyOrb =  b*CosEAnom*dEdt
