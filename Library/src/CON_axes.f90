@@ -148,7 +148,7 @@ module CON_axes
   use CON_planet, ONLY: UseSetMagAxis, UseSetRotAxis, UseAlignedAxes, &
        UseRealMagAxis, UseRealRotAxis, MagAxisThetaGeo, MagAxisPhiGeo, &
        MagAxisTheta, MagAxisPhi, DipoleStrength, RotAxisTheta, RotAxisPhi, &
-       UseRotation, TiltRotation, RadiusPlanet, OmegaPlanet, OmegaOrbit, &
+       UseRotation, RadiusPlanet, OmegaPlanet, OmegaOrbit, &
        TimeEquinox, AngleEquinox, DoUpdateB0, DtUpdateB0, &
        NamePlanet, IsInitializedPlanet, tStart, IsOrbitSet, Orbit, &
        is_planet_init, get_rotation_axis_hgi, get_gei_geo_matrix_from_w, &
@@ -244,6 +244,7 @@ contains
     if (.not.DoInitializeAxes) RETURN
 
     call CON_set_do_test(NameSub, DoTest)
+    if(DoTest)write(*,*) NameSub,' starting for iPlanet=', iPlanet
 
     if(UseRealMagAxis .and. .not.UseRealRotAxis) call CON_stop(NameSub// &
          'UseRealMagAxis=T and UseRealRotAxis=F is not allowed')
@@ -315,7 +316,6 @@ contains
     elseif(.not.UseSetRotAxis)then
        if(UseRealRotAxis)then
           if(.not.UseOrbitalTable_I(iPlanet))then
-             RotAxisTheta = TiltRotation
              if(OmegaOrbit == 0.0)then
                 ! Make the rotation axis to be as equinox condition
                 RotAxisPhi   = -cHalfPi
@@ -327,10 +327,8 @@ contains
              end if
           end if
           if(DoTest)write(*,*)NameSub, &
-               ': UseRealRotAxis, UseRealMagAxis, TiltRotation, ', &
-               'OmegaOrbit, tStart, tEquinox=', &
-               UseRealRotAxis, UseRealMagAxis, TiltRotation*cRadToDeg, &
-               OmegaOrbit, tStart, TimeEquinox % Time
+               ': UseRealRotAxis, UseRealMagAxis, OmegaOrbit= ', &
+               UseRealRotAxis, UseRealMagAxis, OmegaOrbit
        else
           ! Rotational axis must be aligned with magnetic axis
           if(UseSetMagAxis)then

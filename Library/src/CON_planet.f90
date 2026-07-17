@@ -13,7 +13,7 @@ module CON_planet
   ! Components can only access the data through the inquiry methods
   ! via the {\bf CON\_physics} class.
 
-  use ModNumConst, ONLY: cTwoPi, cDegToRad, cPi, cTiny, cUnit_DD
+  use ModNumConst, ONLY: cPi, cHalfPi, cTwoPi, cDegToRad, cTiny, cUnit_DD
   use ModPlanetConst
   use ModTimeConvert, ONLY: TimeType, time_int_to_real
   use ModUtilities, ONLY: upper_case, CON_stop
@@ -43,7 +43,6 @@ module CON_planet
   real:: RadiusPlanet
   real:: MassPlanet
   real:: IonosphereHeight
-  real:: TiltRotation    ! tilt relative to orbital plane
   real:: OmegaRotation   ! Average angular speed relative to Sun/Star
   real:: OmegaPlanet     ! OmegaRotation + OmegaOrbit (inertial omega)
   real:: RotPeriodPlanet ! 2*pi/OmegaPlanet (inertial period)
@@ -171,7 +170,6 @@ contains
     ! Set all values for the selected planet
     RadiusPlanet     = rPlanet_I(iPlanet)
     MassPlanet       = MassPlanet_I(iPlanet)
-    TiltRotation     = TiltPlanet_I(iPlanet)
     IonosphereHeight = IonoHeightPlanet_I(iPlanet)
 
     if (UseOrbitalTable_I(iPlanet)) then
@@ -265,11 +263,22 @@ contains
           call read_var('OmegaPlanet',  OmegaPlanet)
           if (OmegaPlanet /= 0.0) then
              RotPeriodPlanet = cTwoPi/OmegaPlanet
+             call read_var('RotAxisTheta', RotAxisTheta)
+             RotAxisTheta = RotAxisTheta*cDegToRad
+             if(RotAxisTheta /= 0.0)then
+                call read_var('RotAxisPhi', RotAxisPhi)
+                RotAxisPhi = RotAxisPhi*cDegToRad
+             end if
           else
              RotPeriodPlanet = 0.0
+             RotAxisTheta    = 0.0
+             RotAxisPhi      = -cHalfPi ! equinox-like value
           end if
-          call read_var('TiltRotation', TiltRotation)
-          TiltRotation = TiltRotation * cDegToRad
+          UseSetRotAxis  = .true.
+          UseRealRotAxis = .false.
+          UseSetMagAxis  = .true.
+          UseRealMagAxis = .false.
+
           call read_var('TypeBField',   TypeBField)
           call upper_case(TypeBField)
 
@@ -277,26 +286,18 @@ contains
           case('NONE')
              MagAxisTheta   = 0.0
              MagAxisPhi     = 0.0
-             UseSetMagAxis  = .true.
-             UseRealMagAxis = .false.
              DipoleStrength = 0.0
 
-          case('DIPOLE','QUADRUPOLE','OCTUPOLE')
-             call read_var('MagAxisThetaGeo', MagAxisThetaGeo)
-             MagAxisThetaGeo = MagAxisThetaGeo * cDegToRad
-             call read_var('MagAxisPhiGeo',   MagAxisPhiGeo)
-             MagAxisPhiGeo = MagAxisPhiGeo * cDegToRad
-             call read_var('DipoleStrength',DipoleStrength)
-
-             if (TypeBField == 'QUADRUPOLE') then
-                call CON_stop(NameSub// &
-                     ' ERROR: quadrupole field unimplemented')
-             endif
-
-             if (TypeBField == 'OCTUPOLE') then
-                call CON_stop(NameSub// &
-                     ' ERROR: octupole field unimplemented')
-             endif
+          case('DIPOLE')
+             call read_var('MagAxisTheta', MagAxisTheta)
+             MagAxisTheta = MagAxisTheta * cDegToRad
+             if(MagAxisTheta /= 0.0) then
+                call read_var('MagAxisPhi', MagAxisPhi)
+                MagAxisPhi = MagAxisPhi * cDegToRad
+             else
+                MagAxisPhi = 0.0
+             end if
+             call read_var('DipoleStrength', DipoleStrength)
 
           case default
              call CON_stop(NameSub// &
