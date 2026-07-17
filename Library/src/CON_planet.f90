@@ -219,9 +219,6 @@ contains
     MagAxisThetaGeo   = bAxisThetaPlanet_I(iPlanet)  ! Permanent theta  in GEO
     MagAxisPhiGeo     = bAxisPhiPlanet_I(iPlanet)    ! Permanent phi    in GEO
 
-    ! write(*,*)'!!! iPlanet, UseOrbitalTable, UseRotationTable=', &
-    !     iPlanet, UseOrbitalTable_I(iPlanet), UseRotationTable_I(iPlanet)
-
     ! For Enceladus the dipole is at Saturn's center
     if(iPlanet == Enceladus_) MagCenter_D(2) = 944.23
 
@@ -601,7 +598,6 @@ contains
 
     character(len=*), parameter:: NameSub = 'orbit_in_hgi'
     !--------------------------------------------------------------------------
-    if(.not.IsOrbitSet) call get_planet_orbit(tStart, Orbit)
     a         = Orbit%aAu*cAU
     Ecc       = Orbit%Eccentricity
     Inc       = Orbit%InclinationDeg*cDegToRad
@@ -622,15 +618,10 @@ contains
        if(abs(dEAnom) < cTiny) EXIT
     end do
 
-    ! write(*,*)'!!! iIter, Lon, Eanom=', iIter, Lon&cRadToDeg, Eanom*cRadToDeg
-
     CosEAnom = cos(EAnom); SinEAnom = sin(EAnom)
     b = a*sqrt(max(1 - Ecc**2, 0.0))
     xOrb = a*(CosEAnom - Ecc)
     yOrb = b*SinEAnom
-
-    ! write(*,*)'!!! a, b, xOrb, yOrb, r=', &
-    !     a/cAU, b/cAU, xOrb/cAU, yOrb/cAU, sqrt(xOrb**2+yOrb**2)/cAU
 
     CosOm = cos(OmegaNode); SinOm = sin(OmegaNode)
     CosI  = cos(Inc);       SinI  = sin(Inc)
@@ -682,7 +673,6 @@ contains
     real(Real8_), intent(in) :: Time
     real,        intent(out) :: GeiGeo_DD(3,3)
 
-    type(OrbitType)    :: Orbit
     type(RotationType) :: Rot
     real :: Angle, Alpha, Delta, Incl, Node
     real :: PoleIcrf_D(3), OrbitJ2k_D(3), OrbitIcrf_D(3)
@@ -693,7 +683,6 @@ contains
 
     if(GeiOffset < -9.0)then
        ! Calculate offset angle between ICRF 0 longitude and GEI 0 longitude
-       if(.not.IsOrbitSet) call get_planet_orbit(Time, Orbit)
        Alpha = Rot%AlphaDeg*cDegToRad
        Delta = Rot%DeltaDeg*cDegToRad
        Incl  = Orbit%InclinationDeg*cDegToRad

@@ -144,14 +144,15 @@ module CON_axes
        atan2_check
   use ModTimeConvert, ONLY: time_int_to_real, time_real_to_int, TimeType
   use ModPlanetConst, ONLY: DipoleStrengthPlanet_I, Earth_, iPlanet, &
-       UseOrbitalTable_I, UseRotationTable_I, GeiOffset
+       UseOrbitalTable_I, UseRotationTable_I, GeiOffset, get_planet_orbit
   use CON_planet, ONLY: UseSetMagAxis, UseSetRotAxis, UseAlignedAxes, &
        UseRealMagAxis, UseRealRotAxis, MagAxisThetaGeo, MagAxisPhiGeo, &
        MagAxisTheta, MagAxisPhi, DipoleStrength, RotAxisTheta, RotAxisPhi, &
        UseRotation, TiltRotation, RadiusPlanet, OmegaPlanet, OmegaOrbit, &
        TimeEquinox, AngleEquinox, DoUpdateB0, DtUpdateB0, &
-       NamePlanet, IsInitializedPlanet, is_planet_init, tStart, &
-       get_rotation_axis_hgi, get_gei_geo_matrix_from_w, orbit_in_hgi
+       NamePlanet, IsInitializedPlanet, tStart, IsOrbitSet, Orbit, &
+       is_planet_init, get_rotation_axis_hgi, get_gei_geo_matrix_from_w, &
+       orbit_in_hgi
   use CON_geopack, ONLY: &
        geopack_recalc, geopack_sun, &
        RotAxisPhiGeopack, RotAxisThetaGeopack, &
@@ -252,6 +253,9 @@ contains
     call time_int_to_real(TimeEquinox)
 
     if(UseOrbitalTable_I(iPlanet))then
+       ! Obtain the orbit elements at start time unless set with #ORBIT
+       if(.not.IsOrbitSet) call get_planet_orbit(tStart, Orbit)
+
        ! Set initial planet position and velocity in HGI
        call orbit_in_hgi(tStart, XyzPlanetHgi_D, vPlanetHgi_D)
 
