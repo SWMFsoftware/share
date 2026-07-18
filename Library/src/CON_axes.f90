@@ -235,6 +235,7 @@ contains
 
     real :: XyzPlanetHgr_D(3)
     real :: RotAxisHgi_D(3), GseX_D(3), GseY_D(3), GseZ_D(3)
+    real :: HgiGseRaw_DD(3,3)
 
     integer :: iTime_I(7)
 
@@ -264,18 +265,44 @@ contains
        GseX_D = -XyzPlanetHgi_D/norm2(XyzPlanetHgi_D)
        GseZ_D = cross_product(XyzPlanetHgi_D, vPlanetHgi_D) ! orbit normal
        GseZ_D = GseZ_D/norm2(GseZ_D)
-       HgiGse_DD(:,x_) = GseX_D
-       HgiGse_DD(:,y_) = cross_product(GseZ_D, GseX_D)
-       HgiGse_DD(:,z_) = GseZ_D
+       HgiGseRaw_DD(:,x_) = GseX_D
+       HgiGseRaw_DD(:,y_) = cross_product(GseZ_D, GseX_D)
+       HgiGseRaw_DD(:,z_) = GseZ_D
+       HgiGse_DD = HgiGseRaw_DD
 
        if(UseRealRotAxis)then
           ! Get rotation axis in HGI
           call get_rotation_axis_hgi(0.0, RotAxisHgi_D)
-          ! Get rotation axis in GSE
-          RotAxis_D = matmul(RotAxisHgi_D, HgiGse_DD)
+          ! Keep physical axis orientation independent of optional
+          ! HGI longitude offset.
+          RotAxis_D = matmul(RotAxisHgi_D, HgiGseRaw_DD)
           ! Get direction angles in GSE
           call xyz_to_dir(RotAxis_D, RotAxisTheta, RotAxisPhi)
        endif
+
+       ! For HGI the same longitude offset behavior is needed as in
+       ! the legacy GEOPACK path, including the negative sentinel.
+       if(dLongitudeHgi < 0.0)then
+          dLongitudeHgi = modulo(atan2(HgiGse_DD(2,1), HgiGse_DD(1,1)), cTwoPi)
+          dLongitudeHgiDeg = dLongitudeHgi*cRadToDeg - 360.0
+       end if
+       if(dLongitudeHgi > 0.0)then
+          HgiGse_DD = matmul(rot_matrix_z(-dLongitudeHgi), HgiGse_DD)
+          XyzPlanetHgi_D = matmul(rot_matrix_z(-dLongitudeHgi), XyzPlanetHgi_D)
+          vPlanetHgi_D   = matmul(rot_matrix_z(-dLongitudeHgi), vPlanetHgi_D)
+       end if
+
+       ! A negative dLongitudeHgr means align anti-Earth with the -X,Z plane
+       ! at the start time, matching the behavior of set_hgi_gse_d_planet.
+       if(dLongitudeHgr < 0.0)then
+          dLongitudeHgr = modulo( &
+               + dLongitudeHgi &
+               + atan2(HgiGse_DD(2,1), HgiGse_DD(1,1)) &
+               - OmegaCarrington*(tStart - tStartCarringtonCoord), &
+               cTwoPi8)
+          dLongitudeHgrDeg = dLongitudeHgr*cRadToDeg - 360.0
+       end if
+
     else
        ! Calculate HgiGse matrix for the first time.
        ! This should be done for t=0.0 so that the HgiGse can be shifted
@@ -606,7 +633,8 @@ contains
     !      if int(TimeSim/DtUpdateB0) differs from int(TimeSimLast/DtUpdateB0)
     !
 
-    real :: MagAxisGei_D(3), OrbitNormal_D(3), RotAxisHgi_D(3)
+      real :: MagAxisGei_D(3), OrbitNormal_D(3), RotAxisHgi_D(3)
+      real :: HgiGseRaw_DD(3,3)
 
     real :: TimeSimLast = -1000.0  ! Last simulation time for magnetic fields
     real :: TimeSimHgr  = -1000.0  ! Last simulation time for HGR update
@@ -620,15 +648,22 @@ contains
        if(UseOrbitalTable_I(iPlanet))then
           call orbit_in_hgi(TimeSim, XyzPlanetHgi_D, vPlanetHgi_D)
 
-          HgiGse_DD(:,x_) = -XyzPlanetHgi_D/max(norm2(XyzPlanetHgi_D), cTiny)
+          HgiGseRaw_DD(:,x_) = -XyzPlanetHgi_D/max(norm2(XyzPlanetHgi_D), cTiny)
           OrbitNormal_D   = cross_product(XyzPlanetHgi_D, vPlanetHgi_D)
-          HgiGse_DD(:,z_) = OrbitNormal_D/max(norm2(OrbitNormal_D), cTiny)
-          HgiGse_DD(:,y_) = cross_product(HgiGse_DD(:,z_), HgiGse_DD(:,x_))
+          HgiGseRaw_DD(:,z_) = OrbitNormal_D/max(norm2(OrbitNormal_D), cTiny)
+          HgiGseRaw_DD(:,y_) = cross_product(HgiGseRaw_DD(:,z_), HgiGseRaw_DD(:,x_))
+          HgiGse_DD = HgiGseRaw_DD
           SunEMBDistance = norm2(XyzPlanetHgi_D)/cAU
+
+          if(dLongitudeHgi > 0.0)then
+             HgiGse_DD = matmul(rot_matrix_z(-dLongitudeHgi), HgiGse_DD)
+             XyzPlanetHgi_D = matmul(rot_matrix_z(-dLongitudeHgi), XyzPlanetHgi_D)
+             vPlanetHgi_D   = matmul(rot_matrix_z(-dLongitudeHgi), vPlanetHgi_D)
+          end if
 
           if(UseRealRotAxis .and. UseRotationTable_I(iPlanet))then
              call get_rotation_axis_hgi(TimeSim, RotAxisHgi_D)
-             RotAxis_D = matmul(RotAxisHgi_D, HgiGse_DD)
+             RotAxis_D = matmul(RotAxisHgi_D, HgiGseRaw_DD)
              call xyz_to_dir(RotAxis_D, RotAxisTheta, RotAxisPhi)
              call set_gse_gei_matrix
           end if
@@ -878,9 +913,9 @@ contains
        call CON_stop(NameSub//' unknown TypeCoordOut='//TypeCoordOut)
     end select
 
-    Rot_DD = matmul(OutGse_DD,transpose(InGse_DD))
+    Rot_DD = matmul(OutGse_DD, transpose(InGse_DD))
 
-    ! Rotated HGI/HGC case
+    ! Uppercase HGI/HGC/HGR refer to the original frames, so undo the offsets
     if(dLongitudeHgi /= 0.0)then
        if(TypeCoordIn == 'HGI' .or. TypeCoordIn == 'HGC') &
             Rot_DD = matmul(Rot_DD, rot_matrix_z(-dLongitudeHgi))
@@ -889,7 +924,6 @@ contains
             Rot_DD = matmul(rot_matrix_z(dLongitudeHgi), Rot_DD)
     end if
 
-    ! Rotated HGR case
     if(dLongitudeHgr /= 0.0)then
        if(TypeCoordIn == 'HGR') then
           Rot_DD = matmul(Rot_DD, rot_matrix_z(-dLongitudeHgr))
@@ -1350,6 +1384,12 @@ contains
     ! Test Mars
     ! Test Mars
     write(*,*) 'Testing Mars'
+   ! Reset heliographic offsets so Earth-specific settings do not
+   ! leak into the Mars checks.
+   dLongitudeHgi    = 0.0
+   dLongitudeHgiDeg = 0.0
+   dLongitudeHgr    = 0.0
+   dLongitudeHgrDeg = 0.0
     IsInitializedPlanet = .false.
     DoInitializeAxes = .true.
     GeiOffset = -10.0 ! reset GEI offset angle to default value

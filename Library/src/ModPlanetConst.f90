@@ -162,8 +162,11 @@ contains
     bAxisThetaPlanet_I     = 0.0                        ! [rad]
     bAxisPhiPlanet_I       = 0.0                        ! [rad]
 
-    UseOrbitalTable_I      = .false.
-    UseRotationTable_I     = .false.
+    UseOrbitalTable_I      = .true.
+    UseOrbitalTable_I(Earth_) = .false.
+    UseRotationTable_I     = .true.
+    UseRotationTable_I(Earth_) = .false.
+    
     OrbitJ2k_I             = OrbitType(1.0,0.0,0.0,0.0,0.0,0.0)
     dOrbitJ2k_I            = OrbitType(0.0,0.0,0.0,360000.0,0.0,0.0)
     RotationIcrf_I         = RotationType(90.0,90.0,0.0)
@@ -388,9 +391,6 @@ contains
     OrbitJ2k_I(Enceladus_)  = OrbitJ2k_I(Saturn_)
     dOrbitJ2k_I(Enceladus_) = dOrbitJ2k_I(Saturn_)
 
-    UseOrbitalTable_I([NewPlanet_,Mercury_,Venus_,Moon_,Mars_,Jupiter_,Io_, &
-         Europa_,Saturn_,Titan_,Enceladus_,Uranus_,Neptune_,Pluto_]) = .true.
-
     ! Table-driven rotation parameters (IAU WGCCRE 2009, Table 1)
     ! alpha, delta, W [deg] rates are per century for alpha/delta
     ! and per day for W.
@@ -440,9 +440,6 @@ contains
 
     RotationIcrf_I(Pluto_)  = RotationType(132.993,-6.163,302.695)
     dRotationIcrf_I(Pluto_) = RotationType(0.0,0.0,56.3625225)
-
-    UseRotationTable_I([NewPlanet_,Mercury_,Venus_,Moon_,Mars_,Jupiter_,Io_, &
-         Europa_,Saturn_,Titan_,Enceladus_,Uranus_,Neptune_,Pluto_]) = .true.
 
     ! Calculate the rotation matrix for J2k to Icrf:
     J2kIcrf_DD = rot_matrix_x(-InclJ2k)
