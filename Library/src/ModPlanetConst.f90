@@ -164,8 +164,8 @@ contains
 
     UseOrbitalTable_I      = .false.
     UseRotationTable_I     = .false.
-    OrbitJ2k_I             = OrbitType(0.0,0.0,0.0,0.0,0.0,0.0)
-    dOrbitJ2k_I            = OrbitType(0.0,0.0,0.0,0.0,0.0,0.0)
+    OrbitJ2k_I             = OrbitType(1.0,0.0,0.0,0.0,0.0,0.0)
+    dOrbitJ2k_I            = OrbitType(0.0,0.0,0.0,360000.0,0.0,0.0)
     RotationIcrf_I         = RotationType(90.0,90.0,0.0)
     dRotationIcrf_I        = RotationType(0.0,0.0,0.0)
 
