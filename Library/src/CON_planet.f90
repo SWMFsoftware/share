@@ -661,10 +661,9 @@ contains
     real, intent(out) :: GeiGeo_DD(3,3)
 
     type(RotationType) :: Rot
-    real :: Angle, Alpha, Delta, Incl, Node
+    real :: Alpha, Delta, Incl, Node, EquinoxNorm
     real :: PoleIcrf_D(3), OrbitJ2k_D(3), OrbitIcrf_D(3)
     real :: IcrfNode_D(3), Equinox_D(3)
-    real :: NormIcrfNode, NormEquinox
     !--------------------------------------------------------------------------
     call get_planet_rotation_elements(tStart + TimeSim, Rot)
 
@@ -675,28 +674,32 @@ contains
        Incl  = Orbit%InclinationDeg*cDegToRad
        Node  = Orbit%LonNodeDeg*cDegToRad
 
-       ! Pole direction in ICRF/J2000 equatorial coordinates.
+       ! Pole direction in ICRF/J2000 equatorial coordinates
        PoleIcrf_D = [cos(Delta)*cos(Alpha), cos(Delta)*sin(Alpha), sin(Delta)]
 
-       ! Orbit normal from J2000 ecliptic elements, converted to ICRF.
+       ! Orbit normal from J2000 ecliptic elements, converted to ICRF
        OrbitJ2k_D = [sin(Node)*sin(Incl), -cos(Node)*sin(Incl), cos(Incl)]
        OrbitIcrf_D = matmul(OrbitJ2k_D, J2kIcrf_DD)
 
-       ! IcrfNode is the ascending node of the body equator on the ICRF equator
-       IcrfNode_D = cross_product([0.0, 0.0, 1.0], PoleIcrf_D)
-       IcrfNode_D = IcrfNode_D/norm2(IcrfNode_D)
-
        ! GEI x-axis is the planet's vernal equinox direction on the equator
        Equinox_D = cross_product(PoleIcrf_D, OrbitIcrf_D)
-       Equinox_D = Equinox_D/norm2(Equinox_D)
+       EquinoxNorm = norm2(Equinox_D)
+       if(EquinoxNorm < cTiny)then
+          ! If the equinox direction is singular, set the offset to pi.
+          GeiOffset = cPi
+       else
+          Equinox_D = Equinox_D/EquinoxNorm
 
-       ! Exact signed angle from IAU node (0 longitude) to the GEI x-axis.
-       ! The cPi is due to GEO has 0 at midnight while the rotation
-       ! parameters define the angle for the noon meridian
-       GeiOffset = cPi + atan2( &
-            dot_product(cross_product(IcrfNode_D, Equinox_D), PoleIcrf_D), &
-            dot_product(IcrfNode_D, Equinox_D))
+          ! IAU node direction on the ICRF equator
+          IcrfNode_D = [-sin(Alpha), cos(Alpha), 0.0]
 
+          ! Exact signed angle from IAU node (0 longitude) to the GEI x-axis.
+          ! The cPi is due to GEO having 0 at midnight while the rotation
+          ! parameters define the angle for the noon meridian.
+          GeiOffset = cPi + atan2( &
+              dot_product(cross_product(IcrfNode_D, Equinox_D), PoleIcrf_D), &
+              dot_product(IcrfNode_D, Equinox_D))
+       end if
     end if
 
     ! W is measured from Q to the prime meridian point B.
