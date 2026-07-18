@@ -166,7 +166,7 @@ contains
     UseOrbitalTable_I(Earth_) = .false.
     UseRotationTable_I     = .true.
     UseRotationTable_I(Earth_) = .false.
-    
+
     OrbitJ2k_I             = OrbitType(1.0,0.0,0.0,0.0,0.0,0.0)
     dOrbitJ2k_I            = OrbitType(0.0,0.0,0.0,360000.0,0.0,0.0)
     RotationIcrf_I         = RotationType(90.0,90.0,0.0)
