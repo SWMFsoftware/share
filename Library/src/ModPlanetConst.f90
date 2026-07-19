@@ -163,9 +163,9 @@ contains
     bAxisPhiPlanet_I       = 0.0                        ! [rad]
 
     UseOrbitalTable_I      = .true.
-    UseOrbitalTable_I(Earth_) = .false.
+    ! UseOrbitalTable_I(Earth_) = .false.
     UseRotationTable_I     = .true.
-    UseRotationTable_I(Earth_) = .false.
+    ! UseRotationTable_I(Earth_) = .false.
 
     OrbitJ2k_I             = OrbitType(1.0,0.0,0.0,0.0,0.0,0.0)
     dOrbitJ2k_I            = OrbitType(0.0,0.0,0.0,360000.0,0.0,0.0)
