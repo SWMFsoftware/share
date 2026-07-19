@@ -150,7 +150,7 @@ module CON_axes
        MagAxisTheta, MagAxisPhi, DipoleStrength, RotAxisTheta, RotAxisPhi, &
        UseRotation, RadiusPlanet, OmegaPlanet, OmegaOrbit, &
        TimeEquinox, AngleEquinox, DoUpdateB0, DtUpdateB0, &
-       NamePlanet, IsInitializedPlanet, tStart, IsOrbitSet, Orbit, &
+       IsInitializedPlanet, tStart, IsOrbitSet, Orbit, &
        is_planet_init, get_rotation_axis_hgi, get_gei_geo_matrix_from_w, &
        orbit_in_hgi
   use CON_geopack, ONLY: &
@@ -318,7 +318,7 @@ contains
        call set_v_planet
     end if
 
-    if(NamePlanet == 'EARTH' .and. UseRealRotAxis .and. UseRealMagAxis)then
+    if(iPlanet == Earth_ .and. UseRealRotAxis .and. UseRealMagAxis)then
        ! Use GEOPACK axes for Earth (elliptic orbit and IGRF dipole)
        call time_real_to_int(tStart, iTime_I)
        call geopack_recalc(iTime_I)
@@ -594,13 +594,14 @@ contains
        RETURN
     end if
 
-    if(UseRotationTable_I(iPlanet) .and. iPlanet /= Earth_)then
-       call get_gei_geo_matrix_from_w(TimeSim, GeiGeo_DD)
-    else
-       AlphaEquinox = (TimeSim + tStart - TimeEquinox % Time) &
-            * OmegaPlanet + AngleEquinox
-       GeiGeo_DD = rot_matrix_z(AlphaEquinox)
-    end if
+    call get_gei_geo_matrix_from_w(TimeSim, GeiGeo_DD)
+
+    ! Obsolete and inaccurate calculation with about 2 degree error
+    !if(iPlanet == Earth_)then
+    !   AlphaEquinox = (TimeSim + tStart - TimeEquinox % Time) &
+    !        * OmegaPlanet + AngleEquinox
+    !   GeiGeo_DD = rot_matrix_z(AlphaEquinox)
+    !end if
 
   end subroutine set_gei_geo_matrix
   !============================================================================
@@ -633,8 +634,8 @@ contains
     !      if int(TimeSim/DtUpdateB0) differs from int(TimeSimLast/DtUpdateB0)
     !
 
-      real :: MagAxisGei_D(3), OrbitNormal_D(3), RotAxisHgi_D(3)
-      real :: HgiGseRaw_DD(3,3)
+    real :: MagAxisGei_D(3), OrbitNormal_D(3), RotAxisHgi_D(3)
+    real :: HgiGseRaw_DD(3,3)
 
     real :: TimeSimLast = -1000.0  ! Last simulation time for magnetic fields
     real :: TimeSimHgr  = -1000.0  ! Last simulation time for HGR update
@@ -661,7 +662,7 @@ contains
              vPlanetHgi_D   = matmul(rot_matrix_z(-dLongitudeHgi), vPlanetHgi_D)
           end if
 
-          if(UseRealRotAxis .and. UseRotationTable_I(iPlanet))then
+          if(UseRealRotAxis .and. iPlanet /= Earth_)then
              call get_rotation_axis_hgi(TimeSim, RotAxisHgi_D)
              RotAxis_D = matmul(RotAxisHgi_D, HgiGseRaw_DD)
              call xyz_to_dir(RotAxis_D, RotAxisTheta, RotAxisPhi)
@@ -1180,11 +1181,11 @@ contains
 
     call get_axes(0.0, MagAxisTilt, RotAxisGsm_D)
 
-    if(abs(MagAxisTilt*cRadToDeg - 7.7223745616548189) > 0.00001)write(*,*) &
+    if(abs(MagAxisTilt*cRadToDeg - 7.981905804308643) > 0.00001)write(*,*) &
          'test get_axes failed: MagAxisTilt =',MagAxisTilt*cRadToDeg,&
-         ' should be 7.7223745616548189 degrees within round off error'
+         ' should be 7.981905804308643 degrees within round off error'
 
-    Result_D = [4.017959626728e-5, 0.122841278089, 0.9924263291464]
+    Result_D = [7.23514970498717E-05, 0.11768330549083, 0.99305117409628]
     if(maxval(abs(RotAxisGsm_D - Result_D)) > 0.00001) &
          write(*,*) 'test get_axes failed: RotAxisGsm_D =',&
          RotAxisGsm_D,' should be equal to ',Result_D, &
@@ -1192,8 +1193,8 @@ contains
 
     write(*,'(a)')'Testing transform_matrix'
 
-    Rot_DD = transform_matrix(0.0,'GSM','GEO')
-    RotAxisGeo_D = matmul(Rot_DD,RotAxisGsm_D)
+    Rot_DD = transform_matrix(0.0, 'GSM', 'GEO')
+    RotAxisGeo_D = matmul(Rot_DD, RotAxisGsm_D)
 
     Result_D = [0.0, 0.0, 1.0]
     if(maxval(abs(RotAxisGeo_D - Result_D)) > 0.0001) &
@@ -1201,7 +1202,7 @@ contains
          RotAxisGeo_D,' should be be equal to ',Result_D,&
          ' within round off errors'
 
-    Rot_DD = transform_matrix(10.0,'HGI','HGC')
+    Rot_DD = transform_matrix(10.0, 'HGI', 'HGC')
     Result_DD = rot_matrix_z(-10.0*OmegaCarrington)
     if(maxval(abs(Rot_DD - Result_DD)) > Epsilon1) then
        write(*,*)'test transform_matrix failed: HGI->HGC matrix is'
@@ -1216,42 +1217,42 @@ contains
     write(*,'(a)')'Testing angular_velocity'
 
     ! HGI is an inertial system
-    Omega_D  = angular_velocity(0.0,'HGI')
+    Omega_D  = angular_velocity(0.0, 'HGI')
     Result_D = [0., 0., 0.]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: HGI Omega_D = ',Omega_D,&
          ' should be equal to ',Result_D,' within round off errors'
 
     ! HGR rotates around its Z axis with the OmegaCarrington
-    Omega_D  = angular_velocity(0.0,'HGR')
+    Omega_D  = angular_velocity(0.0, 'HGR')
     Result_D = [0., 0., OmegaCarrington]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: HGR Omega_D = ',Omega_D,&
          ' should be equal to ',Result_D,' within round off errors'
 
     ! HGC rotates around its Z axis with the OmegaCarrington
-    Omega_D  = angular_velocity(0.0,'HGC')
+    Omega_D  = angular_velocity(0.0, 'HGC')
     Result_D = [0., 0., OmegaCarrington]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: HGC Omega_D = ',Omega_D,&
          ' should be equal to ',Result_D,' within round off errors'
 
     ! GEI is an inertial system
-    Omega_D  = angular_velocity(0.0,'GEI')
+    Omega_D  = angular_velocity(0.0, 'GEI')
     Result_D = [0., 0., 0.]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: GEI Omega_D = ',Omega_D, &
          ' should be equal to ',Result_D,' within round off errors'
 
     ! In the current approximation GSE is an inertial system
-    Omega_D  = angular_velocity(0.0,'GSE')
+    Omega_D  = angular_velocity(0.0, 'GSE')
     Result_D = [0., 0., 0.]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: GSE Omega_D = ',Omega_D,&
          ' should be equal to ',Result_D,' within round off errors'
 
     ! GEO rotates with OmegaPlanet around the Z axis with respect to inertial
-    Omega_D  = angular_velocity(0.0,'GEO')
+    Omega_D  = angular_velocity(0.0, 'GEO')
     Result_D = [0., 0., OmegaPlanet]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: GEO Omega_D = ',Omega_D,&
@@ -1270,16 +1271,16 @@ contains
     ! so GSM rotates with a positive sign around the X axis.
     ! The sign is right, the amplitude is reasonable.
 
-    Omega_D  = angular_velocity(0.0,'GSM')
-    Result_D = [9.8163649853322886E-06, 0., 0.]
+    Omega_D  = angular_velocity(0.0, 'GSM')
+    Result_D = [1.0159142032690014E-05, 0., 0.]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: GSM Omega_D = ',Omega_D,&
          ' should be equal to ',Result_D,' within round off errors'
 
     ! This is a general case, we believe the numbers
-    Omega_D  = angular_velocity(0.0,'GSE','SMG',iFrame=2)
-    Result_D = [9.7273384193693053E-06, 8.9577283077318018E-06, &
-         -1.3190560195532345E-06]
+    Omega_D  = angular_velocity(0.0, 'GSE', 'SMG',iFrame=2)
+1   Result_D = [1.0060719966113833E-05, 8.5816024030392317E-06, &
+         -1.4107021605913379E-06]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: GSE-SMG Omega_D in SMG= ',&
          Omega_D,' should be equal to ',Result_D,' within round off errors'
@@ -1312,7 +1313,7 @@ contains
     ! is getting farther away from the Sun, so the X component of the
     ! velocity should be a small positive number.
     v2_D = transform_velocity(0., [0., 0., 0.], [0., 0., 0.], 'hgi', 'GSE')
-    Result_D = [ 4.8531599940505521E+02, 2.9901632640648619E+04, 0.]
+    Result_D = [ 4.8518332411364236E+02, 2.9900370812848141E+04, 0.]
     if(maxval(abs(v2_D - Result_D)) > Epsilon2) &
          write(*,*)'test angular_velocity failed: HGI-GSE v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
@@ -1348,7 +1349,7 @@ contains
          ' should be equal to ',Result_D,' within round off errors'
 
     ! Go back
-    Position_D = matmul(HgrHgi_DD,XyzPlanetHgi_D)
+    Position_D = matmul(HgrHgi_DD, XyzPlanetHgi_D)
     v2_D = transform_velocity(0., Result_D, Position_D, 'hgr', 'GEO')
     Result_D = [0., 0., 0.]
     if(maxval(abs(v2_D - Result_D)) > Epsilon2) &
@@ -1384,12 +1385,12 @@ contains
     ! Test Mars
     ! Test Mars
     write(*,*) 'Testing Mars'
-   ! Reset heliographic offsets so Earth-specific settings do not
-   ! leak into the Mars checks.
-   dLongitudeHgi    = 0.0
-   dLongitudeHgiDeg = 0.0
-   dLongitudeHgr    = 0.0
-   dLongitudeHgrDeg = 0.0
+    ! Reset heliographic offsets so Earth-specific settings do not
+    ! leak into the Mars checks.
+    dLongitudeHgi    = 0.0
+    dLongitudeHgiDeg = 0.0
+    dLongitudeHgr    = 0.0
+    dLongitudeHgrDeg = 0.0
     IsInitializedPlanet = .false.
     DoInitializeAxes = .true.
     GeiOffset = -10.0 ! reset GEI offset angle to default value
