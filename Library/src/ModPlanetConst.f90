@@ -54,7 +54,7 @@ module ModPlanetConst
   type RotationType
      real :: AlphaDeg  ! longirude of rotation axis in reference frame
      real :: DeltaDeg  ! latiude of rotation axis in reference frame
-     real :: WDeg      ! direction of meridian relative to vernal equinox
+     real :: WDeg      ! direction of meridian in ICRF frame
   end type RotationType
 
   ! Declarations for the variables that we are storing to define each body.
@@ -65,12 +65,9 @@ module ModPlanetConst
   ! NOTE THE THE PRECISE DEFINITIONS OF WHAT THE VARIABLES MEAN CAN BE
   ! FOUND AT THE END OF THE FILE AND IN THE CODE DOCUMENTATION (we hope).
 
-  ! Radius, mass, and Orbital parameters
-  ! RightAscension_I, Inclination_I, ArgPeriapsis_I are relative to HGI
+  ! Radius, mass, and simplified orbital parameters for moons
   real, dimension(0:MaxPlanet+1):: &
-       rPlanet_I, MassPlanet_I, rOrbitPlanet_I, Excentricity_I, &
-       OrbitalPeriodPlanet_I, RotationPeriodPlanet_I, TiltPlanet_I, &
-       RightAscension_I, Inclination_I, ArgPeriapsis_I
+       rPlanet_I, MassPlanet_I, rOrbitMoon_I, OrbitalPeriodMoon_I
 
   ! Magnetic field of planet
   character (len=lTypeBField):: TypeBFieldPlanet_I(0:MaxPlanet+1)
@@ -84,8 +81,6 @@ module ModPlanetConst
   ! Index of the selected planet
   integer:: iPlanet = -1
   integer:: Planet_ = -1 ! For compatibility with some other code
-
-  logical, dimension(0:MaxPlanet+1):: UseOrbitalTable_I, UseRotationTable_I
 
   type(OrbitType), dimension(0:MaxPlanet+1):: &
        OrbitJ2k_I, dOrbitJ2k_I
@@ -147,25 +142,13 @@ contains
 
     rPlanet_I              = 0.0                        ! [m]
     MassPlanet_I           = 0.0                        ! [kg]
-    rOrbitPlanet_I         = 0.0                        ! [m]
-    OrbitalPeriodPlanet_I  = 0.0                        ! [s]
-    RotationPeriodPlanet_I = 0.0                        ! [s]
-    Excentricity_I         = 0.0
-    RightAscension_I       = 0.0                        ! [rad]
-    Inclination_I          = 0.0                        ! [rad]
-    ArgPeriapsis_I         = 0.0                        ! [rad]
-
-    TiltPlanet_I           = 0.0                        ! [rad]
+    rOrbitMoon_I           = 0.0                        ! [m]
+    OrbitalPeriodMoon_I    = 0.0                        ! [s]
 
     TypeBFieldPlanet_I     = 'NONE'
     DipoleStrengthPlanet_I = 0.0                        ! [T]
     bAxisThetaPlanet_I     = 0.0                        ! [rad]
     bAxisPhiPlanet_I       = 0.0                        ! [rad]
-
-    UseOrbitalTable_I      = .true.
-    ! UseOrbitalTable_I(Earth_) = .false.
-    UseRotationTable_I     = .true.
-    ! UseRotationTable_I(Earth_) = .false.
 
     OrbitJ2k_I             = OrbitType(1.0,0.0,0.0,0.0,0.0,0.0)
     dOrbitJ2k_I            = OrbitType(0.0,0.0,0.0,360000.0,0.0,0.0)
@@ -193,11 +176,6 @@ contains
 
     rPlanet_I(Earth_)                   = 6378.0e+3               ! [m]
     MassPlanet_I(Earth_)                = 5.976e+24               ! [kg]
-
-    rOrbitPlanet_I(Earth_)              = cAU                     ! [m]
-    OrbitalPeriodPlanet_I(Earth_)       = 365.24218967*cDay       ! [s]
-    RotationPeriodPlanet_I(Earth_)      = cDay                    ! [s]
-    TiltPlanet_I(Earth_)                = 23.5 * cDegToRad        ! [rad]
 
     TypeBFieldPlanet_I(Earth_)          = 'DIPOLE'
     DipoleStrengthPlanet_I(Earth_)      = -31100.0e-9             ! [T]
@@ -271,8 +249,7 @@ contains
 
     rPlanet_I(Europa_)                  = 1569.0e+3              ! [m]
     MassPlanet_I(Europa_)               = 4.80e22                ! [kg]
-    OrbitalPeriodPlanet_I(Europa_)      = 3.551 * cDay           ! [s]
-    RotationPeriodPlanet_I(Europa_)     = 3.551 * cDay           ! [s]
+    OrbitalPeriodMoon_I(Europa_)        = 3.551 * cDay           ! [s]
 
     TypeBFieldPlanet_I(Europa_)         = 'DIPOLE'
     DipoleStrengthPlanet_I(Europa_)     =    100.0e-9            ! [T]
@@ -284,18 +261,16 @@ contains
 
     rPlanet_I(Titan_)                   = 2575.0e+3              ! [m]
     MassPlanet_I(Titan_)                = 0.1346e+24             ! [kg]
-    rOrbitPlanet_I(Titan_)              = 1.222e+9               ! [m]
-    OrbitalPeriodPlanet_I(Titan_)       = 15.945 * cDay          ! [s]
-    RotationPeriodPlanet_I(Titan_)      = 15.945 * cDay          ! [s]
+    rOrbitMoon_I(Titan_)                = 1.222e+9               ! [m]
+    OrbitalPeriodMoon_I(Titan_)         = 15.945*cDay            ! [s]
 
     ! Enceladus (62)
     NamePlanet_I(Enceladus_)            = 'ENCELADUS'
 
     rPlanet_I(Enceladus_)               = 252.0e+3               ! [m]
     MassPlanet_I(Enceladus_)            = 8.4e+19                ! [kg]
-    rOrbitPlanet_I(Enceladus_)          = 2.3802e+8              ! [m]
-    OrbitalPeriodPlanet_I(Enceladus_)   = 1.370218 * cDay        ! [s]
-    RotationPeriodPlanet_I(Enceladus_)  = 1.370218 * cDay        ! [s]
+    rOrbitMoon_I(Enceladus_)            = 2.3802e+8              ! [m]
+    OrbitalPeriodMoon_I(Enceladus_)     = 1.370218 * cDay        ! [s]
 
     ! This is the field of Saturn but using a different distance unit !!!
     TypeBFieldPlanet_I(Enceladus_)         = 'DIPOLE'
@@ -305,10 +280,10 @@ contains
 
     ! Comets
     NamePlanet_I(Halley_) = 'HALLEY'
-    rPlanet_I(Halley_)                   = 1.0E9    ! [m] for distance units
+    rPlanet_I(Halley_)                  = 1.0E9                 ! [m]
 
     NamePlanet_I(CometCG_)='CometCG'
-    rPlanet_I(CometCG_) = 1.0E3
+    rPlanet_I(CometCG_)                 = 1.0E3                 ! [m]
 
     ! Get the base time for the J2000 system
     call time_int_to_real(TimeJ2k)
@@ -652,18 +627,3 @@ contains
   !============================================================================
 end module ModPlanetConst
 !==============================================================================
-
-! Documentation
-
-! The orbital period belongs to the TROPICAL YEAR, which is
-! relative to the vernal equinox which is slowly moving
-! due to the precession of the Earth's rotation axis.
-
-! The rotational angular velocity is relative to an inertial frame
-
-! Reference equinox time taken from
-! http://aa.usno.navy.mil/data/docs/Earth_Seasons.html
-
-! The angle between the zero meridian and the eqinox direction at
-! equinox time. For Earth this can be calculated from the time of day.
-! For other planets there is no analogous method to calculate this angle.

@@ -47,16 +47,12 @@ module CON_planet
   real:: OmegaPlanet     ! OmegaRotation + OmegaOrbit (inertial omega)
   real:: RotPeriodPlanet ! 2*pi/OmegaPlanet (inertial period)
   real:: OmegaOrbit      ! Average angular speed of orbital motion
-  real:: AngleEquinox    ! The Sun's meridian at equinox time for Earth
 
   ! Orbit description
   logical:: IsOrbitSet = .false.
   type(OrbitType) :: Orbit
 
-  ! Default equinox time value is valid for Earth
-  type(TimeType) :: TimeEquinox = TimeType(2000, 3, 20, 7, 35, 0, &
-       0.0, 0.0_REAL8_, '20000320073500')
-  !$acc declare create(OmegaPlanet, OmegaRotation, AngleEquinox, TimeEquinox)
+  !$acc declare create(OmegaPlanet, OmegaRotation)
 
   ! Magnetic field type and strength in teslas
   character (len=lTypeBField) :: TypeBField = 'DIPOLE'
@@ -172,44 +168,16 @@ contains
     MassPlanet       = MassPlanet_I(iPlanet)
     IonosphereHeight = IonoHeightPlanet_I(iPlanet)
 
-    if (UseOrbitalTable_I(iPlanet)) then
-       rOrbitPlanet   = OrbitJ2k_I(iPlanet) % aAu * cAU
-       OmegaOrbit     = dOrbitJ2k_I(iPlanet) % MeanLonDeg*cDegToRad &
-            /cCentury
-    else
-       rOrbitPlanet  = rOrbitPlanet_I(iPlanet)
-       if (OrbitalPeriodPlanet_I(iPlanet) == 0.0) then
-          OmegaOrbit = 0.0
-       else
-          OmegaOrbit = cTwoPi/OrbitalPeriodPlanet_I(iPlanet)
-       end if
-    end if
+    rOrbitPlanet = OrbitJ2k_I(iPlanet) % aAu * cAU
+    OmegaOrbit   = dOrbitJ2k_I(iPlanet) % MeanLonDeg*cDegToRad/cCentury
 
-    if (UseRotationTable_I(iPlanet)) then
-       OmegaPlanet   = dRotationIcrf_I(iPlanet) % WDeg*cDegToRad/cDay
-       OmegaRotation = OmegaPlanet - OmegaOrbit
-       if (OmegaPlanet /= 0.0) then
-          RotPeriodPlanet = cTwoPi/OmegaPlanet
-       else
-          RotPeriodPlanet = 0.0
-       end if
+    OmegaPlanet   = dRotationIcrf_I(iPlanet) % WDeg*cDegToRad/cDay
+    OmegaRotation = OmegaPlanet - OmegaOrbit
+    if (OmegaPlanet /= 0.0) then
+       RotPeriodPlanet = cTwoPi/OmegaPlanet
     else
-       RotPeriodPlanet = RotationPeriodPlanet_I(iPlanet)
-       if (RotPeriodPlanet == 0.0) then
-          OmegaRotation = 0.0
-       else
-          OmegaRotation = cTwoPi/RotPeriodPlanet
-       end if
-       OmegaPlanet  = OmegaRotation + OmegaOrbit
+       RotPeriodPlanet = 0.0
     end if
-    if(iPlanet == Earth_)then
-       ! For Earth the longitude of midnight can be obtained
-       ! from the time of day
-       AngleEquinox = cTwoPi/(24*60) * &
-            (TimeEquinox % iHour*60 + TimeEquinox % iMinute)
-    end if
-    ! Set the real value and the string
-    call time_int_to_real(TimeEquinox)
 
     ! Magnetic field type and strength in teslas
     TypeBField        = TypeBFieldPlanet_I(iPlanet)
@@ -220,8 +188,8 @@ contains
     ! For Enceladus the dipole is at Saturn's center
     if(iPlanet == Enceladus_) MagCenter_D(2) = 944.23
 
-    !$acc update device(OmegaPlanet, AngleEquinox, OmegaRotation, TimeEquinox,&
-    !$acc MagAxisPhi, MagAxisTheta,  rOrbitPlanet)
+    !$acc update device(OmegaPlanet, OmegaRotation,&
+    !$acc MagAxisPhi, MagAxisTheta, rOrbitPlanet)
 
   end function is_planet_init
   !============================================================================
@@ -460,8 +428,8 @@ contains
        HgiJ2k_DD  = cUnit_DD
        HgiIcrf_DD = cUnit_DD
        J2kIcrf_DD = cUnit_DD
-       call read_var('OrbitalPeriodPlanet', OrbitalPeriodPlanet_I(iPlanet))
-       OmegaOrbit = cTwoPi/OrbitalPeriodPlanet_I(iPlanet)
+       call read_var('OrbitalPeriodPlanet', OmegaOrbit)
+       if(OmegaOrbit /= 0.0) OmegaOrbit = cTwoPi/OmegaOrbit
        ! Correct omega planet?
        call read_var('rOrbitPlanet',  Orbit % aAu) ! [m]
        Orbit % aAu = Orbit % aAu/cAU
@@ -704,7 +672,7 @@ contains
 
     ! W is measured from Q to the prime meridian point B.
     ! This code's GEO x-axis follows the midnight half-plane convention
-    ! used by the legacy AngleEquinox logic, so it is opposite to B.
+    ! so it is opposite to B.
     GeiGeo_DD = rot_matrix_z(Rot%WDeg*cDegToRad - GeiOffset)
 
   end subroutine get_gei_geo_matrix_from_w

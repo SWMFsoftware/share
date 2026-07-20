@@ -774,12 +774,14 @@ contains
     real :: xSmg_D(3), xGsm_D(3), xGse_D(3), bSmg_D(3), bGsm_D(3), bGse_D(3)
     real :: x_D(3), rMap, xMap_D(3)
     integer :: iHemisphere
+    type(TimeType):: TimeEquinox
     !--------------------------------------------------------------------------
-
     write(*,*)
     write(*,'(a)')'TEST GET_PLANET_FIELD'
     write(*,*)
 
+    TimeEquinox = TimeType(2000, 3, 20, 7, 35, 0, 0.0, 0.0_Real8_, '')
+    call time_int_to_real(TimeEquinox)
     write(*,*) 'TimeEquinox=', TimeEquinox
     call init_axes(TimeEquinox % Time)
 
