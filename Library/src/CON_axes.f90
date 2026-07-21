@@ -300,7 +300,6 @@ contains
        dLongitudeHgrDeg = dLongitudeHgr*cRadToDeg - 360.0
     end if
 
-
     if(iPlanet == Earth_ .and. UseRealRotAxis .and. UseRealMagAxis)then
        ! Use GEOPACK axes for Earth (elliptic orbit and IGRF dipole)
        call time_real_to_int(tStart, iTime_I)
