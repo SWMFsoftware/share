@@ -5,6 +5,12 @@ COMPILE.c     = clang
 COMPILE.mpicc = mpicc
 COMPILE.mpicxx= mpicxx
 
+# DEBUGMEMORY = -fsanitize=address,undefined -fno-sanitize-recover=all \
+#	      -fno-omit-frame-pointer
+#SANITIZER_RUNTIME_DIR := $(shell ${COMPILE.mpicxx} --print-runtime-dir)
+#DEBUGMEMORYLINK = ${SANITIZER_RUNTIME_DIR}/libclang_rt.asan_osx_dynamic.dylib \
+#		  -Wl,-rpath,${SANITIZER_RUNTIME_DIR}
+
 LINK.cpp = ${COMPILE.c} -lstdc++
 
 CPPLIB = -lc++ -lmpi_cxx
