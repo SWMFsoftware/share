@@ -144,7 +144,7 @@ module CON_axes
        UseRealMagAxis, UseRealRotAxis, MagAxisThetaGeo, MagAxisPhiGeo, &
        MagAxisTheta, MagAxisPhi, DipoleStrength, RotAxisTheta, RotAxisPhi, &
        UseRotation, RadiusPlanet, OmegaPlanet, OmegaOrbit, &
-       DoUpdateB0, DtUpdateB0, &
+       TypeBField, DoUpdateB0, DtUpdateB0, &
        IsInitializedPlanet, tStart, IsOrbitSet, Orbit, &
        is_planet_init, get_rotation_axis_hgi, get_gei_geo_matrix_from_w, &
        orbit_in_hgi
@@ -244,6 +244,11 @@ contains
 
     call CON_set_do_test(NameSub, DoTest)
     if(DoTest)write(*,*) NameSub,' starting for iPlanet=', iPlanet
+
+    if(TypeBField == 'NONE') UseRealMagAxis = .false.
+    if(DoTest)write(*,*) NameSub, &
+         ' UseRealRotAxis, UseSetRotAxis, UseRealMagAxis, UseSetMagAxis=', &
+         UseRealRotAxis, UseSetRotAxis, UseRealMagAxis, UseSetMagAxis
 
     if(UseRealMagAxis .and. .not.UseRealRotAxis) call CON_stop(NameSub// &
          'UseRealMagAxis=T and UseRealRotAxis=F is not allowed')
