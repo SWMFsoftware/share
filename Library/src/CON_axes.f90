@@ -162,7 +162,7 @@ module CON_axes
   !                      angular_velocity and transform_velocity
   ! 21Jul25 - Gabor Toth Generalized orbit and rotation using IAU values
   !                      and true Kepler solver
-  
+
   implicit none
 
   save
