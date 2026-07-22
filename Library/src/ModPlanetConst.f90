@@ -625,5 +625,112 @@ contains
 
   end subroutine add_jupiter_rotation_terms
   !============================================================================
+  subroutine igrf_mag_axis(Time, Dipole_D)
+
+    ! This was part of the RECALC subroutine from geopack.f by Tsyganenko
+    !
+    ! 1/26/2010: Darren De Zeeuw extend to 2015 with updated
+    !            IGRF-11 coefficients.
+    !
+    ! 01/22/2016: G.Toth updated to IGRF-12 coefficients to 2020.
+    !             Fixed JDAY/365 to (JDAY-1)/365.25 (as in GEOPACK-2008).
+    !             Rewrote the whole thing.
+    ! 02/04/2020: G.Toth updated to IGRF-13 coefficients to 2025 from
+    !             https://www.ngdc.noaa.gov/IAGA/vmod/coeffs/igrf13coeffs.txt
+    ! 02/01/2026  I. Sokolov updated IGRF-14 coefficients beyond year 2025
+    !             https://www.ngdc.noaa.gov/IAGA/vmod/coeffs/IGRF14coeffs.xlsx
+    ! Moved into ModPlanetConst to eliminate Geopack dependence.
+
+    use ModTimeConvert, ONLY: time_real_to_int, n_day_of_year
+
+    real(Real8_), intent(in):: Time        ! Time
+    real,        intent(out):: Dipole_D(3) ! Dipole vector
+
+    integer:: iYearLast=0, iDayLast=0  ! Store year and day of last call
+    logical:: DoWarnSmallYear = .true. ! Only warn once iYearIn < MinYear
+    logical:: DoWarnLargeYear = .true. ! Only warn once iYearIn > MaxYear
+
+    integer:: iTime_I(7), iYear, iDay
+
+    ! Year range
+    integer, parameter:: MinYear = 1965
+    integer, parameter:: MaxYear = 2025
+
+    ! IGRF coefficients are given every 5 year
+    integer, parameter:: DnYear = 5
+    integer, parameter:: nEpoch  = (MaxYear - MinYear)/DnYear + 1
+
+    ! Array of IGRF coefficients from MinYear to MaxYear
+    ! The 1st column is -1* 3rd element of the IGRF G coefficients (G11)
+    ! The 2nd column is -1* 2nd element of the IGRF H coefficients (H11)
+    ! The 3rd column is +1* 2nd element of the IGRF G coefficients (G10)
+    ! These provide the X, Y and Z components of the magnetic dipole in nT.
+
+    real, parameter:: Dipole_DI(3,nEpoch) = reshape( [ &
+         -2119.,   +5776.,   -30334.,   & ! 1965
+         -2068.,   +5737.,   -30220.,   & ! 1970
+         -2013.,   +5675.,   -30100.,   & ! 1975
+         -1956.,   +5604.,   -29992.,   & ! 1980
+         -1905.,   +5500.,   -29873.,   & ! 1985
+         -1848.,   +5406.,   -29775.,   & ! 1990
+         -1784.,   +5306.,   -29692.,   & ! 1995
+         -1728.2,  +5186.1,  -29619.4,  & ! 2000
+         -1669.05, +5077.99, -29554.63, & ! 2005
+         -1586.42, +4944.26, -29496.57, & ! 2010
+         -1501.77, +4795.99, -29441.46, & ! 2015
+         -1450.9,  +4652.5,  -29404.8,  & ! 2020
+         -1410.3,  +4545.5,  -29350.8   & ! 2025
+         ], [3, nEpoch] )
+
+    integer:: iEpoch        ! Index of the 5 year "epoch"
+    real:: Weight1, Weight2 ! interpolation weights
+
+    character(len=*), parameter:: NameSub = 'igrf_mag_axis'
+    !--------------------------------------------------------------------------
+    call time_real_to_int(Time, iTime_I)
+    iYear = iTime_I(1)
+    iDay  = n_day_of_year(iYear, iTime_I(2), iTime_I(3)) ! day of year
+
+    if(iYear < MinYear) then
+       if(DoWarnSmallYear)then
+          write(*,*) NameSub, ' WARNING: no IGRF coefficients before year ', &
+               MinYear
+          write(*,*)NameSub,': setting iYear=', MinYear,' iDay=1'
+          DoWarnSmallYear = .false.
+       end if
+       iYear = MinYear
+       iDay  = 1
+    endif
+    if(iYear > MaxYear + DnYear) then
+       if(DoWarnLargeYear)then
+          write(*,*) 'WARNING!!! Update IGRF coefficients in ',NameSub, &
+               ' in share/Library/src/ModPlanetConst.f90 !!!'
+          write(*,*) NameSub, ': no IGRF coefficients beyond year ', MaxYear
+          write(*,*)NameSub,': setting iYear=', MaxYear+DnYear,' iDay=365'
+          DoWarnLargeYear = .false.
+       end if
+       iYear = MaxYear + DnYear
+       iDay  = 365
+    endif
+
+    ! No need to recalculate if the call uses the same values as last time
+    if (iYear == iYearLast .and. iDay == iDayLast) RETURN
+    iYearLast = iYear
+    iDayLast  = iDay
+
+    ! Find the epoch index for iYear
+    iEpoch  = min(nEpoch-1, (iYear - MinYear)/DnYear + 1)
+
+    ! Calculate time relative to epoch start normalized to epoch length
+    Weight2 = (iYear + (iDay-1)/365.25 - MinYear - (iEpoch-1)*DnYear)/DnYear
+    Weight1 = 1.0 - Weight2
+
+    Dipole_D = Weight1*Dipole_DI(:,iEpoch) + Weight2*Dipole_DI(:,iEpoch+1)
+
+    ! Convert from nT to Tesla (SI units)
+    Dipole_D = 1e-9*Dipole_D
+
+  end subroutine igrf_mag_axis
+  !============================================================================
 end module ModPlanetConst
 !==============================================================================

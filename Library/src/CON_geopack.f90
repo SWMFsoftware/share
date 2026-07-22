@@ -41,15 +41,22 @@ module CON_geopack
 
 contains
   !============================================================================
-  integer function JulianDay(iYear,iMonth,iDay)
-    ! Coded by A.Ridley
-    integer,intent(in)::iYear,iMonth,iDay
-    integer, dimension(1:12),parameter :: nDayInMonth_I = [ &
+  integer function JulianDay(iYear, iMonth, iDay)
+
+    ! Originally coded by A. Ridley. Corrected by G. Toth.
+
+    ! This function returns the number of days in the year with Jan 1 being 1.
+    ! This is _not_ the Julian day, which is the number of days since 4713 BC.
+
+    integer, intent(in):: iYear, iMonth, iDay
+    integer, parameter :: nDayInMonth_I(12) = [ &
          31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     !--------------------------------------------------------------------------
-    JulianDay=iDay
-    if(iMonth>1)JulianDay=JulianDay+sum(nDayInMonth_I(1:iMonth-1))
-    if(iMonth>2.and.mod(iYear,4)==0)JulianDay=JulianDay+1
+    JulianDay = iDay
+    if(iMonth > 1) JulianDay = JulianDay + sum(nDayInMonth_I(1:iMonth-1))
+    if(iMonth > 2 .and. mod(iYear, 4) == 0 .and. &
+         (mod(iYear, 100) /= 0 .or. mod(iYear, 400) == 0)) &
+         JulianDay = JulianDay + 1
 
   end function JulianDay
   !============================================================================
@@ -121,114 +128,28 @@ contains
 
   end subroutine geopack_sun
   !============================================================================
-  subroutine geopack_mag_axis(iYearIn, iDayIn)
+  subroutine geopack_mag_axis(iYear, nDay)
 
-    ! This was part of the RECALC subroutine from geopack.f by Tsyganenko
-    !
-    ! 1/26/2010: Darren De Zeeuw extend to 2015 with updated
-    !            IGRF-11 coefficients.
-    !
-    ! 01/22/2016: G.Toth updated to IGRF-12 coefficients to 2020.
-    !             Fixed JDAY/365 to (JDAY-1)/365.25 (as in GEOPACK-2008).
-    !             Rewrote the whole thing.
-    ! 02/04/2020: G.Toth updated to IGRF-13 coefficients to 2025 from
-    !             https://www.ngdc.noaa.gov/IAGA/vmod/coeffs/igrf13coeffs.txt
-    ! 02/01/2026  I. Sokolov updated IGRF-14 coefficients beyond year 2025
-    !             https://www.ngdc.noaa.gov/IAGA/vmod/coeffs/IGRF14coeffs.xlsx
+    use ModTimeConvert, ONLY: time_int_to_real
+    use ModPlanetConst, ONLY: igrf_mag_axis
 
-    integer, intent(in):: iYearIn  ! Year number (four digits)
-    integer, intent(in):: iDayIn   ! Day of year (day 1 = JAN 1)
+    ! Get magnetic axis direction and dipole strength from IGRF
+    ! for nDay-th day of year iYear
 
-    integer:: iYearLast=0, iDayLast=0  ! Store year and day of last call
-    logical:: DoWarnSmallYear = .true. ! Only warn once iYearIn < MinYear
-    logical:: DoWarnLargeYear = .true. ! Only warn once iYearIn > MaxYear
+    integer, intent(in):: iYear  ! Year number (four digits)
+    integer, intent(in):: nDay   ! Day of year (day 1 = JAN 1)
 
-    integer:: iYear ! limited year value
-    integer:: iDay  ! limited day value
-
-    ! Year range
-    integer, parameter:: MinYear = 1965
-    integer, parameter:: MaxYear = 2025
-
-    ! IGRF coefficients are given every 5 year
-    integer, parameter:: DnYear = 5
-    integer, parameter:: nEpoch  = (MaxYear - MinYear)/DnYear + 1
-
-    ! Array of IGRF coefficients from MinYear to MaxYear
-    ! The 1st column is -1* 3rd element of the IGRF G coefficients (G11)
-    ! The 2nd column is -1* 2nd element of the IGRF H coefficients (H11)
-    ! The 3rd column is +1* 2nd element of the IGRF G coefficients (G10)
-    ! These provide the X, Y and Z components of the magnetic dipole in nT.
-
-    real, parameter:: Dipole_DI(3,nEpoch) = reshape( [ &
-         -2119.,   +5776.,   -30334.,   & ! 1965
-         -2068.,   +5737.,   -30220.,   & ! 1970
-         -2013.,   +5675.,   -30100.,   & ! 1975
-         -1956.,   +5604.,   -29992.,   & ! 1980
-         -1905.,   +5500.,   -29873.,   & ! 1985
-         -1848.,   +5406.,   -29775.,   & ! 1990
-         -1784.,   +5306.,   -29692.,   & ! 1995
-         -1728.2,  +5186.1,  -29619.4,  & ! 2000
-         -1669.05, +5077.99, -29554.63, & ! 2005
-         -1586.42, +4944.26, -29496.57, & ! 2010
-         -1501.77, +4795.99, -29441.46,  & ! 2015
-         -1450.9,  +4652.5,  -29404.8,   & ! 2020
-         -1410.3,  +4545.5,  -29350.8    & ! 2025
-         ], [3, nEpoch] )
-
-    integer:: iEpoch        ! Index of the 5 year "epoch"
-    real:: Weight1, Weight2 ! interpolation weights
-    real:: Dipole_D(3)      ! interpolated dipole strength
-
-    character(len=*), parameter:: NameSub = 'geopack_mag_axis'
+    real(Real8_):: Time
+    real:: Dipole_D(3)
     !--------------------------------------------------------------------------
-    iYear = iYearIn
-    iDay  = iDayIn
-
-    if(iYearIn < MinYear) then
-       if(DoWarnSmallYear)then
-          write(*,*) NameSub, ' WARNING: no IGRF coefficients before year ', &
-               MinYear
-          write(*,*)NameSub,': setting iYear=', MinYear,' iDay=1'
-          DoWarnSmallYear = .false.
-       end if
-       iYear = MinYear
-       iDay  = 1
-    endif
-    if(iYearIn > MaxYear+DnYear) then
-       if(DoWarnLargeYear)then
-          write(*,*) 'WARNING!!! Update IGRF coefficients in ',NameSub, &
-               ' in share/Library/src/CON_geopack !!!'
-          write(*,*) NameSub, ': no IGRF coefficients beyond year ', MaxYear
-          write(*,*)NameSub,': setting iYear=', MaxYear+DnYear,' iDay=365'
-          DoWarnLargeYear = .false.
-       end if
-       iYear = MaxYear+DnYear
-       iDay  = 365
-    endif
-
-    ! No need to recalculate if the call uses the same values as last time
-    if (iYear == iYearLast .and. iDay == iDayLast) RETURN
-    iYearLast = iYear
-    iDayLast  = iDay
-
-    ! Find the epoch index for iYear
-    iEpoch  = min(nEpoch-1, (iYear - MinYear)/DnYear + 1)
-
-    ! Calculate time relative to epoch start normalized to epoch length
-    Weight2 = (iYear + (iDay-1)/365.25 - MinYear - (iEpoch-1)*DnYear)/DnYear
-    Weight1 = 1.0 - Weight2
-
-    Dipole_D = Weight1*Dipole_DI(:,iEpoch) + Weight2*Dipole_DI(:,iEpoch+1)
+    call time_int_to_real([iYear, 1, nDay, 0, 0, 0, 0], Time)
+    call igrf_mag_axis(Time, Dipole_D)
 
     ! Take the dipole strength with negative magnitude (conventional)
     DipoleStrengthGeopack = -norm2(Dipole_D)
 
-    ! The negative sign is because the dipole strength is negative
+    ! Direction of the magnetic axis
     AxisMagGeo_D = Dipole_D/DipoleStrengthGeopack
-
-    ! Convert from nT to Tesla (SI units)
-    DipoleStrengthGeopack = DipoleStrengthGeopack*1e-9
 
   end subroutine geopack_mag_axis
   !============================================================================
@@ -344,15 +265,15 @@ contains
     integer:: iYear=2000, iMonth, iDay, iHour, iMin=0, iSec=0
     !--------------------------------------------------------------------------
     ! For perihelion
-    iMonth=1;iDay=3;iHour=5
-    call geopack_recalc(iYear,iMonth,iDay,iHour,iMin,iSec)
+    iMonth=1; iDay=3; iHour=5
+    call geopack_recalc(iYear, iMonth, iDay, iHour, iMin, iSec)
     write(*,'(a,f14.4)')  'DipoleStrength=', DipoleStrengthGeopack*1e9
-    write(*,'(a,3f14.10)')'AxisMagGeo_D=', AxisMagGeo_D
+    write(*,'(a,3f14.10)') 'AxisMagGeo_D=', AxisMagGeo_D
     write(*,'(a,/,3f14.10,/,3f14.10,/,3f14.10)')'GsmGse_DD=', GsmGse_DD
 
     write(*,'(a,f14.10,a)')'SunEMBDistance=',SunEMBDistance,&
          ', should be 0.98329'
-    GeiHgi_DD=matmul(GeiGse_DD,transpose(HgiGse_DD))
+    GeiHgi_DD = matmul(GeiGse_DD, transpose(HgiGse_DD))
     write(*,'(a,3es16.8)')&
          'Solar rotation axis vector calculated as GeiHgi_DD(:,3)',&
          GeiHgi_DD(:,3)

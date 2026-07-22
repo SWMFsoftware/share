@@ -132,11 +132,6 @@ module CON_axes
   !   Inertial forces should be taken into account.
   !
   ! \end{verbatim}
-  !TODO:
-  ! Generalize transformations to and from heliocentric coordinate systems
-  ! for non-Earth planets.
-  ! Take ellipticity of the planet orbit into account.
-  ! Possibly recalculate the GSE-GEI matrix all the time.
 
   use ModKind
   use ModCoordTransform, ONLY: rot_matrix_x, rot_matrix_y, rot_matrix_z, &
@@ -144,7 +139,7 @@ module CON_axes
        atan2_check
   use ModTimeConvert, ONLY: time_int_to_real, time_real_to_int, TimeType
   use ModPlanetConst, ONLY: DipoleStrengthPlanet_I, Earth_, iPlanet, &
-       GeiOffset, get_planet_orbit
+       GeiOffset, get_planet_orbit, igrf_mag_axis
   use CON_planet, ONLY: UseSetMagAxis, UseSetRotAxis, UseAlignedAxes, &
        UseRealMagAxis, UseRealRotAxis, MagAxisThetaGeo, MagAxisPhiGeo, &
        MagAxisTheta, MagAxisPhi, DipoleStrength, RotAxisTheta, RotAxisPhi, &
@@ -153,11 +148,6 @@ module CON_axes
        IsInitializedPlanet, tStart, IsOrbitSet, Orbit, &
        is_planet_init, get_rotation_axis_hgi, get_gei_geo_matrix_from_w, &
        orbit_in_hgi
-  use CON_geopack, ONLY: &
-       geopack_recalc, geopack_sun, &
-       RotAxisPhiGeopack, RotAxisThetaGeopack, &
-       AxisMagGeo_D, DipoleStrengthGeopack, &
-       HgiGse_DD, dLongitudeHgiDeg, dLongitudeHgi, SunEMBDistance
   use ModNumConst, ONLY: cHalfPi, cRadToDeg, cTwoPi, cTwoPi8, cUnit_DD, cTiny
   use ModConst, ONLY: rSun, cAU
   use ModUtilities, ONLY: CON_stop, CON_set_do_test
@@ -170,7 +160,9 @@ module CON_axes
   !                      CON_axes more indepenedent
   ! 17Jan05 - Ofer Cohen and G. Toth merged in GEOPACK and added functions
   !                      angular_velocity and transform_velocity
-
+  ! 21Jul25 - Gabor Toth Generalized orbit and rotation using IAU values
+  !                      and true Kepler solver
+  
   implicit none
 
   save
@@ -179,11 +171,12 @@ module CON_axes
 
   integer, parameter, private :: x_=1, y_=2, z_=3
 
-  ! Position and Velocity of Planet in HGI
-  real :: XyzPlanetHgi_D(3), vPlanetHgi_D(3)
+  ! Position and Velocity of Planet in HGI, Sun-Planet distance in au
+  real :: XyzPlanetHgi_D(3), vPlanetHgi_D(3), SunEMBDistance
 
-  ! Offset longitude angle for HGR in degrees and radians
+  ! Offset longitude angle for hgr and hgi systems in degrees and radians
   real :: dLongitudeHgrDeg = 0.0, dLongitudeHgr = 0.0
+  real :: dLongitudeHgiDeg = 0.0, dLongitudeHgi = 0.0
 
   ! Rotational axis in GSE and GSM
   real    :: RotAxis_D(3)      ! Permanent Cartesian components in GSE
@@ -202,16 +195,21 @@ module CON_axes
   logical :: DoInitializeAxes=.true.
 
   ! Coordinate transformation matrices connecting all the systems
+  ! The notation follows the convention of contraction of indices
+  ! for example GSE -> GSM is done as vGsm_D = matmul(GsmGse_DD, vGse_D)
+  ! Most transforms go through GSE, but there are a few extra matrices defined
   real, dimension(3,3) :: &
-       SmgGsm_DD, &            ! vSmg_D = matmul(SmgGsm_DD,vGsm_D)
-       GsmGse_DD, &            ! vGsm_D = matmul(GsmGse_DD,vGse_D)
-       GseGei_DD, &            ! vGse_D = matmul(GseGei_DD,vGei_D)
-       GeiGeo_DD, &            ! vGei_D = matmul(GeiGeo_DD,vGeo_D)
-       MagGeo_DD, &            ! vMag_D = matmul(MagGeo_DD,vGeo_D)
-       HgrHgi_DD, &            ! vHgr_D = matmul(HgrHgi_DD,vHgi_D)
-       HgrGse_DD, &            ! vHgr_D = matmul(HgrGse_DD,vGse_D)
-       HgcHgi_DD, &            ! vHgc_D = matmul(HgcHgi_DD,vHgi_D)
-       HgcGse_DD               ! vHgc_D = matmul(HgcGse_DD,vGse_D)
+       SmgGsm_DD, &
+       GeiGeo_DD, &
+       GsmGse_DD, &
+       GseGei_DD, &
+       MagGeo_DD, &
+       HgrHgi_DD, &
+       HgiGse_DD, &
+       HgrGse_DD, &
+       HgcHgi_DD, &
+       HgcGse_DD
+
   !$acc declare create(SmgGsm_DD, GsmGse_DD, GseGei_DD, GeiGeo_DD, MagGeo_DD)
   !$acc declare create(HgrHgi_DD, HgrGse_DD, HgcHgi_DD, HgcGse_DD)
 
@@ -236,8 +234,8 @@ contains
     real :: XyzPlanetHgr_D(3)
     real :: RotAxisHgi_D(3), GseX_D(3), GseZ_D(3)
     real :: HgiGse0_DD(3,3) ! Matrix for the true non-rotated HGI
-
-    integer :: iTime_I(7)
+    real :: Dipole_D(3)     ! IGRF dipole for Earth
+    real :: DipoleStrengthIgrf
 
     logical:: DoTest
     character(len=*), parameter:: NameSub = 'init_axes'
@@ -301,20 +299,23 @@ contains
     end if
 
     if(iPlanet == Earth_ .and. UseRealRotAxis .and. UseRealMagAxis)then
-       ! Use GEOPACK axes for Earth (elliptic orbit and IGRF dipole)
-       call time_real_to_int(tStart, iTime_I)
-       call geopack_recalc(iTime_I)
+       call igrf_mag_axis(tStart, Dipole_D)
+
+       ! Take the dipole strength with negative magnitude (conventional)
+       DipoleStrengthIgrf = -norm2(Dipole_D)
+
+       ! Normalized unit vector (pointing north with negative strength)
+       MagAxisGeo_D = Dipole_D/DipoleStrengthIgrf
+
        ! Calculate magnetic axis angles from the direction vector
-       call xyz_to_dir(AxisMagGeo_D, MagAxisThetaGeo, MagAxisPhiGeo)
+       call xyz_to_dir(MagAxisGeo_D, MagAxisThetaGeo, MagAxisPhiGeo)
        ! Copy dipole strength if it is the default
        if(DipoleStrength == DipoleStrengthPlanet_I(Earth_)) &
-            DipoleStrength = DipoleStrengthGeopack
+            DipoleStrength = DipoleStrengthIgrf
        if(DoTest)then
-          write(*,*)'RotAxisThetaGeopack, RotAxisPhiGeopack=', &
-               RotAxisThetaGeopack*cRadToDeg, RotAxisPhiGeopack*cRadToDeg
-          write(*,*)'MagAxisThetaGeopack, MagAxisPhiGeopack=', &
+          write(*,*)'IGRF MagAxisThetaGeo, MagAxisPhiGeo=', &
                MagAxisThetaGeo*cRadToDeg, MagAxisPhiGeo*cRadToDeg
-          write(*,*)'DipoleStrengthDefault, DipoleStrengthGeopack=', &
+          write(*,*)'DipoleStrengthDefault, DipoleStrengthIgrf=', &
                DipoleStrengthPlanet_I(Earth_), DipoleStrength
        end if
     elseif(.not.UseSetRotAxis .and. .not.UseRealRotAxis)then

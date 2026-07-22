@@ -382,6 +382,7 @@ contains
     integer, parameter :: iYearMax  = 2499
     type(TimeType) :: TimeConvert, TimeStart
     real(Real8_):: Time
+    integer:: nDay
     real:: JulianDay
     !--------------------------------------------------------------------------
     write(*,*)'Testing time conversion routines'
@@ -403,8 +404,22 @@ contains
     if(abs(JulianDay - 2461052.5) > 0.1) &
          write(*,*)'Error for time_int_to_julian: JulianDay=', JulianDay, &
          ' instead of 2461052.5'
+    ! Test n_day_of_year
+    nDay = n_day_of_year(2020, 6, 25) ! leap year
+    if(nDay /= 177) &
+         write(*,*)'Error: n_day_of_year(2020,6,25)=', nDay, ' instead of 177'
+    nDay = n_day_of_year(2000, 6, 25) ! leap year
+    if(nDay /= 177) &
+         write(*,*)'Error: n_day_of_year(2000,6,25)=', nDay, ' instead of 177'
+    nDay = n_day_of_year(2100, 6, 25) ! not leap year
+    if(nDay /= 176) &
+         write(*,*)'Error: n_day_of_year(2100,6,25)=', nDay, ' instead of 176'
+    nDay = n_day_of_year(2026, 6, 25) ! not leap year
+    if(nDay /= 176) &
+         write(*,*)'Error: n_day_of_year(2026,6,25)=', nDay, ' instead of 176'
+
     ! Test converting to seconds and then to Julian day
-    call time_int_to_real([2026, 6, 25, 12, 0, 0, 0], Time)
+    call time_int_to_real([2026, 1, nDay, 12, 0, 0, 0], Time)
     call time_real_to_julian(Time, JulianDay)
     if(abs(JulianDay - 2461217.0) > 0.1) &
          write(*,*)'Error for time_real_to_julian: JulianDay=', JulianDay, &
