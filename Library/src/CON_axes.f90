@@ -433,12 +433,12 @@ contains
        call show_rot_matrix(GsmGse_DD)
        if(sum(XyzPlanetHgi_D**2) > 1e-6)then
           XyzPlanetHgr_D = matmul(HgrHgi_DD, XyzPlanetHgi_D)
-          write(*,*)'dLongitudeHgr,dLongitudeHgi=',&
+          write(*,*)'dLongitudeHgr,dLongitudeHgi=', &
                dLongitudeHgrDeg, dLongitudeHgiDeg
           write(*,*)'XyzPlanetHgi_D/rSun = ', XyzPlanetHgi_D/rSun
           write(*,*)'XyzPlanetHgr_D/rSun = ', XyzPlanetHgr_D/rSun
-          write(*,*)'r/AU,HG_lat,HGR_lon,HGI_lon=',&
-               sqrt(sum(XyzPlanetHgi_D**2))/cAU,&
+          write(*,*)'r/AU,HG_lat,HGR_lon,HGI_lon=', &
+               PlanetDistance/cAU, &
                asin(XyzPlanetHgi_D(3)/norm2(XyzPlanetHgi_D))*cRadToDeg, &
                atan2_check(XyzPlanetHgr_D(2), XyzPlanetHgr_D(1))*cRadToDeg, &
                atan2_check(XyzPlanetHgi_D(2), XyzPlanetHgi_D(1))*cRadToDeg
