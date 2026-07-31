@@ -171,8 +171,8 @@ module CON_axes
 
   integer, parameter, private :: x_=1, y_=2, z_=3
 
-  ! Position and Velocity of Planet in HGI, Sun-Planet distance in au
-  real :: XyzPlanetHgi_D(3), vPlanetHgi_D(3), SunEMBDistance
+  ! Position and Velocity of Planet in HGI, Planet distance in m
+  real :: XyzPlanetHgi_D(3), vPlanetHgi_D(3), PlanetDistance
 
   ! Offset longitude angle for hgr and hgi systems in degrees and radians
   real :: dLongitudeHgrDeg = 0.0, dLongitudeHgr = 0.0
@@ -260,6 +260,7 @@ contains
 
     ! Set initial planet position and velocity in HGI
     call orbit_in_hgi(0.0, XyzPlanetHgi_D, vPlanetHgi_D)
+    PlanetDistance = norm2(XyzPlanetHgi_D)
 
     ! Set HgiGse matrix
     GseX_D = -XyzPlanetHgi_D/norm2(XyzPlanetHgi_D)
@@ -432,12 +433,12 @@ contains
        call show_rot_matrix(GsmGse_DD)
        if(sum(XyzPlanetHgi_D**2) > 1e-6)then
           XyzPlanetHgr_D = matmul(HgrHgi_DD, XyzPlanetHgi_D)
-          write(*,*)'dLongitudeHgr,dLongitudeHgi=',&
+          write(*,*)'dLongitudeHgr,dLongitudeHgi=', &
                dLongitudeHgrDeg, dLongitudeHgiDeg
           write(*,*)'XyzPlanetHgi_D/rSun = ', XyzPlanetHgi_D/rSun
           write(*,*)'XyzPlanetHgr_D/rSun = ', XyzPlanetHgr_D/rSun
-          write(*,*)'r/AU,HG_lat,HGR_lon,HGI_lon=',&
-               sqrt(sum(XyzPlanetHgi_D**2))/cAU,&
+          write(*,*)'r/AU,HG_lat,HGR_lon,HGI_lon=', &
+               PlanetDistance/cAU, &
                asin(XyzPlanetHgi_D(3)/norm2(XyzPlanetHgi_D))*cRadToDeg, &
                atan2_check(XyzPlanetHgr_D(2), XyzPlanetHgr_D(1))*cRadToDeg, &
                atan2_check(XyzPlanetHgi_D(2), XyzPlanetHgi_D(1))*cRadToDeg
@@ -535,7 +536,7 @@ contains
        HgiGse0_DD(:,z_) = OrbitNormal_D/max(norm2(OrbitNormal_D), cTiny)
        HgiGse0_DD(:,y_) = cross_product(HgiGse0_DD(:,z_), HgiGse0_DD(:,x_))
        HgiGse_DD = HgiGse0_DD
-       SunEMBDistance = norm2(XyzPlanetHgi_D)/cAU
+       PlanetDistance = norm2(XyzPlanetHgi_D)
 
        if(dLongitudeHgi > 0.0)then
           HgiGse_DD      = matmul(rot_matrix_z(-dLongitudeHgi), HgiGse_DD)
