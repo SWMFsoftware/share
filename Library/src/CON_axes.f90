@@ -490,12 +490,6 @@ contains
 
     real, intent(in) :: TimeSim
     !--------------------------------------------------------------------------
-    if(.not.UseRotation)then
-       ! If the planet does not rotate we may take GEI=GEO
-       GeiGeo_DD = cUnit_DD
-       RETURN
-    end if
-
     call get_gei_geo_matrix_from_w(TimeSim, GeiGeo_DD)
 
   end subroutine set_gei_geo_matrix
@@ -670,9 +664,11 @@ contains
     call xyz_to_lonlat(GeoGse_DD(:,x_), LonSubsolar, LatSubsolar)
 
     if(DoTest)then
-       write(*,*)NameSub,' new MagAxis_D     =',MagAxis_D
-       write(*,*)NameSub,' new MagAxisTiltGsm=',MagAxisTiltGsm*cRadToDeg
-       write(*,*)NameSub,' new RotAxisGsm_D  =',RotAxisGsm_D
+       write(*,*)NameSub,' Lon,LatSubsolar   =', &
+            LonSubsolar*cRadToDeg, LatSubsolar*cRadToDeg
+       write(*,*)NameSub,' new MagAxis_D     =', MagAxis_D
+       write(*,*)NameSub,' new MagAxisTiltGsm=', MagAxisTiltGsm*cRadToDeg
+       write(*,*)NameSub,' new RotAxisGsm_D  =', RotAxisGsm_D
     end if
 
     !$acc update device(RotAxis_D, RotAxisGsm_D)
