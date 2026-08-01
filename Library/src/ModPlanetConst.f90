@@ -31,8 +31,6 @@ module ModPlanetConst
 
   real, parameter:: DayPerCentury  = 36525.0
 
-  ! Angle between ICRF midnight meridian and equinox direction of planet
-  real :: GeiOffset = -10.0
   ! Rotation angle between J2K and Icrf is Earth inclination at J2000 epoch
   real, parameter:: InclJ2k = 23.4392911*cDegToRad
   ! Conversion matrix from equatorial ICRF to ecliptic J2000 = rot_x(-InclJ2k)
