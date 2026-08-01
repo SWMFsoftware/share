@@ -145,7 +145,7 @@ module CON_axes
        MagAxisTheta, MagAxisPhi, DipoleStrength, RotAxisTheta, RotAxisPhi, &
        UseRotation, RadiusPlanet, OmegaPlanet, OmegaOrbit, &
        TypeBField, DoUpdateB0, DtUpdateB0, &
-       IsInitializedPlanet, tStart, IsOrbitSet, Orbit, &
+       IsInitializedPlanet, tStart, IsOrbitSet, Orbit, MeridianGeo, &
        is_planet_init, get_rotation_axis_hgi, get_gei_geo_matrix_from_w, &
        orbit_in_hgi
   use ModNumConst, ONLY: cHalfPi, cRadToDeg, cTwoPi, cTwoPi8, cUnit_DD, cTiny
@@ -183,6 +183,9 @@ module CON_axes
   real    :: RotAxisGsm_D(3)   ! Changing  Cartesian components in GSM
   !$acc declare create(RotAxis_D, RotAxisGsm_D)
 
+  ! Subsolar point in GEO
+  real :: LonSubsolar, LatSubsolar
+
   ! Magnetic axis in GEO, GEI and GSE
   real    :: MagAxisGeo_D(3)                         ! Permanent vector in GEO
   real    :: MagAxis0Gei_D(3)  ! Starting position of the magnetix axis in GEI
@@ -192,7 +195,7 @@ module CON_axes
   !$acc declare create(MagAxisTiltGsm, MagAxisGsm_D, MagAxis_D)
 
   ! Logical tells if the time independent axis parameters have been set
-  logical :: DoInitializeAxes=.true.
+  logical :: DoInitializeAxes = .true.
 
   ! Coordinate transformation matrices connecting all the systems
   ! The notation follows the convention of contraction of indices
@@ -345,6 +348,17 @@ contains
     ! set the GseGei matrix to convert between GSE and  GEI systems
     call set_gse_gei_matrix
 
+    ! Set initial GEO rotation from IAU W and calibrate it to the requested
+    ! subsolar longitude at tStart if #MERIDIAN was provided.
+    call set_gei_geo_matrix(0.0)
+    if(MeridianGeo >= 0.0)then
+       GeoGse_DD = transpose(matmul(GseGei_DD, GeiGeo_DD))
+       call xyz_to_lonlat(GeoGse_DD(:,x_), LonSubsolar, LatSubsolar)
+       ! Modify GeiOffset to match the requested MeridianGeo at tStart
+       GeiOffset = modulo(GeiOffset + MeridianGeo - LonSubsolar, cTwoPi)
+       call set_gei_geo_matrix(0.0)
+    end if
+
     ! Calculate initial position for the magnetic axis in GSE and GEI systems
     if(UseRealMagAxis)then
        ! Cartesian coordinates of the magnetic axis unit vector in GEO
@@ -357,7 +371,6 @@ contains
        end if
 
        ! GEO --> GEI
-       call set_gei_geo_matrix(0.0)
        MagAxis0Gei_D = matmul(GeiGeo_DD, MagAxis_D)
 
        ! GEI --> GSE
@@ -387,7 +400,6 @@ contains
 
        ! Calculate the GEI position too
        ! (in case mag axis is not aligned and rotates)
-       call set_gei_geo_matrix(0.0)
        MagAxis0Gei_D = matmul(MagAxis_D, GseGei_DD)
 
        if(DoTest)then
@@ -651,8 +663,11 @@ contains
 
     GseGeo_DD = matmul(GseGei_DD, GeiGeo_DD)
     GeoGse_DD = transpose(GseGeo_DD)
-    MagGse_DD = matmul(MagGeo_DD,GeoGse_DD)
+    MagGse_DD = matmul(MagGeo_DD, GeoGse_DD)
     GeoSmg_DD = matmul(GeoGse_DD, GseSmg_DD)
+
+    ! Get Subsolar point in GEO
+    call xyz_to_lonlat(GeoGse_DD(:,x_), LonSubsolar, LatSubsolar)
 
     if(DoTest)then
        write(*,*)NameSub,' new MagAxis_D     =',MagAxis_D
@@ -1023,7 +1038,7 @@ contains
 
     ! Do some self consistency checks. Stop with an error message if
     ! test fails. Otherwise write out success.
-    real:: MagAxisTilt, LonSubSolar, LatSubSolar
+    real:: MagAxisTilt
     real:: RotAxisGsm_D(3), RotAxisGeo_D(3), Rot_DD(3,3), Result_DD(3,3)
     real:: Omega_D(3), v2_D(3), Result_D(3), Position_D(3)
     real:: Epsilon1, Epsilon2, Epsilon3
@@ -1274,7 +1289,6 @@ contains
     dLongitudeHgrDeg = 0.0
     IsInitializedPlanet = .false.
     DoInitializeAxes = .true.
-    GeiOffset = -10.0 ! reset GEI offset angle to default value
     if(.not.is_planet_init('Mars')) write(*,*)'is_planet_init("MARS") failed'
 
     TimeStart = TimeType(2017, 9, 12, 18, 0, 0, 0.0, 0.0_Real8_, '')
@@ -1283,9 +1297,8 @@ contains
     write(*,"(a,3es21.12)")' XyzPlanetHgi_D=', XyzPlanetHgi_D
     write(*,"(a,3es21.12)")' vPlanetHgi_D=', vPlanetHgi_D
     write(*,"(a,es21.12)")' Sun-Mars dist=', norm2(XyzPlanetHgi_D)/cAU
-    call xyz_to_lonlat(GeoGse_DD(:,x_), LonSubSolar, LatSubSolar)
-    write(*,*)'LonSubSolar=', LonSubSolar*cRadToDeg
-    write(*,*)'LatSubSolar=', LatSubSolar*cRadToDeg
+    write(*,*)'LonSubsolar=', LonSubsolar*cRadToDeg
+    write(*,*)'LatSubsolar=', LatSubsolar*cRadToDeg
     write(*,"(a,3es21.12)")' RotAxis_D=', RotAxis_D
 
   end subroutine test_axes

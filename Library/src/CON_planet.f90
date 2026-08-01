@@ -39,6 +39,9 @@ module CON_planet
   real(Real8_) :: tStart = -1.0
   !$acc declare create(tStart)
 
+  ! Desired GEO subsolar longitude at the start of the simulation.
+  real :: MeridianGeo = -1.0
+
   ! Define variables
   real:: RadiusPlanet
   real:: MassPlanet
@@ -146,6 +149,11 @@ contains
 
     NamePlanet = NamePlanetIn; call upper_case(NamePlanet)
     IsInitializedPlanet = .true.
+
+    ! Reset optional start-time subsolar longitude override.
+    MeridianGeo = -1.0
+    ! Reset GEI/GEO offset cache so it is recalculated for the new planet.
+    GeiOffset = -10.0
 
     IsKnown = .false.
     do i = NoPlanet_, MaxPlanet
@@ -340,6 +348,14 @@ contains
        call read_var('MagneticCenterX',MagCenter_D(1))
        call read_var('MagneticCenterY',MagCenter_D(2))
        call read_var('MagneticCenterZ',MagCenter_D(3))
+
+    case('#MERIDIAN')
+       NamePlanetCommands = '#MERIDIAN ' // NamePlanetCommands
+       IsPlanetModified = .true.
+
+       ! Set the GEO subsolar longitude at the start of the simulation.
+       call read_var('MeridianGeo', MeridianGeo)
+       MeridianGeo = modulo(MeridianGeo*cDegToRad, cTwoPi)
 
     case('#ROTATION')
        NamePlanetCommands = '#ROTATION ' // NamePlanetCommands
