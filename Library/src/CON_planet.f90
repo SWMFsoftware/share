@@ -41,6 +41,8 @@ module CON_planet
 
   ! Desired GEO subsolar longitude at the start of the simulation.
   real :: MeridianGeo = -1.0
+  ! Angle between GEI and GEO X axes at tStart.
+  real :: AngleGeiGeoStart = -1.0
 
   ! Define variables
   real:: RadiusPlanet
@@ -152,8 +154,8 @@ contains
 
     ! Reset optional start-time subsolar longitude override.
     MeridianGeo = -1.0
-    ! Reset GEI/GEO offset cache so it is recalculated for the new planet.
-    GeiOffset = -10.0
+    ! Reset GEI/GEO angle so it is recalculated for the new planet.
+    AngleGeiGeoStart = -1.0
 
     IsKnown = .false.
     do i = NoPlanet_, MaxPlanet
@@ -639,59 +641,57 @@ contains
 
   end subroutine get_rotation_axis_hgi
   !============================================================================
-  subroutine get_gei_geo_matrix_from_w(TimeSim, GeiGeo_DD)
+  subroutine get_gei_geo_angle(Angle)
 
-    real, intent(in) :: TimeSim
-    real, intent(out) :: GeiGeo_DD(3,3)
+    ! Set angle between GEI and GEO systems at start time
+
+    real, intent(out) :: Angle
 
     type(RotationType) :: Rot
-    real :: Alpha, Delta, Incl, Node, EquinoxNorm
+    real :: Alpha, Delta, Incl, Node, EquinoxNorm, GeiOffset
     real :: PoleIcrf_D(3), OrbitJ2k_D(3), OrbitIcrf_D(3)
     real :: IcrfNode_D(3), Equinox_D(3)
     !--------------------------------------------------------------------------
-    call get_planet_rotation_elements(tStart + TimeSim, Rot)
+    call get_planet_rotation_elements(tStart, Rot)
 
-    if(GeiOffset < -9.0)then
-       ! Calculate offset angle between ICRF 0 longitude and GEI 0 longitude
-       Alpha = Rot%AlphaDeg*cDegToRad
-       Delta = Rot%DeltaDeg*cDegToRad
-       Incl  = Orbit%InclinationDeg*cDegToRad
-       Node  = Orbit%LonNodeDeg*cDegToRad
+    ! Calculate offset angle between ICRF 0 longitude and GEI 0 longitude
+    Alpha = Rot%AlphaDeg*cDegToRad
+    Delta = Rot%DeltaDeg*cDegToRad
+    Incl  = Orbit%InclinationDeg*cDegToRad
+    Node  = Orbit%LonNodeDeg*cDegToRad
 
-       ! Pole direction in ICRF/J2000 equatorial coordinates
-       PoleIcrf_D = [cos(Delta)*cos(Alpha), cos(Delta)*sin(Alpha), sin(Delta)]
+    ! Pole direction in ICRF/J2000 equatorial coordinates
+    PoleIcrf_D = [cos(Delta)*cos(Alpha), cos(Delta)*sin(Alpha), sin(Delta)]
 
-       ! Orbit normal from J2000 ecliptic elements, converted to ICRF
-       OrbitJ2k_D = [sin(Node)*sin(Incl), -cos(Node)*sin(Incl), cos(Incl)]
-       OrbitIcrf_D = matmul(OrbitJ2k_D, J2kIcrf_DD)
+    ! Orbit normal from J2000 ecliptic elements, converted to ICRF
+    OrbitJ2k_D = [sin(Node)*sin(Incl), -cos(Node)*sin(Incl), cos(Incl)]
+    OrbitIcrf_D = matmul(OrbitJ2k_D, J2kIcrf_DD)
 
-       ! GEI x-axis is the planet's vernal equinox direction on the equator
-       Equinox_D = cross_product(PoleIcrf_D, OrbitIcrf_D)
-       EquinoxNorm = norm2(Equinox_D)
-       if(EquinoxNorm < cTiny)then
-          ! If the equinox direction is singular, set the offset to pi.
-          GeiOffset = cPi
-       else
-          Equinox_D = Equinox_D/EquinoxNorm
+    ! GEI x-axis is the planet's vernal equinox direction on the equator
+    Equinox_D = cross_product(PoleIcrf_D, OrbitIcrf_D)
+    EquinoxNorm = norm2(Equinox_D)
+    if(EquinoxNorm < cTiny)then
+       ! If the equinox direction is singular, set the offset to pi.
+       GeiOffset = cPi
+    else
+       Equinox_D = Equinox_D/EquinoxNorm
 
-          ! IAU node direction on the ICRF equator
-          IcrfNode_D = [-sin(Alpha), cos(Alpha), 0.0]
+       ! IAU node direction on the ICRF equator
+       IcrfNode_D = [-sin(Alpha), cos(Alpha), 0.0]
 
-          ! Exact signed angle from IAU node (0 longitude) to the GEI x-axis.
-          ! The cPi is due to GEO having 0 at midnight while the rotation
-          ! parameters define the angle for the noon meridian.
-          GeiOffset = cPi + atan2( &
-              dot_product(cross_product(IcrfNode_D, Equinox_D), PoleIcrf_D), &
-              dot_product(IcrfNode_D, Equinox_D))
-       end if
+       ! Exact signed angle from IAU node (0 longitude) to the GEI x-axis.
+       ! The cPi is due to GEO having 0 at midnight while the rotation
+       ! parameters define the angle for the noon meridian.
+       ! Make sure GeiOffset is non-negative
+       GeiOffset = modulo( cPi + atan2( &
+            dot_product(cross_product(IcrfNode_D, Equinox_D), PoleIcrf_D), &
+            dot_product(IcrfNode_D, Equinox_D)), cTwoPi)
     end if
 
-    ! W is measured from Q to the prime meridian point B.
-    ! This code's GEO x-axis follows the midnight half-plane convention
-    ! so it is opposite to B.
-    GeiGeo_DD = rot_matrix_z(Rot%WDeg*cDegToRad - GeiOffset)
+    ! Make sure Angle is non-negative
+    Angle = modulo(Rot%WDeg*cDegToRad - GeiOffset, cTwoPi)
 
-  end subroutine get_gei_geo_matrix_from_w
+  end subroutine get_gei_geo_angle
   !============================================================================
 end module CON_planet
 !==============================================================================
