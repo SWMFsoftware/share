@@ -885,9 +885,8 @@ contains
           ! For heliocentric coordinate systems set the inertial frame to HGI
           NameCoord2 = 'hgi'
        else
-          ! For geocentric systems GSE is assumed to be inertial
-          ! Otherwise better use GEI !!!
-          NameCoord2 = 'GSE'
+          ! For geocentric systems GEI is inertial
+          NameCoord2 = 'GEI'
        end if
        iFrameOut = 1
     end if
