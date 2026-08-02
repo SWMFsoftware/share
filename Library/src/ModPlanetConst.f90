@@ -31,8 +31,6 @@ module ModPlanetConst
 
   real, parameter:: DayPerCentury  = 36525.0
 
-  ! Angle between ICRF midnight meridian and equinox direction of planet
-  real :: GeiOffset = -10.0
   ! Rotation angle between J2K and Icrf is Earth inclination at J2000 epoch
   real, parameter:: InclJ2k = 23.4392911*cDegToRad
   ! Conversion matrix from equatorial ICRF to ecliptic J2000 = rot_x(-InclJ2k)
@@ -164,6 +162,7 @@ contains
     MassPlanet_I(Mercury_)              = 3.3022e+23              ! [kg]
     TypeBFieldPlanet_I(Mercury_)        = 'DIPOLE'
     DipoleStrengthPlanet_I(Mercury_)    = -200.0e-9               ! [T]
+    ! Dipole offset_Z = 484 km
 
     ! Venus (20)
     NamePlanet_I(Venus_)                = 'VENUS'
@@ -176,7 +175,6 @@ contains
 
     rPlanet_I(Earth_)                   = 6378.0e+3               ! [m]
     MassPlanet_I(Earth_)                = 5.976e+24               ! [kg]
-
     TypeBFieldPlanet_I(Earth_)          = 'DIPOLE'
     DipoleStrengthPlanet_I(Earth_)      = -31100.0e-9             ! [T]
     bAxisThetaPlanet_I(Earth_)          =  11.0 * cDegToRad       ! [rad]
@@ -191,8 +189,6 @@ contains
     MassPlanet_I(Moon_)                 = 7.3477e+22              ! [kg]
 
     ! Mars (40)
-    ! See https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html
-    !     https://www.princeton.edu/~willman/planetary_systems/Sol/Mars
     NamePlanet_I(Mars_)                 = 'MARS'
 
     rPlanet_I(Mars_)                    = 3396.0e+3              ! [m]
@@ -203,11 +199,11 @@ contains
 
     rPlanet_I(Jupiter_)                 = 71492.0e+3             ! [m]
     MassPlanet_I(Jupiter_)              = 1.8980e+27             ! [kg]
-
     TypeBFieldPlanet_I(Jupiter_)        = 'DIPOLE'
     DipoleStrengthPlanet_I(Jupiter_)    = 428000.0e-9            ! [T]
-    bAxisThetaPlanet_I(Jupiter_)        = 0.0 * cDegToRad        ! [rad]
-    bAxisPhiPlanet_I(Jupiter_)          = 0.0 * cDegToRad        ! [rad]
+    bAxisThetaPlanet_I(Jupiter_)        = 10.31 * cDegToRad      ! [rad]
+    bAxisPhiPlanet_I(Jupiter_)          = 159.0 * cDegToRad      ! [rad]
+    ! Dipole offset_Z = 7,800 km
     IonoHeightPlanet_I(Jupiter_)        = 1000.0e+3              ! [m]
 
     ! Saturn (60)
@@ -215,29 +211,40 @@ contains
 
     rPlanet_I(Saturn_)                  = 60268.0e+3             ! [m]
     MassPlanet_I(Saturn_)               = 0.5685e+27             ! [kg]
-
     TypeBFieldPlanet_I(Saturn_)         = 'DIPOLE'
     DipoleStrengthPlanet_I(Saturn_)     = 20800.0e-9             ! [T]
+    bAxisThetaPlanet_I(Saturn_)         = 0.0                    ! [rad]
+    bAxisPhiPlanet_I(Saturn_)           = 0.0                    ! [rad]
+    ! Dipole offset_Z = 2400 km
 
     IonoHeightPlanet_I(Saturn_)         = 1000.0e+3              ! [m]
 
     ! Uranus (70)
-    NamePlanet_I(Uranus_)                = 'URANUS'
-    rPlanet_I(Uranus_)                   = 25559.0e+3            ! [m]
-    MassPlanet_I(Uranus_)                = 8.681e+25             ! [kg]
-    TypeBFieldPlanet_I(Uranus_)          = 'DIPOLE'
-    DipoleStrengthPlanet_I(Uranus_)      = 22800.0e-9            ! [T]
-    bAxisThetaPlanet_I(Uranus_)          = 58.6 * cDegToRad      ! [rad]
-    bAxisPhiPlanet_I(Uranus_)            = 289.1 * cDegToRad     ! [rad]
-    ! Not sure about ^ this value.
-    IonoHeightPlanet_I(Uranus_)          = 110000.0              ! [m]
+    NamePlanet_I(Uranus_)               = 'URANUS'
+    rPlanet_I(Uranus_)                  = 25559.0e+3             ! [m]
+    MassPlanet_I(Uranus_)               = 8.681e+25              ! [kg]
+    TypeBFieldPlanet_I(Uranus_)         = 'DIPOLE'
+    DipoleStrengthPlanet_I(Uranus_)     = 22800.0e-9             ! [T]
+    bAxisThetaPlanet_I(Uranus_)         = 58.6 * cDegToRad       ! [rad]
+    bAxisPhiPlanet_I(Uranus_)           = 49.9 * cDegToRad       ! [rad]
+    ! Dipole offset = (0.03, -0.19, 0.24)rPlanet
+    IonoHeightPlanet_I(Uranus_)         = 110000.0               ! [m]
 
     ! Neptune (80)
+    NamePlanet_I(Neptune_)              = 'NEPTUNE'
+    rPlanet_I(Neptune_)                 = 24764.0e+3             ! [m]
+    MassPlanet_I(Neptune_)              = 1.02413e+26            ! [kg]
+    TypeBFieldPlanet_I(Neptune_)        = 'DIPOLE'
+    DipoleStrengthPlanet_I(Neptune_)    = 14200.0e-9             ! [T]
+    bAxisThetaPlanet_I(Neptune_)        = 46.8 * cDegToRad       ! [rad]
+    bAxisPhiPlanet_I(Neptune_)          = 289.1 * cDegToRad      ! [rad]
+    IonoHeightPlanet_I(Neptune_)        = 110000.0               ! [m]
+    ! Dipole offset = (-0.43, -0.31, -0.02)rPlanet
 
     ! Pluto (90)
-    NamePlanet_I(Pluto_)               = 'PLUTO'
-    rPlanet_I(Pluto_)                  = 1188.3e+3               ! [m]
-    MassPlanet_I(Pluto_)               = 1.303e22                ! [kg]
+    NamePlanet_I(Pluto_)                = 'PLUTO'
+    rPlanet_I(Pluto_)                   = 1188.3e+3              ! [m]
+    MassPlanet_I(Pluto_)                = 1.303e22               ! [kg]
 
     ! Io (51)
     NamePlanet_I(Io_)                   = 'IO'
@@ -250,7 +257,6 @@ contains
     rPlanet_I(Europa_)                  = 1569.0e+3              ! [m]
     MassPlanet_I(Europa_)               = 4.80e22                ! [kg]
     OrbitalPeriodMoon_I(Europa_)        = 3.551 * cDay           ! [s]
-
     TypeBFieldPlanet_I(Europa_)         = 'DIPOLE'
     DipoleStrengthPlanet_I(Europa_)     =    100.0e-9            ! [T]
     bAxisThetaPlanet_I(Europa_)         =  90.0 * cDegToRad      ! [rad]

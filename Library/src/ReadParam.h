@@ -249,6 +249,71 @@ public:
       ss.ignore(INT_MAX, '\n');
     }
   }
+
+  //==========================================================
+  // Optional parameter read. Like read_var, but returns false (and leaves the
+  // stream position unchanged) instead of aborting when the next line is
+  // missing or is the start of a new #COMMAND. Used for parameters that are
+  // NOT required in every PARAM.in, so omitting them keeps the default value.
+  template <class T>
+  bool read_optional(std::string description, T &var) {
+    if (!ss.good()) return false;
+    std::streampos pos = ss.tellg();
+    std::string line;
+    std::getline(ss, line);
+    if (line.empty() || line[0] == '#') {
+      ss.clear();            // getline may have hit EOF; restore good bit
+      ss.seekg(pos);         // un-consume the line
+      return false;
+    }
+    // The line is "<name> <value>"; extract the value token after the name.
+    std::istringstream iss(line);
+    std::string name, value;
+    iss >> name >> value;
+    if (value.empty()) {
+      ss.seekg(pos);
+      return false;
+    }
+    std::istringstream vs(value);
+    T parsed;
+    vs >> parsed;
+    if (vs.fail()) {
+      ss.seekg(pos);
+      return false;
+    }
+    var = parsed;
+    if (isVerbose) {
+      std::cout << component << ": " << std::left << std::setw(40) << var
+                << description << " (optional)" << std::endl;
+    }
+    return true;
+  }
+
+  // String specialisation (already line-oriented).
+  bool read_optional(std::string description, std::string &var) {
+    if (!ss.good()) return false;
+    std::streampos pos = ss.tellg();
+    std::string line;
+    std::getline(ss, line);
+    if (line.empty() || line[0] == '#') {
+      ss.clear();
+      ss.seekg(pos);
+      return false;
+    }
+    std::istringstream iss(line);
+    std::string name, value;
+    iss >> name >> value;
+    if (value.empty()) {
+      ss.seekg(pos);
+      return false;
+    }
+    var = value;
+    if (isVerbose) {
+      std::cout << component << ": " << std::left << std::setw(40) << var
+                << description << " (optional)" << std::endl;
+    }
+    return true;
+  }
 };
 
 inline void char_to_string(std::string &ss, char *chararray, int length,
