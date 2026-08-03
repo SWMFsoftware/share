@@ -140,8 +140,8 @@ sub execute_gitall(){
 
 	       # figure out the branch
 	       my $branch = "master";
-	       $branch = $1 if $gitstatus =~ /^[\#\s]*On branch (\w+)/;
-	       $branch = $1 if $gitstatus =~ /\bdetached at (\w+)/;
+	       $branch = $1 if $gitstatus =~ /^[\#\s]*On branch (\S+)/;
+	       $branch = $1 if $gitstatus =~ /\bdetached at (\S+)/;
 
 	       my $status = "original";
 	       $status = "modified" if $gitstatus =~ /\bmodified:/;
