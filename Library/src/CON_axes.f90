@@ -531,61 +531,68 @@ contains
     real :: MagAxisGei_D(3), OrbitNormal_D(3), RotAxisHgi_D(3)
     real :: HgiGse0_DD(3,3) ! Rotation matrix for true unrotated HGI
 
-    real :: TimeSimLast = -1000.0  ! Last simulation time for magnetic fields
-    real :: TimeSimHgr  = -1000.0  ! Last simulation time for HGR update
+    real :: TimeSimLast = -1000.0  ! Last simulation time for any update
+    real :: TimeSimPrev = -1000.0  ! Last simulation time for mag axis  update
     real :: Angle
 
     ! Reset the helio-centered coordinate transformations if time changed
     logical:: DoTest
     character(len=*), parameter:: NameSub = 'set_axes'
     !--------------------------------------------------------------------------
-    if(TimeSimHgr /= TimeSim)then
-       call orbit_in_hgi(TimeSim, XyzPlanetHgi_D, vPlanetHgi_D)
+    if(TimeSim == TimeSimLast .and. .not.present(DoSetAxes)) RETURN
+    TimeSimLast = TimeSim
 
-       HgiGse0_DD(:,x_) = -XyzPlanetHgi_D/max(norm2(XyzPlanetHgi_D), cTiny)
-       OrbitNormal_D    = cross_product(XyzPlanetHgi_D, vPlanetHgi_D)
-       HgiGse0_DD(:,z_) = OrbitNormal_D/max(norm2(OrbitNormal_D), cTiny)
-       HgiGse0_DD(:,y_) = cross_product(HgiGse0_DD(:,z_), HgiGse0_DD(:,x_))
-       HgiGse_DD = HgiGse0_DD
-       PlanetDistance = norm2(XyzPlanetHgi_D)
+    call CON_set_do_test(NameSub, DoTest)
 
-       if(dLongitudeHgi > 0.0)then
-          HgiGse_DD      = matmul(rot_matrix_z(-dLongitudeHgi), HgiGse_DD)
-          XyzPlanetHgi_D = matmul(rot_matrix_z(-dLongitudeHgi), XyzPlanetHgi_D)
-          vPlanetHgi_D   = matmul(rot_matrix_z(-dLongitudeHgi), vPlanetHgi_D)
-       end if
-
-       if(UseRealRotAxis .and. iPlanet /= Earth_)then
-          call get_rotation_axis_hgi(TimeSim, RotAxisHgi_D)
-          RotAxis_D = matmul(RotAxisHgi_D, HgiGse0_DD)
-          call xyz_to_dir(RotAxis_D, RotAxisTheta, RotAxisPhi)
-          call set_gse_gei_matrix
-       end if
-
-       ! Recalculate the HgrHgi_DD matrix
-       ! The negative sign in front of OmegaCarrington comes from that
-       ! this matrix transforms from HGI to HGR, so a point at rest
-       ! in HGI rotates BACKWARDS in HGR
-       Angle = modulo( &
-            -OmegaCarrington*(TimeSim + tStart - tStartCarringtonCoord), &
-            cTwoPi8)
-
-       ! Modify angle by the offsets
-       Angle = Angle + dLongitudeHgi - dLongitudeHgr
-
-       HgrHgi_DD = rot_matrix_z(Angle)
-
-       ! Calculate the HgrGse_DD matrix
-       HgrGse_DD = matmul(HgrHgi_DD, HgiGse_DD)
-
-       ! Recalculate the HgcHgi and HgcGse matrixes
-       Angle     = -OmegaCarrington*TimeSim
-       HgcHgi_DD = rot_matrix_z(Angle)
-       HgcGse_DD = matmul(HgcHgi_DD, HgiGse_DD)
-
-       ! Remember the time
-       TimeSimHgr = TimeSim
+    if(DoTest)then
+       write(*,*) NameSub,'UseAlignedAxes,UseRotation,DoUpdateB0=', &
+            UseAlignedAxes, UseRotation, DoUpdateB0
+       write(*,*) NameSub,'DtUpdateB0,TimeSim,TimeSimPrev=', &
+            DtUpdateB0, TimeSim, TimeSimPrev
     end if
+
+    call orbit_in_hgi(TimeSim, XyzPlanetHgi_D, vPlanetHgi_D)
+
+    HgiGse0_DD(:,x_) = -XyzPlanetHgi_D/max(norm2(XyzPlanetHgi_D), cTiny)
+    OrbitNormal_D    = cross_product(XyzPlanetHgi_D, vPlanetHgi_D)
+    HgiGse0_DD(:,z_) = OrbitNormal_D/max(norm2(OrbitNormal_D), cTiny)
+    HgiGse0_DD(:,y_) = cross_product(HgiGse0_DD(:,z_), HgiGse0_DD(:,x_))
+    HgiGse_DD = HgiGse0_DD
+    PlanetDistance = norm2(XyzPlanetHgi_D)
+
+    if(dLongitudeHgi > 0.0)then
+       HgiGse_DD      = matmul(rot_matrix_z(-dLongitudeHgi), HgiGse_DD)
+       XyzPlanetHgi_D = matmul(rot_matrix_z(-dLongitudeHgi), XyzPlanetHgi_D)
+       vPlanetHgi_D   = matmul(rot_matrix_z(-dLongitudeHgi), vPlanetHgi_D)
+    end if
+
+    if(UseRealRotAxis .and. iPlanet /= Earth_)then
+       call get_rotation_axis_hgi(TimeSim, RotAxisHgi_D)
+       RotAxis_D = matmul(RotAxisHgi_D, HgiGse0_DD)
+       call xyz_to_dir(RotAxis_D, RotAxisTheta, RotAxisPhi)
+       call set_gse_gei_matrix
+    end if
+
+    ! Recalculate the HgrHgi_DD matrix
+    ! The negative sign in front of OmegaCarrington comes from that
+    ! this matrix transforms from HGI to HGR, so a point at rest
+    ! in HGI rotates BACKWARDS in HGR
+    Angle = modulo( &
+         -OmegaCarrington*(TimeSim + tStart - tStartCarringtonCoord), &
+         cTwoPi8)
+
+    ! Modify angle by the offsets
+    Angle = Angle + dLongitudeHgi - dLongitudeHgr
+
+    HgrHgi_DD = rot_matrix_z(Angle)
+
+    ! Calculate the HgrGse_DD matrix
+    HgrGse_DD = matmul(HgrHgi_DD, HgiGse_DD)
+
+    ! Recalculate the HgcHgi and HgcGse matrixes
+    Angle     = -OmegaCarrington*TimeSim
+    HgcHgi_DD = rot_matrix_z(Angle)
+    HgcGse_DD = matmul(HgcHgi_DD, HgiGse_DD)
 
     ! Check if there is a need to update the magnetic axis
     ! and related transformations
@@ -595,25 +602,15 @@ contains
 
        ! If DtUpdateB0 is more than 0.001 update if int(time/DtUpdateB0) differ
        if(DtUpdateB0 > 0.001)then
-          if(int(TimeSim/DtUpdateB0) == int(TimeSimLast/DtUpdateB0)) RETURN
+          if(int(TimeSim/DtUpdateB0) == int(TimeSimPrev/DtUpdateB0)) RETURN
        end if
 
        ! If DtUpdateB0 is less than 1 msec update unless time is the same
-       if(abs(TimeSim - TimeSimLast) < cTiny) RETURN
+       if(abs(TimeSim - TimeSimPrev) < cTiny) RETURN
 
     end if
 
-    call CON_set_do_test(NameSub, DoTest)
-
-    if(DoTest)then
-       write(*,*) NameSub,'UseAlignedAxes,UseRotation,DoUpdateB0=',&
-            UseAlignedAxes, UseRotation, DoUpdateB0
-       write(*,*) NameSub,'DtUpdateB0,TimeSim,TimeSimLast=',&
-            DtUpdateB0, TimeSim, TimeSimLast
-    end if
-
-    ! Remember the simulation time
-    TimeSimLast = TimeSim
+    TimeSimPrev = TimeSimLast ! For magnetic axis update
 
     ! Rotate MagAxis0Gei around Z axis to get current position in GEI
     MagAxisGei_D = matmul(rot_matrix_z(OmegaPlanet*TimeSim), MagAxis0Gei_D)
@@ -885,9 +882,8 @@ contains
           ! For heliocentric coordinate systems set the inertial frame to HGI
           NameCoord2 = 'hgi'
        else
-          ! For geocentric systems GSE is assumed to be inertial
-          ! Otherwise better use GEI !!!
-          NameCoord2 = 'GSE'
+          ! For planetocentric systems GEI is inertial frame
+          NameCoord2 = 'GEI'
        end if
        iFrameOut = 1
     end if
