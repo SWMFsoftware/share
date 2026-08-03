@@ -532,7 +532,6 @@ contains
     real :: HgiGse0_DD(3,3) ! Rotation matrix for true unrotated HGI
 
     real :: TimeSimLast = -1000.0  ! Last simulation time for any update
-    real :: TimeSimPrev = -1000.0  ! Last simulation time for mag axis  update
     real :: Angle
 
     ! Reset the helio-centered coordinate transformations if time changed
@@ -547,8 +546,8 @@ contains
     if(DoTest)then
        write(*,*) NameSub,'UseAlignedAxes,UseRotation,DoUpdateB0=', &
             UseAlignedAxes, UseRotation, DoUpdateB0
-       write(*,*) NameSub,'DtUpdateB0,TimeSim,TimeSimPrev=', &
-            DtUpdateB0, TimeSim, TimeSimPrev
+       write(*,*) NameSub,'DtUpdateB0,TimeSim=', &
+            DtUpdateB0, TimeSim
     end if
 
     call orbit_in_hgi(TimeSim, XyzPlanetHgi_D, vPlanetHgi_D)
@@ -566,7 +565,7 @@ contains
        vPlanetHgi_D   = matmul(rot_matrix_z(-dLongitudeHgi), vPlanetHgi_D)
     end if
 
-    if(UseRealRotAxis .and. iPlanet /= Earth_)then
+    if(UseRealRotAxis)then
        call get_rotation_axis_hgi(TimeSim, RotAxisHgi_D)
        RotAxis_D = matmul(RotAxisHgi_D, HgiGse0_DD)
        call xyz_to_dir(RotAxis_D, RotAxisTheta, RotAxisPhi)
@@ -593,24 +592,6 @@ contains
     Angle     = -OmegaCarrington*TimeSim
     HgcHgi_DD = rot_matrix_z(Angle)
     HgcGse_DD = matmul(HgcHgi_DD, HgiGse_DD)
-
-    ! Check if there is a need to update the magnetic axis
-    ! and related transformations
-    if(.not.present(DoSetAxes))then
-       ! If magnetic axis does not move, no need to update
-       if(.not.DoUpdateB0) RETURN
-
-       ! If DtUpdateB0 is more than 0.001 update if int(time/DtUpdateB0) differ
-       if(DtUpdateB0 > 0.001)then
-          if(int(TimeSim/DtUpdateB0) == int(TimeSimPrev/DtUpdateB0)) RETURN
-       end if
-
-       ! If DtUpdateB0 is less than 1 msec update unless time is the same
-       if(abs(TimeSim - TimeSimPrev) < cTiny) RETURN
-
-    end if
-
-    TimeSimPrev = TimeSimLast ! For magnetic axis update
 
     ! Rotate MagAxis0Gei around Z axis to get current position in GEI
     MagAxisGei_D = matmul(rot_matrix_z(OmegaPlanet*TimeSim), MagAxis0Gei_D)
@@ -1039,7 +1020,6 @@ contains
     real:: RotAxisGsm_D(3), RotAxisGeo_D(3), Rot_DD(3,3), Result_DD(3,3)
     real:: Omega_D(3), v2_D(3), Result_D(3), Position_D(3)
     real:: Epsilon1, Epsilon2, Epsilon3
-   real:: LonSubsolar0
     type(TimeType):: TimeStart
     !--------------------------------------------------------------------------
     if(precision(1.0) >= 12)then
@@ -1138,13 +1118,6 @@ contains
          write(*,*)'test angular_velocity failed: GEI Omega_D = ',Omega_D, &
          ' should be equal to ',Result_D,' within round off errors'
 
-    ! In the current approximation GSE is an inertial system
-    Omega_D  = angular_velocity(0.0, 'GSE')
-    Result_D = [0., 0., 0.]
-    if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
-         write(*,*)'test angular_velocity failed: GSE Omega_D = ',Omega_D,&
-         ' should be equal to ',Result_D,' within round off errors'
-
     ! GEO rotates with OmegaPlanet around the Z axis with respect to inertial
     Omega_D  = angular_velocity(0.0, 'GEO')
     Result_D = [0., 0., OmegaPlanet]
@@ -1152,8 +1125,8 @@ contains
          write(*,*)'test angular_velocity failed: GEO Omega_D = ',Omega_D,&
          ' should be equal to ',Result_D,' within round off errors'
 
-    ! GEO rotates with OmegaPlanet around the Z axis with respect to GSE
-    Omega_D  = angular_velocity(0.0,'GSE','GEO',iFrame=2)
+    ! GEO rotates with OmegaPlanet around the Z axis with respect to GEI
+    Omega_D  = angular_velocity(0.0, 'GEI', 'GEO', iFrame=2)
     Result_D = [0., 0., OmegaPlanet]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: GSE,GEO Omega_D = ',Omega_D,&
@@ -1165,14 +1138,14 @@ contains
     ! so GSM rotates with a positive sign around the X axis.
     ! The sign is right, the amplitude is reasonable.
 
-    Omega_D  = angular_velocity(0.0, 'GSM')
+    Omega_D  = angular_velocity(0.0, 'GSE', 'GSM', iFrame=2)
     Result_D = [1.0159142032690014E-05, 0., 0.]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: GSM Omega_D = ',Omega_D,&
          ' should be equal to ',Result_D,' within round off errors'
 
     ! This is a general case, we believe the numbers
-    Omega_D  = angular_velocity(0.0, 'GSE', 'SMG',iFrame=2)
+    Omega_D  = angular_velocity(0.0, 'GSE', 'SMG', iFrame=2)
     Result_D = [1.0060719966113833E-05, 8.5816024030392317E-06, &
          -1.4107021605913379E-06]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
@@ -1181,9 +1154,9 @@ contains
 
     write(*,'(a)')'Testing transform_velocity'
 
-    ! Let's take the (/0.,0.,cAU/) point with 0 velocity in HGR.
-    ! This will correspond to the point matmul((/cAU,0.,0./),HgrHgi_DD) in HGI
-    ! and it should rotate with (/0.,0.,OmegaCarrington/) in HGI.
+    ! Let's take the [0.,0.,cAU] point with 0 velocity in HGR.
+    ! This will correspond to the point matmul([cAU,0.,0.], HgrHgi_DD) in HGI
+    ! and it should rotate with [0.,0.,OmegaCarrington] in HGI.
 
     Position_D = [cAU,0.,0.]
     v2_D = transform_velocity(0., [0.,0.,0.], Position_D, 'hgr', 'hgi')
