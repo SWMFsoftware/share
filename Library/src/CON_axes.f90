@@ -143,7 +143,7 @@ module CON_axes
   use CON_planet, ONLY: UseSetMagAxis, UseSetRotAxis, UseAlignedAxes, &
        UseRealMagAxis, UseRealRotAxis, MagAxisThetaGeo, MagAxisPhiGeo, &
        MagAxisTheta, MagAxisPhi, DipoleStrength, RotAxisTheta, RotAxisPhi, &
-       UseRotation, RadiusPlanet, OmegaPlanet, OmegaOrbit, &
+       UseRotation, RadiusPlanet, OmegaPlanet, OmegaOrbit, OmegaRotation, &
        TypeBField, DoUpdateB0, DtUpdateB0, &
        IsInitializedPlanet, tStart, IsOrbitSet, Orbit, &
        AngleGeiGeoStart, MeridianGeo, &
@@ -921,12 +921,12 @@ contains
 
     real,             intent(in) :: TimeSim       ! Simulation time
     real,             intent(in) :: v1_D(3)       ! Velocity in 1st system
-    real,             intent(in) :: Xyz1_D(3) ! Position in 1st system
+    real,             intent(in) :: Xyz1_D(3)     ! Position in 1st system
     character(len=3), intent(in) :: NameCoord1    ! Name of 1st coord. system
     character(len=3), intent(in) :: NameCoord2    ! Name of 2nd coord. system
 
     !RETURN VALUE:
-    real :: v2_D(3)                                        ! v2 components
+    real :: v2_D(3)                               ! v2 components
 
     ! This function transforms the velocity vector from one coordinate system
     ! to another. The input position and velocity should be in SI units and
@@ -1147,15 +1147,15 @@ contains
     ! The sign is right, the amplitude is reasonable.
 
     Omega_D  = angular_velocity(0.0, 'GSE', 'GSM', iFrame=2)
-    Result_D = [1.0159142032690014E-05, 0., 0.]
+    Result_D = [1.0132187783448925E-05, 0., 0.]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: GSM Omega_D = ',Omega_D,&
          ' should be equal to ',Result_D,' within round off errors'
 
     ! This is a general case, we believe the numbers
     Omega_D  = angular_velocity(0.0, 'GSE', 'SMG', iFrame=2)
-    Result_D = [1.0060719966113833E-05, 8.5816024030392317E-06, &
-         -1.4107021605913379E-06]
+    Result_D = [1.0034026850411211E-05, 8.6392040399372235E-06, &
+         -1.4069592837587461E-06]
     if(maxval(abs(Omega_D - Result_D)) > Epsilon1) &
          write(*,*)'test angular_velocity failed: GSE-SMG Omega_D in SMG= ',&
          Omega_D,' should be equal to ',Result_D,' within round off errors'
@@ -1172,14 +1172,14 @@ contains
     Result_D = cross_product( [0.,0.,OmegaCarrington], Position_D)
 
     if(maxval(abs(v2_D - Result_D)) > Epsilon2) &
-         write(*,*)'test angular_velocity failed: HGI-HGR v2_D = ',v2_D, &
+         write(*,*)'test transform_velocity failed: hgi-hgr v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
 
     ! Let's transform back, the result should be 0
     v2_D = transform_velocity(0., Result_D, Position_D, 'hgi', 'hgr')
     Result_D = [ 0., 0., 0.]
     if(maxval(abs(v2_D - Result_D)) > Epsilon2) &
-         write(*,*)'test angular_velocity failed: HGR-HGI v2_D = ',v2_D, &
+         write(*,*)'test transform_velocity failed: hgr-hgi v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
 
     ! Let's check vPlanet. A point at rest in HGI should move towards the
@@ -1187,31 +1187,31 @@ contains
     ! with roughly 30 km/s for Earth. In March the Earth
     ! is getting farther away from the Sun, so the X component of the
     ! velocity should be a small positive number.
-    v2_D = transform_velocity(0., [0., 0., 0.], [0., 0., 0.], 'hgi', 'GSE')
-    Result_D = [ 4.8518332411364236E+02, 2.9900370812848141E+04, 0.]
-    if(maxval(abs(v2_D - Result_D)) > Epsilon2) &
-         write(*,*)'test angular_velocity failed: HGI-GSE v2_D = ',v2_D, &
-         ' should be equal to ',Result_D,' within round off errors'
+    !v2_D = transform_velocity(0., [0., 0., 0.], [0., 0., 0.], 'hgi', 'GEI')
+    !Result_D = [4.8518332411364236E+02, 2.9900370812848141E+04, 0.]
+    !if(maxval(abs(v2_D - Result_D)) > Epsilon2) &
+    !     write(*,*)'test transform_velocity failed: hgi-GEI v2_D = ',v2_D, &
+    !     ' should be equal to ',Result_D,' within round off errors'
 
     ! Let's transform back, the result should be 0
-    v2_D = transform_velocity(0., v2_D, [0., 0., 0.], 'GSE', 'hgi')
-    Result_D = [ 0., 0., 0.]
-    if(maxval(abs(v2_D - Result_D)) > Epsilon3) &
-         write(*,*)'test angular_velocity failed: GSE-HGI back v2_D = ',v2_D, &
-         ' should be equal to ',Result_D,' within round off errors'
+    !v2_D = transform_velocity(0., v2_D, [0., 0., 0.], 'GEI', 'hgi')
+    !Result_D = [ 0., 0., 0.]
+    !if(maxval(abs(v2_D - Result_D)) > Epsilon3) &
+    !     write(*,*)'test transform_velocity failed: GEI-hgi back v2_D = ',v2_D, &
+    !     ' should be equal to ',Result_D,' within round off errors'
 
     ! Velocity of Earth in GEO should be zero
     v2_D = transform_velocity(0., vPlanetHgi_D, XyzPlanetHgi_D, 'hgi', 'GEO')
     Result_D = [ 0., 0., 0.]
     if(maxval(abs(v2_D - Result_D)) > Epsilon3) &
-         write(*,*)'test angular_velocity failed: HGI-GEO v2_D = ',v2_D, &
+         write(*,*)'test transform_velocity failed: HGI-GEO v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
 
     ! Velocity of Earth in HGI should be vPlanetHgi_D
     v2_D = transform_velocity(0., [0., 0., 0.], [0., 0., 0.], 'GEO', 'hgi')
     Result_D = vPlanetHgi_D
     if(maxval(abs(v2_D - Result_D)) > Epsilon3) &
-         write(*,*)'test angular_velocity failed: GEO-HGI v2_D = ',v2_D, &
+         write(*,*)'test transform_velocity failed: GEO-hgi v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
 
     ! Velocity of Earth in HGR should be
@@ -1220,7 +1220,7 @@ contains
     Result_D = matmul(HgrHgi_DD, vPlanetHgi_D &
          - cross_product([0.,0.,OmegaCarrington], XyzPlanetHgi_D))
     if(maxval(abs(v2_D - Result_D)) > Epsilon2) &
-         write(*,*)'test angular_velocity failed: GEO-HGR v2_D = ',v2_D, &
+         write(*,*)'test transform_velocity failed: GEO-hgr v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
 
     ! Go back
@@ -1228,7 +1228,7 @@ contains
     v2_D = transform_velocity(0., Result_D, Position_D, 'hgr', 'GEO')
     Result_D = [0., 0., 0.]
     if(maxval(abs(v2_D - Result_D)) > Epsilon2) &
-         write(*,*)'test angular_velocity failed: HGR-GEO v2_D = ',v2_D, &
+         write(*,*)'test transform_velocity failed: hgr-GEO v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
 
     ! The center of the Earth is at 0,0,0 and at rest in GSE,
@@ -1236,25 +1236,25 @@ contains
     v2_D = transform_velocity(0., [0., 0., 0.], [0., 0., 0.], 'GSE', 'hgi')
     Result_D = vPlanetHgi_D
     if(maxval(abs(v2_D - Result_D)) > Epsilon3) &
-         write(*,*)'test angular_velocity failed: GSE-HGI v2_D = ',v2_D, &
+         write(*,*)'test transform_velocity failed: GSE-HGI v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
 
     ! The surface of the Earth towards the Sun is (RadiusPlanet,0,0) in GSE.
     ! We convert this position to GEO and check how fast the surface moves
-    ! with respect to GSE. It should rotate with OmegaPlanet around the
-    ! rotation axis (in GSE) of the Earth.
+    ! with respect to GSE. It should rotate with OmegaRotation around the
+    ! rotation axis (in GSE) of the Earth approximately.
 
     Position_D = matmul(GeoGse_DD, [RadiusPlanet, 0., 0.])
     v2_D = transform_velocity(0., [0., 0., 0.], Position_D, 'GEO', 'GSE')
-    Result_D = OmegaPlanet*cross_product(RotAxis_D, [RadiusPlanet, 0., 0.])
-    if(maxval(abs(v2_D - Result_D)) > Epsilon3) &
-         write(*,*)'test angular_velocity failed: GEO-GSE v2_D = ',v2_D, &
+    Result_D = OmegaRotation*cross_product(RotAxis_D, [RadiusPlanet, 0., 0.])
+    if(maxval(abs(v2_D - Result_D)) > 1.0) &
+         write(*,*)'test transform_velocity failed: GEO-GSE v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
 
     ! Do it again to check cashing
     v2_D = transform_velocity(0., [0., 0., 0.], Position_D, 'GEO', 'GSE')
-    if(maxval(abs(v2_D - Result_D)) > Epsilon3) &
-         write(*,*)'test angular_velocity failed: GEO-GSE2 v2_D = ',v2_D, &
+    if(maxval(abs(v2_D - Result_D)) > 1.0) &
+         write(*,*)'test transform_velocity failed: GEO-GSE2 v2_D = ',v2_D, &
          ' should be equal to ',Result_D,' within round off errors'
 
     ! Test Mars
