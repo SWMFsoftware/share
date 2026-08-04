@@ -1187,18 +1187,18 @@ contains
     ! with roughly 30 km/s for Earth. In March the Earth
     ! is getting farther away from the Sun, so the X component of the
     ! velocity should be a small positive number.
-    !v2_D = transform_velocity(0., [0., 0., 0.], [0., 0., 0.], 'hgi', 'GEI')
-    !Result_D = [4.8518332411364236E+02, 2.9900370812848141E+04, 0.]
-    !if(maxval(abs(v2_D - Result_D)) > Epsilon2) &
-    !     write(*,*)'test transform_velocity failed: hgi-GEI v2_D = ',v2_D, &
-    !     ' should be equal to ',Result_D,' within round off errors'
+    v2_D = transform_velocity(0., [0., 0., 0.], XyzPlanetHgi_D, 'hgi', 'GSE')
+    Result_D = [4.8518332411364236E+02, 2.9900370812848141E+04, 0.]
+    if(maxval(abs(v2_D - Result_D)) > Epsilon2) &
+         write(*,*)'test transform_velocity failed: hgi-GSE v2_D = ',v2_D, &
+         ' should be equal to ',Result_D,' within round off errors'
 
     ! Let's transform back, the result should be 0
-    !v2_D = transform_velocity(0., v2_D, [0., 0., 0.], 'GEI', 'hgi')
-    !Result_D = [ 0., 0., 0.]
-    !if(maxval(abs(v2_D - Result_D)) > Epsilon3) &
-    !     write(*,*)'test transform_velocity failed: GEI-hgi back v2_D = ',v2_D, &
-    !     ' should be equal to ',Result_D,' within round off errors'
+    v2_D = transform_velocity(0., v2_D, [0., 0., 0.], 'GSE', 'hgi')
+    Result_D = [ 0., 0., 0.]
+    if(maxval(abs(v2_D - Result_D)) > Epsilon3) &
+         write(*,*)'test transform_velocity failed: GSE-hgi back v2_D = ',v2_D, &
+         ' should be equal to ',Result_D,' within round off errors'
 
     ! Velocity of Earth in GEO should be zero
     v2_D = transform_velocity(0., vPlanetHgi_D, XyzPlanetHgi_D, 'hgi', 'GEO')
