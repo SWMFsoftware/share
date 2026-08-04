@@ -175,6 +175,9 @@ module CON_axes
   ! Position and Velocity of Planet in HGI, Planet distance in m
   real :: XyzPlanetHgi_D(3), vPlanetHgi_D(3), PlanetDistance
 
+  ! Rotation axis in HGI is fixed
+  real :: RotAxisHgi0_D(3) = 0.0
+
   ! Offset longitude angle for hgr and hgi systems in degrees and radians
   real :: dLongitudeHgrDeg = 0.0, dLongitudeHgr = 0.0
   real :: dLongitudeHgiDeg = 0.0, dLongitudeHgi = 0.0
@@ -203,16 +206,18 @@ module CON_axes
   ! for example GSE -> GSM is done as vGsm_D = matmul(GsmGse_DD, vGse_D)
   ! Most transforms go through GSE, but there are a few extra matrices defined
   real, dimension(3,3) :: &
-       SmgGsm_DD, &
-       GeiGeo_DD, &
-       GsmGse_DD, &
-       GseGei_DD, &
-       MagGeo_DD, &
-       HgrHgi_DD, &
-       HgiGse_DD, &
-       HgrGse_DD, &
-       HgcHgi_DD, &
-       HgcGse_DD
+       SmgGsm_DD,  & ! GSM->SMG
+       GeiGeo_DD,  & ! GEO->GEI
+       GsmGse_DD,  & ! GSM->GSE
+       GseGei_DD,  & ! GEI->GSE
+       MagGeo_DD,  & ! GEO->MAG
+       HgrHgi_DD,  & ! hgi->hgr
+       HgiHgi0_DD, & ! HGI->hgi
+       Hgi0Gse_DD, & ! GSE->HGI
+       HgiGse_DD,  & ! GSE->hgi
+       HgrGse_DD,  & ! GSE->hgr
+       HgcHgi_DD,  & ! hgi->hgc
+       HgcGse_DD     ! GSE->hgc
 
   !$acc declare create(SmgGsm_DD, GsmGse_DD, GseGei_DD, GeiGeo_DD, MagGeo_DD)
   !$acc declare create(HgrHgi_DD, HgrGse_DD, HgcHgi_DD, HgcGse_DD)
@@ -236,8 +241,6 @@ contains
     ! Calculate conversion matrices between MAG-GEO-GEI-GSE systems.
 
     real :: XyzPlanetHgr_D(3)
-    real :: RotAxisHgi_D(3), GseX_D(3), GseZ_D(3)
-    real :: HgiGse0_DD(3,3) ! Matrix for the true non-rotated HGI
     real :: Dipole_D(3)     ! IGRF dipole for Earth
     real :: DipoleStrengthIgrf
 
@@ -262,40 +265,18 @@ contains
     ! Obtain the orbit elements at start time unless set with #ORBIT
     if(.not.IsOrbitSet) call get_planet_orbit(tStart, Orbit)
 
-    ! Set initial planet position and velocity in HGI
-    call orbit_in_hgi(0.0, XyzPlanetHgi_D, vPlanetHgi_D)
-    PlanetDistance = norm2(XyzPlanetHgi_D)
-
-    ! Set HgiGse matrix
-    GseX_D = -XyzPlanetHgi_D/norm2(XyzPlanetHgi_D)
-    GseZ_D = cross_product(XyzPlanetHgi_D, vPlanetHgi_D) ! orbit normal
-    GseZ_D = GseZ_D/norm2(GseZ_D)
-    HgiGse0_DD(:,x_) = GseX_D
-    HgiGse0_DD(:,y_) = cross_product(GseZ_D, GseX_D)
-    HgiGse0_DD(:,z_) = GseZ_D
-    HgiGse_DD = HgiGse0_DD
+    ! Set initial planet position and true HGI-GSE matrix
+    call set_hgi_gse_matrix(0.0)
 
     if(UseRealRotAxis)then
        ! Get rotation axis in HGI
-       call get_rotation_axis_hgi(0.0, RotAxisHgi_D)
+       call get_rotation_axis_hgi(RotAxisHgi0_D)
        ! Keep physical axis orientation independent of optional
        ! HGI longitude offset.
-       RotAxis_D = matmul(RotAxisHgi_D, HgiGse0_DD)
+       RotAxis_D = matmul(RotAxisHgi0_D, Hgi0Gse_DD)
        ! Get direction angles in GSE
        call xyz_to_dir(RotAxis_D, RotAxisTheta, RotAxisPhi)
     endif
-
-    if(dLongitudeHgi < 0.0)then
-       ! Find the longitude of the planet and set HGI rotation
-       dLongitudeHgi = modulo(atan2(HgiGse_DD(2,1), HgiGse_DD(1,1)), cTwoPi)
-       dLongitudeHgiDeg = dLongitudeHgi*cRadToDeg - 360.0
-    end if
-    if(dLongitudeHgi > 0.0)then
-       ! Rotate the HGI system to lower case hgi
-       HgiGse_DD      = matmul(rot_matrix_z(-dLongitudeHgi), HgiGse_DD)
-       XyzPlanetHgi_D = matmul(rot_matrix_z(-dLongitudeHgi), XyzPlanetHgi_D)
-       vPlanetHgi_D   = matmul(rot_matrix_z(-dLongitudeHgi), vPlanetHgi_D)
-    end if
 
     ! A negative dLongitudeHgr means align anti-Earth with the -X,Z plane
     ! at the start time, matching the behavior of set_hgi_gse_d_planet.
@@ -477,6 +458,48 @@ contains
     !==========================================================================
   end subroutine init_axes
   !============================================================================
+  subroutine set_hgi_gse_matrix(TimeSim)
+
+    ! Set true and rotated HgiGse matrices and
+    ! the planet location/velocity in (rotated) HGI
+
+    real, intent(in) :: TimeSim
+
+    real :: GseX_D(3), GseZ_D(3)
+
+    character(len=*), parameter:: NameSub = 'set_hgi_gse_matrix'
+    !--------------------------------------------------------------------------
+    call orbit_in_hgi(TimeSim, XyzPlanetHgi_D, vPlanetHgi_D)
+    PlanetDistance = norm2(XyzPlanetHgi_D)
+
+    ! GSE coordinate unit vectors in HGI
+    GseX_D = -XyzPlanetHgi_D/PlanetDistance
+    GseZ_D = cross_product(XyzPlanetHgi_D, vPlanetHgi_D) ! orbit normal
+    GseZ_D = GseZ_D/norm2(GseZ_D)
+    ! GSE->HGI
+    Hgi0Gse_DD(:,x_) = GseX_D
+    Hgi0Gse_DD(:,y_) = cross_product(GseZ_D, GseX_D)
+    Hgi0Gse_DD(:,z_) = GseZ_D
+    HgiGse_DD = Hgi0Gse_DD
+
+    if(dLongitudeHgi < 0.0)then
+       ! Find the longitude of the planet and set HGI rotation
+       ! This is only done once when TimeSim == 0.0
+       if(TimeSim /= 0.0) call CON_stop(NameSub//': TimeSim should be 0')
+       dLongitudeHgi = modulo(atan2(HgiGse_DD(2,1), HgiGse_DD(1,1)), cTwoPi)
+       dLongitudeHgiDeg = dLongitudeHgi*cRadToDeg - 360.0
+    end if
+    if(dLongitudeHgi > 0.0)then
+       ! HGI->hgi matrix
+       if(TimeSim == 0.0) HgiHgi0_DD = rot_matrix_z(-dLongitudeHgi)
+       ! Rotate the true HGI system to rotated lower case hgi
+       HgiGse_DD      = matmul(HgiHgi0_DD, Hgi0Gse_DD)
+       XyzPlanetHgi_D = matmul(HgiHgi0_DD, XyzPlanetHgi_D)
+       vPlanetHgi_D   = matmul(HgiHgi0_DD, vPlanetHgi_D)
+    end if
+
+  end subroutine set_hgi_gse_matrix
+  !============================================================================
   subroutine set_gei_geo_matrix(TimeSim)
 
     ! The rotation is around the Z axis, which is the rotational axis
@@ -528,8 +551,7 @@ contains
     !      if int(TimeSim/DtUpdateB0) differs from int(TimeSimLast/DtUpdateB0)
     !
 
-    real :: MagAxisGei_D(3), OrbitNormal_D(3), RotAxisHgi_D(3)
-    real :: HgiGse0_DD(3,3) ! Rotation matrix for true unrotated HGI
+    real :: MagAxisGei_D(3)
 
     real :: TimeSimLast = -1000.0  ! Last simulation time for any update
     real :: Angle
@@ -550,25 +572,14 @@ contains
             DtUpdateB0, TimeSim
     end if
 
-    call orbit_in_hgi(TimeSim, XyzPlanetHgi_D, vPlanetHgi_D)
-
-    HgiGse0_DD(:,x_) = -XyzPlanetHgi_D/max(norm2(XyzPlanetHgi_D), cTiny)
-    OrbitNormal_D    = cross_product(XyzPlanetHgi_D, vPlanetHgi_D)
-    HgiGse0_DD(:,z_) = OrbitNormal_D/max(norm2(OrbitNormal_D), cTiny)
-    HgiGse0_DD(:,y_) = cross_product(HgiGse0_DD(:,z_), HgiGse0_DD(:,x_))
-    HgiGse_DD = HgiGse0_DD
-    PlanetDistance = norm2(XyzPlanetHgi_D)
-
-    if(dLongitudeHgi > 0.0)then
-       HgiGse_DD      = matmul(rot_matrix_z(-dLongitudeHgi), HgiGse_DD)
-       XyzPlanetHgi_D = matmul(rot_matrix_z(-dLongitudeHgi), XyzPlanetHgi_D)
-       vPlanetHgi_D   = matmul(rot_matrix_z(-dLongitudeHgi), vPlanetHgi_D)
-    end if
+    call set_hgi_gse_matrix(TimeSim)
 
     if(UseRealRotAxis)then
-       call get_rotation_axis_hgi(TimeSim, RotAxisHgi_D)
-       RotAxis_D = matmul(RotAxisHgi_D, HgiGse0_DD)
+       ! Physical axis orientation is based on true HGI
+       RotAxis_D = matmul(RotAxisHgi0_D, Hgi0Gse_DD)
+       ! Get direction angles in GSE
        call xyz_to_dir(RotAxis_D, RotAxisTheta, RotAxisPhi)
+       ! Recalculate GSE-GEI matrix
        call set_gse_gei_matrix
     end if
 
@@ -610,7 +621,6 @@ contains
     !
     ! This matrix changes with simulation time unless
     !    UseRotation=.false. or UseAlignedAxes=.true.
-
     GsmGse_DD = rot_matrix_x(atan2_check(MagAxis_D(y_), MagAxis_D(z_)))
 
     ! Calculate the rotation matrix to convert between SMG and GSM systems.
@@ -619,12 +629,10 @@ contains
     !
     ! This matrix changes with simulation time unless
     !    UseRotation=.false. or UseAlignedAxes=.true.
-
     MagAxisTiltGsm = -asin(MagAxis_D(x_))
     SmgGsm_DD = rot_matrix_y(MagAxisTiltGsm)
 
     ! SMG-GSE transformation matrix
-
     SmgGse_DD = matmul(SmgGsm_DD, GsmGse_DD)
     GseSmg_DD = transpose(SmgGse_DD)
 
@@ -632,8 +640,8 @@ contains
     ! and calculate the rotation axis in GSM coordinates.
     ! These are useful to obtain the dipole field and the corotation velocity
     ! in the GSM system.
-    MagAxisGsm_D = matmul(GsmGse_DD,MagAxis_D)
-    RotAxisGsm_D = matmul(GsmGse_DD,RotAxis_D)
+    MagAxisGsm_D = matmul(GsmGse_DD, MagAxis_D)
+    RotAxisGsm_D = matmul(GsmGse_DD, RotAxis_D)
 
     ! Now calculate the transformation matrices for the rotating systems
     call set_gei_geo_matrix(TimeSim)
