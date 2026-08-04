@@ -561,7 +561,7 @@ contains
     real, optional, intent(out) :: vHgi_D(3)
 
     real :: a, Ecc, Inc, OmegaNode, LongPeri, Lon
-    real :: EAnom, dEAnom, CosEAnom, SinEAnom, MeanMotion, dEdt
+    real :: EAnom, dEAnom, CosEAnom, SinEAnom, dEdt
     real :: b
     real :: xOrb, yOrb, VxOrb, VyOrb
     real :: CosO, SinO, CosI, SinI, CosW, SinW
@@ -624,15 +624,14 @@ contains
 
   end subroutine orbit_in_hgi
   !============================================================================
-  subroutine get_rotation_axis_hgi(TimeSim, AxisHgi_D)
+  subroutine get_rotation_axis_hgi(AxisHgi_D)
 
-    real, intent(in) :: TimeSim
     real, intent(out):: AxisHgi_D(3)
 
     type(RotationType) :: Rot
     real :: Alpha, Delta
     !--------------------------------------------------------------------------
-    call get_planet_rotation_elements(tStart + TimeSim, Rot)
+    call get_planet_rotation_elements(tStart, Rot)
     Alpha = Rot % AlphaDeg*cDegToRad
     Delta = Rot % DeltaDeg*cDegToRad
 
