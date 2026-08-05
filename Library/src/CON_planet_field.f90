@@ -23,7 +23,7 @@ module CON_planet_field
   ! PUBLIC MEMBER FUNCTIONS
   public :: get_planet_field  ! Get planet field at some time and place
   public :: map_planet_field  ! Map planet field from a point to a radius
-  public :: map_planet_field_fast ! map dipole field
+  public :: map_planet_field_fast ! map dipole field (GPU version)
   public :: test_planet_field ! Test the methods in this module
 
   ! revision history:
@@ -51,7 +51,6 @@ module CON_planet_field
 
 contains
   !============================================================================
-
   subroutine get_planet_field11(TimeSim, XyzIn_D, TypeCoord, b_D)
 
     real,              intent(in) :: TimeSim      ! simulation time
@@ -193,7 +192,6 @@ contains
 
   end subroutine get_planet_field11
   !============================================================================
-
   subroutine get_planet_field13(TimeSim, XyzIn_D, TypeCoord, Bx, By, Bz)
 
     real,              intent(in) :: TimeSim      ! simulation time
@@ -202,7 +200,6 @@ contains
     real,              intent(out):: Bx, By, Bz   ! magnetic field
 
     real :: b_D(3)
-
     !--------------------------------------------------------------------------
     call get_planet_field(TimeSim, XyzIn_D, TypeCoord, b_D)
 
@@ -212,7 +209,6 @@ contains
 
   end subroutine get_planet_field13
   !============================================================================
-
   subroutine get_planet_field31(TimeSim, x, y, z, TypeCoord, b_D)
 
     real,              intent(in) :: TimeSim      ! simulation time
@@ -225,7 +221,6 @@ contains
 
   end subroutine get_planet_field31
   !============================================================================
-
   subroutine get_planet_field33(TimeSim, x, y, z, TypeCoord, Bx, By, Bz)
 
     real,              intent(in) :: TimeSim      ! simulation time
@@ -234,7 +229,6 @@ contains
     real,              intent(out):: Bx, By, Bz   ! magnetic field
 
     real :: b_D(3)
-
     !--------------------------------------------------------------------------
     call get_planet_field(TimeSim, [x, y, z], TypeCoord, b_D)
 
@@ -244,11 +238,11 @@ contains
 
   end subroutine get_planet_field33
   !============================================================================
-
-  ! ===========================================================================
   subroutine calculate_multipole_field(XyzIn_D, b_D)
+
     ! Calculate the (Bx, By, Bz) components of the magnetic field based
     ! on Schimdt coefficients declared in CON_planet.f90
+
     use ModNumConst, ONLY: cTwoPi
 
     real, intent(in) :: XyzIn_D(3)
@@ -261,7 +255,6 @@ contains
     real :: sinmphi, cosmphi, sintheta, costheta, sinphi, cosphi
     real :: a_r, inv_sintheta, sinphi_prev, cosphi_prev
 
-    ! ------------------------------------------------------------------
     ! Convert input location to GEO coordinate system
     ! We assume input coordinate system is GSE since
     ! mag-rot axes are aligned anyway.
@@ -287,8 +280,6 @@ contains
     ! Wertz, J. R. (Ed.). (2012). Spacecraft attitude determination and
     !    control (Vol. 73). Springer Science & Business Media.
     !    (Appendices G & H)
-    ! -----------------------------------------------------------------
-
     !--------------------------------------------------------------------------
     XyzGeo_D = matmul(GeoGse_DD, XyzIn_D)
 
@@ -359,8 +350,8 @@ contains
 
   end subroutine calculate_multipole_field
   !============================================================================
-
   subroutine calculate_legendre_polynomials(theta, P_II, diffP_II)
+
     ! Subroutine to calculate the Schmidt normalized associated Legendre
     ! polynomials P(n,m) and their derivatives wrt theta diffP(n,m) to be
     ! used in the calculation of the magnetic field.
@@ -382,7 +373,6 @@ contains
     real, allocatable :: K_II(:,:)
 
     real :: sintheta, costheta
-    ! --------------------------------------------
     !--------------------------------------------------------------------------
     if(.not.allocated(K_II)) then
       allocate(K_II(0:MaxHarmonicDegree, 0:MaxHarmonicDegree))
@@ -421,7 +411,6 @@ contains
 
   end subroutine calculate_legendre_polynomials
   !============================================================================
-
   subroutine map_planet_field11(TimeSim, XyzIn_D, TypeCoord, &
        rMapIn, XyzMap_D, iHemisphere, DoNotConvertBack, DdirDxyz_DD)
 
@@ -641,7 +630,6 @@ contains
 
   end subroutine map_planet_field11
   !============================================================================
-
   subroutine map_planet_field33(TimeSim, xIn, yIn, zIn, TypeCoord, &
        rMap, xMap, yMap, zMap, iHemisphere, DoNotConvertBack, DdirDxyz_DD)
 
@@ -668,6 +656,7 @@ contains
          XyzMap_D, iHemisphere, DoNotConvertBack, DdirDxyz_DD)
 
     xMap=XyzMap_D(1); yMap=XyzMap_D(2); zMap=XyzMap_D(3)
+
   end subroutine map_planet_field33
   !============================================================================
   subroutine map_planet_field_fast(XyzIn_D, rMap, XyzMap_D, iHemisphere, &
@@ -766,8 +755,8 @@ contains
 
   end subroutine map_planet_field_fast
   !============================================================================
-
   subroutine test_planet_field
+
     ! Test the methods in this class.
 
     real :: TimeSim
@@ -824,6 +813,5 @@ contains
 
   end subroutine test_planet_field
   !============================================================================
-
 end module CON_planet_field
 !==============================================================================
