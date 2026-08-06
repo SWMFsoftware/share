@@ -266,11 +266,18 @@ public:
       ss.seekg(pos);         // un-consume the line
       return false;
     }
-    // The line is "<name> <value>"; extract the value token after the name.
+    // The line is "<value> <name>" (value first, parameter name second), the
+    // standard SWMF PARAM convention.  Only consume the line when the name
+    // matches the requested parameter, so a parameter block may list a subset
+    // of the optional parameters (each individually optional) with the values
+    // first, e.g. the #WAVEIC block:
+    //     0.02  frac
+    //     1     waveMode
+    //     3.0   anisoTPerpOverTPar
     std::istringstream iss(line);
     std::string name, value;
-    iss >> name >> value;
-    if (value.empty()) {
+    iss >> value >> name;
+    if (value.empty() || name != description) {
       ss.seekg(pos);
       return false;
     }
@@ -302,8 +309,8 @@ public:
     }
     std::istringstream iss(line);
     std::string name, value;
-    iss >> name >> value;
-    if (value.empty()) {
+    iss >> value >> name;
+    if (value.empty() || name != description) {
       ss.seekg(pos);
       return false;
     }
