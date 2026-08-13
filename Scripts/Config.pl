@@ -985,7 +985,7 @@ sub set_amrex_{
 
     $Amrex = $NewAmrex;
 
-    print "Enabling AMREX library in $MakefileConf\n" if $Amrex eq "yes";
+    print "Enabling ${NewAmrexDim}D AMREX library in $MakefileConf\n" if $Amrex eq "yes";
     print "Disabling AMREX library in $MakefileConf\n" if $Amrex eq "no";
     if(not $DryRun){
 	@ARGV = ($MakefileConf);
