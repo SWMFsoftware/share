@@ -6101,6 +6101,7 @@ pro get_log, file, wlog, wlognames, logtime, timeunit, rownames, $
      endif
      logtime = log_time(wlog, wlognames)
      return
+     ;; end of CSV reader
   endif
   unit = 0
   found = 0
@@ -6113,7 +6114,8 @@ pro get_log, file, wlog, wlognames, logtime, timeunit, rownames, $
 
   ;; Use buffers for efficient reading
   line  = ''
-  firstcolumn = 0 ; first column with numbers
+  isname = 0                    ; there is a line starting with "name"
+  firstcolumn = 0               ; first column with numbers
   nheadline = 0
   isheader  = 1
   headlines = strarr(1)
@@ -6130,9 +6132,14 @@ pro get_log, file, wlog, wlognames, logtime, timeunit, rownames, $
         if strmid(line, strlen(line)-6, 6) eq "#START" then $
            readf, unit, line $
         else begin
-           ;; check if the line contains any character that is not a
-           ;; number or a separator of a date
-           for i = 0, strlen(line) - 1 do begin
+           ;; ignore first column if isname is true
+           if isname then j = strpos(line,' ') > strpos(line,string(9B)) > 0 $
+           else j = 0
+           ;; check if header line starts with "name"
+           if strlowcase(strmid(line,0,4)) eq "name" then isname = 1
+           ;; check if the rest of the line contains any character
+           ;; that is not number or a separator of a date
+           for i = j, strlen(line) - 1 do begin
               if strmatch(strmid(line,i,1), '[!	0123456789dDeET \.\+\-\:]') $
               then begin
                  isheader = 1
@@ -6147,7 +6154,7 @@ pro get_log, file, wlog, wlognames, logtime, timeunit, rownames, $
            string_to_array, line, numbers, n
            if n le 1 and not scalar then isheader=1
         endif
-        
+
         if isheader then begin
            if nheadline eq 0 then $
               headlines(0) = line $
