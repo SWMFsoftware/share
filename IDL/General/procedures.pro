@@ -6059,8 +6059,8 @@ pro get_log, file, wlog, wlognames, logtime, timeunit, rownames, $
      if verbose then $
         print,'CSV file: nwlog=', nwlog,', nt=', nt, format='(a,i4,a,i8)'
      value = read_csv(file, header=wlognamesRead)
-
-     if strlowcase(strmid(wlognamesRead[0],0,4)) eq 'date' then begin
+     if strlowcase(strmid(wlognamesRead[0],0,4)) eq 'date' or $
+        strlowcase(strmid(wlognamesRead[0],0,9)) eq 'timestamp' then begin
         ;; Convert date string to columns
         wlog = dblarr(nt, nwlog+5)
         wlognames = strarr(nwlog+5)
