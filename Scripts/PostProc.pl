@@ -94,6 +94,7 @@ my %PlotDir = (
     "SC"     => "SC/IO2",
     "SP"     => "SP/IO2",
     "UA"     => "UA/Output,UA/data",
+    "plots"  => "plots",
     "STDOUT" => "STDOUT",
 	    );
 
@@ -136,7 +137,7 @@ REPEAT:{
 
 	my $pIDL = "./pIDL $MovieFlag $SleepFlag -n=$nThread $Pattern $Format";
 	$pIDL .= " -q" if $Quiet;
-	
+
 	# Post process files if necessary
 	if($Dir eq "IE"){
 	    if($Gzip){
@@ -191,6 +192,8 @@ REPEAT:{
 		my @files=glob("plots/*.fls");
 		&shell("gzip",@files) if @files;
 	    }
+	}elsif( $Dir =~ /^plots$/ ){
+	    &shell("cd ..; $pIDL");
 	}
 	chdir $Pwd;
     }
