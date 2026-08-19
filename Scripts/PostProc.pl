@@ -94,6 +94,7 @@ my %PlotDir = (
     "SC"     => "SC/IO2",
     "SP"     => "SP/IO2",
     "UA"     => "UA/Output,UA/data",
+    "plots"  => "plots",
     "STDOUT" => "STDOUT",
 	    );
 
@@ -136,7 +137,7 @@ REPEAT:{
 
 	my $pIDL = "./pIDL $MovieFlag $SleepFlag -n=$nThread $Pattern $Format";
 	$pIDL .= " -q" if $Quiet;
-	
+
 	# Post process files if necessary
 	if($Dir eq "IE"){
 	    if($Gzip){
@@ -147,7 +148,7 @@ REPEAT:{
             &concat_sat_log if $Concat;
 	}elsif( $Dir =~ /^PC|PT$/ ){
 	    &shell($pIDL);
-	}elsif( $Dir =~ "UA"){
+	}elsif( $Dir eq "UA"){
 	    if (-e "./post_process.py") {
 		&shell("./pGITM -np $nThread");
 	    }else{
@@ -167,30 +168,32 @@ REPEAT:{
 		}
 	    }
             &concat_sat_log if $Concat;
-	}elsif( $Dir =~ /^IM/ ){
+	}elsif( $Dir eq "IM" ){
 	    my @files=glob("plots/*.dat");
 	    if($Gzip){
 		&shell("gzip",@files) if @files;
 	    }else{
 		&shell("./Preplot.pl",@files) if @files;
 	    }
-	}elsif( $Dir =~ /^PS/ ){
+	}elsif( $Dir eq "PS" ){
 	    my @files=glob("Output/dgcpm*.dat");
 	    if($Gzip){
 		&shell("gzip", @files) if @files;
 	    }
-	}elsif( $Dir =~ /^PW/ ){
+	}elsif( $Dir eq "PW" ){
 	    # PWOM output files cannot be gzipped while code is running
 	    # because it is appending to the files.
 	    if($Gzip and not $Repeat){
 		my @files=glob("plots/*.out");
 		&shell("gzip", @files) if @files;
 	    }
-	}elsif( $Dir =~ /^RB/ ){
+	}elsif( $Dir eq "RB" ){
 	    if($Gzip){
 		my @files=glob("plots/*.fls");
 		&shell("gzip",@files) if @files;
 	    }
+	}elsif( $Dir eq "plots" ){
+	    &shell("cd ..; $pIDL");
 	}
 	chdir $Pwd;
     }
