@@ -57,12 +57,8 @@
 #PBS -S /bin/csh
 #PBS -N SWMF
 
-# To run with 2 MPI procs and 8 OpenMp threads use this (and see below)
-# (Note: the ompthreads=8 is the same as "setenv OMP_NUM_THREADS 8")
-#!! PBS -l select=16:ncpus=16:mpiprocs=2:ompthreads=8:model=san
-
 # To run on the 256-core Turin nodes
-#PBS -l select=1:ncpus=3:mpiprocs=3:model=tur_ath
+#PBS -l select=10:ncpus=256:mpiprocs=256:model=tur_ath
 
 # There are normal, devel, long, wide queues
 #PBS -q normal
@@ -91,9 +87,9 @@ cd $PBS_O_WORKDIR
 # Start PostProc.pl in the background
 #./PostProc.pl -n=16 -g -r=60 >& PostProc.log &
 
-# run SWMF (the number of processors has to be set here!)
+# run SWMF (the number of processors has to be set here! Based on -l select=...)
 # the date/time stamp for runlog is only necessary for automated resubmission
-mpiexec -n 3 --ppn 3 ./SWMF.exe > runlog_`date +%y%m%d%H%M`
+mpiexec -n 2560 ./SWMF.exe > runlog_`date +%y%m%d%H%M`
 
 # Request PostProc.pl to stop and wait for it to finish
 
