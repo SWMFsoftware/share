@@ -60,7 +60,7 @@ interactive_job() {
     if [ "$WALLTIME_HOURS" -gt 8 ]; then
         QUEUE_LINE="#PBS -q long"
     else
-        QUEUE_LINE=""
+        QUEUE_LINE="#PBS -q normal"
     fi
 
     # --- Build checklist items ---
