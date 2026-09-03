@@ -60,7 +60,7 @@ interactive_job() {
     if [ "$WALLTIME_HOURS" -gt 8 ]; then
         QUEUE_LINE="#PBS -q long"
     else
-        QUEUE_LINE=""
+        QUEUE_LINE="#PBS -q normal"
     fi
 
     # --- Build checklist items ---
@@ -171,7 +171,7 @@ TARGET_CPUS=$2
 shift 2
 
 WALLTIME_HOURS=8
-QUEUE_LINE=""
+QUEUE_LINE="#PBS -q normal"
 declare -A EXCLUDE_MODELS
 
 for arg in "$@"; do
