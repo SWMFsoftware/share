@@ -321,6 +321,39 @@ public:
     }
     return true;
   }
+
+  // Bool specialisation (supports "T"/"F", "true"/"false", "1"/"0").
+  bool read_optional(std::string description, bool &var) {
+    if (!ss.good()) return false;
+    std::streampos pos = ss.tellg();
+    std::string line;
+    std::getline(ss, line);
+    if (line.empty() || line[0] == '#') {
+      ss.clear();
+      ss.seekg(pos);
+      return false;
+    }
+    std::istringstream iss(line);
+    std::string name, value;
+    iss >> value >> name;
+    if (value.empty() || name != description) {
+      ss.seekg(pos);
+      return false;
+    }
+    if (value == "T" || value == "t" || value == "true" || value == "TRUE" || value == "1") {
+      var = true;
+    } else if (value == "F" || value == "f" || value == "false" || value == "FALSE" || value == "0") {
+      var = false;
+    } else {
+      ss.seekg(pos);
+      return false;
+    }
+    if (isVerbose) {
+      std::cout << component << ": " << std::left << std::setw(40) << (var ? "T" : "F")
+                << description << " (optional)" << std::endl;
+    }
+    return true;
+  }
 };
 
 inline void char_to_string(std::string &ss, char *chararray, int length,
