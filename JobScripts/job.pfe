@@ -10,11 +10,11 @@
 # An alternative is to submit several jobs for different CPU types and
 # keep the first one that started:
 #
-#   qsub.pfe.pl job.pfe
+#   qsub.pfe.cfe.pl job.pfe
 #
 # This can be used the for normal/long queues. For help, type 
 #
-#   qsub.pfe.pl -h
+#   qsub.pfe.cfe.pl -h
 #
 # For the devel queue only one job can be submitted. To see the number of
 # free nodes per machine type and queue use
@@ -24,7 +24,6 @@
 # To check the status of submitted jobs, use
 #
 # qstat -u YOUR_USER_NAME
-# qstat v100@pbspl4 -u YOUR_USER_NAME # for v100 jobs
 #
 # Note that the run directory should be moved to the /nobackup filesystem,
 # otherwise the quota on the home directory will fill up before the run ends.
@@ -94,7 +93,7 @@
 # To run on v100 GPU (up to 4)
 #!! PBS -lselect=1:ncpus=36:ngpus=1:model=sky_gpu
 #!! PBS -lselect=1:ncpus=48:ngpus=1:model=cas_gpu
-### PBS -q v100@pbspl4
+### PBS -q v100
 
 # The default is the "normal" queue with an 8 hour walltime limit.
 
