@@ -4,22 +4,20 @@
 #         !!! where the run is going to be performed                !!!
 
 # Job script for Pleiades computer at NASA Ames using the GPU nodes.
-# Currently the GPU nodes are on pbspl4, so it is best to
+# Currently the GPU nodes are on Cabeus (cfe), so it is best to
 # 
-#   ssh pbspl4
+#   ssh cfe
 #   cd SWMF/run
-#   qsub job.pfe.pbspl.nvidia
+#   qsub job.pfe.cfe.nvidia
 #
 # An alternative is to submit jobs for different CPU types and
 # keep the first one that started:
 #
-#   qsub.pfe.pbspl.pl job.pfe.pbspl.nvidia
+#   qsub.pfe.cfe.pl job.pfe.cfe.nvidia
 #
 # To check the status of submitted jobs, use
 #
-# qstat -u YOUR_USER_NAME             # on pbspl4 node
-# qstat v100@pbspl4 -u YOUR_USER_NAME # from other nodes
-#
+# qstat -u YOUR_USER_NAME             # on cfe node
 
 #PBS -S /bin/csh
 #PBS -N GPU
@@ -40,10 +38,10 @@
 
 # Select queue:
 # Max 16 nodes, 4 gpus per node, 24 hours
-### PBS -q v100@pbspl4
+### PBS -q v100
 
 # Max 2 sky_gpu nodes with 8 GPUs per node between 8am and 5pm PST
-### PBS -q devel@pbspl4
+### PBS -q devel
 
 ################
 #   A100 GPU   #
@@ -55,7 +53,7 @@
 
 # Select queue:
 # Max 32 nodes for 24 hours: prime time
-#PBS -q gpu_normal@pbspl4
+#PBS -q gpu_normal
 
 # Max 64 nodes for 12 hours: non-prime time
 ### PBS -q np_gpu_wide

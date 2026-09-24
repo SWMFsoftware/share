@@ -18,7 +18,7 @@ if(not @machine){
     }
 }
 
-my $qsub  = "qsub.pfe.pbspl.pl";
+my $qsub  = "qsub.pfe.cfe.pl";
 
 if(not $script or $script =~ /\-+h/i){
     print "

@@ -9,7 +9,7 @@ case "$CURRENT_HOST" in
       	echo '################ PFE Detected ###############'
       	echo
         if [[ " $* " =~ [[:space:]]-i[[:space:]] ]]; then
-            ############################ PFE INTERACTIVE STARTS ##############################
+            ############################ PFE INTERACTIVE STARTS ###############
             orig_dir=$(pwd)
             cd "$HOME" || exit 1
             table=$(node_stats.sh | awk '
@@ -173,11 +173,11 @@ if(-f SWMF.DONE) exit
 ./Restart.pl
 qsub job.pfe
 EOF
-            if [ -x ./qsub.pfe.pbspl.pl ]; then
-                ./qsub.pfe.pbspl.pl job.pfe "${JOB_NAME}"
+            if [ -x ./qsub.pfe.cfe.pl ]; then
+                ./qsub.pfe.cfe.pl job.pfe "${JOB_NAME}"
             fi
             whiptail --msgbox "Job '${JOB_NAME}' submitted requesting ${TARGET_CPUS} CPUs (Walltime:${WALLTIME_HOURS}h)" 8 70
-            ############################# PFE NON-INTERACTIVE ENDS ###############################
+            ############################# PFE NON-INTERACTIVE ENDS ############
         fi
         ;;
     ath*)
