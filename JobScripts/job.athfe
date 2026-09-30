@@ -76,6 +76,7 @@ hostname
 # Load programming environment
 module purge
 module load PrgEnv-intel cray-pals idl
+module load hpe-libfabric/2.2.0rc1
 module list
 
 # To reduce MPI startup time
