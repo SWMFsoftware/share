@@ -2358,7 +2358,7 @@ contains
   !============================================================================
   subroutine  interpolate_amr3(&
        XyzIn_D, XyzGridIn_DI, iLevel_I, IsOut_I, iCaseExtended,&
-       nGridOut, Weight_I, iOrder_I, IsCorner, NameCaller)
+       nGridOut, Weight_I, iOrder_I, IsCorner, IsSuccess)
     integer,parameter :: nGrid = 8, nDim = 3
     ! Input parameters
     ! The location at which to interpolate the data
@@ -2389,7 +2389,7 @@ contains
     ! applicable
     logical, intent(out):: IsCorner
     ! The name of the calling subroutine
-    character(len=*), optional, intent(in):: NameCaller
+    logical, intent(out):: IsSuccess
     ! Misc
     real    :: zMin
     real    :: Aux, AuxCoarse, AuxFine   ! Misc
@@ -2405,15 +2405,13 @@ contains
     ! To find the sort of corner stencil
     integer:: iCase, iDir, iGrid, iDim
 
-    ! Error message
-    character(len=200):: StringError
     ! Switches in the algorithm
     logical,parameter:: UseFaceInsideCorner =.true.,&
          UseEdgeInsideCorner = .true.
 
     character(len=*), parameter:: NameSub = 'interpolate_amr3'
     !--------------------------------------------------------------------------
-    Weight_I = 0
+    Weight_I = 0; IsSuccess = .true.
     ! We store in advance the 'basic' grid point
     ! and orientation of all possible stencil configurations
     ! and now we extracted this information
@@ -2664,11 +2662,6 @@ contains
        Weight_I(nGridOut2 + 1:nGridOut) = Weight_I(1:nFine)*(1 - AuxFine)
        Weight_I(     1:nFine) = Weight_I(1:  nFine)*AuxFine
     case default
-       if(present(NameCaller))then
-          StringError = NameCaller
-       else
-          StringError = NameSub
-       end if
        write(*,*) 'Inputs in failed '//NameSub
        write(*,*) 'Input coordinates: ', XyzIn_D
        write(*,*) 'iGrid GridX GridY GridZ iLevel IsOut'
@@ -2676,10 +2669,10 @@ contains
           write(*,*)iGrid,XyzGridIn_DI(:,iGrid),iLevel_I(iGrid),IsOut_I(iGrid)
        end do
        write(*,*)'iCaseExtended=',iCaseExtended
-       StringError = trim(StringError)//&
+       write(*,*) NameSub//&
             ': failed to determine interpolation stencil; '//&
             'likely, the grid information is incorrect'
-       call CON_stop(StringError)
+       IsSuccess = .false.
     end select
   contains
     !==========================================================================
@@ -3111,6 +3104,7 @@ contains
     integer           :: nGrid
     ! Loop variables
     integer:: iGrid, iSubGrid, iGridSeenFrom, iOrder
+    ! Logical to check if the algorithm failed
     character(len=*), parameter:: NameSub = 'interpolate_amr_gc'
     !--------------------------------------------------------------------------
     cTol2 = cTol**(nByteReal/4)
@@ -3290,8 +3284,6 @@ contains
          IsSecondOrder   = IsSecondOrder,&
          nSubgridIn_I    = nSubgrid_I,&
          NameCaller      = NameSub)
-
-    ! store indices of cells in the final interpolation stencil
     iCellOut_II(:,1:nCellOut) = iIndexes_II(1:nDim,1:nCellOut)
   contains
     !==========================================================================
@@ -4132,6 +4124,9 @@ contains
     ! ! Number of integers in the cell index. Normally this is nDim
     ! however, a flexibility to allow any other value is useful.
     integer:: nCellId
+    ! Logical to check if the called routine worked properly
+    logical :: IsSuccess
+    character(len=*), parameter :: NameSub = 'interpolate_extended_stencil'
     !--------------------------------------------------------------------------
     nCellId = UBOUND(iCellIndexes_DII,1)
 
@@ -4191,7 +4186,17 @@ contains
           call generate_basic_stencil(XyzStencil_D)
           call interpolate_amr3(&
                Xyz_D , XyzGrid_DI, iLevel_I, IsOut_I, iCaseExtended,&
-               nGridOut, Weight_I, iOrder_I, IsCorner, NameCaller)
+               nGridOut, Weight_I, iOrder_I, IsCorner, IsSuccess)
+          if(.not.IsSuccess)then
+             write(*,*)'Inputs in the failed '//NameSub
+             write(*,*)' =', Xyz_D
+             write(*,*) 'iGrid GridX GridY GridZ iBlock iProc iLevel'
+             do iGrid = 1, nGrid
+                write(*,*) iGrid, XyzGrid_DII(:,0,iGrid), &
+                     iBlock_I(iGrid), iProc_I(iGrid), iLevelSubgrid_I(iGrid)
+             end do
+             call CON_stop('Failure in '//NameSub)
+          end if
        end if
        if(IsCorner)then
           ! This is not necessarily esleif,
