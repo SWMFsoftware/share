@@ -2669,6 +2669,13 @@ contains
        else
           StringError = NameSub
        end if
+       write(*,*) 'Inputs in failed '//NameSub
+       write(*,*) 'Input coordinates: ', XyzIn_D
+       write(*,*) 'iGrid GridX GridY GridZ iLevel IsOut'
+       do iGrid = 1,8
+          write(*,*)iGrid,XyzGridIn_DI(:,iGrid),iLevel_I(iGrid),IsOut_I(iGrid)
+       end do
+       write(*,*)'iCaseExtended=',iCaseExtended
        StringError = trim(StringError)//&
             ': failed to determine interpolation stencil; '//&
             'likely, the grid information is incorrect'
