@@ -4134,7 +4134,7 @@ contains
     integer:: nCellId
     ! Logical to check if the called routine worked properly
     logical, intent(out) :: IsSuccess
-    character(len=*), parameter :: NameSub = 'interpolate_extended_stencil'
+    character(len=*), parameter:: NameSub = 'interpolate_extended_stencil'
     !--------------------------------------------------------------------------
     nCellId = UBOUND(iCellIndexes_DII,1)
     IsSuccess = .true.
