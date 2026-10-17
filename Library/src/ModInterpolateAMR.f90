@@ -4013,7 +4013,7 @@ contains
       integer :: iShift_D(nDim)
       integer :: iGrid, iOrder, iGridPhys
       logical :: IsRef_I(nGrid)
-      character(len=*), parameter :: NameSub = 'get_ghost_cell_indexes'
+      character(len=*), parameter:: NameSub = 'get_ghost_cell_indexes'
       !------------------------------------------------------------------------
       call get_reference_block(&
            nDim, Xyz_D, XyzGrid_DII(:,0,:), &
