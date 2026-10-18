@@ -2938,10 +2938,12 @@ contains
   !============================================================================
 
   subroutine get_reference_block(&
-       nDim, Xyz_D, XyzGrid_DI, iLevel_I, IsOut_I, iGridRef)
+       nDim, Xyz_D, XyzGrid_DI, iLevel_I, IsOut_I, iGridRef, IsRef_I)
     ! choose a reference block that will be used for
     ! interpolation with use of the ghost cells
-
+#ifdef _OPENACC
+    use ModUtilities, ONLY: norm2
+#endif
     ! dimensionality
     integer, intent(in) :: nDim
     ! coordinates of point
@@ -2961,7 +2963,7 @@ contains
     logical, intent(in) :: IsOut_I(2**nDim)
     ! the result: index of reference block in the supergrid XyzGrid_DI
     integer, intent(out):: iGridRef
-
+    logical, optional, intent(in) :: IsRef_I(2**nDim)
     ! various transformations of Xyz_D
     real :: XyzMisc_D(nDim)
     ! shift of Xyz_D relative to the central point
@@ -3351,7 +3353,8 @@ contains
   ! of  State_VGB is allocated is provided in iIndex_II(0,:) components
   ! of the index output array
   subroutine interpolate_amr(nDim, XyzIn_D, nIndexes, find, nCell_D,  &
-       nGridOut, Weight_I, iIndexes_II, IsSecondOrder, UseGhostCell)
+       nGridOut, Weight_I, iIndexes_II, IsSecondOrder, UseGhostCell, &
+       iProcRef)
     use ModKind, ONLY: nByteReal
     ! INPUT PARAMETERS
     ! Number of dimensions
@@ -3408,6 +3411,7 @@ contains
     ! The following is true if stencil does not employ
     ! the out-of-grid points
     logical, intent(out), optional:: IsSecondOrder
+    integer, optional, intent(in) :: iProcRef
     ! Locals----------------
     ! Coordinates of the input point may be recalculated within
     ! routine
@@ -4006,13 +4010,41 @@ contains
       !
       ! Displacement measured in grid sizes or in their halfs from the
       ! reference subgrid
-      integer, dimension(nDim) :: iShift_D
+      integer :: iShift_D(nDim)
       integer :: iGrid, iOrder, iGridPhys
-
+      logical :: IsRef_I(nGrid)
+      character(len=*), parameter :: NameSub = 'get_ghost_cell_indexes'
       !------------------------------------------------------------------------
       call get_reference_block(&
            nDim, Xyz_D, XyzGrid_DII(:,0,:), &
            iLevelSubgrid_I, IsOut_I, iGridPhys)
+      if(present(iProcRef))then
+         ! For CON_router it may be important to choose the reference
+         ! block located at the given processor
+         if(iProc_I(iGridPhys) /= iProcRef)then
+            if(any(iProc_I == iProcRef))then
+               ! Choose different reference block located at iProcRef
+               IsRef_I = (iProc_I == iProcRef).and..not.IsOut_I
+               call get_reference_block(&
+                    nDim, Xyz_D, XyzGrid_DII(:,0,:), &
+                    iLevelSubgrid_I, IsOut_I, iGridPhys, IsRef_I)
+               if(iGridPhys==-1)call CON_stop(NameSub//&
+                    ': Interpolation is impossible on this PE')
+            else
+               write(*,*) 'No interpolation images on iProcRef=', iProcRef
+               write(*,*) ' For point with coords=', Xyz_D
+               write(*,*) &
+                    'iGrid xGrid yGrid zGrid iLevel IsOut iProc iBlock'
+               do iGrid = 1, nGrid
+                  write(*,*)iGrid, XyzGrid_DII(:,0,iGrid), &
+                       iLevelSubgrid_I(iGrid), IsOut_I(iGrid), &
+                       iProc_I(iGrid), iBlock_I(iGrid)
+               end do
+               call CON_stop(NameSub//&
+                    ': Interpolation is impossible on this PE')
+            end if
+         end if
+      end if
       if(iLevelSubgrid_I(iGridPhys)/=Fine_)then
          ! Stencil is uniform
          do iGrid = 1, nGrid
