@@ -3505,9 +3505,6 @@ contains
 
     call get_other_blocks
 
-    ! recalculate grid cell indexes for ghost cells
-    if(UseGhostCellLocal) call get_ghost_cell_indexes
-
     if(DoDebug) write(*,*) NameSub,':: interpolate_extended_stencil starting'
     if(UseGhostCellLocal) then
        ! Below we benefit from the observation that although the
@@ -3542,7 +3539,7 @@ contains
             iGrid4Image_I=iGrid4Image_I)
        if(IsSuccess)then
           ! recalculate grid cell indexes for ghost cells
-          ! call get_ghost_cell_indexes
+          call get_ghost_cell_indexes
           if(DoDebug) write(*,*) NameSub,' finished'
           RETURN
        end if
@@ -4063,82 +4060,102 @@ contains
       ! Displacement measured in grid sizes or in their halfs from the
       ! reference subgrid
       integer :: iShift_D(nDim)
-      integer :: iGrid, iOrder, iGridPhys
-      logical :: IsRef_I(nGrid)
+      integer :: iGrid, iOrder, iGridPhys, iImagePhys, iProcPhys, iBlockPhys
+      ! Loop over images
+      integer :: iImage
+      logical :: UseFlip
       character(len=*), parameter:: NameSub = 'get_ghost_cell_indexes'
       !------------------------------------------------------------------------
-      call get_reference_block(&
-           nDim, Xyz_D, XyzGrid_DII(:,0,:), &
-           iLevelSubgrid_I, IsOut_I, iGridPhys)
-      if(present(iProcRef))then
-         ! For CON_router it may be important to choose the reference
-         ! block located at the given processor
-         if(iProc_I(iGridPhys) /= iProcRef)then
-            if(any(iProc_I == iProcRef))then
-               ! Choose different reference block located at iProcRef
-               IsRef_I = (iProc_I == iProcRef).and..not.IsOut_I
-               call get_reference_block(&
-                    nDim, Xyz_D, XyzGrid_DII(:,0,:), &
-                    iLevelSubgrid_I, IsOut_I, iGridPhys, IsRef_I)
-               if(iGridPhys==-1)call CON_stop(NameSub//&
-                    ': Interpolation is impossible on this PE')
-            else
-               write(*,*) 'No interpolation images on iProcRef=', iProcRef
-               write(*,*) ' For point with coords=', Xyz_D
-               write(*,*) &
-                    'iGrid xGrid yGrid zGrid iLevel IsOut iProc iBlock'
-               do iGrid = 1, nGrid
-                  write(*,*)iGrid, XyzGrid_DII(:,0,iGrid), &
-                       iLevelSubgrid_I(iGrid), IsOut_I(iGrid), &
-                       iProc_I(iGrid), iBlock_I(iGrid)
-               end do
-               call CON_stop(NameSub//&
-                    ': Interpolation is impossible on this PE')
-            end if
-         end if
-      end if
-      if(iLevelSubgrid_I(iGridPhys)/=Fine_)then
+      ! Choose the value of iGrid=iGridPhys and set iBlock_I(iGridPhys)
+      ! at iProc_I(iGridPhys) for interpolating in this block
+      if(all(iLevelSubgrid_I(iGrid4Image_I(1:nGridOut))==Coarse_&
+           .or.IsOut_I(iGrid4Image_I(1:nGridOut))))then
          ! Stencil is uniform
-         do iGrid = 1, nGrid
+         if(present(iProcRef))then
+            if(any(iIndexes_II(0,1:nGridOut) == iProcRef))then
+               iImagePhys = maxloc(Weight_I(1:nGridOut),&
+                    DIM=1, MASK=iIndexes_II(0,1:nGridOut) == iProcRef)
+               iGridPhys = iGrid4Image_I(iImagePhys)
+            else
+               write(*,*)&
+                    'interpolate_extended_stencil cannot be applied at PE=',&
+                    iProcRef
+               write(*,*)'iImage iGrid PE i j k iBlock Level'
+               do iImage = 1, nGridOut
+                  write(*,*)iImage, iGrid4Image_I(iImage), &
+                       iIndexes_II(:,iImage),              &
+                       iLevelSubgrid_I(iGrid4Image_I(iGrid))
+               end do
+            end if
+         else
+            iImagePhys = maxloc(Weight_I(1:nGridOut), DIM=1)
+            iGridPhys = iGrid4Image_I(iImagePhys)
+         end if
+         iIndexes_II(0,1:nGridOut) = iProc_I(iGridPhys)
+         iIndexes_II(nIndexes, 1:nGridOut) = iBlock_I(iGridPhys)
+         UseFlip = IsFlipped_I(iGridPhys)
+         do iImage = 1, nGridOut
+            iGrid = iGrid4Image_I(iImage)
             iShift_D = iShift_DI(1:nDim,iGrid) - iShift_DI(1:nDim,iGridPhys)
-            iCellIndexes_DII(:, 1, iGrid) = &
-                 iCellIndexes_DII(:, 1, iGridPhys) + iShift_D
+            if(UseFlip)iShift_D(iDirFlip) = -iShift_D(iDirFlip)
+            iIndexes_II(1:nDim, iImage) = &
+                 iIndexes_II(1:nDim, iImagePhys) + iShift_D
          end do
-         iBlock_I(1:nGrid) = iBlock_I(iGridPhys)
-         iProc_I( 1:nGrid) = iProc_I( iGridPhys)
          RETURN
       end if
-      do iGrid = 1, nGrid
-         ! Nothing to do, if this part of the extended stencil consists
-         ! of physical cells of the reference block.
-         if(iBlock_I(iGrid)==iBlock_I(iGridPhys)&
-              .and.iProc_I(iGrid)==iProc_I(iGridPhys))CYCLE
-         iBlock_I(iGrid) = iBlock_I(iGridPhys)
-         iProc_I( iGrid) = iProc_I( iGridPhys)
-
+      ! The reference block should be fine
+      if(present(iProcRef))then
+         if(any(iIndexes_II(0,1:nGridOut) == iProcRef.and.&
+              iLevelSubgrid_I(iGrid4Image_I(1:nGridOut))==Fine_))then
+            iImagePhys = maxloc(Weight_I(1:nGridOut),&
+                 DIM=1, MASK=iIndexes_II(0,1:nGridOut) == iProcRef.and.&
+                 iLevelSubgrid_I(iGrid4Image_I(1:nGridOut))==Fine_)
+            iGridPhys = iGrid4Image_I(iImagePhys)
+         else
+            write(*,*)&
+                 'interpolate_extended_stencil cannot be applied at PE=',&
+                 iProcRef
+            write(*,*)'iImage iGrid PE i j k iBlock Level'
+            do iImage = 1, nGridOut
+               write(*,*)iImage, iGrid4Image_I(iImage), &
+                    iIndexes_II(:,iImage),              &
+                    iLevelSubgrid_I(iGrid4Image_I(iGrid))
+            end do
+         end if
+      else
+         iImagePhys = maxloc(Weight_I(1:nGridOut), DIM=1, MASK=&
+              iLevelSubgrid_I(iGrid4Image_I(1:nGridOut))==Fine_)
+         iGridPhys = iGrid4Image_I(iImagePhys)
+      end if
+      iProcPhys = iProc_I(iGridPhys); iBlockPhys = iBlock_I(iGridPhys)
+      UseFlip   = IsFlipped_I(iGridPhys)
+      do iImage = 1, nGridOut
+         ! Nothing to do, if this grid point belongs to the reference block.
+         if(iProc_I(iGrid4Image_I(iImage)) == iProcPhys .and.&
+              iBlock_I(iGrid4Image_I(iImage)) == iBlockPhys)CYCLE
+         iIndexes_II(nIndexes, iImage) = iBlockPhys
+         iIndexes_II(0, iImage) = iProcPhys
+         iGrid = iGrid4Image_I(iImage)
          iShift_D = iShift_DI(1:nDim,iGrid) - iShift_DI(1:nDim,iGridPhys)
          ! If the block chosen for interpolation with the chost cells,
          ! the order of cell indexes along the flipped direction is
          ! opposite to the order of iGrid index, adopted for the BASIC
          ! block, therefore:
-         if(IsFlipped_I(iGridPhys))&
-              iShift_D(iDirFlip) = -iShift_D(iDirFlip)
+         if(UseFlip)iShift_D(iDirFlip) = -iShift_D(iDirFlip)
          ! Below we benefit from the observation that although the
          ! shift in indexes between iGrid and iGridPhys is twice iShift_D
          ! nevertheless the shift between the subgrid points nearest to the
-         ! stencil center is just iShift_D (for which iOrder=nSubgrid_I(iGrid)
+         ! stencil center is just iShift_D
          if(iLevelSubgrid_I(iGrid)==Coarse_)then
             ! We keep the cell index for the fine ghost cell, which is the
             ! nearest to the stencil center
-            iCellIndexes_DII(:, 1, iGrid) = iShift_D +&
-                 iCellIndexes_DII(:, nSubgrid_I(iGridPhys), iGridPhys)
+            iIndexes_II(1:nDim, iImage) = iShift_D + &
+                 iCellNearest_DI(:,iGridPhys)
          else
-            do iOrder = 1, nSubgrid_I(iGrid)
-               iCellIndexes_DII(:, iOrder, iGrid) = iShift_D +             &
-                    iCellIndexes_DII(:, nSubgrid_I(iGridPhys), iGridPhys) +&
-                    iCellIndexes_DII(:, iOrder, iGrid) -                   &
-                    iCellIndexes_DII(:, nSubgrid_I(iGrid), iGrid)
-            end do
+            iIndexes_II(1:nDim, iImage) = iShift_D +             &
+                 iCellNearest_DI(:,iGridPhys)      +             &
+                 iIndexes_II(1:nDim, iImage)       -             &
+                 iCellNearest_DI(:, iGrid)
          end if
       end do
     end subroutine get_ghost_cell_indexes
