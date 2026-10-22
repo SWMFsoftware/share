@@ -4084,8 +4084,9 @@ contains
                do iImage = 1, nGridOut
                   write(*,*)iImage, iGrid4Image_I(iImage), &
                        iIndexes_II(:,iImage),              &
-                       iLevelSubgrid_I(iGrid4Image_I(iGrid))
+                       iLevelSubgrid_I(iGrid4Image_I(iImage))
                end do
+               call CON_stop(NameSub//': code stopped')
             end if
          else
             iImagePhys = maxloc(Weight_I(1:nGridOut), DIM=1)
@@ -4119,8 +4120,9 @@ contains
             do iImage = 1, nGridOut
                write(*,*)iImage, iGrid4Image_I(iImage), &
                     iIndexes_II(:,iImage),              &
-                    iLevelSubgrid_I(iGrid4Image_I(iGrid))
+                    iLevelSubgrid_I(iGrid4Image_I(iImage))
             end do
+            call CON_stop(NameSub//': code stopped')
          end if
       else
          iImagePhys = maxloc(Weight_I(1:nGridOut), DIM=1, MASK=&
