@@ -3558,7 +3558,7 @@ contains
             Weight_I = Weight_I,               &
             iIndexes_II = iIndexes_II,         &
             IsSecondOrder = IsSecondOrder,     &
-            nSubGridIn_I = nSubGrid_I,           &
+            nSubGridIn_I = nSubGrid_I,         &
             IsSuccess = IsSuccess)
        if(IsSuccess)then
           if(DoDebug) write(*,*) NameSub,' finished'
@@ -4080,11 +4080,20 @@ contains
                write(*,*)&
                     'interpolate_extended_stencil cannot be applied at PE=',&
                     iProcRef
-               write(*,*)'iImage iGrid PE i j k iBlock Level'
+               write(*,*)'All PEs:', iProc_I
+               write(*,*)'All nBlocks=', iBlock_I
+               write(*,*)'All iLev=', iLevelSubgrid_I
+               iImagePhys = maxloc(Weight_I(1:nGridOut), DIM=1)
+               iGridPhys = iGrid4Image_I(iImagePhys)
+               write(*,*)'Without iProcRef we would have iImagePhys =',&
+                    iImagePhys
+               write(*,*)'Without iProcRef we would have iGridPhys=', iGridPhys
+               write(*,*)'iGrid PE i j k iBlock Level Weight'
                do iImage = 1, nGridOut
                   write(*,*)iImage, iGrid4Image_I(iImage), &
                        iIndexes_II(:,iImage),              &
-                       iLevelSubgrid_I(iGrid4Image_I(iImage))
+                       iLevelSubgrid_I(iGrid4Image_I(iImage)), &
+                       Weight_I(iImage)
                end do
                IsSuccess = .false.
                RETURN
@@ -4117,11 +4126,21 @@ contains
             write(*,*)&
                  'interpolate_extended_stencil cannot be applied at PE=',&
                  iProcRef
-            write(*,*)'iImage iGrid PE i j k iBlock Level'
+            write(*,*)'All PEs:', iProc_I
+            write(*,*)'All nBlocks=', iBlock_I
+            write(*,*)'All iLev=', iLevelSubgrid_I
+            iImagePhys = maxloc(Weight_I(1:nGridOut), DIM=1, MASK=&
+              iLevelSubgrid_I(iGrid4Image_I(1:nGridOut))==Fine_)
+            iGridPhys = iGrid4Image_I(iImagePhys)
+            write(*,*)'Without iProcRef we would have iImagePhys =',&
+                 iImagePhys
+            write(*,*)'Without iProcRef we would have iGridPhys=', iGridPhys
+            write(*,*)'iGrid PE i j k iBlock Level Weight'
             do iImage = 1, nGridOut
-               write(*,*)iImage, iGrid4Image_I(iImage), &
+               write(*,*)iGrid4Image_I(iImage), &
                     iIndexes_II(:,iImage),              &
-                    iLevelSubgrid_I(iGrid4Image_I(iImage))
+                    iLevelSubgrid_I(iGrid4Image_I(iImage)), &
+                    Weight_I(iImage)
             end do
             IsSuccess = .false.
             RETURN
