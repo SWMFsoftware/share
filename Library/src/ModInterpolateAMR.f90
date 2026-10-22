@@ -3541,7 +3541,7 @@ contains
           ! recalculate grid cell indexes for ghost cells
           call get_ghost_cell_indexes
           if(DoDebug) write(*,*) NameSub,' finished'
-          RETURN
+          if(IsSuccess)RETURN
        end if
     else
        call interpolate_extended_stencil(nDim, &
@@ -4086,7 +4086,8 @@ contains
                        iIndexes_II(:,iImage),              &
                        iLevelSubgrid_I(iGrid4Image_I(iImage))
                end do
-               call CON_stop(NameSub//': code stopped')
+               IsSuccess = .false.
+               RETURN
             end if
          else
             iImagePhys = maxloc(Weight_I(1:nGridOut), DIM=1)
@@ -4122,7 +4123,8 @@ contains
                     iIndexes_II(:,iImage),              &
                     iLevelSubgrid_I(iGrid4Image_I(iImage))
             end do
-            call CON_stop(NameSub//': code stopped')
+            IsSuccess = .false.
+            RETURN
          end if
       else
          iImagePhys = maxloc(Weight_I(1:nGridOut), DIM=1, MASK=&
