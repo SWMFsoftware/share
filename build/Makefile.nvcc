@@ -1,0 +1,37 @@
+# C language related part of Makefile.conf: Makefile.nvcc
+C_COMPILER_NAME=nvcc
+# This file is for Nvidia GPUs: C++ is compiled as CUDA by nvcc with
+# mpicxx (nvc++) as the host compiler. Config.pl builds the CUDA version of
+# AMREX for the same GPU and host compiler; they must match.
+
+# Compute capability of the local GPU, e.g. 89 for 8.9
+CUDA_ARCH := $(shell nvidia-smi --query-gpu=compute_cap --format=csv,noheader | head -1 | tr -dc 0-9)
+
+COMPILE.c     = nvc
+COMPILE.mpicc = mpicc
+COMPILE.mpicxx= nvcc -ccbin=mpicxx
+
+# Relocatable device code requires the final link to be done by nvcc
+LINK.cpp = ${COMPILE.mpicxx} ${FLAGCUDA}
+
+CPPLIB = -lstdc++ -lcuda -lcurand -lcusparse
+
+#DEBUGC = -g
+
+.SUFFIXES: .c .cpp
+
+FLAGC = ${SEARCH_C} ${FLAGC_EXTRA} -c ${OPT3} ${OPENMPFLAG} ${DEBUGC}
+
+# These flags must be compatible with the ones used for the AMREX library
+FLAGCUDA = --relocatable-device-code=true \
+	--generate-code arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH} \
+	-Wno-deprecated-gpu-targets --forward-unknown-to-host-compiler
+
+FLAGCC = ${FLAGC} -std=c++17 -x cu ${FLAGCUDA} \
+	--expt-extended-lambda --expt-relaxed-constexpr
+
+.c.o:
+	${COMPILE.c} ${FLAGC} $< -o $@
+
+.cpp.o:
+	${COMPILE.mpicxx} ${FLAGCC} $< -o $@
