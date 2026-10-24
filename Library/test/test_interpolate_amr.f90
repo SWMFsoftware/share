@@ -4,7 +4,7 @@
 module ModTestInterpolateAMR
 
   use ModInterpolateAMR, ONLY: &
-       interpolate_amr, interpolate_amr_gc, get_reference_block
+       interpolate_amr
   use ModUtilities, ONLY: CON_stop
   use ModNumConst, ONLY: cPi
 
@@ -62,14 +62,13 @@ module ModTestInterpolateAMR
 contains
   !============================================================================
   subroutine test_interpolate_amr(&
-       nDim, IsCartesian, IsPeriodicIn_D, nSample, UseGeneric, UseGhostCell)
+       nDim, IsCartesian, IsPeriodicIn_D, nSample, UseGhostCell)
 
     use ModRandomNumber, ONLY: random_real
 
     integer, intent(in):: nDim, nSample
     logical, intent(in):: IsPeriodicIn_D(nDim)
     logical, intent(in):: IsCartesian
-    logical, intent(in):: UseGeneric
     logical, optional, intent(in):: UseGhostCell
 
     integer :: iIndexes_II(0:nDim+1,2**nDim)
@@ -111,7 +110,7 @@ contains
     if(present(UseGhostCell))then
        DoTestApproximation = .not.any(IsPeriodicIn_D) .or. UseGhostCell
     else
-       DoTestApproximation = .not.any(IsPeriodicIn_D) .or. .not.UseGeneric
+       DoTestApproximation = .not.any(IsPeriodicIn_D)
     end if
     call generate_grid
 
@@ -122,7 +121,7 @@ contains
        ! write(*,*)            'Case=',iLevelTest_I(        1:2** nDim   )
        ! if(nRoot>1) write(*,*)'     ',iLevelTest_I(2**nDim+1:2**(nDim+1))
        call fill_ghost_cells
-       call fill_nei_levels
+       ! call fill_nei_levels
 
        ! We generated refinement, now sample points
        SAMPLE:do iSample = 1, nSample
@@ -132,44 +131,17 @@ contains
           end do
 
           ! call interpolate_amr
-          if(UseGeneric)then
-             call interpolate_amr(&
-                  nDim=nDim, &
-                  XyzIn_D=Coord_D, &
-                  nIndexes=nDim+1,&
-                  find=find_test, &
-                  nCell_D=nCell_D(1:nDim),&
-                  nGridOut=nGridOut,&
-                  Weight_I=Weight_I,&
-                  iIndexes_II=iIndexes_II,&
-                  IsSecondOrder=IsSecondOrder,&
-                  UseGhostCell=UseGhostCell)
-          else
-             call find_test(nDim, Coord_D, &
-                  iProc, iBlock, CoordCorner_D, CellSize_D, IsOut)
-             Coord_D = CoordCorner_D + Coord_D
-             call check_interpolate_test(nDim, Coord_D, iBlock, &
-                  iProc, iBlockNei)
-             if(iBlockNei /= iBlock) then
-                iBlock = iBlockNei
-                CoordCorner_D = Coord_DB(:,iBlock)
-                CellSize_D = DCoord_DB(:,iBlock) / nCell_D(1:nDim)
-             end if
-             call fix_coord(nDim, iBlock, Coord_D, CoordPass_D)
-             call interpolate_amr_gc(&
-                  nDim         = nDim, &
-                  Xyz_D        = CoordPass_D, &
-                  XyzMin_D     = CoordCorner_D, &
-                  DXyz_D       = CellSize_D, &
-                  nCell_D      = nCell_D(1:nDim), &
-                  DiLevelNei_III = DiLevelNei_IIIB(:,:,:,iBlock), &
-                  nCellOut     = nGridOut, &
-                  iCellOut_II  = iIndexes_II(1:nDim,:), &
-                  Weight_i     = Weight_I, &
-                  IsSecondOrder= IsSecondOrder)
-             iIndexes_II(nIndexes,:) = iBlock
-          end if
-
+          call interpolate_amr(&
+               nDim=nDim, &
+               XyzIn_D=Coord_D, &
+               nIndexes=nDim+1,&
+               find=find_test, &
+               nCell_D=nCell_D(1:nDim),&
+               nGridOut=nGridOut,&
+               Weight_I=Weight_I,&
+               iIndexes_II=iIndexes_II,&
+               IsSecondOrder=IsSecondOrder,&
+               UseGhostCell=UseGhostCell)
           ! Compare with interpolated:
           CoordInterpolated_D = 0
           VarInterpolated   = 0
@@ -206,7 +178,6 @@ contains
              write(*,*)'nDim=',nDim
              write(*,*)'IsCartesian=',IsCartesian
              write(*,*)'IsPeriodic_D=',IsPeriodic_D
-             write(*,*)'UseGeneric=',UseGeneric
              write(*,*)'UseGhostCell=',UseGhostCell
              write(*,*)'Grid:', iLevelTest_I(1:2**nDim)
              write(*,*)'nGridOut=',nGridOut
@@ -232,43 +203,17 @@ contains
           end do
 
           ! call interpolate_amr
-          if(UseGeneric)then
-             call interpolate_amr(&
-                  nDim=nDim, &
-                  XyzIn_D=CoordCont_D, &
-                  nIndexes=nDim+1,&
-                  find=find_test, &
-                  nCell_D=nCell_D(1:nDim),&
-                  nGridOut=nGridOut,&
-                  Weight_I=Weight_I,&
-                  iIndexes_II=iIndexes_II,&
-                  IsSecondOrder=IsSecondOrder,&
-                  UseGhostCell=UseGhostCell)
-          else
-             call find_test(nDim, CoordCont_D, &
-                  iProc, iBlock, CoordCorner_D, CellSize_D, IsOut)
-             CoordCont_D = CoordCorner_D + CoordCont_D
-             call check_interpolate_test(nDim, CoordCont_D, iBlock, &
-                  iProc, iBlockNei)
-             if(iBlockNei /= iBlock) then
-                iBlock = iBlockNei
-                CoordCorner_D = Coord_DB(:,iBlock)
-                CellSize_D = DCoord_DB(:,iBlock) / nCell_D(1:nDim)
-             end if
-             call fix_coord(nDim, iBlock, CoordCont_D, CoordPass_D)
-             call interpolate_amr_gc(&
-                  nDim         = nDim, &
-                  Xyz_D        = CoordPass_D, &
-                  XyzMin_D     = CoordCorner_D, &
-                  DXyz_D       = CellSize_D, &
-                  nCell_D      = nCell_D(1:nDim), &
-                  DiLevelNei_III = DiLevelNei_IIIB(:,:,:,iBlock), &
-                  nCellOut     = nGridOut, &
-                  iCellOut_II  = iIndexes_II(1:nDim,:), &
-                  Weight_i     = Weight_I, &
-                  IsSecondOrder= IsSecondOrder)
-             iIndexes_II(nIndexes,:) = iBlock
-          end if
+          call interpolate_amr(&
+               nDim=nDim, &
+               XyzIn_D=CoordCont_D, &
+               nIndexes=nDim+1,&
+               find=find_test, &
+               nCell_D=nCell_D(1:nDim),&
+               nGridOut=nGridOut,&
+               Weight_I=Weight_I,&
+               iIndexes_II=iIndexes_II,&
+               IsSecondOrder=IsSecondOrder,&
+               UseGhostCell=UseGhostCell)
 
           ! Compare interpolated values of Var:
           VarContInterpolated = 0
@@ -305,7 +250,6 @@ contains
              write(*,*)'nDim=',nDim
              write(*,*)'IsCartesian=',IsCartesian
              write(*,*)'IsPeriodic_D=',IsPeriodic_D
-             write(*,*)'UseGeneric=',UseGeneric
              write(*,*)'UseGhostCell=',UseGhostCell
              write(*,*)'Grid:', iLevelTest_I(1:2**nDim)
              write(*,*)'nGridOut=',nGridOut
@@ -328,7 +272,6 @@ contains
              write(*,*)'nDim=',nDim
              write(*,*)'IsCartesian=',IsCartesian
              write(*,*)'IsPeriodic_D=',IsPeriodic_D
-             write(*,*)'UseGeneric=',UseGeneric
              write(*,*)'UseGhostCell=',UseGhostCell
              write(*,*)'Grid:', iLevelTest_I
              write(*,*)'nGridOut=',nGridOut
@@ -659,92 +602,6 @@ contains
       end if
     end subroutine reverse_fix
     !==========================================================================
-    subroutine check_interpolate_test(nDim, Coord_D, iBlockIn, &
-         iProcOut, iBlockOut)
-
-      integer, intent(in) :: nDim
-      real,    intent(in) :: Coord_D(nDim)
-      integer, intent(in) :: iBlockIn
-      integer, intent(out):: iProcOut
-      integer, intent(out):: iBlockOut
-
-      integer:: iLevel_I(2**nDim)
-      logical:: IsOut_I(2**nDim)
-      integer:: iDiscr_D(3)
-      real   :: CoordCentral_D(nDim)
-      real   :: CoordNei_D(nDim), CoordCorner_D(nDim), CellSize_D(nDim)
-      real   :: CoordGrid_DI(nDim, 2**nDim)
-      logical:: IsOut
-      integer:: iGridRef, iGrid
-      integer:: iShiftRef_D(nDim)
-      !------------------------------------------------------------------------
-      ! determine displacement of the point relative to the block's interior
-      iDiscr_D = 0
-      where(Coord_D < Coord_DGB(:,1,1,1,iBlockIn))
-         iDiscr_D(1:nDim) = -1
-      elsewhere(Coord_D >= &
-           Coord_DGB(:,nCell_D(1),nCell_D(2),nCell_D(3),iBlockIn))
-         iDiscr_D(1:nDim) =  1
-      end where
-
-      ! array of levels of neighbors
-      iLevel_I = reshape(DiLevelNei_IIIB(&
-           [MIN(iDiscr_D(1),0), MAX(0,iDiscr_D(1))], &
-           [MIN(iDiscr_D(2),0), MAX(0,iDiscr_D(2))], &
-           [MIN(iDiscr_D(3),0), MAX(0,iDiscr_D(3))], iBlockIn), [2**nDim])
-
-      ! find those that are outside of the computational domain
-      IsOut_I = iLevel_I < -1
-
-      ! iLevel_I may contain -1's;
-      ! fix so there are only 0's (Coarser) and 1's (Finer)
-      if(any(iLevel_I == -1 .and. .not. IsOut_I))&
-           iLevel_I = iLevel_I + 1
-
-      ! cell size of this block
-      if(iTree_IB(Level_,iBlockIn)==Fine_)then
-         CellSize_D = CellSizeFine_D   ! the block is Finer
-      else
-         CellSize_D = CellSizeCoarse_D ! the block is Coarse
-      end if
-
-      ! coordinates of block's junction
-      where(    iDiscr_D(1:nDim) == 1)
-         CoordCentral_D = &
-              Coord_DGB(:,nCell_D(1),nCell_D(2),nCell_D(3),iBlockIn) &
-              + 0.5*CellSize_D
-      elsewhere(iDiscr_D(1:nDim) ==-1)
-         CoordCentral_D = Coord_DGB(:,1,1,1,iBlockIn) - 0.5*CellSize_D
-      elsewhere
-         CoordCentral_D = Coord_D
-      end where
-
-      ! supergrid
-      do iGrid = 1, 2**nDim
-         CoordGrid_DI(:, iGrid) = CoordCentral_D + &
-              (iShift_DI(1:nDim, iGrid)-0.5) * CellSizeCoarse_D
-      end do
-
-      ! find the block that has enough information to perform interpolation
-      ! using only 1 layer of gc
-      call get_reference_block(&
-           nDim, Coord_D, CoordGrid_DI, iLevel_I, IsOut_I, iGridRef)
-      ! displacement to this block
-      iShiftRef_D = iShift_DI(1:nDim,iGridRef)
-
-      ! check if it is the input block
-      if(all((iDiscr_D(1:nDim)-1)/2 == iShiftRef_D*ABS(iDiscr_D(1:nDim))))then
-         iBlockOut = iBlockIn
-         RETURN
-      end if
-
-      ! it is a different block, find it
-      CoordNei_D = CoordCentral_D + 0.5*CellSizeFine_D*(iShiftRef_D-0.5)
-      call find_test(nDim, CoordNei_D, &
-           iProcOut, iBlockOut, CoordCorner_D, CellSize_D, IsOut)
-
-    end subroutine check_interpolate_test
-    !==========================================================================
     subroutine fill_nei_levels
 
       ! fill DiLevelNei_IIIB that store levels of neighbors
@@ -932,14 +789,13 @@ program test_interpolate_amr
 
   implicit none
 
-  integer :: nSampleTest = 1000
+  integer :: nSampleTest = 10000
   !----------------------------------------------------------------------------
   call test( &
        nDim          = 2, &
        IsCartesian   = .false., &
        IsPeriodicIn_D= [.true.,.false.], &
        nSample       = nSampleTest, &
-       UseGeneric    = .true., &
        UseGhostCell  = .false.)
 
   call test( &
@@ -947,22 +803,19 @@ program test_interpolate_amr
        IsCartesian   = .false., &
        IsPeriodicIn_D= [.false.,.true.], &
        nSample       = nSampleTest, &
-       UseGeneric    = .true., &
        UseGhostCell  = .true.)
 
   call test( &
        nDim          = 2,&
        IsCartesian   = .false.,&
        IsPeriodicIn_D= [.false.,.true.], &
-       nSample       = nSampleTest, &
-       UseGeneric    = .false.)
+       nSample       = nSampleTest)
 
   call test( &
        nDim          = 3,&
        IsCartesian   = .false., &
        IsPeriodicIn_D= [.false.,.true.,.true.], &
        nSample       = nSampleTest, &
-       UseGeneric    = .true., &
        UseGhostCell  = .false.)
 
   call test( &
@@ -970,22 +823,19 @@ program test_interpolate_amr
        IsCartesian   = .false., &
        IsPeriodicIn_D= [.false.,.false.,.true.], &
        nSample       = nSampleTest, &
-       UseGeneric    = .true., &
        UseGhostCell  = .true.)
 
   call test( &
        nDim          = 3, &
        IsCartesian   = .false., &
        IsPeriodicIn_D= [.true.,.false.,.true.], &
-       nSample       = nSampleTest, &
-       UseGeneric    = .false.)
+       nSample       = nSampleTest)
 
   call test( &
        nDim          = 2, &
        IsCartesian   = .true., &
        IsPeriodicIn_D= [.true.,.false.], &
        nSample       = nSampleTest, &
-       UseGeneric    = .true., &
        UseGhostCell  = .false.)
 
   call test( &
@@ -993,22 +843,19 @@ program test_interpolate_amr
        IsCartesian   = .true.,&
        IsPeriodicIn_D= [.false.,.true.], &
        nSample       = nSampleTest, &
-       UseGeneric    = .true., &
        UseGhostCell  = .true.)
 
   call test( &
        nDim          = 2, &
        IsCartesian   = .true., &
        IsPeriodicIn_D= [.false.,.true.], &
-       nSample       = nSampleTest, &
-       UseGeneric    = .false.)
+       nSample       = nSampleTest)
 
   call test( &
        nDim          = 3,&
        IsCartesian   = .true.,&
        IsPeriodicIn_D= [.false.,.true.,.true.], &
        nSample       = nSampleTest, &
-       UseGeneric    = .true., &
        UseGhostCell  = .false.)
 
   call test( &
@@ -1016,15 +863,13 @@ program test_interpolate_amr
        IsCartesian   = .true., &
        IsPeriodicIn_D= [.false.,.false.,.true.], &
        nSample       = nSampleTest, &
-       UseGeneric    = .true., &
        UseGhostCell  = .true.)
 
   call test( &
        nDim          = 3, &
        IsCartesian   = .true., &
        IsPeriodicIn_D= [.true.,.false.,.true.], &
-       nSample       = nSampleTest, &
-       UseGeneric    = .false.)
+       nSample       = nSampleTest)
 
 end program test_interpolate_amr
 !==============================================================================
