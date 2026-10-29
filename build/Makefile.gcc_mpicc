@@ -10,9 +10,9 @@ COMPILE.mpicxx= mpicxx
 # 	    -fsanitize=float-cast-overflow -fno-sanitize=null \
 # 	    -fno-sanitize=alignment
 
-LINK.cpp = ${COMPILE.c} -lstdc++
+LINK.cpp = ${COMPILE.c} -lstdc++ -lstdc++fs
 
-CPPLIB = -lstdc++ -lmpi_cxx -lmpi++
+CPPLIB = -lstdc++ -lstdc++fs -lmpi_cxx -lmpi++
 
 #DEBUGC =  -g -Wall -Wextra -Wno-unused-parameter 
 
