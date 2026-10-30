@@ -918,7 +918,17 @@ sub set_amrex_{
     }
 
     my $InstallDir = "InstallDir${NewAmrexDim}D";
-    if($NewAmrex eq "yes" and not -e "util/AMREX/InstallDir${NewAmrexDim}D/lib/libamrex.a"){
+
+    # nvcc (Makefile.nvcc) needs the CUDA version of AMREX for the local GPU.
+    # Rebuild the library if its GPU architecture (none for CPU) differs.
+    my $CudaArch = "";
+    if($CompilerC eq "nvcc"){
+	$CudaArch = `nvidia-smi --query-gpu=compute_cap --format=csv,noheader | head -1 | tr -dc 0-9`;
+	die "$ERROR could not detect the GPU with nvidia-smi\n" unless $CudaArch;
+    }
+    my $LibCudaArch = `grep -o 'arch=compute_[0-9]*' util/AMREX/$InstallDir/lib/pkgconfig/amrex.pc 2>/dev/null | head -1 | tr -dc 0-9`;
+
+    if($NewAmrex eq "yes" and (not -e "util/AMREX/$InstallDir/lib/libamrex.a" or $LibCudaArch ne $CudaArch)){
 	
 	my $AmrexCompiler="intel-classic";	
 	if($Compiler eq "ifx" or $Compiler eq "mpiifx" or 
@@ -938,8 +948,17 @@ sub set_amrex_{
 	$AmrexCompiler="nag" if $Compiler eq "nagfor";
 	$AmrexCompiler="pgi" if $Compiler eq "pgf90" or $Compiler eq "nvfortran";       
 
+	# AMREX passes the obsolete -Mcuda flag to nvfortran, and its Fortran
+	# is not needed. nvcc uses nvc++ (pgi) as host compiler, the same as
+	# -ccbin=mpicxx in Makefile.nvcc.
+	my $CudaOptions = "";
+	if($CudaArch){
+	    $CudaOptions = "--with-fortran no --with-cuda yes --cuda-arch $CudaArch";
+	    $ENV{NVCC_HOST_COMP} = "pgi";
+	}
+
 	&shell_command("cd util/AMREX;", 
-		       "./configure --prefix $InstallDir --comp $AmrexCompiler --enable-fortran-api no --debug $Debug --enable-tiny-profile yes --dim $NewAmrexDim --allow-different-compiler yes;",
+		       "./configure --prefix $InstallDir --comp $AmrexCompiler --enable-fortran-api no --debug $Debug --enable-tiny-profile yes --dim $NewAmrexDim --allow-different-compiler yes $CudaOptions;",
 		       "rm -rf util/AMREX/$InstallDir");
 	
 	$IsStrict = 0;
