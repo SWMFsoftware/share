@@ -284,7 +284,7 @@ if($ShowCompiler){
 # Change to the main directory of the SWMF if called from a component
 chdir "../.." if $IsComponent;
 
-# Check if Makefile.def is up to date
+# Check if Makefile.def is up to date with 1 minute tolerance
 if(-f $MakefileDef){
     my @Stat = stat $MakefileDef;
     my $Time = $Stat[9];
@@ -292,10 +292,10 @@ if(-f $MakefileDef){
     my $TimeOrig = $Stat[9];
     die "$ERROR $MakefileDefOrig is newer than $MakefileDef !\n".
 	"   Reinstall or merge changes into $MakefileDef !\n"
-	if $Time < $TimeOrig;
+	if $Time+60 < $TimeOrig;
 }
 
-# Check if Makefile.conf is up to date
+# Check if Makefile.conf is up to date with 1 minute tolerance
 if(-f $MakefileConf){
     my @Stat = stat $MakefileConf;
     my $Time = $Stat[9];
@@ -306,7 +306,7 @@ if(-f $MakefileConf){
 	my $TimeOrig = $Stat[9];
 	die "$ERROR $Makefile is newer than $MakefileConf !\n".
 	    "   Reinstall or merge changes into $MakefileConf !\n"
-	    if $Time < $TimeOrig;
+	    if $Time+60 < $TimeOrig;
     }
 }
 
