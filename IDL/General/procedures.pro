@@ -648,11 +648,18 @@ pro read_data
 
      print
 
-     open_file, 10, filenames(ifile), filetypes(ifile)
-     if n_elements(firstpict) eq nfile $
-        and max(firstpict) ne min(firstpict) then npict=firstpict[ifile]
-     get_pict, 10, filenames(ifile), filetypes(ifile), $
-               npict<npictinfiles(ifile), error
+     open_file, 10, filenames[ifile], filetypes[ifile]
+     ;; If firstpict is a negative scalar, apply it to all files
+     if n_elements(firstpict) eq 1 and firstpict[0] lt 0 then $
+        firstpict += intarr(nfile) 
+     ;; May use firstpict to set npict
+     if n_elements(firstpict) eq nfile then begin
+        if max(firstpict) ne min(firstpict) then npict = firstpict[ifile]
+        if firstpict[ifile] lt 0 then $
+           npict = firstpict[ifile] + npictinfiles[ifile] + 1
+     endif
+     get_pict, 10, filenames[ifile], filetypes[ifile], $
+               npict < npictinfiles[ifile], error
 
      show_head, ifile
 
@@ -949,11 +956,17 @@ pro animate_data
   arr2arr, firstpict, nfile
   arr2arr, dpict, nfile
 
+  ;; Change negative values in firstpict into positive values in firstpict1
+  firstpict1 = firstpict
+  for ifile = 0, nfile-1 do $
+     if firstpict[ifile] lt 0 then firstpict1[ifile] += npictinfiles[ifile] + 1
+  firstpict1 = firstpict1 > 1
+  
   ;; open file(s) and read and print header(s)
   anygencoord=0
   for ifile = 0, nfile-1 do begin
-     open_file, 10, filenames(ifile), filetypes(ifile)
-     get_file_head, 10, filenames(ifile), filetypes(ifile)
+     open_file, 10, filenames[ifile], filetypes[ifile]
+     get_file_head, 10, filenames[ifile], filetypes[ifile]
      anygencoord = anygencoord or gencoord
      print,         'headline                  =', strtrim(headline,2)
      print, FORMAT='("variables                 =",100(a," "),$)', variables
@@ -965,8 +978,8 @@ pro animate_data
      nfunc_file = intarr(nfile)
      nplot_file = intarr(nfile)
      for ifile = 0, nfile-1 do begin
-        open_file, 10, filenames(ifile), filetypes(ifile)
-        get_file_head, 10, filenames(ifile), filetypes(ifile)
+        open_file, 10, filenames[ifile], filetypes[ifile]
+        get_file_head, 10, filenames[ifile], filetypes[ifile]
         close, 10
         func = func_file[ifile]
         if keyword_set(plotmode_file) then plotmode = plotmode_file[ifile]
@@ -998,23 +1011,23 @@ pro animate_data
   ;; if all files are log files then there is no animation
   if min(filetypes eq 'log') then maxpict = 1 else maxpict = npictmax
   if noautorange then begin
-     npict = min( (npictinfiles - firstpict)/dpict + 1 )
+     npict = min( (npictinfiles - firstpict1)/dpict + 1 )
      if npict gt maxpict then npict = maxpict
      if npict lt 0 then npict = 0
   endif else begin
      npict = 0
      for ifile=0,nfile-1 do $
-        open_file, ifile+10, filenames(ifile), filetypes(ifile)
+        open_file, ifile+10, filenames[ifile], filetypes[ifile]
      error = 0
      while npict lt maxpict and not error do begin
         for ifile = 0, nfile-1 do begin
 
-           if npict eq 0 then nextpict=firstpict(ifile) $
-           else               nextpict=dpict(ifile)
-
-           get_pict, ifile+10, filenames(ifile), filetypes(ifile), $
+           if npict eq 0 then nextpict = firstpict1[ifile] $
+           else               nextpict = dpict[ifile]
+           
+           get_pict, ifile+10, filenames[ifile], filetypes[ifile], $
                      nextpict, err
-
+           
            if keyword_set(wsubtract) then w=w-wsubtract
 
            if keyword_set(timediff) then begin
@@ -1146,7 +1159,7 @@ pro animate_data
   ipict1 = 0
   iplot = 0
   for ifile = 0, nfile-1 do $
-     open_file, ifile+10, filenames(ifile), filetypes(ifile)
+     open_file, ifile+10, filenames[ifile], filetypes[ifile]
   error = 0
   while ipict lt npict and not error do begin
      if ipict1 eq 0 then begin
@@ -1174,10 +1187,10 @@ pro animate_data
 
         if npict gt 1 or nfile gt 1 or noautorange then begin
 
-           if ipict eq 0 then nextpict=firstpict(ifile) $
-           else               nextpict=dpict(ifile)
+           if ipict eq 0 then nextpict = firstpict1[ifile] $
+           else               nextpict = dpict[ifile]
 
-           get_pict, ifile+10, filenames(ifile), filetypes(ifile), $
+           get_pict, ifile+10, filenames[ifile], filetypes[ifile], $
                      nextpict, err
 
            error = error or err
@@ -1242,12 +1255,12 @@ pro animate_data
            end
 
            if keyword_set(plotmode_file) then begin
-              plotmode = plotmode_file(ifile)
+              plotmode = plotmode_file[ifile]
               string_to_array, plotmode, plotmodes, nfunc
            end
 
            if keyword_set(plottitle_file) then begin
-              plottitle = plottitle_file(ifile)
+              plottitle = plottitle_file[ifile]
               string_to_array, plottitle, plottitles, nfunc, ';'
            end
            
@@ -1952,26 +1965,26 @@ pro get_file_types
   npictinfiles = intarr(nfile)
   pictsize = long64(1)
   for ifile=0, nfile-1 do begin
-     l = strlen(filenames(ifile)) - 4
-     if    strpos(filenames(ifile),'.log') eq l $
-        or strpos(filenames(ifile),'.sat') eq l $
-        or strpos(filenames(ifile),'.txt') eq l $
-        or strpos(filenames(ifile),'.csv') eq l then begin
-        filetypes(ifile)    = 'log'
-        npictinfiles(ifile) = 1000
-     endif else if strpos(filenames(ifile),'.idl') ge l-1 then begin
-        filetypes(ifile) = 'rim'
+     l = strlen(filenames[ifile]) - 4
+     if    strpos(filenames[ifile],'.log') eq l $
+        or strpos(filenames[ifile],'.sat') eq l $
+        or strpos(filenames[ifile],'.txt') eq l $
+        or strpos(filenames[ifile],'.csv') eq l then begin
+        filetypes[ifile]    = 'log'
+        npictinfiles[ifile] = 1000
+     endif else if strpos(filenames[ifile],'.idl') ge l-1 then begin
+        filetypes[ifile] = 'rim'
         close, 1
-        openr, 1, filenames(ifile)
+        openr, 1, filenames[ifile]
         status = fstat(1)
         fsize = status.size
-        get_file_head, 1, filenames(ifile), filetypes(ifile), pictsize=pictsize
+        get_file_head, 1, filenames[ifile], filetypes[ifile], pictsize=pictsize
         close, 1
-        npictinfiles(ifile) = fsize/pictsize
+        npictinfiles[ifile] = fsize/pictsize
      endif else begin
         ;; Obtain filetype based on the length info in the first 4 bytes
         close, 10
-        openr, 10, filenames(ifile)
+        openr, 10, filenames[ifile]
         lenhead = 1L
         readu, 10, lenhead
         if lenhead ne 79 and lenhead ne 500 then ftype='ascii' else begin
@@ -1986,7 +1999,7 @@ pro get_file_types
               else: begin
                  print, $
                     'Error in get_file_types: strange unformatted file:',$
-                    filenames(ifile)
+                    filenames[ifile]
                  retall
               end
            endcase
@@ -1995,7 +2008,7 @@ pro get_file_types
         close,10
 
         ;; Obtain file size and number of snapshots
-        open_file, 1, filenames(ifile), ftype
+        open_file, 1, filenames[ifile], ftype
         status = fstat(1)
         fsize = status.size
 
@@ -2004,14 +2017,14 @@ pro get_file_types
         while pointer lt fsize do begin
            ;; Obtain size of a single snapshot
            point_lun, 1, pointer
-           get_file_head, 1, filenames(ifile), ftype, pictsize=pictsize
+           get_file_head, 1, filenames[ifile], ftype, pictsize=pictsize
            ipict   = ipict+1
            pointer = pointer + pictsize
         endwhile
         close,1
 
-        npictinfiles(ifile) = ipict
-        filetypes(ifile)    = ftype
+        npictinfiles[ifile] = ipict
+        filetypes[ifile]    = ftype
      endelse
   endfor
 end
@@ -2024,8 +2037,8 @@ pro show_head, ifile
   common getpict_param
   common file_head
 
-  print,   'filename   = ',filenames(ifile), format="(a,a)"
-  print,   'filetype   = ',filetypes(ifile), format="(a,a)"
+  print,   'filename   = ',filenames[ifile], format="(a,a)"
+  print,   'filetype   = ',filetypes[ifile], format="(a,a)"
   print,   'headline   = ',strtrim(headline,2), format="(a,a)"
   print,   'it         = ',it,       format="(a,i8)"
   print,   'time       = ',time,     format="(a,g15.8)"
