@@ -96,6 +96,19 @@ public:
     while (ss.good()) {
       ss.unget();
 
+      // Only a '#' with nothing but white space before it on its line starts
+      // a command, not e.g. a '#' in the text of #DESCRIPTION.
+      const std::streamoff iHash = ss.tellg();
+      if (iHash > 0) {
+        const std::string::size_type i =
+            param.find_last_not_of(" \t", iHash - 1);
+        if (i != std::string::npos && param[i] != '\n') {
+          ss.get();                // skip this '#'
+          ss.ignore(INT_MAX, '#'); // and go to the next one
+          continue;
+        }
+      }
+
       // Example of commandline:
       // 1) #COMMAND
       // 2) #COMMAND_GRID0_GRID1
