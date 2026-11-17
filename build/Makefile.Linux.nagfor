@@ -53,7 +53,9 @@ Cflag4  = ${CFLAG} ${PRECISION} ${OPT4}
 CFLAGS = ${CFLAG} -save
 
 # Link with or without the MPI library
-Lflag    = ${PRECISION} ${OPENMPFLAG} ${CPPLIB} ${DEBUG}
+# -Wl=`which gcc`: link with the gcc in PATH (e.g. a gcc-toolset) instead of
+# /usr/bin/gcc, so -lstdc++ matches the g++ used for the C++ code.
+Lflag    = ${PRECISION} ${OPENMPFLAG} ${CPPLIB} ${DEBUG} -Wl=`which gcc`
 LflagMpi = ${Lflag} ${MPILIB}
 
 

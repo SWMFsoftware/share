@@ -1022,7 +1022,11 @@ sub set_amrex_{
 	@ARGV = ($MakefileConf);
 	while(<>){
 	    # Add AMREX releated definitions when necessary. 
-	    if($Amrex eq "yes"){ s/^(Lflag\s+.*)/$1 \$\{AMREXLIB}/; };	    
+	    # Put ${AMREXLIB} before ${CPPLIB} so -lstdc++ comes after -lamrex
+	    if($Amrex eq "yes"){
+		s/^(Lflag\s+.*?)\$\{CPPLIB\}/$1\$\{AMREXLIB\} \$\{CPPLIB\}/ or
+		    s/^(Lflag\s+.*)/$1 \$\{AMREXLIB}/;
+	    }
 	    $_ .= $AmrexDefinition if $Amrex eq "yes" and /-lNOMPI/;
 	    print;
 	}
