@@ -15,6 +15,7 @@ Table of Contents:
 - [prepare_geospace.py](#prepare_geospacepy)
 - [plot_indices.py](#plot_indices)
 - [download_sme_kp.py](#download_sme_kppy)
+- [swmf_datafile.py](#swmf_datafilepy)
 
 prepare_geospace.py
 -------------------
@@ -116,3 +117,58 @@ SME/SML/SMU). The SuperMAG username can also be set once via the
 `SUPERMAG_USERID` environment variable instead of `--userid`; if neither is
 given, only the Kp file is downloaded. Run `python download_sme_kp.py --help`
 for all options.
+
+swmf_datafile.py
+----------------
+
+A module to read and write SWMF data files (ASCII, `real4` and `real8`
+binary formats) efficiently with `numpy`. Import it into your own Python
+code to access the snapshots:
+
+```python
+import swmf_datafile as swmf
+
+data = swmf.read_file("file.out")   # returns a dictionary, see below
+swmf.show_data(data)                # print a summary of the dictionary
+swmf.write_file(data, "file2.out")  # write it back out
+```
+
+After reading, the dictionary contains entries such as `head`, `step`,
+`time`, `ndim`, `cart`, `npar`, `nvar`, `dims`, `pars`, `name`, `coord` and
+`state` (see the top of `swmf_datafile.py` for the full description). For
+writing, the dictionary must at least contain `name`, `coord` and `state`.
+
+`swmf_datafile_test.py` is a self-contained example/test script that builds
+sample data dictionaries, writes them out in all supported formats, and reads
+them back, printing the content at each step. Run it directly to see example
+usage, or compare its input/output to understand the data format:
+
+```bash
+python swmf_datafile_test.py
+```
+
+`swmf_datafile.py` can also be run directly from the command line to
+inspect, select snapshots from, and convert the format of existing SWMF data
+files:
+
+```bash
+# Check the content of file.outs
+swmf_datafile.py file.outs
+
+# Show the header info for the first snapshot
+swmf_datafile.py -v -s 0 file.outs
+
+# Extract the first snapshot and then every 10th from 30th to 200th
+swmf_datafile.py -s 0,30:200:10 file.outs selected.outs
+
+# Convert the file into an ascii file with 3 digit floats
+swmf_datafile.py -f 10.3f file.outs ascii.out
+
+# Convert the file into a single precision binary file
+swmf_datafile.py -f real4 file.outs singleprec.outs
+
+# Extract the last two snapshots (note the = sign!) and convert to real8 binary
+swmf_datafile.py -f real8 -s=-2: file.outs doubleprec.out
+```
+
+Run `swmf_datafile.py --help` for all options.
