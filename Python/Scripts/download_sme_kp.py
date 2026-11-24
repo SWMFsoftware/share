@@ -72,13 +72,12 @@ def download_kp(start: datetime, end: datetime, out_csv: str) -> None:
 
     times = data["datetime"]
     kp_values = data["Kp"]
-    statuses = data.get("status", [None] * len(times))
 
     with open(out_csv, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["datetime_utc", "Kp", "status"])
-        for dt_str, kp_val, status in zip(times, kp_values, statuses):
-            writer.writerow([dt_str, kp_val, status])
+        writer.writerow(["datetime_utc", "Kp"])
+        for dt_str, kp_val in zip(times, kp_values):
+            writer.writerow([dt_str, kp_val])
 
     print(f"  Saved {len(times)} Kp records to {out_csv}")
 

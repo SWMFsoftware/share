@@ -14,6 +14,7 @@ Table of Contents:
 
 - [prepare_geospace.py](#prepare_geospacepy)
 - [plot_indices.py](#plot_indices)
+- [download_sme_kp.py](#download_sme_kppy)
 
 prepare_geospace.py
 -------------------
@@ -90,3 +91,28 @@ A simply way of using this script is to make sure you know where your
 # replace with your file names
 python plot_indices.py log_YYYYMMMDD.log geo_YYYMMMDD.log
 ```
+
+download_sme_kp.py
+------------------
+
+A script to download the Kp index and the SME/SML/SMU (SuperMAG Electrojet)
+indices for a given UTC time period, saving each to its own CSV file. It only
+uses the Python standard library, so no extra packages need to be installed.
+
+Kp is fetched from GFZ Potsdam's web service, which needs no registration.
+SME/SML/SMU are SuperMAG-exclusive products, so fetching them requires a free
+SuperMAG "logon" username (just register with an email address at
+https://supermag.jhuapl.edu, no API key needed).
+
+Run once per time period:
+
+```bash
+python download_sme_kp.py --start 2024-05-10T00:00:00 --end 2024-05-13T00:00:00 \
+    --userid YOUR_SUPERMAG_LOGON --out period1
+```
+
+This writes `period1_kp.csv` (3-hour Kp) and `period1_sme.csv` (1-minute
+SME/SML/SMU). The SuperMAG username can also be set once via the
+`SUPERMAG_USERID` environment variable instead of `--userid`; if neither is
+given, only the Kp file is downloaded. Run `python download_sme_kp.py --help`
+for all options.
